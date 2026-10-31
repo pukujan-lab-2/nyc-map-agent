@@ -1,6 +1,70 @@
-# nyc-map-agent on gravebuster
+# Deploying nyc-map-agent
 
-## What runs
+The app runs on the VPS (`ssh vps`, user `ubuntu`) since 2026-10-31. It used to run on
+gravebuster, which has been offline since then; that setup is kept at the end of this file
+in case it comes back.
+
+## The VPS
+
+| Container | Role |
+| --- | --- |
+| `nyc-map-web` | the app (Vite build + Hono), on `127.0.0.1:18088` only |
+| `nyc-map-motis` | MOTIS, the trip planner (`TRIP_PLANNER=motis`) |
+| `nyc-map-lfm3-bridge` | re-offers the LFM3 tunnel port to containers on the Docker gateway |
+
+Chat uses LFM3, which runs on the MacBook Pro. The Pro keeps an SSH reverse tunnel open to the
+VPS's `127.0.0.1:18099` (launchd job `com.pukujan.lfm3-tunnel`). If the Pro sleeps or the tunnel
+drops, chat stops answering while maps and trips keep working.
+
+The checkout is `~/apps/nyc-map-agent`, the env file is `~/apps/nyc-map-agent.env`, and the MOTIS
+data lives in `~/apps/nyc-map-motis`. Everything is in `deploy/docker-compose.vps.yml`.
+
+### Not public yet
+
+No Cloudflare tunnel on the VPS routes `nyc.design-bakery.com` to `127.0.0.1:18088`, so the
+public hostname still answers 530. Adding that route is a change in the Cloudflare dashboard.
+Until it exists, check the app from the VPS itself:
+
+```bash
+curl -s http://127.0.0.1:18088/healthz
+```
+
+### Deploy a commit from main
+
+There is no deploy service on the VPS, so CI does not deploy there yet (see "CI" below). Deploy by
+hand from the checkout. Images are tagged with the short commit, so the previous one stays around
+for a rollback.
+
+```bash
+cd ~/apps/nyc-map-agent
+git fetch origin && git checkout --detach origin/main
+export NYC_MAP_IMAGE=nyc-map-agent:$(git rev-parse --short HEAD)
+docker compose -f deploy/docker-compose.vps.yml --env-file ~/apps/nyc-map-agent.env up -d --build web
+docker ps --filter name=nyc-map-web --format '{{.Image}} {{.Status}}'
+```
+
+To roll back, list the tags with `docker image ls nyc-map-agent`, then run the same `up -d web`
+with `NYC_MAP_IMAGE` set to the older tag and no `--build`.
+
+### Trip planner data
+
+`deploy/motis/build.sh` downloads the OSM extract and the MTA, LIRR, Metro-North and ferry GTFS
+feeds into `~/apps/nyc-map-motis` and builds the MOTIS dataset. It takes about a minute and 4 GB
+of memory. Rebuild weekly, then `docker restart nyc-map-motis`.
+
+### CI
+
+The `deploy` job in `.github/workflows/ci.yml` still runs the production migrations on every
+merge to main. Its trigger and wait steps call the deploy API at the URL in the repository
+variable `NYC_DEPLOY_URL` (on gravebuster that was `https://nyc.design-bakery.com/deploy`) and are
+skipped while that variable is unset, which it is for the VPS.
+The `contract` job checks the public site named by `NYC_PUBLIC_URL` (such as
+`https://nyc.design-bakery.com`) and is skipped the same way.
+Set both once the VPS has a deploy API and a public route.
+
+## Previous host: gravebuster (offline since 2026-10-31)
+
+### What runs
 
 | Container | Role |
 | --- | --- |
@@ -11,7 +75,7 @@
 Public hostname `nyc.design-bakery.com` is routed by the Cloudflare tunnel
 (`study-os-cloudflared-1`) to `http://nyc-map-edge:80` over `study-os_edge`.
 
-## Bootstrap (once)
+### Bootstrap (once)
 
 ```bash
 sudo mkdir -p /srv/nyc-map-agent/state
@@ -39,7 +103,7 @@ openssl rand -hex 32   # CD_SESSION_SECRET
 openssl rand -hex 32   # CD_DEPLOY_TOKEN  (also the GitHub secret NYC_DEPLOY_TOKEN)
 ```
 
-## CI runner
+### CI runner
 
 The repository's workflows run on a self-hosted runner on this host, because
 the account's hosted-minutes budget rejects every `ubuntu-latest` job. It lives
@@ -63,7 +127,7 @@ tar xzf runner.tar.gz && rm runner.tar.gz
 sudo ./svc.sh install yoav && sudo ./svc.sh start
 ```
 
-## Manual operations
+### Manual operations
 
 | Task | Command |
 | --- | --- |
@@ -73,7 +137,7 @@ sudo ./svc.sh install yoav && sudo ./svc.sh start
 | Roll back | press **Roll back** in the dashboard |
 | Clear a stuck lock | `rm -f /srv/nyc-map-agent/state/deploy.lock` (only when no deploy is running; the lock is a file, not a directory) |
 
-## Failure modes
+### Failure modes
 
 - **Build fails:** the old image keeps serving; the run is `failed` with the build log.
 - **Health fails:** the previous image is swapped back automatically.

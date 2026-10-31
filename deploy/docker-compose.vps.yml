@@ -1,4 +1,4 @@
-# nyc-map-agent on the VPS: the app with MOTIS for trips and LFM3 for chat. See docs/MOTIS.md.
+# nyc-map-agent on the VPS: the app with MOTIS for trips and LFM3 for chat. See deploy/README.md.
 #   docker compose -f deploy/docker-compose.vps.yml --env-file ~/apps/nyc-map-agent.env up -d
 # The app binds loopback only; the Cloudflare tunnel reaches it on 127.0.0.1:18088.
 # LFM3 runs on the MacBook Pro (the tax demo's llama-server). The Pro holds an SSH reverse tunnel to

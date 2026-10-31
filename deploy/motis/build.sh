@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the MOTIS NYC dataset: OSM + the same GTFS feeds OTP uses (deploy/otp/build-graph.sh).
 # The dataset tags are OTP's feed ids in lower case; server/features/agent/motis.ts maps them back.
-# Takes under a minute and about 4 GB of memory; then `docker restart nyc-map-motis`. See docs/MOTIS.md.
+# Takes under a minute and about 4 GB of memory; then `docker restart nyc-map-motis`. See deploy/README.md.
 set -euo pipefail
 ROOT=${MOTIS_ROOT:-$HOME/apps/nyc-map-motis}; VER=${MOTIS_VERSION:-v2.11.3}
 mkdir -p "$ROOT"; cd "$ROOT"; mkdir -p in

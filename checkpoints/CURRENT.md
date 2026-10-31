@@ -4,14 +4,21 @@
 
 ## Current projection
 
-*Updated 2026-10-29. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-10-31. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
 
 GitHub Issues own task scope and progress; this file is a projection of them, not task authority. No Project Continuity Modules (PCM) task file is active, so `tasks/` is still empty. The build plan is [`docs/PDD.md`](../docs/PDD.md) (the product design document): what is built, what remains, how to check it and how to ship it. The design rules every screen must follow are in [`docs/DESIGN_RULES.md`](../docs/DESIGN_RULES.md).
+
+**Where it runs.** Since 2026-10-31 the app runs on the VPS (`ssh vps`), with MOTIS planning trips and LFM3 on the MacBook Pro answering chat. It is deployed by hand and is not yet reachable at nyc.design-bakery.com, which still answers 530 because no Cloudflare tunnel routes that name to the VPS. `deploy/README.md` has the steps. gravebuster, the old host, has been offline since the same day.
 
 **What the project is now.** An agent-first map of New York City: a chat and voice assistant over a clean map that helps people get around (restrooms, landmarks, subway exits, readable MTA disruptions). The realignment is described in [`PROJECT.md`](../PROJECT.md). Work from before the realignment (3D city, street view extras, datasets) was closed on 2026-10-25; those pull requests keep their branches on GitHub if any of it comes back (#376).
 
 ## Completed recently
 
+- **GitHub said gravebuster while the app ran on the VPS (2026-10-31, this pull request):** the live app was built from `feat/motis-planner`, a pushed branch with no pull request, so main had neither the code that was serving nor a word about where it ran, and every merge ended in a red `deploy` job aimed at a host that was off. This pull request brings that branch onto main (MOTIS trips, LFM3 chat, prompt caching, Bus Time through the Octo relay), rewrites `deploy/README.md` and `deploy/PROJECT.json` for the VPS, and makes the CI deploy and contract steps wait for the repository variables `NYC_DEPLOY_URL` and `NYC_PUBLIC_URL`. The production migrations still run on every merge.
+- **Agent turns show up in Phoenix (2026-10-31, #601):** nobody could see what a slow or wrong answer had done inside. Each finished agent turn and each server speech-to-text call is now one trace in the workspace's Phoenix project, sent through Octo.
+- **Agent stack 1.0.1 installed from one checkout (2026-10-31, #600):** ACS, PCM, CGM and OIO came from separate checkouts that could drift apart. They now come from one `agent-stack-train` checkout at the certified 1.0.1 release.
+- **CI no longer needs gravebuster (2026-10-30, #599):** every workflow ran on self-hosted runners on gravebuster. They now run on GitHub-hosted runners, which are free for this public repository, so tests kept passing after gravebuster went offline.
+- **Voice input stops recording in noisy places (2026-10-30, #598):** on a street or platform the recorder never heard silence, so a voice question never ended. It now learns the background level first and treats speech as finished when loudness falls back to it.
 - **OpenTripPlanner no longer gets the app's secrets (2026-10-30, #595):** the trip planner container loaded the whole app env file, so `docker inspect nyc-map-otp` showed the Octo, InferHub, MTA, Socrata, Mapillary and CD secrets although OTP reads only one of them. Its service in `deploy/docker-compose.yml` no longer has an `env_file`. CD never recreates OTP, so the change takes effect when it is recreated on the host (`docker compose up -d otp`), which pauses trip search for the minute or two the graph takes to load.
 - **OpenTripPlanner gets the MTA bus key back (2026-10-30, this pull request):** `router-config.json` reads `MTA_BUSTIME_KEY` for live bus positions, so after #595 OTP refused to start. Its service now passes that one variable (interpolated from the env file) and nothing else. On the host, recreate with `--env-file /srv/nyc-map-agent/.env` so the value resolves. Already applied on gravebuster.
 - **Issue logs filed as prose were never triaged (2026-10-29, this pull request):** OIO's triage only reads the intake form's `### <field label>` headings and skips anything else with a green run and no label, so issue logs agents wrote as prose (#532, #509 among the open ones) were never classified. Three checks now catch it here, without touching OIO's managed files: the Issue Log Shape workflow labels such an issue `needs-record-shape` and comments the missing headings, and clears the label once the body is fixed; a Claude Code hook refuses `gh issue create` with a prose issue log; and `scripts/issue-log/issue_log_shape.py render` builds a form-shaped body from JSON. The upstream gap is Pukujan/observational-issue-ops#62. The session-start hygiene script also warns when the ACS boss seat is held with a heartbeat older than its lease; `seat_protocol.py status` prints OK in that case, and the seat had been idle since 2026-10-21.
@@ -54,6 +61,8 @@ GitHub Issues own task scope and progress; this file is a projection of them, no
 
 | Pull request | What it is | State |
 |---|---|---|
+| this pull request | Make GitHub match the VPS deploy; folds in `feat/motis-planner` | Open for review |
+| #602 | The agent reads an unclear place back before answering ("86 St" has six stations) | Open, checks green |
 | #378 | Docs: realign the project, hackathon writeup and research sources | Open for review |
 | #232 | The release bot's release pull request | Left to the bot |
 
@@ -65,6 +74,7 @@ After pulling main, run `pnpm install`: main now needs `xstate`, and #349 change
 
 ## Next
 
+- **Put the VPS app on the public name and give it a deploy path:** add a Cloudflare tunnel route from nyc.design-bakery.com to the VPS's `127.0.0.1:18088` (a dashboard change for the owner), then set `NYC_PUBLIC_URL`. Until the VPS has a deploy API, deploy main by hand after each merge, starting with this pull request, so the VPS runs main instead of `feat/motis-planner`.
 0. **New issue logs from 2026-10-29, filed in the form's shape:** a scorecard that compares our help with Google and Apple Maps on 17 tasks (#586), reading exit signs with the camera offline (#587), the problem tour that flies spot to spot while the agent talks (#588), photos of entrances and destinations (#589), and app labels in the rider's language (#590).
 1. **Finish the remaining-work list in `docs/PDD.md`** (items 1 to 9: menu row, the dropdowns, quick bar, memory summary, task-screen restyle, dead ends). Item 10, the screen-space rules, is done.
 2. **Underground help that never lets you miss your exit or get lost inside a station:** count stops from the saved trip and timetable when there is no signal, and keep exit guidance ready before going down (#373).
@@ -72,13 +82,13 @@ After pulling main, run `pnpm install`: main now needs `xstate`, and #349 change
 
 ## Workspace
 
-Worktrees live outside the repository, as managed worktrees (`.continuity/config.json`). Remove a worktree once its pull request merges. On 2026-10-25 these remained:
+Worktrees live under `~/.cache/acs/worktrees` (`AGENTS.md`). Remove a worktree once its pull request merges. On 2026-10-31 the ones with open work were:
 
 | Worktree | Branch | Pull request |
 |---|---|---|
-| main checkout | `docs/project-realignment` | #378 |
-| `nyc-map-agent-acs-boot` | `chore/acs-boot-wiring` | #394 |
-| `nyc-map-agent-menu-contrast` | `feat/walk-orientation` | #408 |
+| `nyc-map-agent-vps-truth` | `chore/vps-deploy-truth` | this pull request |
+| `nyc-map-agent-place-readback` | `feat/place-readback` | #602 |
+| `nyc-map-agent-demo` | detached, 174 commits behind main, two uncommitted files | none |
 
 Deleted local branches are kept as `archive/<branch-name>` tags, so nothing was lost: `git tag -l 'archive/*'` lists them, and `git switch -c <name> archive/<name>` restores one. Closed pull requests keep their branches on GitHub.
 
