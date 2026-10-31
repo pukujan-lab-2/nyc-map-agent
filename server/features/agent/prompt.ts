@@ -48,9 +48,9 @@ function languageLine(lang?: string): string {
   return `Reply in the language of the user's latest message, the language the user writes or speaks in${lang ? `; if that is unclear, use the browser language ${lang}` : ""}. Keep station and street names as written below, even in another language.`;
 }
 
-export function systemPrompt(nowLocal: string, location: { lon: number; lat: number } | null, mode: "walk" | "transit" | "drive" = "transit", context?: AskContext, lang?: string, memory?: string, underground?: AgentRequest["underground"]): string {
-  const street = contextLine(context);
-  const below = undergroundLine(underground);
+/** The rules, the same for every ask. A model server that caches prompt prefixes (llama.cpp, most APIs)
+ * reuses them, and the tool list after them, instead of re-reading ~5k tokens. */
+export function stablePrompt(): string {
   return [
     // Who it serves and how it speaks.
     "You are the NYC Map's assistant for getting around New York. Answers are spoken aloud: 1-3 short sentences (never more than 4), no markdown, no lists.",
@@ -94,8 +94,16 @@ export function systemPrompt(nowLocal: string, location: { lon: number; lat: num
     liveFeedsLine(),
     mapLayersLine(),
     "Spell street names out in full: Street, Avenue, Boulevard, Place, East/West (\"West 44th Street\", \"St. Marks Place\"), never St/Av abbreviations. Keep station names exactly as the MTA writes them (\"Times Sq-42 St\").",
-    // This request's facts go last: everything above is the same for every ask, so a model server
-    // that caches prompt prefixes (llama.cpp, most APIs) reuses it instead of re-reading ~5k tokens.
+  ].join("\n");
+}
+
+/** This request's facts: time, location, mode chip, memory, what is on screen. Sent apart from
+ * stablePrompt (routes.ts puts them just before the latest question), because chat templates such as
+ * LFM3's append the tool list after the system text, and facts there would break the cached prefix. */
+export function requestFacts(nowLocal: string, location: { lon: number; lat: number } | null, mode: "walk" | "transit" | "drive" = "transit", context?: AskContext, lang?: string, memory?: string, underground?: AgentRequest["underground"]): string {
+  const street = contextLine(context);
+  const below = undergroundLine(underground);
+  return [
     languageLine(lang),
     `Now is ${nowLocal} in New York. Pass the user's time words as they said them ("tomorrow at 9am", "now") to the trip and weather tools; the server resolves them in New York time.`,
     location
@@ -106,4 +114,9 @@ export function systemPrompt(nowLocal: string, location: { lon: number; lat: num
     ...(street ? [street] : []),
     ...(below ? [below] : []),
   ].join("\n");
+}
+
+/** The whole prompt as one text: the rules, then this request's facts. */
+export function systemPrompt(...args: Parameters<typeof requestFacts>): string {
+  return `${stablePrompt()}\n${requestFacts(...args)}`;
 }
