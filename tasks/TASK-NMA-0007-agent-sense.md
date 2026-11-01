@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-01 17:35:00 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["server/features/agent/turn.ts, routes.ts, tools.ts, prompt.ts, hours.ts, runLog.ts, server/lib/tracing.ts"],"completed":["Per-turn tool rules, a reply filter, two-call trips and richer trace spans are in pull request 645."],"decisions":["no new decisions"],"evidence":["1579 tests pass; live LFM3 eval 10 of 11."],"next_action":"After pull request 645 merges and deploys, read the next day of NYC traces for turn.kind and tool arguments and post before and after dialogues on issue 641.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0007","timestamp":"2026-11-01T17:35:00Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"cc7b1491f365ee2447eb38657d0353dc1a5b8d32647037288b5e95988e7839e8","request_id":"0c65415b48eb4402a643b6e0a6a7e8ac","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0007"} -->
+
+Completed:
+- Per-turn tool rules, a reply filter, two-call trips and richer trace spans are in pull request 645.
+
+Evidence:
+- 1579 tests pass; live LFM3 eval 10 of 11.
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/agent/turn.ts, routes.ts, tools.ts, prompt.ts, hours.ts, runLog.ts, server/lib/tracing.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request 645 merges and deploys, read the next day of NYC traces for turn.kind and tool arguments and post before and after dialogues on issue 641.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
