@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-01 10:12:09 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["scripts/eval-line-status*.ts, scripts/record-alert-snapshot.ts, scripts/eval/line-status/, docs/eval/line-status/, .gitignore, checkpoints/CURRENT.md"],"completed":["Built the line status eval: runner, ten rule checks, cases, recorder, DeepSeek generator, soak loop, handoff; opened #630 with auto-merge"],"decisions":["no new decisions"],"evidence":["npx vitest run scripts/eval: 10 passed; tsc, eslint, depcruise clean; 12-trial smoke run on LFM3 was 3 of 12 clean"],"evidence_class":"observed","next_action":"when the full baseline finishes, add its row to docs/eval/line-status/LEDGER.md in a follow-up pull request; DeepSeek key still to be set; PRIVACY.md change before any real questions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0005","timestamp":"2026-11-01T10:12:09Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"c8a34dcc77ff4033d2d68922eaa7db648438c0c0e3c5d4101bd8a014d96335c0","request_id":"566053ccd68a418c9c438d54e8ab6048","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0005"} -->
+
+Completed:
+- Built the line status eval: runner, ten rule checks, cases, recorder, DeepSeek generator, soak loop, handoff; opened #630 with auto-merge
+
+Evidence:
+- npx vitest run scripts/eval: 10 passed; tsc, eslint, depcruise clean; 12-trial smoke run on LFM3 was 3 of 12 clean
+
+Decisions:
+- no new decisions
+
+Changed:
+- scripts/eval-line-status*.ts, scripts/record-alert-snapshot.ts, scripts/eval/line-status/, docs/eval/line-status/, .gitignore, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- when the full baseline finishes, add its row to docs/eval/line-status/LEDGER.md in a follow-up pull request; DeepSeek key still to be set; PRIVACY.md change before any real questions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
