@@ -76,6 +76,29 @@ Blocked/uncertain:
 Next:
 - when the full baseline finishes, add its row to docs/eval/line-status/LEDGER.md in a follow-up pull request; DeepSeek key still to be set; PRIVACY.md change before any real questions
 
+### 2026-11-01 10:22:35 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["docs/eval/line-status/LEDGER.md"],"completed":["Recorded the LFM3 baseline in the ledger: 31 of 174 trials clean; opened #631 with auto-merge"],"decisions":["no new decisions"],"evidence":["Run baseline-after-628, 58 cases x 3 trials, commit b17e6ce7f88a: train 14.6%, held-out 25.5%"],"evidence_class":"observed","next_action":"DeepSeek runs the loop in docs/eval/line-status/PROGRAM.md starting with the unwanted Want to start? and the invented shuttle; owner sets DEEPSEEK_API_KEY and approves the PRIVACY.md change","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0005","timestamp":"2026-11-01T10:22:35Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4bbfae36ac7054bd2025c029564c5c143a3900f0426876d4e73b5bf58b618f35","request_id":"20bef696ab7641999b24a95321885c52","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0005"} -->
+
+Completed:
+- Recorded the LFM3 baseline in the ledger: 31 of 174 trials clean; opened #631 with auto-merge
+
+Evidence:
+- Run baseline-after-628, 58 cases x 3 trials, commit b17e6ce7f88a: train 14.6%, held-out 25.5%
+
+Decisions:
+- no new decisions
+
+Changed:
+- docs/eval/line-status/LEDGER.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- DeepSeek runs the loop in docs/eval/line-status/PROGRAM.md starting with the unwanted Want to start? and the invented shuttle; owner sets DEEPSEEK_API_KEY and approves the PRIVACY.md change
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
