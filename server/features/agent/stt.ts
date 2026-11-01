@@ -1,21 +1,21 @@
 /**
  * POST /api/stt: speech-to-text for browsers without a working built-in
  * recognizer (Brave blocks Chrome's speech service, Firefox has none). The
- * browser records one short turn and posts it here; we pass it to Whisper on
- * Groq and return the text. The audio is not stored or logged. GROQ_API_KEY is
- * read here only and never sent to the client; without it this answers 503
- * and the app says voice isn't available. With `lang=auto` (phones, no language
+ * browser records one short turn and posts it here; we pass it to the
+ * OpenAI-compatible Whisper server named by STT_BASE_URL and return the text.
+ * The audio is not stored or logged. STT_API_KEY is optional, read here only and
+ * never sent to the client; without STT_BASE_URL this answers 503 and the app
+ * says voice isn't available. No hosted service is the default. With `lang=auto` (phones, no language
  * picked) Whisper detects the spoken language and we return it with the text.
  */
 import { clientIp } from "../../lib/clientIp";
 import { exportTrace, sessionFrom } from "../../lib/tracing";
 import { createLimiter } from "./fair-use";
 
-const BASE = "https://api.groq.com/openai/v1";
-const MODEL = "whisper-large-v3-turbo";
+const MODEL = "whisper-1";
 const sttConfig = () => ({
-  key: process.env.STT_API_KEY || process.env.GROQ_API_KEY || "",
-  url: `${(process.env.STT_BASE_URL || BASE).replace(/\/$/, "")}/audio/transcriptions`,
+  key: process.env.STT_API_KEY || "",
+  base: (process.env.STT_BASE_URL || "").replace(/\/$/, ""),
   model: process.env.STT_MODEL || MODEL,
 });
 /** About a minute of compressed speech; a voice turn is a few seconds. */
@@ -56,8 +56,8 @@ export function whisperConfidence(segments: unknown): number | null {
 }
 
 export async function transcribe(form: FormData, headers: Headers, fetchImpl: typeof fetch = fetch): Promise<Response> {
-  const { key, url, model } = sttConfig();
-  if (!key) return json({ error: "stt_unavailable" }, 503);
+  const { key, base, model } = sttConfig();
+  if (!base) return json({ error: "stt_unavailable" }, 503);
   const audio = form.get("audio");
   if (!(audio instanceof Blob) || audio.size === 0) return json({ error: "invalid_query", issues: ["audio: a recording is required"] }, 400);
   if (audio.size > MAX_BYTES) return json({ error: "invalid_query", issues: ["audio: too long"] }, 413);
@@ -75,7 +75,7 @@ export async function transcribe(form: FormData, headers: Headers, fetchImpl: ty
   const started = Date.now();
   const span = (ok: boolean, text = "") => exportTrace({ name: "speech to text", kind: "CHAIN", start: started, end: Date.now(), error: !ok, attributes: { "llm.model_name": model, "output.value": text } }, sessionFrom(headers));
   try {
-    const r = await fetchImpl(url, { method: "POST", headers: { authorization: `Bearer ${key}` }, body: out, signal: AbortSignal.timeout(20_000) });
+    const r = await fetchImpl(`${base}/audio/transcriptions`, { method: "POST", headers: key ? { authorization: `Bearer ${key}` } : {}, body: out, signal: AbortSignal.timeout(20_000) });
     if (!r.ok) { span(false); return json({ error: "stt_failed" }, 502); }
     const d = (await r.json()) as { text?: string; language?: string; segments?: unknown };
     const heard = auto ? detectedLang(d.language) : null;
