@@ -52,6 +52,29 @@ Not needed.
 
 No checkpoints yet.
 
+### 2026-11-01 02:16:21 UTC — claude-code (Claude Opus 5.5)
+
+<!-- continuity:checkpoint {"agent":"claude-code (Claude Opus 5.5)","blocked":["owner adds nyc.design-bakery.com on Cloudflare tunnel A (#614)"],"changed":["checkpoints/CURRENT.md, checkpoints/history/2026-11.md, tasks/TASK-NMA-0001-public-route.md"],"completed":["Komodo deploys main to the VPS; first deploy 0cb74693be46 is healthy and on tunnel A's network"],"decisions":["no new decisions"],"evidence":["Komodo action logged 'deployed'; nyc-map-web healthy; /healthz 200 on 127.0.0.1:18088 and from study-os_edge"],"evidence_class":"observed","next_action":"After the route exists, set NYC_PUBLIC_URL and close #614","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0001","timestamp":"2026-11-01T02:16:21Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3f06f72e841fbc5fb85341a8e69f4274948e86951258a5fd46e13ae5db2efa3b","request_id":"b773b6081cca4c0c82a249a95f2367d0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0001"} -->
+
+Completed:
+- Komodo deploys main to the VPS; first deploy 0cb74693be46 is healthy and on tunnel A's network
+
+Evidence:
+- Komodo action logged 'deployed'; nyc-map-web healthy; /healthz 200 on 127.0.0.1:18088 and from study-os_edge
+
+Decisions:
+- no new decisions
+
+Changed:
+- checkpoints/CURRENT.md, checkpoints/history/2026-11.md, tasks/TASK-NMA-0001-public-route.md
+
+Blocked/uncertain:
+- owner adds nyc.design-bakery.com on Cloudflare tunnel A (#614)
+
+Next:
+- After the route exists, set NYC_PUBLIC_URL and close #614
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
