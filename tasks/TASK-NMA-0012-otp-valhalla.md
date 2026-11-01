@@ -51,6 +51,52 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-01 18:13:39 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["deploy/docker-compose.vps.yml, deploy/otp/build-graph.sh, deploy/valhalla/build.sh, server/features/agent/valhalla.ts, services.ts, polyline.ts, deploy/README.md"],"completed":["Trips on the VPS were planned by MOTIS and walks by a public OSRM server; OTP graph and Valhalla tiles are now built on the VPS, and the compose file and app switch to them, with MOTIS kept until 2026-11-08 as a fallback"],"decisions":["no new decisions"],"evidence":["440 server tests pass; 14-trip comparison on trial containers: OTP had fewer changes in 7 trips and equal in 5, arrived earlier in 4 and 3 to 9 minutes later in 7; docker compose config accepted on the VPS"],"evidence_class":"observed","next_action":"After merge, check nyc-map-otp and nyc-map-valhalla are up and the live chat's trips and walks come from them; then step-free trips (OTP wheelchair plus Valhalla wheelchair profile) and a bigger OSM extract for Long Island","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0012","timestamp":"2026-11-01T18:13:39Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"cc4407b3573cb495a83959b2795102bdb5241f585c19d565a9781410d734769c","request_id":"e4ab3d3e368e4188958ecec3176abd9f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0012"} -->
+
+Completed:
+- Trips on the VPS were planned by MOTIS and walks by a public OSRM server; OTP graph and Valhalla tiles are now built on the VPS, and the compose file and app switch to them, with MOTIS kept until 2026-11-08 as a fallback
+
+Evidence:
+- 440 server tests pass; 14-trip comparison on trial containers: OTP had fewer changes in 7 trips and equal in 5, arrived earlier in 4 and 3 to 9 minutes later in 7; docker compose config accepted on the VPS
+
+Decisions:
+- no new decisions
+
+Changed:
+- deploy/docker-compose.vps.yml, deploy/otp/build-graph.sh, deploy/valhalla/build.sh, server/features/agent/valhalla.ts, services.ts, polyline.ts, deploy/README.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After merge, check nyc-map-otp and nyc-map-valhalla are up and the live chat's trips and walks come from them; then step-free trips (OTP wheelchair plus Valhalla wheelchair profile) and a bigger OSM extract for Long Island
+
+### 2026-11-01 18:13:47 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["deploy/docker-compose.vps.yml, deploy/otp/build-graph.sh, deploy/valhalla/build.sh, server/features/agent/valhalla.ts, services.ts, polyline.ts, deploy/README.md"],"completed":["Trips on the VPS were planned by MOTIS and walks by a public OSRM server; OTP graph and Valhalla tiles are now built on the VPS, and the compose file and app switch to them, with MOTIS kept until 2026-11-08 as a fallback"],"decisions":["no new decisions"],"evidence":["440 server tests pass; 14-trip comparison on trial containers: OTP had fewer changes in 7 trips and equal in 5, arrived earlier in 4 and 3 to 9 minutes later in 7; docker compose config accepted on the VPS"],"evidence_class":"observed","next_action":"After merge, check nyc-map-otp and nyc-map-valhalla are up and the live chat's trips and walks come from them; then step-free trips (OTP wheelchair plus Valhalla wheelchair profile) and a bigger OSM extract for Long Island","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0012","timestamp":"2026-11-01T18:13:47Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"cc4407b3573cb495a83959b2795102bdb5241f585c19d565a9781410d734769c","request_id":"66b8c41df91840a1b5109e000593fe7b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0012"} -->
+
+Completed:
+- Trips on the VPS were planned by MOTIS and walks by a public OSRM server; OTP graph and Valhalla tiles are now built on the VPS, and the compose file and app switch to them, with MOTIS kept until 2026-11-08 as a fallback
+
+Evidence:
+- 440 server tests pass; 14-trip comparison on trial containers: OTP had fewer changes in 7 trips and equal in 5, arrived earlier in 4 and 3 to 9 minutes later in 7; docker compose config accepted on the VPS
+
+Decisions:
+- no new decisions
+
+Changed:
+- deploy/docker-compose.vps.yml, deploy/otp/build-graph.sh, deploy/valhalla/build.sh, server/features/agent/valhalla.ts, services.ts, polyline.ts, deploy/README.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After merge, check nyc-map-otp and nyc-map-valhalla are up and the live chat's trips and walks come from them; then step-free trips (OTP wheelchair plus Valhalla wheelchair profile) and a bigger OSM extract for Long Island
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
