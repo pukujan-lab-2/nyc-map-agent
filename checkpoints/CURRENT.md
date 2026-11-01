@@ -8,7 +8,7 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 *Updated 2026-11-01. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
 
-GitHub Issues own task scope and progress; this file is a projection of them, not task authority. The one Project Continuity Modules (PCM) task file is `tasks/TASK-NMA-0001-public-route.md`, for #614. The build plan is [`docs/PDD.md`](../docs/PDD.md) (the product design document): what is built, what remains, how to check it and how to ship it. The design rules every screen must follow are in [`docs/DESIGN_RULES.md`](../docs/DESIGN_RULES.md).
+GitHub Issues own task scope and progress; this file is a projection of them, not task authority. The Project Continuity Modules (PCM) task files are `tasks/TASK-NMA-0001-public-route.md` (#614) and `tasks/TASK-NMA-0002-ferry-without-otp.md` (#618). The build plan is [`docs/PDD.md`](../docs/PDD.md) (the product design document): what is built, what remains, how to check it and how to ship it. The design rules every screen must follow are in [`docs/DESIGN_RULES.md`](../docs/DESIGN_RULES.md).
 
 **Where it runs.** The app runs on the VPS (`ssh vps`). Komodo deploys main there: the `nyc-map-agent-deploy-on-push` action checks every 5 minutes and runs `deploy/vps/autodeploy.sh`, which builds `nyc-map-agent:<12-char sha>` and rolls back if the health check fails. The first deploy, main at #613 (`0cb74693be46`), went live on 2026-11-01. Since 2026-11-01 nyc.design-bakery.com reaches it through Cloudflare tunnel A (`octo-cloudflared` on the VPS, rule to `http://nyc-map-web:8080`); its DNS record used to point at the dead gravebuster tunnel. See `deploy/README.md`.
 
