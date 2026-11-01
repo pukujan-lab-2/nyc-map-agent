@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-01 09:50:38 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["server/features/agent/prompt.ts, prompt.test.ts, tools.ts, trouble.test.ts, checkpoints/CURRENT.md"],"completed":["Renamed line_status's skipped-station key and added four prompt rules for restating line trouble; opened #628 with auto-merge"],"decisions":["no new decisions"],"evidence":["npx vitest run server/features/agent: 297 passed; tsc and eslint clean; tool output checked against the live MTA feed"],"evidence_class":"observed","next_action":"after #628 deploys, ask the live chat the A train question several times and close #627 if no skipped stop is named as a switch point","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0004","timestamp":"2026-11-01T09:50:38Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"ea264ab1334c7a28245450feb144e99a263745efdf01d86440832bcec634706f","request_id":"d1d6a9af60a045248ea148aab2e357a7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0004"} -->
+
+Completed:
+- Renamed line_status's skipped-station key and added four prompt rules for restating line trouble; opened #628 with auto-merge
+
+Evidence:
+- npx vitest run server/features/agent: 297 passed; tsc and eslint clean; tool output checked against the live MTA feed
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/agent/prompt.ts, prompt.test.ts, tools.ts, trouble.test.ts, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- after #628 deploys, ask the live chat the A train question several times and close #627 if no skipped stop is named as a switch point
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
