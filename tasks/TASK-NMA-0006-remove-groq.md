@@ -52,6 +52,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-01 11:17:26 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["server/features/agent/stt.ts, stt.test.ts, .env.example, deploy/.env.example, docs/PLAN-copilot-port.md"],"completed":["Removed the Groq default from speech-to-text; /api/stt needs STT_BASE_URL; opened #635 with auto-merge"],"decisions":["no new decisions"],"evidence":["vitest stt and voice: 29 passed; tsc and eslint clean; grep for groq in shipped files empty"],"evidence_class":"observed","next_action":"owner runs a Whisper server and sets STT_BASE_URL on the VPS; add the audio path to docs/PRIVACY.md","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0006","timestamp":"2026-11-01T11:17:26Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"83543e95158856eec1074bb0b196bcdb907ceb854123f8f999ccd22459b8d2e1","request_id":"6273dac72b224fc3900c153f7c0d2d66","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0006"} -->
+
+Completed:
+- Removed the Groq default from speech-to-text; /api/stt needs STT_BASE_URL; opened #635 with auto-merge
+
+Evidence:
+- vitest stt and voice: 29 passed; tsc and eslint clean; grep for groq in shipped files empty
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/agent/stt.ts, stt.test.ts, .env.example, deploy/.env.example, docs/PLAN-copilot-port.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- owner runs a Whisper server and sets STT_BASE_URL on the VPS; add the audio path to docs/PRIVACY.md
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
