@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-01 17:06:13 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["6 failing e2e tests"],"changed":["src/components/MenuRow.tsx, src/pages/Index.tsx, src/components/MapPanel.tsx, src/components/ui/switch.tsx, src/lib/useMediaQuery.ts, e2e/menu-rail.spec.ts"],"completed":["Built the wide-screen menu column and opened draft PR #640; 97 of 103 e2e tests pass"],"decisions":["no new decisions"],"evidence":["local playwright run: 97 passed, 6 failed (4 hard-code the old left edge, 1 taps a map point, 1 chat dialog covers trip preview Play)"],"evidence_class":"observed","next_action":"fix the 6 failing tests, update DESIGN_RULES and PDD, then mark the PR ready with auto-merge","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0007","timestamp":"2026-11-01T17:06:13Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"c17faea329555a9af0e1a225ce383ea735a27978f92ba6925b15f705a848fe36","request_id":"883b9c9232a445eebab3570dbb115aec","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0007"} -->
+
+Completed:
+- Built the wide-screen menu column and opened draft PR #640; 97 of 103 e2e tests pass
+
+Evidence:
+- local playwright run: 97 passed, 6 failed (4 hard-code the old left edge, 1 taps a map point, 1 chat dialog covers trip preview Play)
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/components/MenuRow.tsx, src/pages/Index.tsx, src/components/MapPanel.tsx, src/components/ui/switch.tsx, src/lib/useMediaQuery.ts, e2e/menu-rail.spec.ts
+
+Blocked/uncertain:
+- 6 failing e2e tests
+
+Next:
+- fix the 6 failing tests, update DESIGN_RULES and PDD, then mark the PR ready with auto-merge
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
