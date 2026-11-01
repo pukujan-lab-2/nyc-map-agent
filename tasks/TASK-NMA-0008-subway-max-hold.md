@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-01 17:34:47 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["src/features/transit/model.ts, TransitLayer.tsx, maxHold.test.ts, e2e/responsive.spec.ts"],"completed":["Capped the vehicle-report pin at 60 s unless the line is in trouble; opened #644 with auto-merge"],"decisions":["no new decisions"],"evidence":["vitest src/features/transit: 142 passed; tsc and eslint clean; live sample: 34% parked before, 12% by timetable alone"],"evidence_class":"observed","next_action":"after #644 deploys, re-measure the parked share on the live feed","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0008","timestamp":"2026-11-01T17:34:47Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"8c0507f824fc2bdf1abc9a3191375373f4080d53d8f3948671241132ee9aa61f","request_id":"c39a1dabd8d942af8935d9c421431830","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0008"} -->
+
+Completed:
+- Capped the vehicle-report pin at 60 s unless the line is in trouble; opened #644 with auto-merge
+
+Evidence:
+- vitest src/features/transit: 142 passed; tsc and eslint clean; live sample: 34% parked before, 12% by timetable alone
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/transit/model.ts, TransitLayer.tsx, maxHold.test.ts, e2e/responsive.spec.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- after #644 deploys, re-measure the parked share on the live feed
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
