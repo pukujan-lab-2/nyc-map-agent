@@ -1,6 +1,6 @@
 # TASK-NMA-0010 — Transfer Bus Label
 
-<!-- continuity:task {"acceptance":["a ring marker on the end station of a suspension","the label reads Transfer to the <bus> bus at <station>","unit test of the label text passes"],"depends_on":[],"goal":"The map names the station where a shuttle bus takes over and marks it.","id":"NMA-0010","issue_url":"https://github.com/Pukujan-lab/nyc-map-agent/issues/647","next_action":"after #649 deploys, check the A-line T426 view on the live site","owner":"claude-code","priority":"P3","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"The shuttle label floated with no marker or station name (#647)."} -->
+<!-- continuity:task {"acceptance":["a ring marker on the end station of a suspension","the label reads Transfer to the <bus> bus at <station>","unit test of the label text passes"],"depends_on":[],"goal":"The map names the station where a shuttle bus takes over and marks it.","id":"NMA-0010","issue_url":"https://github.com/pukujan-lab-2/nyc-map-agent/issues/19","next_action":"after #649 deploys, check the A-line T426 view on the live site","owner":"claude-code","priority":"P3","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"The shuttle label floated with no marker or station name (#647)."} -->
 
 - Status: active
 - Owner: claude-code
