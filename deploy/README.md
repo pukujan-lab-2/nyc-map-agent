@@ -29,22 +29,23 @@ Until it exists, check the app from the VPS itself:
 curl -s http://127.0.0.1:18088/healthz
 ```
 
-### Deploy a commit from main
+### How it gets deployed
 
-There is no deploy service on the VPS, so CI does not deploy there yet (see "CI" below). Deploy by
-hand from the checkout. Images are tagged with the short commit, so the previous one stays around
-for a rollback.
+Services on the VPS deploy from GitHub through Komodo, never from a hand-pulled branch. The plan
+for what runs where is `vps/PLAN.md` in Pukujan-lab/server-management, and the Komodo stacks are
+in that repository's `komodo/resources/stacks-vps.toml`. nyc-map-agent is in neither yet. Until it
+is, merges to main do not reach the VPS, which keeps running `nyc-map-agent:ecd8ba0`, built by hand
+from `feat/motis-planner` on 2026-10-31.
+
+To see what is running:
 
 ```bash
-cd ~/apps/nyc-map-agent
-git fetch origin && git checkout --detach origin/main
-export NYC_MAP_IMAGE=nyc-map-agent:$(git rev-parse --short HEAD)
-docker compose -f deploy/docker-compose.vps.yml --env-file ~/apps/nyc-map-agent.env up -d --build web
-docker ps --filter name=nyc-map-web --format '{{.Image}} {{.Status}}'
+docker ps --filter name=nyc-map --format '{{.Names}} {{.Image}} {{.Status}}'
+git -C ~/apps/nyc-map-agent log -1 --oneline
 ```
 
-To roll back, list the tags with `docker image ls nyc-map-agent`, then run the same `up -d web`
-with `NYC_MAP_IMAGE` set to the older tag and no `--build`.
+Images are tagged with their short commit, so `docker image ls nyc-map-agent` lists the ones a
+rollback could use.
 
 ### Trip planner data
 
@@ -60,7 +61,7 @@ variable `NYC_DEPLOY_URL` (on gravebuster that was `https://nyc.design-bakery.co
 skipped while that variable is unset, which it is for the VPS.
 The `contract` job checks the public site named by `NYC_PUBLIC_URL` (such as
 `https://nyc.design-bakery.com`) and is skipped the same way.
-Set both once the VPS has a deploy API and a public route.
+Set both once the VPS has a Komodo deploy and a public route.
 
 ## Previous host: gravebuster (offline since 2026-10-31)
 
