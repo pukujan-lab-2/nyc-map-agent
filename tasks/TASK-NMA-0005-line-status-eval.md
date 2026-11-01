@@ -99,6 +99,29 @@ Blocked/uncertain:
 Next:
 - DeepSeek runs the loop in docs/eval/line-status/PROGRAM.md starting with the unwanted Want to start? and the invented shuttle; owner sets DEEPSEEK_API_KEY and approves the PRIVACY.md change
 
+### 2026-11-01 10:23:06 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":[".coord/boss_claim.json"],"completed":["Committed the boss seat change another agent (workbuddy@air) made to .coord/boss_claim.json"],"decisions":["no new decisions"],"evidence":["git diff showed only the seat handover at 2026-11-01T10:21:23Z; seat_protocol status OK"],"evidence_class":"observed","next_action":"DeepSeek runs the loop in docs/eval/line-status/PROGRAM.md; owner sets DEEPSEEK_API_KEY and approves the PRIVACY.md change","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0005","timestamp":"2026-11-01T10:23:06Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"0075dca6d17fe0368f1e4abc2d2d3d9ef78c7849fb05ae0635445b93216ea4f6","request_id":"da6900253b6f4c31b4ce708aced39d0e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0005"} -->
+
+Completed:
+- Committed the boss seat change another agent (workbuddy@air) made to .coord/boss_claim.json
+
+Evidence:
+- git diff showed only the seat handover at 2026-11-01T10:21:23Z; seat_protocol status OK
+
+Decisions:
+- no new decisions
+
+Changed:
+- .coord/boss_claim.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- DeepSeek runs the loop in docs/eval/line-status/PROGRAM.md; owner sets DEEPSEEK_API_KEY and approves the PRIVACY.md change
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
