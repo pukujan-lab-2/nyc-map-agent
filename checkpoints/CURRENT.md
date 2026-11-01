@@ -10,7 +10,7 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 GitHub Issues own task scope and progress; this file is a projection of them, not task authority. No Project Continuity Modules (PCM) task file is active, so `tasks/` is still empty. The build plan is [`docs/PDD.md`](../docs/PDD.md) (the product design document): what is built, what remains, how to check it and how to ship it. The design rules every screen must follow are in [`docs/DESIGN_RULES.md`](../docs/DESIGN_RULES.md).
 
-**Where it runs.** The app runs on the VPS (`ssh vps`) since 2026-10-31, built by hand from `feat/motis-planner`, whose code reached main in #603. Once #611 and Pukujan-lab/server-management#69 merge, a Komodo action deploys main there within 5 minutes of each merge. nyc.design-bakery.com answers 530 until the owner adds its route on Cloudflare tunnel A. See `deploy/README.md`.
+**Where it runs.** The app runs on the VPS (`ssh vps`) since 2026-10-31, built by hand from `feat/motis-planner`, whose code reached main in #603. Once #613 and Pukujan-lab/server-management#69 merge, a Komodo action deploys main there within 5 minutes of each merge. nyc.design-bakery.com answers 530 until the owner adds its route on Cloudflare tunnel A. See `deploy/README.md`.
 
 **What the project is now.** An agent-first map of New York City: a chat and voice assistant over a clean map that helps people get around (restrooms, landmarks, subway exits, readable MTA disruptions). The realignment is described in [`PROJECT.md`](../PROJECT.md). Work from before the realignment (3D city, street view extras, datasets) was closed on 2026-10-25; those pull requests keep their branches on GitHub if any of it comes back (#376).
 
@@ -20,7 +20,7 @@ GitHub Issues own task scope and progress; this file is a projection of them, no
 
 | Pull request | What it is | State |
 |---|---|---|
-| #611's pull request | Komodo deploys main to the VPS (`deploy/vps/autodeploy.sh`); merges before server-management#69 | Open |
+| #613 | Komodo deploys main to the VPS (`deploy/vps/autodeploy.sh`); merges before server-management#69 | Open |
 | #602 | The agent reads an unclear place back before answering ("86 St" has six stations) | Open, checks green |
 | #378 | Docs: realign the project, hackathon writeup and research sources | Open for review |
 | #232 | The release bot's release pull request | Left to the bot |
