@@ -26,7 +26,7 @@ import { useMapData } from "@/lib/geo/aggregate";
 import type { NtaAggregate } from "@/lib/geo/types";
 import { buildMapModel } from "@/lib/layers";
 import { useMapState } from "@/lib/store/MapStateContext";
-import { useMediaQuery } from "@/lib/useMediaQuery";
+import { RAIL_QUERY, useMediaQuery } from "@/lib/useMediaQuery";
 import { windowBounds } from "@/lib/windows";
 
 const NO_SOURCES: string[] = [];
@@ -47,6 +47,7 @@ export default function Index() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   // Phones are chat-first: just the map, the chat and voice; menus are asked for in the chat (owner, 2026-10-25).
   const wide = useMediaQuery("(min-width: 640px)");
+  const railed = useMediaQuery(RAIL_QUERY);
   const flags = useFlags();
   const analytics = flags.noise || flags.crashes || flags.combined || flags.dataLayers;
   const data = useMapData(windowId, analytics);
@@ -180,7 +181,10 @@ export default function Index() {
   }, [data.noise, data.crashes, enabledSources, sourceState.counts]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-background">
+    <div className="relative flex h-full w-full overflow-hidden bg-background">
+      {agentHome && railed ? <MenuRow onOpenDashboard={() => setControlsOpen(true)} onOpenSources={() => setSourcesOpen(true)} /> : null}
+      {/* The map and everything over it. contain: layout makes fixed children measure from here, beside the column. */}
+      <div data-testid="map-area" className="relative h-full min-w-0 flex-1 overflow-hidden [contain:layout]">
       <MapView model={model} boundaries={data.boundaries} areas={areas} route={route} />
 
       <RoutePanel
@@ -235,7 +239,7 @@ export default function Index() {
       )}
       <FeatureOverlays />
       <ContextCleanChip />
-      {agentHome && wide ? <MenuRow onOpenDashboard={() => setControlsOpen(true)} onOpenSources={() => setSourcesOpen(true)} /> : null}
+      {agentHome && wide && !railed ? <MenuRow onOpenDashboard={() => setControlsOpen(true)} onOpenSources={() => setSourcesOpen(true)} /> : null}
 
       <MapPanel
         isDesktop={isDesktop}
@@ -289,6 +293,7 @@ export default function Index() {
         noise={data.noise}
         crashes={data.crashes}
       />
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { PanelSearch, type PanelSearchHandle } from "./PanelSearch";
 import { FEATURES } from "@/features";
 import { LayersDrawer } from "./LayersDrawer";
+import { RAIL_QUERY } from "@/lib/useMediaQuery";
 
 /**
  * Mobile peek snap: one row (title + number) plus the grab handle, raised by the
@@ -169,8 +170,10 @@ export function MapPanel({
   useLayoutEffect(() => {
     if (!home) return;
     const root = document.documentElement;
+    // Wide screens keep the menus in a column beside the map, so nothing sits above the panel.
     const row = document.querySelector<HTMLElement>("[data-testid='menu-row'] > *");
-    root.style.setProperty("--topbar-h", `${row ? Math.ceil(row.getBoundingClientRect().bottom) : 64}px`);
+    const column = window.matchMedia(RAIL_QUERY).matches;
+    root.style.setProperty("--topbar-h", `${column ? 0 : row ? Math.ceil(row.getBoundingClientRect().bottom) : 64}px`);
     return () => { root.style.removeProperty("--topbar-h"); };
   }, [home]);
   if (panelHidden) return null;
