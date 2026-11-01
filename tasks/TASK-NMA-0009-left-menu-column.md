@@ -76,6 +76,29 @@ Blocked/uncertain:
 Next:
 - fix the 6 failing tests, update DESIGN_RULES and PDD, then mark the PR ready with auto-merge
 
+### 2026-11-01 17:35:49 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["6 failing e2e tests on the draft PR"],"changed":["tasks/TASK-NMA-0009-left-menu-column.md"],"completed":["Renumbered the left-menu-column task from NMA-0007 to NMA-0009 so it does not collide with the agent-sense task"],"decisions":["no new decisions"],"evidence":["git mv and id rewrite in the task file; no code changed"],"evidence_class":"observed","next_action":"fix the failing tests, update DESIGN_RULES and PDD, then mark #640 ready with auto-merge","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0009","timestamp":"2026-11-01T17:35:49Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f822b7b2b009b222c0e5e97f334425ee69a5a0a6ae9da9db08d70edf26bf8a86","request_id":"557ae69ce88e4178b45c39c199f9e209","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0009"} -->
+
+Completed:
+- Renumbered the left-menu-column task from NMA-0007 to NMA-0009 so it does not collide with the agent-sense task
+
+Evidence:
+- git mv and id rewrite in the task file; no code changed
+
+Decisions:
+- no new decisions
+
+Changed:
+- tasks/TASK-NMA-0009-left-menu-column.md
+
+Blocked/uncertain:
+- 6 failing e2e tests on the draft PR
+
+Next:
+- fix the failing tests, update DESIGN_RULES and PDD, then mark #640 ready with auto-merge
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
