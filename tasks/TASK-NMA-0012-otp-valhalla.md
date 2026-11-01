@@ -1,6 +1,6 @@
 # TASK-NMA-0012 — Otp Valhalla
 
-<!-- continuity:task {"acceptance":["replace this with observable, task-specific acceptance checks"],"depends_on":[],"goal":"Plan trips with OTP and walks with Valhalla on the VPS","id":"NMA-0012","issue_url":"https://github.com/Pukujan-lab/nyc-map-agent/issues/652","next_action":"define scope and observable acceptance checks, then begin bounded work","owner":"claude-code","priority":"high","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"Owner chose OTP for step-free and LIRR trips, and a self-hosted walking router"} -->
+<!-- continuity:task {"acceptance":["replace this with observable, task-specific acceptance checks"],"depends_on":[],"goal":"Plan trips with OTP and walks with Valhalla on the VPS","id":"NMA-0012","issue_url":"https://github.com/pukujan-lab-2/nyc-map-agent/issues/24","next_action":"define scope and observable acceptance checks, then begin bounded work","owner":"claude-code","priority":"high","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"Owner chose OTP for step-free and LIRR trips, and a self-hosted walking router"} -->
 
 - Status: active
 - Owner: claude-code
