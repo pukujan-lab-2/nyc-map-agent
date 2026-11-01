@@ -52,6 +52,29 @@ Not needed.
 
 No checkpoints yet.
 
+### 2026-11-01 02:39:17 UTC — claude-code (Claude Opus 5.5)
+
+<!-- continuity:checkpoint {"agent":"claude-code (Claude Opus 5.5)","blocked":[],"changed":["server/features/ferry/*, package.json (fflate 0.8.2), docs/OTP.md, checkpoints, tasks/TASK-NMA-0002"],"completed":["The ferry route reads the NYC Ferry and Staten Island Ferry GTFS feeds and NYC Ferry's live positions itself; no OTP needed"],"decisions":["no new decisions"],"evidence":["8 ferry unit tests pass; full suite 1532 passed; typecheck and eslint clean on the change; real feeds gave 200 with 8 routes, 44 terminals, 2 scheduled boats"],"evidence_class":"observed","next_action":"After Komodo deploys it, check /api/v1/ferry on nyc.design-bakery.com, then set NYC_PUBLIC_URL under #614","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0002","timestamp":"2026-11-01T02:39:17Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"895d52805b99ebbd5e81761f15e11bdb79c4dd657110e59a608a267b9151d60b","request_id":"3b36c8ef51584dd390d828c91949a5a0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0002"} -->
+
+Completed:
+- The ferry route reads the NYC Ferry and Staten Island Ferry GTFS feeds and NYC Ferry's live positions itself; no OTP needed
+
+Evidence:
+- 8 ferry unit tests pass; full suite 1532 passed; typecheck and eslint clean on the change; real feeds gave 200 with 8 routes, 44 terminals, 2 scheduled boats
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/ferry/*, package.json (fflate 0.8.2), docs/OTP.md, checkpoints, tasks/TASK-NMA-0002
+
+Blocked/uncertain:
+- none
+
+Next:
+- After Komodo deploys it, check /api/v1/ferry on nyc.design-bakery.com, then set NYC_PUBLIC_URL under #614
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
