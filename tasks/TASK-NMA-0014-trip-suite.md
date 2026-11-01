@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - Record the 36-conversation LFM3 baseline in docs/eval/trips/LEDGER.md, then mark PR #29 ready
 
+### 2026-11-01 23:26:00 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["docs/eval/trips/LEDGER.md, PR #29 description"],"completed":["Ran and recorded the first trip suite baseline: 21 of 51 turns clean on LFM3 1.7B"],"decisions":["no new decisions"],"evidence":["eval-runs baseline rows; most failures trace to the fast trip path and the 8-step cap, not the model"],"evidence_class":"observed","next_action":"Merge PR #29 after green CI, then fix the fast trip path so it draws the route, keeps the rider's language and reads a named start","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0014","timestamp":"2026-11-01T23:26:00Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"5532a948da1a20450bde7ba59c8fcab176cd7cf7f8f27854cf378843e496cf2d","request_id":"370d99c4ad5440afa000695205e8b4a3","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0014"} -->
+
+Completed:
+- Ran and recorded the first trip suite baseline: 21 of 51 turns clean on LFM3 1.7B
+
+Evidence:
+- eval-runs baseline rows; most failures trace to the fast trip path and the 8-step cap, not the model
+
+Decisions:
+- no new decisions
+
+Changed:
+- docs/eval/trips/LEDGER.md, PR #29 description
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge PR #29 after green CI, then fix the fast trip path so it draws the route, keeps the rider's language and reads a named start
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
