@@ -9,6 +9,7 @@ const listeners = new Set<(map: MapLibreMap | null) => void>();
 
 export function setMapInstance(map: MapLibreMap | null): void {
   current = map;
+  (globalThis as { __map?: unknown }).__map = map;
   listeners.forEach((l) => l(map));
 }
 export function getMapInstance(): MapLibreMap | null {
