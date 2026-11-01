@@ -11,7 +11,9 @@
 import { createDailyBudget, createLimiter } from "../server/features/agent/fair-use";
 import { POST } from "../server/features/agent/routes";
 
-type Case = { say: string; want: "ask" | "plan" };
+type Case = { say: string; want: "ask" | "plan"; before?: Array<{ role: "user" | "assistant"; content: string }> };
+// An earlier restroom answer must not steer a new destination (#641).
+const RESTROOM_TALK = [{ role: "user" as const, content: "Where's the nearest public restroom that's open now?" }, { role: "assistant" as const, content: "Union Square Park, about 2 min on foot. Want to start?" }];
 const CASES: Case[] = [
   { say: "I need to get to Brooklyn tomorrow", want: "ask" },
   { say: "Quiero ir a Brooklyn mañana con mi abuela", want: "ask" },
@@ -22,6 +24,8 @@ const CASES: Case[] = [
   { say: "¿Cómo llego al Museo Americano de Historia Natural ahora?", want: "plan" },
   { say: "Мне нужно в Центральный парк сейчас", want: "plan" },
   { say: "Union Square to Times Square now, step-free please", want: "plan" },
+  { say: "get to times square", want: "plan", before: RESTROOM_TALK },
+  { say: "Let me go to Brooklyn Bridge.", want: "plan" },
 ];
 
 const url = process.argv.includes("--url") ? process.argv[process.argv.indexOf("--url") + 1] : null;
@@ -29,8 +33,8 @@ const here = { lon: -73.9903, lat: 40.7359 };
 // In process, the app's per-address limit would stop the run after a few cases.
 const fairUse = { limiter: createLimiter({ windowMax: 1000, windowMs: 60_000, burstMax: 1000, burstMs: 60_000 }), budget: createDailyBudget({ softCap: 0, hardCap: 0, capModel: null }), now: Date.now };
 
-async function ask(say: string): Promise<{ text: string; planned: boolean }> {
-  const req = { messages: [{ role: "user", content: say }], location: here, now: new Date().toISOString() };
+async function ask(say: string, before: Case["before"] = []): Promise<{ text: string; planned: boolean }> {
+  const req = { messages: [...before, { role: "user", content: say }], location: here, now: new Date().toISOString() };
   const res = url
     ? await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(req) })
     : await POST(new Request("http://local/api/agent", { method: "POST", body: JSON.stringify(req) }), { fairUse });
@@ -48,8 +52,9 @@ async function ask(say: string): Promise<{ text: string; planned: boolean }> {
 const asksOnce = (t: string) => (t.match(/[?？؟]/g) ?? []).length === 1;
 let failed = 0;
 for (const c of CASES) {
-  const r = await ask(c.say);
-  const ok = c.want === "ask" ? !r.planned && asksOnce(r.text) : r.planned && /[?？؟]/.test(r.text.slice(-160));
+  const r = await ask(c.say, c.before);
+  const clean = !/restroom|walkToNearest|transit_plan|showRoute|[0-9a-f]{8}-[0-9a-f]{4}-/i.test(r.text);
+  const ok = c.want === "ask" ? !r.planned && asksOnce(r.text) : r.planned && clean && /[?？؟]/.test(r.text.slice(-160));
   if (!ok) failed += 1;
   console.log(`${ok ? "pass" : "FAIL"}  want ${c.want}  ${c.say}\n      → ${r.text.replace(/\s+/g, " ")}`);
 }

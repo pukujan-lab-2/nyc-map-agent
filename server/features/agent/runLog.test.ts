@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { exportTrace, type SpanSpec } from "../../lib/tracing";
 import { RunLog, type RunRecord } from "./runLog";
+
+vi.mock("../../lib/tracing", () => ({ exportTrace: vi.fn() }));
 
 const clock = () => {
   let t = 1_000;
@@ -48,5 +51,32 @@ describe("RunLog", () => {
     const run = new RunLog("m", () => Promise.resolve(), Date.now, vi.fn(), 60_000);
     expect(Object.keys(run.record("done", null)).sort()).toEqual(["firstStepMs", "firstTextMs", "id", "inputTokens", "model", "notes", "outcome", "outputTokens", "startedAt", "steps", "totalMs"]);
     run.finish("done", null);
+  });
+
+  it("puts what each tool was asked and answered on its span, with an outcome", () => {
+    const c = clock();
+    const run = new RunLog("lfm3", () => Promise.resolve(), c.now, vi.fn(), 60_000);
+    run.modelCalls = 2;
+    run.stepStart("a", "transit_plan", { to: "Times Square", timing: "now" });
+    c.tick(900); run.stepEnd("a", true, { tripId: "x", summary: "N train", sources: [{ source: "MTA" }] });
+    run.stepStart("b", "nearest_restroom", { place: "here" });
+    c.tick(50); run.stepEnd("b", false, "Location permission not granted");
+    run.finish("done", null);
+    const root = vi.mocked(exportTrace).mock.calls.at(-1)?.[0] as SpanSpec;
+    const [plan, restroom] = root.children!.filter((s) => s.kind === "TOOL");
+    expect(plan.attributes).toMatchObject({ "tool.name": "transit_plan", "tool.parameters": '{"to":"Times Square","timing":"now"}', "output.value": '{"tripId":"x","summary":"N train"}' });
+    expect(plan.error).toBe(false);
+    expect(restroom).toMatchObject({ error: true, attributes: { "output.value": '"Location permission not granted"' } });
+    expect(root.attributes).toMatchObject({ "turn.kind": "trip", "turn.tools": "transit_plan,nearest_restroom", "turn.model_calls": 2 });
+  });
+
+  it("calls a question turn 'asked' and a turn with no tool 'no-tool'", () => {
+    const run = new RunLog("m", () => Promise.resolve(), Date.now, vi.fn(), 60_000);
+    run.stepStart("a", "transit_plan", {}); run.stepEnd("a", true, { needsAnswer: true, ask: "destination" });
+    run.finish("done", null);
+    expect((vi.mocked(exportTrace).mock.calls.at(-1)?.[0] as SpanSpec).attributes?.["turn.kind"]).toBe("asked");
+    const bare = new RunLog("m", () => Promise.resolve(), Date.now, vi.fn(), 60_000);
+    bare.finish("done", null);
+    expect((vi.mocked(exportTrace).mock.calls.at(-1)?.[0] as SpanSpec).attributes?.["turn.kind"]).toBe("no-tool");
   });
 });

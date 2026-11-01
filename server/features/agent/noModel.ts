@@ -14,7 +14,7 @@ type Question = { text: string; hasLocation: boolean; now?: Date };
 
 // Also the words the Restroom button asks with in the app's other languages (French, Haitian Creole,
 // Russian, Chinese, Korean, Bengali); \b does not work next to those scripts, so they match on their own.
-const RESTROOM = /\b(rest ?rooms?|bathrooms?|toilets?|toilettes?|washrooms?|loos?|wc|baños?|banos?|servicios|sanitarios?|aseos?|twal[eè]t)\b|туалет|厕所|洗手间|화장실|টয়লেট/i;
+export const RESTROOM = /\b(rest ?rooms?|bathrooms?|toilets?|toilettes?|washrooms?|loos?|wc|baños?|banos?|servicios|sanitarios?|aseos?|twal[eè]t)\b|туалет|厕所|洗手间|화장실|টয়লেট/i;
 // "is the N running", "Q train delays", "the 7 line": the subway's own letters and numbers.
 // Letters are matched in capitals only, so "take a train" is not the A.
 const LINE = /\b(?:[Tt]he\s+)?([1-7]|[ABCDEFGJLMNQRWZ]|SIR)\s*(?:[Tt]rains?|[Ll]ines?|[Ss]ubway)\b|\b(?:[Ii]s|[Aa]re)\s+the\s+([1-7]|[ABCDEFGJLMNQRWZ])\b/;
@@ -148,8 +148,6 @@ export async function answerWithoutModel(q: Question, tools: Tools, intent: NoMo
       // another name may be the wrong place, and the model can ask.
       const at = clock(r.arrive);
       if (r.blocked || !at || !foundAsAsked(intent.to, r.destination)) return null;
-      await run(tools.showRoute, { tripId: r.tripId });
-      await run(tools.openPanel, { tripId: r.tripId });
       const first = r.affectsThisTrip?.length ? `${r.affectsThisTrip[0]} ` : "";
       const rides = r.summary === "walk" ? "Walk there" : `Take the ${r.summary.replace(/ subway\b/g, " train").replace(/ → /g, ", then the ")}`;
       const exit = r.exitAdvice ? ` ${r.exitAdvice}` : "";

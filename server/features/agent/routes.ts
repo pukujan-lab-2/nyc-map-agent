@@ -20,6 +20,7 @@ import { AnswerAudit } from "./audit";
 import { RunLog } from "./runLog";
 import { sessionFrom } from "../../lib/tracing";
 import { mayReadBack, planReadBack } from "./readback";
+import { isNewRequest, MAX_TOOL_STEPS, restroomAllowed, Scrub } from "./turn";
 import { askIn, CloseHold, isQuestion, questionsAnswered, riderLanguage, say, sayPrompt, type Lang, type Line } from "./ask";
 import { openDataEntrances, type Station } from "./transit";
 
@@ -103,10 +104,13 @@ export async function POST(request: Request, opts: { model?: LanguageModel; deps
       const closing: { line: Line | null; lang: Lang | null } = { line: null, lang: null };
       const clearLine = () => { closing.line = null; };
       const hold = new CloseHold();
+      const scrub = new Scrub();
+      let wrote = false;
       const nowLocal = toNyLocal(clock);
       // Data sources and their age, plus the "no guessing" check (#375); one "sources" line before "done".
       const audit = new AnswerAudit([nowLocal, contextLine(context) ?? "", ...messages.filter((m) => m.role === "user").map((m) => m.content)]);
       const tools = makeTools({ location, now: clock, emit: (command) => send({ type: "command", command }), actions: (a) => actions.add(a), sources: audit.ledger, deps: opts.deps, followedTrain: context?.followedTrain ?? null, replying: isShortReply(messages), answered: questionsAnswered(messages), say: (line, language) => { closing.line = line; closing.lang = riderLanguage(lastAsked, language); }, drive: resolveFlags({ env: process.env.VITE_FLAGS, advancedMode: false }).agentDrive });
+      const toolNames = Object.keys(tools) as Array<keyof typeof tools>;
       // Restrooms and line status still get a real answer with no model (#199).
       const lastAsked = messages.filter((m) => m.role === "user").at(-1)?.content ?? "";
       run.input = lastAsked;
@@ -150,19 +154,26 @@ export async function POST(request: Request, opts: { model?: LanguageModel; deps
           // Rules first and identical every time, facts just before the latest question, so the cached
           // prefix (rules, tools, earlier turns) is reused; see requestFacts.
           system: stablePrompt(),
-          messages: withFacts(messages, requestFacts(nowLocal, location, mode, context, lang, memory, underground)),
+          messages: withFacts(messages, requestFacts(nowLocal, location, mode, context, lang, memory, underground, isNewRequest(messages) && messages.length > 1)),
           allowSystemInMessages: true,
           tools,
           // A question the app can say itself ends the model's turn right after the tool asks for it.
-          stopWhen: [stepCountIs(8), () => !!closing.line && isQuestion(closing.line) && closing.lang !== null],
+          stopWhen: [stepCountIs(MAX_TOOL_STEPS + 1), () => !!closing.line && isQuestion(closing.line) && closing.lang !== null],
           // A trip tool that needs one more detail (ask.ts): the next step only writes that question, with no tool to plan on a guess.
           // In another language the model words it, in a step with no tools and only that question to say.
-          prepareStep: ({ steps }) => {
+          prepareStep: ({ steps, stepNumber }) => {
             const ask = askIn(steps.at(-1)?.toolResults ?? []);
-            return ask ? { toolChoice: "none" as const, activeTools: [], system: sayPrompt(ask.question, lang), messages } : {};
+            if (ask) return { toolChoice: "none" as const, activeTools: [], system: sayPrompt(ask.question, lang), messages };
+            // Each turn is read from its own latest message (#641): an earlier restroom answer does not
+            // make "get to Times Square" a restroom ask. After a few tool calls the model writes its
+            // answer instead of calling more, so a turn cannot run out of steps with nothing said.
+            return {
+              activeTools: toolNames.filter((n) => n !== "nearest_restroom" || restroomAllowed(messages)),
+              ...(stepNumber >= MAX_TOOL_STEPS ? { toolChoice: "none" as const } : {}),
+            };
           },
           // Spoken answers are 1-4 sentences; this bounds a runaway reply's cost (#199).
-          maxOutputTokens: 800,
+          maxOutputTokens: 500,
           maxRetries: 1,
           // The default handler console.logs the raw provider error; keep logs to the request id only.
           onError: ({ error }) => {
@@ -175,22 +186,26 @@ export async function POST(request: Request, opts: { model?: LanguageModel; deps
         });
         for await (const part of result.fullStream) {
           if (part.type === "text-delta") {
-            const text = hold.push(part.text);
+            if (part.text) wrote = true;
+            // Held back for a trailing "Want to start?", then released a sentence at a time with
+            // anything that names a tool or a trip id dropped (turn.ts).
+            const text = scrub.push(hold.push(part.text));
             run.text(text); audit.text(text); answerText += text;
             if (text) send({ type: "text", text });
           }
+          else if (part.type === "start-step") run.modelCalls += 1;
           else if (part.type === "tool-call") {
             // "tool" stays for older clients; "step" pairs a start with its end (#370).
             send({ type: "tool", name: part.toolName });
             send({ type: "step", id: part.toolCallId.slice(0, 100), name: part.toolName, status: "start" });
-            run.stepStart(part.toolCallId, part.toolName);
+            run.stepStart(part.toolCallId, part.toolName, part.input);
           } else if (part.type === "tool-result") {
             audit.toolResult(part.toolName, part.output);
             send({ type: "step", id: part.toolCallId.slice(0, 100), name: part.toolName, status: "done" });
-            run.stepEnd(part.toolCallId, true);
-          } else if (part.type === "tool-error") { run.stepEnd(part.toolCallId, false); send({ type: "step", id: part.toolCallId.slice(0, 100), name: part.toolName, status: "error" }); }
+            run.stepEnd(part.toolCallId, true, part.output);
+          } else if (part.type === "tool-error") { run.stepEnd(part.toolCallId, false, String(part.error instanceof Error ? part.error.message : part.error).slice(0, 200)); send({ type: "step", id: part.toolCallId.slice(0, 100), name: part.toolName, status: "error" }); }
           else if (part.type === "error") {
-            const left = hold.rest(false);
+            const left = scrub.push(hold.rest(false)) + scrub.rest();
             if (left) { answerText += left; send({ type: "text", text: left }); }
             run.finish("error", null);
             finished = true;
@@ -204,8 +219,8 @@ export async function POST(request: Request, opts: { model?: LanguageModel; deps
             const line = closing.line;
             // A question the model already worded (a language without phrases) is not said twice.
             const asking = !!line && isQuestion(line) && closing.lang !== null;
-            const following = !!line && !isQuestion(line) && !!answerText;
-            const own = hold.rest(following || line === null).trimEnd();
+            const following = !!line && !isQuestion(line) && wrote;
+            const own = (scrub.push(hold.rest(following || line === null)) + scrub.rest()).trimEnd();
             const ours = line && (asking || following) ? (say(line, closing.lang) ?? (following ? say(line, "en") : null)) : null;
             const close = `${own}${ours ? `${answerText || own ? " " : ""}${ours}` : ""}`;
             if (close) { run.text(close); audit.text(close); answerText += close; send({ type: "text", text: close }); }

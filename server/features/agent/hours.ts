@@ -77,9 +77,17 @@ export function hoursToday(hours: string | null | undefined, now: Date): string 
     // "Friday to Monday" runs over the weekend.
     const covers = from <= to ? day >= from && day <= to : day >= from || day <= to;
     if (!covers) continue;
-    const rest = m[3].trim();
+    const rest = tidyHours(m[3].trim());
     return /closed/i.test(rest) ? "closed" : rest || null;
   }
   if (sawDays) return null;
-  return parts.length === 1 && parts[0].length <= 60 ? parts[0] : null;
+  return parts.length === 1 && parts[0].length <= 60 ? tidyHours(parts[0]) || null : null;
+}
+
+/**
+ * Hours as a phrase to say aloud: the city's list adds notes ("8am-4pm, Open later seasonally") that
+ * are not times, so only the parts with a time, "dusk"/"dawn", "24 hours" or "closed" stay.
+ */
+export function tidyHours(text: string): string {
+  return text.split(/,\s*/).filter((p) => /\d|dusk|dawn|sunrise|sunset|closed|24\s*hours/i.test(p)).join(", ");
 }

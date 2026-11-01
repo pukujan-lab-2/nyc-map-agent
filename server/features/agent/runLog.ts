@@ -14,7 +14,13 @@ import { exportTrace, type SpanSpec } from "../../lib/tracing";
 const STUCK_MS = 45_000;
 
 type RunOutcome = "done" | "error" | "stuck" | "aborted";
-interface RunStep { name: string; ms: number; status: "done" | "error" | "running"; atMs?: number }
+interface RunStep { name: string; ms: number; status: "done" | "error" | "running"; atMs?: number; id?: string }
+
+/** A value as short JSON for a span: the data sources are left out and long results cut. */
+function brief(value: unknown, max = 600): string {
+  const text = JSON.stringify(value, (k, v: unknown) => (k === "sources" ? undefined : v)) ?? "";
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
 export interface RunRecord {
   id: string;
   startedAt: string;
@@ -73,17 +79,22 @@ export class RunLog {
     this.stuckTimer.unref?.();
   }
 
-  stepStart(id: string, name: string): void {
+  /** What each tool was asked and answered, for the trace only (never the log line or the database row). */
+  private readonly details = new Map<string, { input?: string; result?: string }>();
+
+  stepStart(id: string, name: string, input?: unknown): void {
     const at = this.now();
     this.firstStep ??= at - this.started;
     this.open.set(id, { name, at });
+    if (input !== undefined) this.details.set(id, { input: brief(input) });
   }
 
-  stepEnd(id: string, ok: boolean): void {
+  stepEnd(id: string, ok: boolean, result?: unknown): void {
     const s = this.open.get(id);
     if (!s) return;
     this.open.delete(id);
-    this.steps.push({ name: s.name, ms: this.now() - s.at, status: ok ? "done" : "error", atMs: s.at - this.started });
+    this.steps.push({ name: s.name, ms: this.now() - s.at, status: ok ? "done" : "error", atMs: s.at - this.started, id });
+    if (result !== undefined) this.details.set(id, { ...this.details.get(id), result: brief(result) });
   }
 
   text(chunk = ""): void {
@@ -95,6 +106,9 @@ export class RunLog {
   note(message: string): void {
     this.notes.push(message.slice(0, 200));
   }
+
+  /** Model round trips this turn: one per step the model took. */
+  modelCalls = 0;
 
   usedModel(model: string): void {
     this.model = model;
@@ -111,17 +125,24 @@ export class RunLog {
   private trace(outcome: RunOutcome, usage: { inputTokens: number; outputTokens: number } | null): void {
     const r = this.record(outcome, usage);
     const end = this.started + r.totalMs;
-    const tools: SpanSpec[] = r.steps.map((s) => {
+    const tools: SpanSpec[] = [...this.steps, ...r.steps.filter((x) => x.status === "running")].map((s) => {
       const start = this.started + (s.atMs ?? 0);
-      return { name: s.name, kind: "TOOL", start, end: start + s.ms, error: s.status === "error", attributes: { "tool.name": s.name } };
+      const d = (s.id ? this.details.get(s.id) : undefined) ?? {};
+      return {
+        name: s.name, kind: "TOOL", start, end: start + s.ms, error: s.status === "error",
+        attributes: { "tool.name": s.name, ...(d.input ? { "input.value": d.input, "tool.parameters": d.input } : {}), ...(d.result ? { "output.value": d.result } : {}) },
+      };
     });
+    // What kind of turn this was, so a trace says it without reading the spans.
+    const asked = [...this.details.values()].some((d) => d.result?.includes('"needsAnswer":true'));
+    const kind = asked ? "asked" : r.steps.length === 0 ? "no-tool" : r.steps.some((s) => s.name === "transit_plan") ? "trip" : r.steps[0].name;
     const llm: SpanSpec[] = r.model === "none" ? [] : [{
       name: "model", kind: "LLM", start: this.started, end,
       attributes: { "llm.model_name": r.model, "llm.token_count.prompt": r.inputTokens ?? 0, "llm.token_count.completion": r.outputTokens ?? 0, "output.value": this.output },
     }];
     exportTrace({
       name: "agent turn", kind: "CHAIN", start: this.started, end, error: outcome !== "done", children: [...llm, ...tools],
-      attributes: { "input.value": this.input, "output.value": this.output, outcome, "first_text_ms": r.firstTextMs ?? -1, notes: r.notes.join("; ") },
+      attributes: { "input.value": this.input, "output.value": this.output, outcome, "first_text_ms": r.firstTextMs ?? -1, notes: r.notes.join("; "), "turn.kind": kind, "turn.tools": r.steps.map((s) => s.name).join(","), "turn.model_calls": this.modelCalls },
     }, this.session);
   }
 
@@ -136,7 +157,7 @@ export class RunLog {
       firstStepMs: this.firstStep,
       firstTextMs: this.firstText,
       totalMs: now - this.started,
-      steps: [...this.steps, ...running],
+      steps: [...this.steps.map((step) => ({ name: step.name, ms: step.ms, status: step.status, atMs: step.atMs })), ...running],
       notes: [...this.notes],
       inputTokens: usage?.inputTokens ?? null,
       outputTokens: usage?.outputTokens ?? null,

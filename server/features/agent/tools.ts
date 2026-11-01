@@ -13,6 +13,7 @@ import { landmarkAtTurn, landmarksOnWay } from "./landmarksOnWay";
 import { sameStation } from "../../../src/lib/transit/serviceChanges";
 import { lineTroubles, otherLinesAt, stuckTrains, troubleSummary, type FeedAlert, type LiveVehicle } from "../../../src/lib/transit/trouble";
 import { planTrip, type PlanDeps } from "./plan";
+import { hoursToday } from "./hours";
 import { askFor, followUpFor, preferFrom, type Line } from "./ask";
 import { withSources, type SourceLedger } from "./freshness";
 import { parseWhen, sayWhen, scheduleFor } from "./when";
@@ -263,6 +264,9 @@ function allTools(ctx: ToolContext) {
         trips.set(t.id, t);
         for (const a of t.alternatives) trips.set(a.id, { ...a, alternatives: [] });
         offer(tripActions(t));
+        // Drawn here, not by two more model calls: a transit trip is shown as soon as it is planned.
+        emit({ type: "showRoute", trip: t });
+        emit({ type: "openPanel", trip: t });
         // The closing offer is the app's, said after the answer (routes.ts), so the model never words it.
         ctx.say?.(followUpFor(t, said), language);
         return {
@@ -297,7 +301,7 @@ function allTools(ctx: ToolContext) {
         const w = first ? await safe((ctx.deps?.walk ?? routeWalk)(at(from), [first.lon, first.lat]), null) : null;
         const walk = first && w ? await walkBrief(walkTrip(from, { label: first.name, at: [first.lon, first.lat] }, w)) : null;
         // Coordinates stay out of the model's view; the button carries them.
-        return { restrooms: spots.map((r) => ({ name: r.name, distanceM: r.distanceM, status: r.status, hours: r.hours, openNow: r.openNow, accessibility: r.accessibility, operator: r.operator })), walkToNearest: walk };
+        return { restrooms: spots.map((r) => ({ name: r.name, distanceM: r.distanceM, status: r.status, hours: hoursToday(r.hours, now()), openNow: r.openNow, accessibility: r.accessibility, operator: r.operator })), walkToNearest: walk };
       }),
     }),
     station_exit: tool({

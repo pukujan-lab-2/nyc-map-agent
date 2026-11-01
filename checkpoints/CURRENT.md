@@ -22,6 +22,7 @@ GitHub Issues own task scope and progress; this file is a projection of them, no
 
 | Pull request | What it is | State |
 |---|---|---|
+| #641 | The agent no longer repeats an earlier restroom answer for a new destination, speaks tool names or trip ids, or runs out of steps with nothing said; a trip takes two model calls; tool spans carry arguments and results | Open, checks pending |
 | #378 | Docs: realign the project, hackathon writeup and research sources | Open for review; GitHub reports its merge state as unknown, so it needs a rebase before it can merge |
 | #232 | The release bot's release pull request | Left to the bot; blocked on the release it would cut |
 

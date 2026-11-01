@@ -56,7 +56,7 @@ export function exportTrace(root: SpanSpec, session?: string | null): void {
     if (session) attrs["session.id"] = session;
     for (const [k, v] of Object.entries(attrs)) if (typeof v === "string") attrs[k] = mask(v);
     const span = t.startSpan(spec.name, { startTime: spec.start, attributes: attrs }, ctx);
-    if (spec.error) span.setStatus({ code: 2 });
+    span.setStatus({ code: spec.error ? 2 : 1 });
     for (const child of spec.children ?? []) write(child, span);
     span.end(spec.end);
   };
