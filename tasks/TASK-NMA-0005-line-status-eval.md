@@ -214,6 +214,29 @@ Blocked/uncertain:
 Next:
 - Run iteration 3: take a fresh baseline on the fixed runner, then change one prompt line at a time; do not rerun the shuttle wording
 
+### 2026-11-01 17:39:25 UTC — dsh (the model deepseek-v4.1-flash)
+
+<!-- continuity:checkpoint {"agent":"dsh (the model deepseek-v4.1-flash)","blocked":[],"changed":["tasks/TASK-NMA-0005-line-status-eval.md"],"completed":["Pointed the task record at iteration 3 on the fixed runner, so a new session does not repeat the shuttle change that already measured worse on held-out"],"decisions":["Keep NMA-0005 active: #629 is still open and no iteration has been accepted yet"],"evidence":["the record's next action names the fresh baseline and one-prompt-line-at-a-time rule; continuity validate reports VALID for the record's shape; the change is in #646"],"evidence_class":"observed","next_action":"Merge #646, then take the iteration 3 baseline on the fixed runner; do not rerun the shuttle wording","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0005","timestamp":"2026-11-01T17:39:25Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d213697c4aa1515fdd0478b4fbba1368415322e0eb570bccbc7055a55a509431","request_id":"830eb576eeae4b038163a7fdd975e76b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0005"} -->
+
+Completed:
+- Pointed the task record at iteration 3 on the fixed runner, so a new session does not repeat the shuttle change that already measured worse on held-out
+
+Evidence:
+- the record's next action names the fresh baseline and one-prompt-line-at-a-time rule; continuity validate reports VALID for the record's shape; the change is in #646
+
+Decisions:
+- Keep NMA-0005 active: #629 is still open and no iteration has been accepted yet
+
+Changed:
+- tasks/TASK-NMA-0005-line-status-eval.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge #646, then take the iteration 3 baseline on the fixed runner; do not rerun the shuttle wording
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
