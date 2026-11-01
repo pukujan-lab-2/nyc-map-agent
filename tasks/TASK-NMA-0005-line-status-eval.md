@@ -168,6 +168,29 @@ Blocked/uncertain:
 Next:
 - remove Groq from the speech-to-text endpoint as the owner asked
 
+### 2026-11-01 11:47:05 UTC — dsh (the model deepseek-v4.1-flash)
+
+<!-- continuity:checkpoint {"agent":"dsh (the model deepseek-v4.1-flash)","blocked":[],"changed":["tasks/TASK-NMA-0001..0006, checkpoints/CURRENT.md, docs/PRIVACY.md"],"completed":["The records agree with GitHub again: five PCM tasks (#614, #618, #625, #627, #634) now say completed instead of active, and CURRENT.md lists only the two pull requests that are really open"],"decisions":["Leave NMA-0005 as the one active task, because #629 is still open and iteration 2 is unstarted"],"evidence":["gh issue view on all five issues shows CLOSED on 2026-11-01; gh pr list shows only #378 and #232 open; continuity validate prints VALID"],"evidence_class":"observed","next_action":"Run iteration 2 of the line status loop per docs/eval/line-status/PROGRAM.md: widen what server/features/agent/routes.ts withholds so the five trials that still close with a trip offer pass, and record the result in LEDGER.md","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0005","timestamp":"2026-11-01T11:47:05Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4e42a2894eeec6143888a06ead863bf9d31b36df581a6039dd046428c5455d7e","request_id":"a23598e2562b4fa59e5550c9e63c6c1d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0005"} -->
+
+Completed:
+- The records agree with GitHub again: five PCM tasks (#614, #618, #625, #627, #634) now say completed instead of active, and CURRENT.md lists only the two pull requests that are really open
+
+Evidence:
+- gh issue view on all five issues shows CLOSED on 2026-11-01; gh pr list shows only #378 and #232 open; continuity validate prints VALID
+
+Decisions:
+- Leave NMA-0005 as the one active task, because #629 is still open and iteration 2 is unstarted
+
+Changed:
+- tasks/TASK-NMA-0001..0006, checkpoints/CURRENT.md, docs/PRIVACY.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Run iteration 2 of the line status loop per docs/eval/line-status/PROGRAM.md: widen what server/features/agent/routes.ts withholds so the five trials that still close with a trip offer pass, and record the result in LEDGER.md
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
