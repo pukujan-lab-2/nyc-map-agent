@@ -1,8 +1,11 @@
 /**
  * POST /api/stt: speech-to-text for browsers without a working built-in
  * recognizer (Brave blocks Chrome's speech service, Firefox has none). The
- * browser records one short turn and posts it here; we pass it to the
- * OpenAI-compatible Whisper server named by STT_BASE_URL and return the text.
+ * browser records one short turn and posts it here; we pass it to the speech
+ * server named by STT_BASE_URL and return the text. STT_PROTOCOL says how it
+ * talks: "openai" (default, any OpenAI-compatible Whisper server) or "speech"
+ * (the copilot's speech server on the MacBook Pro: POST /stt?stack=&lang=,
+ * STT_STACK picks the models, "multilingual" is Whisper large-v3-turbo).
  * The audio is not stored or logged. STT_API_KEY is optional, read here only and
  * never sent to the client; without STT_BASE_URL this answers 503 and the app
  * says voice isn't available. No hosted service is the default. With `lang=auto` (phones, no language
@@ -17,6 +20,8 @@ const sttConfig = () => ({
   key: process.env.STT_API_KEY || "",
   base: (process.env.STT_BASE_URL || "").replace(/\/$/, ""),
   model: process.env.STT_MODEL || MODEL,
+  protocol: process.env.STT_PROTOCOL === "speech" ? ("speech" as const) : ("openai" as const),
+  stack: process.env.STT_STACK || "multilingual",
 });
 /** About a minute of compressed speech; a voice turn is a few seconds. */
 export const MAX_BYTES = 2_000_000;
@@ -56,7 +61,7 @@ export function whisperConfidence(segments: unknown): number | null {
 }
 
 export async function transcribe(form: FormData, headers: Headers, fetchImpl: typeof fetch = fetch): Promise<Response> {
-  const { key, base, model } = sttConfig();
+  const { key, base, model, protocol, stack } = sttConfig();
   if (!base) return json({ error: "stt_unavailable" }, 503);
   const audio = form.get("audio");
   if (!(audio instanceof Blob) || audio.size === 0) return json({ error: "invalid_query", issues: ["audio: a recording is required"] }, 400);
@@ -75,11 +80,15 @@ export async function transcribe(form: FormData, headers: Headers, fetchImpl: ty
   const started = Date.now();
   const span = (ok: boolean, text = "") => exportTrace({ name: "speech to text", kind: "CHAIN", start: started, end: Date.now(), error: !ok, attributes: { "llm.model_name": model, "output.value": text } }, sessionFrom(headers));
   try {
-    const r = await fetchImpl(`${base}/audio/transcriptions`, { method: "POST", headers: key ? { authorization: `Bearer ${key}` } : {}, body: out, signal: AbortSignal.timeout(20_000) });
+    const auth: Record<string, string> = key ? { authorization: `Bearer ${key}` } : {};
+    // The speech server swaps its models in on the first call of a stack, which takes about 30 seconds.
+    const r = protocol === "speech"
+      ? await fetchImpl(`${base}/stt?stack=${encodeURIComponent(stack)}${lang ? `&lang=${lang}` : ""}`, { method: "POST", headers: { ...auth, "content-type": audio.type || "audio/wav" }, body: audio, signal: AbortSignal.timeout(60_000) })
+      : await fetchImpl(`${base}/audio/transcriptions`, { method: "POST", headers: auth, body: out, signal: AbortSignal.timeout(20_000) });
     if (!r.ok) { span(false); return json({ error: "stt_failed" }, 502); }
-    const d = (await r.json()) as { text?: string; language?: string; segments?: unknown };
+    const d = (await r.json()) as { text?: string; language?: string; segments?: unknown; confidence?: unknown };
     const heard = auto ? detectedLang(d.language) : null;
-    const confidence = whisperConfidence(d.segments);
+    const confidence = typeof d.confidence === "number" && Number.isFinite(d.confidence) ? Math.round(d.confidence * 100) / 100 : whisperConfidence(d.segments);
     span(true, (d.text ?? "").trim());
     return json({ text: (d.text ?? "").trim(), ...(heard ? { lang: heard } : {}), ...(confidence !== null ? { confidence } : {}) });
   } catch {
