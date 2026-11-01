@@ -1,6 +1,6 @@
 # Current repository checkpoint
 
-<!-- continuity:current {"active_task": "NMA-0005", "active_task_file": "tasks/TASK-NMA-0005-line-status-eval.md", "protocol_version": "0.1.0-draft", "schema": "project-continuity.current.v1"} -->
+<!-- continuity:current {"active_task":null,"active_task_file":null,"protocol_version":"0.1.0-draft","schema":"project-continuity.current.v1"} -->
 
 Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `history/`.
 
