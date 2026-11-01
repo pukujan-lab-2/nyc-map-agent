@@ -22,6 +22,7 @@ import { useSelectedLine } from "@/lib/transit/selectedLine";
 import { APP_LANGS, LANG_LABELS, setLangPref, useLangPref, type AppLang } from "@/lib/voice/langPref";
 import { setVoicePrefs, useVoicePrefs } from "@/lib/voice/voicePrefs";
 import { useMenuT, type MenuKey } from "@/lib/i18n/menuText";
+import { RAIL_QUERY, useMediaQuery } from "@/lib/useMediaQuery";
 
 /**
  * The agent-first home's top-left menu row (#370, docs/DESIGN_RULES.md): six
@@ -29,6 +30,9 @@ import { useMenuT, type MenuKey } from "@/lib/i18n/menuText";
  * pill with its icon and label; the rest follow as icons in one boxed strip
  * that swipes sideways, with a › button for the ones out of view.
  * Each opens one floating, see-through dropdown; only one is open at a time.
+ * On wide screens (RAIL_QUERY, 1024 px and up) the same six menus are a vertical
+ * column down the left edge, each with its icon and label, and the dropdown opens
+ * beside it, like Google Maps (#637). Nothing there swipes or loops.
  */
 export type MenuId = Exclude<OpenMenu, "view" | null>;
 const ITEMS: Array<{ id: MenuId; label: MenuKey; Icon: LucideIcon }> = [
@@ -252,6 +256,7 @@ export function MenuRow({ onOpenDashboard, onOpenSources }: { onOpenDashboard: (
   const followed = useFollowed();
   const { walking, streetViewOpen } = useMapState();
   const { drawerOpen } = usePanel();
+  const wide = useMediaQuery(RAIL_QUERY);
   const wrap = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const t = useMenuT();
@@ -289,6 +294,46 @@ export function MenuRow({ onOpenDashboard, onOpenSources }: { onOpenDashboard: (
     const end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
     el.scrollTo({ left: end ? 0 : el.scrollLeft + el.clientWidth * 0.7, behavior: "smooth" });
   };
+
+  const dropdownBody = open ? (
+    open === "myDay" ? (MyDayBody ? <ErrorBoundary name="my-day" fallback={<p className="px-3 py-2 text-sm">My day could not open. Reload the page to try again.</p>}><Suspense fallback={null}><MyDayBody onClose={close} /></Suspense></ErrorBoundary> : null)
+      : open === "layers" ? <LayersBody onClose={close} />
+      : open === "filters" ? <FiltersBody onClose={close} />
+      : open === "data" ? <DataBody />
+      : open === "cityData" ? <CityDataBody onClose={close} onOpenDashboard={onOpenDashboard} onOpenSources={onOpenSources} />
+      : <SettingsBody />
+  ) : null;
+
+  // Wide screens: the six menus are a column at the left edge of the page (the map sits beside it, see
+  // pages/Index.tsx), and the open dropdown floats over the map to its right.
+  if (wide) {
+    return (
+      <aside ref={wrap} data-testid="menu-row" className="pointer-events-none relative z-50 h-full w-[96px] shrink-0">
+        <nav aria-label={t("menus")} data-active={active} data-testid="menu-rail"
+          className="pointer-events-auto absolute left-1.5 flex flex-col gap-1 rounded-[22px] border border-[#263449] bg-[rgba(15,23,42,0.88)] p-1.5 backdrop-blur-[8px]" style={{ top }}>
+          {ITEMS.map((it) => {
+            const { Icon } = it;
+            const on = open === it.id;
+            return (
+              <button key={it.id} type="button" aria-expanded={on} aria-haspopup="true" onClick={() => pick(it.id)} data-menu={it.id}
+                data-testid={it.id === active ? "menu-pill" : `menu-${it.id}`}
+                className={`flex h-[58px] w-[72px] flex-col items-center justify-center gap-1 rounded-[16px] text-[11px] font-semibold leading-none ${RING} ${on ? "bg-[#f8fafc] text-[#0f172a]" : "text-[#f1f5f9] hover:bg-white/10"}`}>
+                <Icon className="h-5 w-5" aria-hidden />
+                <span>{t(it.label)}</span>
+              </button>
+            );
+          })}
+        </nav>
+        {open ? (
+          <div role="region" aria-label={t(ITEMS.find((x) => x.id === open)!.label)} data-testid="menu-dropdown" data-map-cover
+            className={`pointer-events-auto absolute left-full ml-1 w-[360px] max-w-[calc(100vw-120px)] overflow-y-auto overscroll-contain ${FLOAT}`}
+            style={{ top, maxHeight: "calc(100dvh - env(safe-area-inset-top) - 32px - var(--chat-bar-h, 0px) - 12px)" }}>
+            {dropdownBody}
+          </div>
+        ) : null}
+      </aside>
+    );
+  }
 
   return (
     <div ref={wrap} data-testid="menu-row" className="pointer-events-none absolute left-3 z-40 flex flex-col gap-2" style={{ top, width: "min(310px, calc(100vw - 104px))" }}>
@@ -328,12 +373,7 @@ export function MenuRow({ onOpenDashboard, onOpenSources }: { onOpenDashboard: (
         <div role="region" aria-label={t(ITEMS.find((x) => x.id === open)!.label)} data-testid="menu-dropdown" data-map-cover
           className={`pointer-events-auto w-[min(320px,calc(100vw-92px))] overflow-y-auto overscroll-contain ${FLOAT}`}
           style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top) - 84px - var(--chat-bar-h, 0px) - 12px)" }}>
-          {open === "myDay" ? (MyDayBody ? <ErrorBoundary name="my-day" fallback={<p className="px-3 py-2 text-sm">My day could not open. Reload the page to try again.</p>}><Suspense fallback={null}><MyDayBody onClose={close} /></Suspense></ErrorBoundary> : null)
-            : open === "layers" ? <LayersBody onClose={close} />
-            : open === "filters" ? <FiltersBody onClose={close} />
-            : open === "data" ? <DataBody />
-            : open === "cityData" ? <CityDataBody onClose={close} onOpenDashboard={onOpenDashboard} onOpenSources={onOpenSources} />
-            : <SettingsBody />}
+          {dropdownBody}
         </div>
       ) : null}
     </div>
