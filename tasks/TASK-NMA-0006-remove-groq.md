@@ -75,6 +75,29 @@ Blocked/uncertain:
 Next:
 - owner runs a Whisper server and sets STT_BASE_URL on the VPS; add the audio path to docs/PRIVACY.md
 
+### 2026-11-01 11:21:21 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["server/features/agent/stt.ts, stt.test.ts, src/lib/voice/serverStt.ts, serverStt.test.ts, deploy/README.md, env templates"],"completed":["Voice now uses the Pro's multilingual speech server: speech protocol in /api/stt, browser sends 16 kHz WAV, docs; #635 updated"],"decisions":["no new decisions"],"evidence":["vitest stt and voice: 31 passed; tsc, eslint clean; Spanish clip through the VPS tunnel transcribed correctly in 2.6 s; app container on the VPS reaches the speech server"],"evidence_class":"observed","next_action":"after #635 deploys, set STT_BASE_URL, STT_PROTOCOL and STT_STACK in the VPS env file, redeploy and test /api/stt on the live site; add the audio path to docs/PRIVACY.md","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0006","timestamp":"2026-11-01T11:21:21Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"0647e14f1e49510f6d3f6d7afd57c7f1e58049cbf362f3d4386d6b01cefa4f25","request_id":"eab827df02344b9f9e94fb056d07618c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0006"} -->
+
+Completed:
+- Voice now uses the Pro's multilingual speech server: speech protocol in /api/stt, browser sends 16 kHz WAV, docs; #635 updated
+
+Evidence:
+- vitest stt and voice: 31 passed; tsc, eslint clean; Spanish clip through the VPS tunnel transcribed correctly in 2.6 s; app container on the VPS reaches the speech server
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/agent/stt.ts, stt.test.ts, src/lib/voice/serverStt.ts, serverStt.test.ts, deploy/README.md, env templates
+
+Blocked/uncertain:
+- none
+
+Next:
+- after #635 deploys, set STT_BASE_URL, STT_PROTOCOL and STT_STACK in the VPS env file, redeploy and test /api/stt on the live site; add the audio path to docs/PRIVACY.md
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
