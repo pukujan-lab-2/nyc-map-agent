@@ -119,7 +119,7 @@ export function encodeWav(samples: Float32Array, rate: number): Blob {
 }
 
 /** Speech servers read WAV, not the webm or mp4 a browser records: decode the clip and resample it to 16 kHz mono. Null when the browser cannot. */
-export async function toWav16k(blob: Blob): Promise<Blob | null> {
+async function toWav16k(blob: Blob): Promise<Blob | null> {
   try {
     const ctx = new AudioContext();
     const decoded = await ctx.decodeAudioData(await blob.arrayBuffer());
