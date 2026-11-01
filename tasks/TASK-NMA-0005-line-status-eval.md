@@ -237,6 +237,29 @@ Blocked/uncertain:
 Next:
 - Merge #646, then take the iteration 3 baseline on the fixed runner; do not rerun the shuttle wording
 
+### 2026-11-01 18:09:23 UTC — dsh (the model deepseek-v4.1-flash)
+
+<!-- continuity:checkpoint {"agent":"dsh (the model deepseek-v4.1-flash)","blocked":[],"changed":["tasks/TASK-NMA-0005-line-status-eval.md"],"completed":["Checked the task record against the session: it now points at iteration 3 on the fixed runner, and the guard's request for a checkpoint on this branch is answered"],"decisions":["Keep NMA-0005 active and do not start iteration 3 here: the runner queue is blocking the merge, and a baseline taken while another agent edits the same checkout would not be comparable"],"evidence":["the branch carries the checkpoint commits 5887269 and this one; #646 is open with auto-merge armed; the ci workflow has been queued since 17:39 UTC, which is a runner queue problem on GitHub's side, not a test failure"],"evidence_class":"observed","next_action":"Wait for the ci run to leave the queue and #646 to merge, then take the iteration 3 baseline on the fixed runner; do not rerun the shuttle wording","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0005","timestamp":"2026-11-01T18:09:23Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"fdc8b390ee3e9f9d8df360cb58d73d158bce60f298805c4c7ece19ddbae2e96e","request_id":"76779ea91889491fb65ced5f08b5751d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0005"} -->
+
+Completed:
+- Checked the task record against the session: it now points at iteration 3 on the fixed runner, and the guard's request for a checkpoint on this branch is answered
+
+Evidence:
+- the branch carries the checkpoint commits 5887269 and this one; #646 is open with auto-merge armed; the ci workflow has been queued since 17:39 UTC, which is a runner queue problem on GitHub's side, not a test failure
+
+Decisions:
+- Keep NMA-0005 active and do not start iteration 3 here: the runner queue is blocking the merge, and a baseline taken while another agent edits the same checkout would not be comparable
+
+Changed:
+- tasks/TASK-NMA-0005-line-status-eval.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Wait for the ci run to leave the queue and #646 to merge, then take the iteration 3 baseline on the fixed runner; do not rerun the shuttle wording
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
