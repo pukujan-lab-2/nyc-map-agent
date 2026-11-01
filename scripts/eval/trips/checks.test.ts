@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkTurn } from "./checks";
+import { checkTurn, isReadback } from "./checks";
 import type { Expect, Observed } from "./types";
 
 const ids = (e: Expect, o: Partial<Observed>) => checkTurn(e, { reply: "ok", tools: [], commands: [], ...o }).map((v) => v.check);
@@ -58,5 +58,15 @@ describe("trip checks pass good turns", () => {
 
   it("three calls of one tool are not a loop", () => {
     expect(ids({}, { tools: ["geocode", "geocode", "geocode"] })).toEqual([]);
+  });
+});
+
+describe("the app's readback", () => {
+  it("is recognised by its fixed opening", () => {
+    expect(isReadback("Just to check: did you mean Eastern Pkwy-Brooklyn Museum (2 3 trains)?")).toBe(true);
+  });
+
+  it("is not any reply that asks a question", () => {
+    expect(isReadback("Which Brooklyn do you mean: a neighborhood or a station?")).toBe(false);
   });
 });

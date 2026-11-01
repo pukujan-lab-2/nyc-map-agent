@@ -30,6 +30,8 @@ export interface Observed {
   tools: string[];
   /** Map commands sent to the app (showRoute, openPanel, playFlythrough, flyTo, ...). */
   commands: string[];
+  /** The app's "Just to check: did you mean ...?" that the runner answered "Yes" within this turn. */
+  readback?: string;
 }
 
 export type CheckId =

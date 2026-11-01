@@ -20,7 +20,7 @@ import { createDailyBudget, createLimiter } from "../server/features/agent/fair-
 import { stablePrompt } from "../server/features/agent/prompt";
 import { DEFAULT_MODEL, POST } from "../server/features/agent/routes";
 import { CASES } from "./eval/trips/cases";
-import { checkTurn } from "./eval/trips/checks";
+import { checkTurn, isReadback } from "./eval/trips/checks";
 import { format } from "./eval/trips/report";
 import { UnreachableModel, withRetry } from "./eval/line-status/retry";
 import type { Case, Observed, Row } from "./eval/trips/types";
@@ -80,17 +80,26 @@ async function trial(c: Case, n: number, runId: string): Promise<Row[]> {
   const rows: Row[] = [];
   for (const [i, turn] of c.turns.entries()) {
     messages.push({ role: "user", content: turn.user });
-    const body = JSON.stringify({ messages, location });
     const t0 = Date.now();
-    let observed: Observed;
-    try {
-      observed = await withRetry(async () => observe(await ask(body)), {
-        attempts: 3,
-        delayMs: 2000,
-        onRetry: (err, next) => console.error(`  ${c.id} trial ${n} turn ${i}: retry ${next} after ${err instanceof Error ? err.message : String(err)}`),
-      });
-    } catch (err) {
-      throw new UnreachableModel(c.id, n, err);
+    const send = async () => {
+      const body = JSON.stringify({ messages, location });
+      try {
+        return await withRetry(async () => observe(await ask(body)), {
+          attempts: 3,
+          delayMs: 2000,
+          onRetry: (err, next) => console.error(`  ${c.id} trial ${n} turn ${i}: retry ${next} after ${err instanceof Error ? err.message : String(err)}`),
+        });
+      } catch (err) {
+        throw new UnreachableModel(c.id, n, err);
+      }
+    };
+    let observed = await send();
+    // The app asks once to confirm an ambiguous station; answer it and score the turn on what follows.
+    if (isReadback(observed.reply)) {
+      const readback = observed.reply;
+      messages.push({ role: "assistant", content: readback }, { role: "user", content: "Yes" });
+      const next = await send();
+      observed = { ...next, tools: [...observed.tools, ...next.tools], commands: [...observed.commands, ...next.commands], readback };
     }
     messages.push({ role: "assistant", content: observed.reply });
     rows.push({ runId, label, caseId: c.id, trial: n, turn: i, user: turn.user, expect: turn.expect, observed, violations: checkTurn(turn.expect, observed), ms: Date.now() - t0, versions });

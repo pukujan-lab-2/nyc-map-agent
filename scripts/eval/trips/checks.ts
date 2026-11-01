@@ -12,6 +12,12 @@ export const LOOP_AT = 4;
 /** Names the rider should never see: tool and field names, trip ids, UUIDs. */
 const INTERNAL = /\b(walkToNearest|tripId|transit_plan|route_walk|drive_plan|nearest_restroom|suggest_layer|showRoute|openPanel|playFlythrough|line_status)\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/;
 
+/**
+ * The app's own readback of an ambiguous station name (server/features/agent/readback.ts). It is
+ * the right move, not a missed plan, so the runner answers "Yes" as a rider would and scores what follows.
+ */
+export const isReadback = (reply: string) => reply.startsWith("Just to check: did you mean");
+
 export function checkTurn(expect: Expect, o: Observed): Violation[] {
   const out: Violation[] = [];
   const planned = o.tools.some((t) => PLANNERS.includes(t));
