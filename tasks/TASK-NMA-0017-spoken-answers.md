@@ -77,6 +77,29 @@ Blocked/uncertain:
 Next:
 - Open the pull request, then listen to it on the phone once the PR is deployed
 
+### 2026-11-02 01:25:22 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["e2e expectations, size limits, generated API files"],"completed":["The voice branch is rebased onto the merged model switch, three end-to-end checks now expect the spelled-out street names, and the size limits fit both changes"],"decisions":["no new decisions"],"evidence":["After the rebase: 1634 unit tests pass, no module-boundary violations, every size limit met; the four spelled-out-name specs passed locally before it"],"evidence_class":"observed","next_action":"Wait for the pull request's checks to pass and auto-merge, then listen to the Kokoro voice on a phone once deployed","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0017","timestamp":"2026-11-02T01:25:22Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"309c59ca4de1386c0f104c412883a1384dd6c76dcd8f476db2afb7c5c8b96fa9","request_id":"186e4491163c4a36adb4247ee4755530","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0017"} -->
+
+Completed:
+- The voice branch is rebased onto the merged model switch, three end-to-end checks now expect the spelled-out street names, and the size limits fit both changes
+
+Evidence:
+- After the rebase: 1634 unit tests pass, no module-boundary violations, every size limit met; the four spelled-out-name specs passed locally before it
+
+Decisions:
+- no new decisions
+
+Changed:
+- e2e expectations, size limits, generated API files
+
+Blocked/uncertain:
+- none
+
+Next:
+- Wait for the pull request's checks to pass and auto-merge, then listen to the Kokoro voice on a phone once deployed
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
