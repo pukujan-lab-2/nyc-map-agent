@@ -54,6 +54,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-02 00:53:46 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["station formatter, /api/tts, Kokoro player, prompt"],"completed":["Answers now show and speak station shorthand in full, and Kokoro reads English, Spanish, French and Chinese answers through a new voice route"],"decisions":["no new decisions"],"evidence":["1620 unit tests pass; the station-name answer passes the layout check at four sizes; Kokoro answered from the VPS for English and Spanish"],"evidence_class":"observed","next_action":"Open the pull request, then listen to it on the phone once the PR is deployed","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0017","timestamp":"2026-11-02T00:53:46Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"aa06b06a628c878666b934868fe98e2bd532eb265ad7fed30889671d9da4b57d","request_id":"d7dc546f04e5469d949994c71d457f7a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0017"} -->
+
+Completed:
+- Answers now show and speak station shorthand in full, and Kokoro reads English, Spanish, French and Chinese answers through a new voice route
+
+Evidence:
+- 1620 unit tests pass; the station-name answer passes the layout check at four sizes; Kokoro answered from the VPS for English and Spanish
+
+Decisions:
+- no new decisions
+
+Changed:
+- station formatter, /api/tts, Kokoro player, prompt
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request, then listen to it on the phone once the PR is deployed
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
