@@ -55,6 +55,52 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-02 00:45:28 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["provider chain, health watcher, Settings Model choice, larger switches, pull sheet cap"],"completed":["The agent can now answer with the large hosted models or the small dev model, picked in Settings; a watcher keeps the working provider first"],"decisions":["no new decisions"],"evidence":["1612 unit tests pass; the settings layout check passes at all four sizes; the full e2e run had two agent tests time out under four workers, and both pass alone"],"evidence_class":"observed","next_action":"Open the pull request, then put the SMART_* working keys in the VPS env so production gets the smart chain","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0016","timestamp":"2026-11-02T00:45:28Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f19367a0bab6f22028748b4c04117df41ae8e25bbeeff448e302475efb93c646","request_id":"f6c1951197ae46c5a54b6accce87e913","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0016"} -->
+
+Completed:
+- The agent can now answer with the large hosted models or the small dev model, picked in Settings; a watcher keeps the working provider first
+
+Evidence:
+- 1612 unit tests pass; the settings layout check passes at all four sizes; the full e2e run had two agent tests time out under four workers, and both pass alone
+
+Decisions:
+- no new decisions
+
+Changed:
+- provider chain, health watcher, Settings Model choice, larger switches, pull sheet cap
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request, then put the SMART_* working keys in the VPS env so production gets the smart chain
+
+### 2026-11-02 00:45:34 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["provider chain, health watcher, Settings Model choice, larger switches, pull sheet cap"],"completed":["The agent can now answer with the large hosted models or the small dev model, picked in Settings; a watcher keeps the working provider first"],"decisions":["no new decisions"],"evidence":["1612 unit tests pass; the settings layout check passes at all four sizes; the full e2e run had two agent tests time out under four workers, and both pass alone"],"evidence_class":"observed","next_action":"Open the pull request, then put the SMART_* working keys in the VPS env so production gets the smart chain","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0016","timestamp":"2026-11-02T00:45:34Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f19367a0bab6f22028748b4c04117df41ae8e25bbeeff448e302475efb93c646","request_id":"5990328cc2414c65a0f5dbf337159b54","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0016"} -->
+
+Completed:
+- The agent can now answer with the large hosted models or the small dev model, picked in Settings; a watcher keeps the working provider first
+
+Evidence:
+- 1612 unit tests pass; the settings layout check passes at all four sizes; the full e2e run had two agent tests time out under four workers, and both pass alone
+
+Decisions:
+- no new decisions
+
+Changed:
+- provider chain, health watcher, Settings Model choice, larger switches, pull sheet cap
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request, then put the SMART_* working keys in the VPS env so production gets the smart chain
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
