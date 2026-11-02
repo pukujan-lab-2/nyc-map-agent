@@ -1,6 +1,6 @@
 import { QrButton } from "@/components/MapChrome";
 import { useMenuT } from "@/lib/i18n/menuText";
-import { healthLine, setProfilePref, useProfilePref, useSmartHealth } from "@/features/agent/profilePref";
+import { healthLine, setProfilePref, useProfilePref, useSmartHealth } from "@/lib/modelProfile";
 import { APP_LANGS, LANG_LABELS, setLangPref, useLangPref, type AppLang } from "@/lib/voice/langPref";
 
 /** Language, the model (#35) and the app's QR code: what a phone's sheets keep behind the chat. */

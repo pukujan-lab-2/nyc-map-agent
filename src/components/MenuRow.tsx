@@ -22,7 +22,7 @@ import { useSelectedLine } from "@/lib/transit/selectedLine";
 import { APP_LANGS, LANG_LABELS, setLangPref, useLangPref, type AppLang } from "@/lib/voice/langPref";
 import { setVoicePrefs, useVoicePrefs } from "@/lib/voice/voicePrefs";
 import { useMenuT, type MenuKey } from "@/lib/i18n/menuText";
-import { setProfilePref, useProfilePref, useSmartHealth, healthLine } from "@/features/agent/profilePref";
+import { setProfilePref, useProfilePref, useSmartHealth, healthLine } from "@/lib/modelProfile";
 
 /**
  * The agent-first home's top-left menu row (#370, docs/DESIGN_RULES.md): six

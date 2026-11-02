@@ -1,7 +1,7 @@
 import { gapLeft, markAsked, QUESTION_GAP_MS, RETRY_WITHIN_S, waitFor } from "./askSpacing";
 import { streamEvent, type AgentRequest, type StreamEvent } from "./schema";
 import { SESSION_ID } from "../../lib/sessionId";
-import { getProfilePref } from "./profilePref";
+import { getProfilePref } from "@/lib/modelProfile";
 
 /** Parse an NDJSON body into validated events; bad lines are dropped. */
 export async function* readEvents(body: ReadableStream<Uint8Array>): AsyncGenerator<StreamEvent> {

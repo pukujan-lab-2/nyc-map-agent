@@ -18,7 +18,7 @@ LFM3 started failing on trips while DeepSeek had worked, and development of the 
 ## Allowed files
 
 - `server/features/agent/{providers,health,model-fallback,routes}.ts`, `server/app.ts`, `server/openapi.ts`
-- `src/features/agent/{profilePref,stream,schema}.ts`, `src/components/{MenuRow,SettingsBody,MapChrome}.tsx`, `src/components/ui/switch.tsx`, `src/components/task-screens.css`, `src/lib/i18n/menuText.ts`
+- `src/lib/modelProfile.ts`, `src/features/agent/{stream,schema}.ts`, `src/components/{MenuRow,SettingsBody,MapChrome}.tsx`, `src/components/ui/switch.tsx`, `src/components/task-screens.css`, `src/lib/i18n/menuText.ts`
 - tests beside them and `e2e/responsive.spec.ts`
 
 ## Human outcome

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { healthLine, parseProfile, readProfile, setProfilePref, getProfilePref, PROFILE_KEY } from "./profilePref";
-import { withProfile } from "./stream";
+import { healthLine, parseProfile, readProfile, setProfilePref, getProfilePref, PROFILE_KEY } from "./modelProfile";
+import { withProfile } from "@/features/agent/stream";
 
 const mem = (init: Record<string, string> = {}) => {
   const m = new Map(Object.entries(init));
