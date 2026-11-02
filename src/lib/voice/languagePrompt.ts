@@ -14,18 +14,6 @@
  */
 import { APP_LANGS, LANG_LABELS, type AppLang } from "./langPref";
 
-/** How the question is worded per language, so the prompt itself is understood. */
-const ASK: Record<AppLang, string> = {
-  en: "Which language?",
-  es: "¿En qué idioma?",
-  zh: "用哪种语言？",
-  ru: "На каком языке?",
-  bn: "কোন ভাষায়?",
-  ht: "Nan ki lang?",
-  fr: "Quelle langue ?",
-  ko: "어떤 언어로 할까요?",
-};
-
 /** The languages offered, in a stable order. Every supported language is offered. */
 export const OFFERED: AppLang[] = [...APP_LANGS];
 
@@ -38,7 +26,7 @@ export const OFFERED: AppLang[] = [...APP_LANGS];
  */
 export function languagePrompt(appLang: AppLang): Array<{ text: string; lang: AppLang }> {
   return [
-    { text: ASK[appLang] ?? ASK.en, lang: appLang },
+    { text: "Which language?", lang: appLang },
     ...OFFERED.map((l) => ({ text: `${LANG_LABELS[l]}.`, lang: l })),
   ];
 }

@@ -4,7 +4,7 @@ import { languageList, languagePrompt, matchSpokenLanguage, OFFERED } from "./la
 
 describe("languagePrompt", () => {
   it("asks first, in the language the app is already showing", () => {
-    expect(languagePrompt("es")[0]).toEqual({ text: "¿En qué idioma?", lang: "es" });
+    expect(languagePrompt("es")[0]).toEqual({ text: "Which language?", lang: "es" });
   });
 
   it("offers every supported language, each spoken in its own voice", () => {
@@ -15,8 +15,9 @@ describe("languagePrompt", () => {
     expect(rest[0]).toEqual({ text: "English.", lang: "en" });
   });
 
-  it("falls back to the English question for an unknown app language", () => {
-    expect(languagePrompt("xx" as never)[0].text).toBe("Which language?");
+  it("speaks the question in the app's own language, then every name in its own", () => {
+    expect(languagePrompt("xx" as never)[0].lang).toBe("xx");
+    expect(languagePrompt("ko").length).toBe(1 + OFFERED.length);
   });
 });
 
