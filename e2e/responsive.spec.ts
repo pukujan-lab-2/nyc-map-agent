@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { expectLayout, SIZES } from "./layout";
 import { mockNetwork } from "./mocks";
+import { slow } from "./slow";
 
 /**
  * Every main screen meets the layout bar in e2e/layout.ts at every size in
@@ -123,8 +124,38 @@ for (const size of SIZES) {
       await ask(page, "Plan my trip to Times Square, leaving now.");
       await expect(page.getByText(/Sending in a moment/).first()).toBeVisible();
       await expectLayout(page);
-      await expect(page.getByText("Times Square is 12 minutes away on the 1 train.")).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByText("Times Square is 12 minutes away on the 1 train.")).toBeVisible({ timeout: slow(10_000) });
       await expect(page.getByText(/between questions/)).toHaveCount(0);
+      await expectLayout(page);
+    });
+
+    // Settings → Model: Smart or Dev, with the smart chain's health; the pick goes with each question (#35).
+    test("the model switch in Settings", async ({ page }) => {
+      await open(page);
+      await page.route("**/api/agent/health", (r) => r.fulfill({ json: { profile: "smart", smart: [{ id: "deepseek", label: "DeepSeek (InferHub)", model: "m", ok: true }, { id: "qwen", label: "Qwen (yolo)", model: "y", ok: false }] } }));
+      const sent: Array<{ profile?: string }> = [];
+      await page.route("**/api/agent", (r) => {
+        sent.push(r.request().postDataJSON() as { profile?: string });
+        return r.fulfill({ contentType: "application/x-ndjson", body: stream([{ type: "text", text: "Dev answered." }, { type: "done" }]) });
+      });
+      const phone = size.width < 640; // the menu row (and its Settings dropdown) starts at the sm breakpoint
+      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
+      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
+      await expect(panel.getByTestId("model-health")).toHaveText("DeepSeek (InferHub) · 1/2");
+      await expectLayout(page);
+      await panel.getByLabel("Model").selectOption("dev");
+      await expect(panel.getByTestId("model-health")).toHaveCount(0);
+      if (phone) await panel.getByRole("button", { name: /^Close/ }).click();
+      else await page.keyboard.press("Escape");
+      await ask(page, "Nearest restroom?");
+      await expect(page.getByText("Dev answered.")).toBeVisible();
+      expect(sent.at(-1)?.profile).toBe("dev");
+    });
+
+    test("home with the transit layers drawn", async ({ page }) => {
+      await open(page);
+      await expect(page.getByTestId("agent-bar")).toBeVisible();
+      await page.waitForTimeout(1000); // the live layers, including the alert marker layers (#647), are mounted
       await expectLayout(page);
     });
 
