@@ -52,6 +52,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-04 06:47:39 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["rebase, all-JS size limit, task record"],"completed":["The voice language question branch is rebased onto main, which now has the spoken answers and the e2e fix; one size limit is raised to fit"],"decisions":["no new decisions"],"evidence":["1648 unit tests pass, no module-boundary violations, every size limit met, and 13 voice and language end-to-end tests pass locally"],"evidence_class":"observed","next_action":"Wait for the pull request's checks and auto-merge, then try the hands-free language question by voice on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0018","timestamp":"2026-11-04T06:47:39Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"5fc6c2e2abcbc23b072706503a679c529eea0cbe7ebfa945e15da567d3da9d95","request_id":"03ad94cf4fda4a02831fe878fd7ff91e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0018"} -->
+
+Completed:
+- The voice language question branch is rebased onto main, which now has the spoken answers and the e2e fix; one size limit is raised to fit
+
+Evidence:
+- 1648 unit tests pass, no module-boundary violations, every size limit met, and 13 voice and language end-to-end tests pass locally
+
+Decisions:
+- no new decisions
+
+Changed:
+- rebase, all-JS size limit, task record
+
+Blocked/uncertain:
+- none
+
+Next:
+- Wait for the pull request's checks and auto-merge, then try the hands-free language question by voice on a phone
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
