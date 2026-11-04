@@ -1,6 +1,6 @@
 # TASK-NMA-0003 — Trip Questions
 
-<!-- continuity:task {"acceptance":["replace this with observable, task-specific acceptance checks"],"depends_on":[],"goal":"The trip chat asks one short question when a request is vague, then ends a planned trip with one follow-up offer.","id":"NMA-0003","issue_url":"https://github.com/Pukujan-lab/nyc-map-agent/issues/625","next_action":"none: #625 is closed and its fix is live (#626). The next change to trip questions belongs to the eval loop in #629, not to this record","owner":"claude-code","priority":"P2","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"completed","why":"Vague asks like 'Brooklyn tomorrow' were planned on a guess and no trip answer offered a next step."} -->
+<!-- continuity:task {"acceptance":["replace this with observable, task-specific acceptance checks"],"depends_on":[],"goal":"The trip chat asks one short question when a request is vague, then ends a planned trip with one follow-up offer.","id":"NMA-0003","next_action":"none: #625 is closed and its fix is live (#626). The next change to trip questions belongs to the eval loop in #629, not to this record","owner":"claude-code","priority":"P2","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"completed","why":"Vague asks like 'Brooklyn tomorrow' were planned on a guess and no trip answer offered a next step."} -->
 
 - Status: completed
 - Owner: claude-code
