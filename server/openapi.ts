@@ -74,6 +74,20 @@ export const STT_ROUTE = createRoute({
   },
 });
 
+export const TTS_ROUTE = createRoute({
+  method: "post",
+  path: "/api/tts",
+  summary: "Read a short answer aloud with Kokoro (16-bit mono PCM); the text is not stored",
+  responses: {
+    200: { description: "Streamed speech; the sample rate is in X-Sample-Rate", content: { "audio/L16": { schema: z.string().openapi({ format: "binary" }) } } },
+    400: { description: "No text, or too long", content: { "application/json": { schema: ApiError } } },
+    415: { description: "No Kokoro voice for this language; the browser speaks it", content: { "application/json": { schema: ApiError } } },
+    429: { description: "Too many requests", content: { "application/json": { schema: ApiError } } },
+    502: { description: "The voice server failed", content: { "application/json": { schema: ApiError } } },
+    503: { description: "No voice server is set up", content: { "application/json": { schema: ApiError } } },
+  },
+});
+
 /** POST /api/agent: the smart-mode trip agent. Body mirrors src/features/agent/schema.ts `requestBody`. */
 export const AGENT_ROUTE = createRoute({
   method: "post",
@@ -192,6 +206,7 @@ export const ROUTES = {
     },
   }),
   "/api/agent/health": jsonRoute("/api/agent/health", "The default model profile and each smart provider's last health probe (no keys)"),
+  "/api/agent/warm": jsonRoute("/api/agent/warm", "Wakes the trip planner and walking routes if they sleep, at most once a minute; the page sends it once on load"),
   "/api/transit": jsonRoute("/api/transit", "Live transit capabilities ({ bus })"),
   "/api/transit/:system": jsonRoute(
     "/api/transit/{system}",

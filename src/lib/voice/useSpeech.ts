@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isBrave, isPhone, recordTurn, serverSttAvailable, transcribeTurn, type Recording } from "./serverStt";
 import { startBargeIn } from "./bargeIn";
+import { kokoroLang, kokoroUp, speakKokoro } from "./kokoro";
 import { speakQueued } from "./tts";
+import { formatStationName } from "../streetName";
 
 /** Silence after the last heard word that ends a turn. Long enough for mid-sentence pauses. */
 const END_OF_TURN_MS = 1300;
@@ -72,6 +74,8 @@ export interface UseSpeechResult {
   startListening: () => void;
   stopListening: () => void;
   speak: (text: string, opts?: { bargeIn?: boolean; lang?: string }) => void;
+  /** Speak several utterances in a row, each in its own language's voice (the language question). */
+  speakSequence: (items: Array<{ text: string; lang: string }>) => void;
   stopSpeaking: () => void;
   speaking: boolean;
   muted: boolean;
@@ -238,12 +242,22 @@ export function useSpeech({
       interimRef.current = "";
       recognitionRef.current?.abort();
       setSpeaking(true);
-      const cancel = speakQueued(window.speechSynthesis, text, () => {
+      // Station and street shorthand is read in full ("Times Square-42 Street"), then Kokoro speaks it
+      // where it has a voice (#37); the browser voice takes every other language and any failure.
+      const said = formatStationName(text);
+      const tag = opts?.lang ?? lang;
+      const end = () => {
         if (cancelSpeechRef.current === cancel) cancelSpeechRef.current = null;
         stopBargeRef.current?.();
         stopBargeRef.current = null;
         setSpeaking(false);
-      }, opts?.lang ?? lang);
+      };
+      let inner: () => void = () => undefined;
+      const cancel = () => inner();
+      const browser = () => { inner = speakQueued(window.speechSynthesis, said, end, tag); };
+      const k = kokoroUp() ? kokoroLang(said, tag) : null;
+      if (k) inner = speakKokoro(said, k, end, browser);
+      else browser();
       cancelSpeechRef.current = cancel;
       if (opts?.bargeIn) {
         // Only in hands-free (tap-started): an echo-cancelled detector so talking over the answer stops it.
@@ -254,6 +268,41 @@ export function useSpeech({
       }
     },
     [muted, stopSpeaking, lang],
+  );
+
+  // The language question says each name in that language's own voice, one after another, so the
+  // rider hears what each voice sounds like before picking. Silence between names keeps them apart.
+  const speakSequence = useCallback(
+    (items: Array<{ text: string; lang: string }>) => {
+      if (muted) return;
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+      stopSpeaking();
+      finalRef.current = "";
+      interimRef.current = "";
+      recognitionRef.current?.abort();
+      setSpeaking(true);
+      const synth = window.speechSynthesis;
+      const voices = synth.getVoices();
+      // Hold every utterance: Chrome can GC one mid-speech and never fire onend.
+      const held: SpeechSynthesisUtterance[] = [];
+      let i = 0;
+      const next = () => {
+        if (i >= items.length) { setSpeaking(false); cancelSpeechRef.current = null; return; }
+        const item = items[i++];
+        const u = new SpeechSynthesisUtterance(item.text);
+        const voice = voices.find((v) => v.lang.toLowerCase().startsWith(item.lang.toLowerCase()));
+        if (voice) u.voice = voice;
+        u.lang = voice?.lang ?? item.lang;
+        u.rate = 0.98;
+        u.onend = () => setTimeout(next, 220);
+        u.onerror = () => setTimeout(next, 120);
+        held.push(u);
+        synth.speak(u);
+      };
+      cancelSpeechRef.current = () => { i = items.length; synth.cancel(); setSpeaking(false); };
+      next();
+    },
+    [muted, stopSpeaking],
   );
 
   useEffect(() => {
@@ -280,6 +329,7 @@ export function useSpeech({
     startListening,
     stopListening,
     speak,
+    speakSequence,
     stopSpeaking,
     speaking,
     muted,
