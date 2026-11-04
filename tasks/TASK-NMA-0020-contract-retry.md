@@ -52,6 +52,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-04 23:41:35 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":[".github/workflows/ci.yml contract step"],"completed":["The contract check now runs a second time 30 seconds after a failure, so one dropped request no longer fails a healthy deploy"],"decisions":["no new decisions"],"evidence":["The retry loop passes first try, passes after one failure and fails after two, checked with stand-in commands; the workflow file parses"],"evidence_class":"observed","next_action":"Open the pull request, then watch the next few main runs for the contract step","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0020","timestamp":"2026-11-04T23:41:35Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"203a5f2b671ff1f128803324be1e99e188d30e5b145a031b1baece1d02dd631c","request_id":"7c038de706b9422a87fead01305139e1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0020"} -->
+
+Completed:
+- The contract check now runs a second time 30 seconds after a failure, so one dropped request no longer fails a healthy deploy
+
+Evidence:
+- The retry loop passes first try, passes after one failure and fails after two, checked with stand-in commands; the workflow file parses
+
+Decisions:
+- no new decisions
+
+Changed:
+- .github/workflows/ci.yml contract step
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request, then watch the next few main runs for the contract step
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
