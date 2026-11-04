@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-04 16:26:40 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["tts.ts keeper, app start, stacks.json default on the Pro"],"completed":["The speech server on the Pro now defaults to the Whisper and Kokoro stack and has it loaded, and the app keeps it loaded by asking every four minutes"],"decisions":["no new decisions"],"evidence":["New sentences started in about 1 ms and took 0.65 s after the swap; 464 server tests pass"],"evidence_class":"observed","next_action":"Open the pull request, then watch the speech server's last_swap on /health to see whether the copilot demo pulls it back","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0019","timestamp":"2026-11-04T16:26:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"5456bf0f004bf6592bec4b9a079ba99263c9ee1f325f5bbf99dfcd446fc00dc9","request_id":"e6d1838c89144715ae6231307bd2bfe0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0019"} -->
+
+Completed:
+- The speech server on the Pro now defaults to the Whisper and Kokoro stack and has it loaded, and the app keeps it loaded by asking every four minutes
+
+Evidence:
+- New sentences started in about 1 ms and took 0.65 s after the swap; 464 server tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- tts.ts keeper, app start, stacks.json default on the Pro
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request, then watch the speech server's last_swap on /health to see whether the copilot demo pulls it back
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
