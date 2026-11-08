@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-08 05:20:11 UTC — agent:claude-code/39bc49e4-4388-4090-97d5-748e0ac5c5f3
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/39bc49e4-4388-4090-97d5-748e0ac5c5f3","blocked":[],"changed":["none"],"completed":["Subway notices in the line panel open as a diagram of their stretch of line with spoken, lit steps; Other ways removed"],"decisions":["no new decisions"],"evidence":["Unit suite passes (231 files, 1658 tests); tsc and eslint clean; line-notices e2e passes at all four layout sizes; size-limit passes"],"next_action":"After deploy, open a notice on a phone and listen to the walk","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0021","timestamp":"2026-11-08T05:20:11Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3e52105b2de47996ba6a1f0869bf90b4731e45b1eae16ef6f2de7eb0f16d0f7b","request_id":"7df8f4a499c94847b823a1eda13d187c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0021"} -->
+
+Completed:
+- Subway notices in the line panel open as a diagram of their stretch of line with spoken, lit steps; Other ways removed
+
+Evidence:
+- Unit suite passes (231 files, 1658 tests); tsc and eslint clean; line-notices e2e passes at all four layout sizes; size-limit passes
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After deploy, open a notice on a phone and listen to the walk
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
