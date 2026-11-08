@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildStreetContext, closeAsk, openAsk } from "@/lib/agent/streetContext";
 import { followedTrain } from "@/lib/transit/follow";
 import { setMapInstance } from "@/lib/map/mapInstance";
@@ -173,10 +173,10 @@ function eyeCamera(map: MaplibreMapInstance, eye: Eye): CameraOptions {
 import { useMapState } from "@/lib/store/MapStateContext";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 import { WalkControls } from "./WalkControls";
-import { StationInside } from "./StationInside";
 import { stationFinder, type NearStation } from "@/lib/map/stationNear";
 import { toLngLat, toLocal, walkIn } from "@/lib/map/stationWalk";
-import { createStationLayer, STATION_LAYER } from "@/lib/map/three/stationScene";
+// three.js stays out of the boot chunk: the view below the street loads when you first go down.
+const StationInside = lazy(() => import("./StationInside").then((m) => ({ default: m.StationInside })));
 import { useQuickLayer } from "@/lib/quickLayers";
 import { QuickLayers } from "./QuickLayers";
 import { MapChrome } from "./MapChrome";
@@ -1665,9 +1665,17 @@ export function MapView({
   useEffect(() => {
     const map = mapRef.current?.getMap();
     if (!ready || !map || !stationHere?.model.elevated) return;
-    map.addLayer(createStationLayer(stationHere.model, stationHere.tracks));
+    const here = stationHere;
+    let id: string | null = null;
+    let gone = false;
+    void import("@/lib/map/three/stationScene").then(({ createStationLayer, STATION_LAYER }) => {
+      if (gone || map.getLayer(STATION_LAYER)) return;
+      map.addLayer(createStationLayer(here.model, here.tracks));
+      id = STATION_LAYER;
+    });
     return () => {
-      if (map.getLayer(STATION_LAYER)) map.removeLayer(STATION_LAYER);
+      gone = true;
+      if (id && map.getLayer(id)) map.removeLayer(id);
     };
   }, [ready, stationHere]);
 
@@ -1880,7 +1888,9 @@ export function MapView({
         />
       ) : null}
       {walking && underground && stationHere && mapRef.current ? (
-        <StationInside station={stationHere} getEye={getEye} fov={mapRef.current.getMap().getVerticalFieldOfView()} />
+        <Suspense fallback={null}>
+          <StationInside station={stationHere} getEye={getEye} fov={mapRef.current.getMap().getVerticalFieldOfView()} />
+        </Suspense>
       ) : null}
       {walking && ready && mapRef.current ? (
         <StreetMiniMap main={mapRef.current.getMap()} getEye={getEye} onExit={stopWalk} onMap={() => showView("map")} filters={inset} />
