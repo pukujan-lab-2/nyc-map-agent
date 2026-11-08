@@ -23,4 +23,5 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 ## Next
 
 - **After #53 merges, try station, line chip, Back and Close on a phone.** Check the drag between peek, half and full on the station sheet too, since it no longer uses vaul.
+- **After the notice diagram deploys (#55), open a notice on a phone and listen to it.** Tapping a subway notice in the line panel now draws the affected stretch (skipped stops, no trains, shuttle bus, new local stops, where to change) and reads short steps aloud while each lights up; the MTA text sits behind Full notice, and the Other ways button is gone. Check that Kokoro reads the steps without a long silence and that the walk keeps pace with the voice.
 - **After #44 deploys, check sleep and wake on the VPS.** Both containers should show `Exited (0)` 10 minutes after the last request, the first trip after that should come from OTP rather than the built-in router, and OTP's real cold start should be written into `deploy/README.md` and server-management's `vps/services.toml`.
