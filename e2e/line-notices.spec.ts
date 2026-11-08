@@ -132,6 +132,102 @@ for (const size of SIZES) {
   });
 }
 
+/** A 2-line shuttle notice with the MTA's station notes, as the feed carries them (#55). */
+function shuttleAlert() {
+  return {
+    id: "lmm:planned_work:e2e-bus", kind: "planned", type: "Planned - Part Suspended", reroute: true, agency: "MTASBWY", routes: ["2"], stops: ["127", "128", "132"],
+    text: "No [2] between Times Sq-42 St and 14 St",
+    description: "[2] trains run between Wakefield-241 St and Times Sq-42 St.\n\n[shuttle bus icon] Free shuttle buses run between Times Sq-42 St and 14 St.\nTransfer between [2] and [shuttle bus icon] buses at Times Sq-42 St.",
+    period: "Nov 14 - 15, Sat 3:45 AM to Sun 10:00 PM",
+    changes: [{ alertId: "lmm:planned_work:e2e-bus", route: "2", kind: "suspended", names: ["Times Sq-42 St", "14 St"], notice: "No trains" }],
+    alternatives: [
+      { stop: "127", notes: "[shuttle bus icon] 7 Av at 42 St" },
+      { stop: "128", notes: "[shuttle bus icon] 7 Av at 34 St" },
+      { stop: "132", notes: "[1][3]\n[shuttle bus icon] 7 Av at 14 St" },
+    ],
+  };
+}
+
+/** A voice that finishes each line at once, except the one that names the first bus corner: the walk holds there. */
+const voiceHoldingAtCorner = () => {
+  const said: Array<{ text: string; lang: string }> = [];
+  Object.assign(window, { __said: said });
+  Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+    speaking: false, paused: false, pending: false, getVoices: () => [], addEventListener: () => undefined, removeEventListener: () => undefined,
+    speak: (u: SpeechSynthesisUtterance) => {
+      said.push({ text: u.text, lang: u.lang });
+      if (!/7 Avenue at 42 Street/.test(u.text)) setTimeout(() => { u.onend?.(new Event("end") as SpeechSynthesisEvent); u.dispatchEvent(new Event("end")); }, 20);
+    },
+    cancel: () => undefined, pause: () => undefined, resume: () => undefined,
+  } });
+};
+
+// Owner, 2026-11-08: "guide me on whats going on where to take shuttle bus etc", and the map follows the voice.
+for (const size of SIZES) {
+  test(`a shuttle notice guides to the bus corner and the map follows at ${size.width}×${size.height}`, async ({ page }) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    await page.addInitScript(voiceHoldingAtCorner);
+    await mockNetwork(page);
+    const body = JSON.parse(liveNow()) as { alerts: { alerts: unknown[] } };
+    body.alerts.alerts.push(shuttleAlert());
+    await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(body) }));
+    await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+    await page.goto("/");
+    await page.getByRole("button", { name: "My train" }).click({ timeout: slow(15_000) });
+    await page.getByRole("button", { name: /^7 Avenue Express/ }).first().click({ timeout: slow(15_000) });
+    const panel = page.getByTestId("line-panel");
+    const notice = panel.locator("[data-notice]", { hasText: "No 2" });
+    await notice.scrollIntoViewIfNeeded();
+    await notice.click();
+
+    const walk = panel.getByTestId("notice-walk");
+    // Each station row says where its bus stops, in the notice's own words with the streets spelled out.
+    await expect(walk.locator('[data-stop="127"]')).toContainText("7 Avenue at 42 Street");
+    await expect(walk.getByTestId("notice-step")).toContainText([
+      "No 2 trains between Times Square-42 Street and 14 Street. Free shuttle buses run instead.",
+      "Ride the 2 to Times Square-42 Street and go up to the street.",
+      "The shuttle bus stops at 7 Avenue at 42 Street.",
+      "Get off the bus at 14 Street and change to the 1 or 3.",
+      "When: November 14 to 15, Saturday 3:45 AM to Sunday 10:00 PM.",
+    ]);
+    // The voice reached the corner step; the map marks that corner at Times Sq-42 St.
+    await expect(walk).toHaveAttribute("data-step", "2", { timeout: slow(10_000) });
+    await expect.poll(() => page.evaluate(async () => {
+      const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: Array<{ properties?: { label?: string } }> }> } | undefined } }).__map?.getSource("transit-walk-corners");
+      return (await src?.getData())?.features?.map((f) => f.properties?.label ?? "").join("|") ?? "";
+    })).toContain("7 Avenue at 42 Street");
+    await expectLayout(page);
+  });
+}
+
+test("a notice is guided in the rider's language", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.addInitScript(() => localStorage.setItem("nma.lang", "es"));
+  await page.addInitScript(voiceHoldingAtCorner);
+  await mockNetwork(page);
+  const body = JSON.parse(liveNow()) as { alerts: { alerts: unknown[] } };
+  body.alerts.alerts.push(shuttleAlert());
+  await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(body) }));
+  await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+  // The model's part, stood in for: every line comes back marked, names untouched.
+  await page.route("**/api/agent/translate", async (r) => {
+    const { lines } = r.request().postDataJSON() as { lines: string[] };
+    await r.fulfill({ contentType: "application/json", body: JSON.stringify({ lines: lines.map((l) => `ES ${l}`) }) });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Mi tren|My train/ }).click({ timeout: slow(15_000) });
+  await page.getByRole("button", { name: /^7 Avenue Express/ }).first().click({ timeout: slow(15_000) });
+  const panel = page.getByTestId("line-panel");
+  const notice = panel.locator("[data-notice]", { hasText: "No 2" });
+  await notice.scrollIntoViewIfNeeded();
+  await notice.click();
+  const walk = panel.getByTestId("notice-walk");
+  await expect(walk.getByTestId("notice-step").first()).toHaveText("ES No 2 trains between Times Square-42 Street and 14 Street. Free shuttle buses run instead.");
+  await expect(walk.locator('[data-stop="128"]')).toContainText("ES Shuttle bus");
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: Array<{ text: string; lang: string }> }).__said[0] ?? null)).toMatchObject({ text: expect.stringMatching(/^ES No 2/), lang: expect.stringMatching(/^es/) });
+  await expectLayout(page);
+});
+
 // Owner, 2026-10-27: on a weekday the 7's weekend work was nowhere on the map. "This weekend" shows it.
 for (const [width, height] of [[375, 667], [1280, 800]]) {
   test(`the line panel shows this weekend's planned work at ${width}×${height}`, async ({ page }) => {

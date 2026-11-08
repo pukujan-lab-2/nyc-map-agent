@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, Bus, ChevronDown, Play, Square, Volume2, VolumeX } from "lucide-react";
+import { useSharedLocation } from "@/lib/geo/sharedLocation";
+import { useAppLang } from "@/lib/i18n/appLang";
 import { formatStationName } from "@/lib/streetName";
 import { say } from "@/lib/voice/say";
-import { alertDiagram, cleanAlertText, isGap, shortNotice, type AlertDiagram, type DiagramStep, type StopState } from "./alertDiagram";
+import { alertDiagram, cleanAlertText, isGap, laterSteps, shortNotice, type AlertDiagram, type Corner, type DiagramStep, type StopState } from "./alertDiagram";
+import { setWalkFocus } from "./alertFocus";
+import { useNoticeLines } from "./noticeLang";
 import type { TransitAlert } from "./hooks";
 import type { StaticSystem } from "./model";
 
@@ -15,7 +19,7 @@ const readMuted = () => { try { return localStorage.getItem(MUTE_KEY) === "off";
  * voice and does graph walk for me"): each step is said aloud while its stations light up, then the
  * next. Muted, the steps still walk, paced for reading. Each step stays up at least a moment.
  */
-function useNoticeWalk(steps: DiagramStep[], auto: boolean) {
+function useNoticeWalk(steps: DiagramStep[], auto: boolean, lang: string) {
   const [step, setStep] = useState<number | null>(null);
   const [muted, setMutedState] = useState(readMuted);
   const cancel = useRef<(() => void) | null>(null);
@@ -36,22 +40,24 @@ function useNoticeWalk(steps: DiagramStep[], auto: boolean) {
       let spoke = muted, dwelt = false;
       const next = () => { if (spoke && dwelt) go(i + 1); };
       timer = setTimeout(() => { dwelt = true; next(); }, muted ? 1500 + steps[i].text.length * 45 : 900);
-      if (!muted) hush = say(steps[i].text, "en-US", () => { spoke = true; next(); });
+      if (!muted) hush = say(steps[i].text, lang, () => { spoke = true; next(); });
     };
     cancel.current = () => { alive = false; clearTimeout(timer); hush(); };
     go(0);
-  }, [steps, muted]);
+  }, [steps, muted, lang]);
   const setMuted = (m: boolean) => {
     try { localStorage.setItem(MUTE_KEY, m ? "off" : "on"); } catch { /* private window: this visit only */ }
     stop();
     setMutedState(m);
   };
-  // Opened by a tap: start at once. Closing the notice ends it.
-  useEffect(() => { if (auto) play(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Opened by a tap: start once the words are ready (in the rider's language). Closing the notice ends it.
+  const started = useRef(false);
+  useEffect(() => { if (auto && !started.current) { started.current = true; play(); } }, [auto, play]);
   useEffect(() => () => cancel.current?.(), []);
   return { step, playing: step !== null, play, stop, muted, setMuted };
 }
 
+const TAG_KEYS = ["skip", "closed", "shuttle", "local"] as const;
 const TAG: Record<StopState, { label: string; bg: string; fg: string } | null> = {
   skip: { label: "Skipped", bg: "#dc2626", fg: "#ffffff" },
   closed: { label: "No trains", bg: "#475569", fg: "#f1f5f9" },
@@ -61,14 +67,14 @@ const TAG: Record<StopState, { label: string; bg: string; fg: string } | null> =
   open: null,
 };
 
-function Diagram({ d, color, lit }: { d: AlertDiagram; color: string; lit: Set<string> | null }) {
+function Diagram({ d, color, lit, labels }: { d: AlertDiagram; color: string; lit: Set<string> | null; labels: Record<StopState, string> & { heading: string } }) {
   const rail = d.rows.filter((r) => isGap(r) || !r.off);
   const off = d.rows.filter((r) => !isGap(r) && r.off);
   const directional = d.kind === "skip" || d.kind === "local";
   return (
     <div data-testid="notice-diagram" className="flex flex-col gap-1">
       <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-[#a5b4cb]">
-        {d.heading}
+        {labels.heading}
         {directional && !/both ways/.test(d.heading) ? <ArrowDown className="h-3.5 w-3.5" aria-label="this way down the list" /> : null}
       </div>
       <ol className="flex flex-col" aria-label={`${d.heading}, station by station`}>
@@ -101,7 +107,8 @@ function Diagram({ d, color, lit }: { d: AlertDiagram; color: string; lit: Set<s
               </span>
               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 py-1 text-[13px]">
                 <span className={r.state === "skip" || broken ? "text-[#cbd5e1] line-through decoration-[#94a3b8]/70" : "font-medium"}>{formatStationName(r.name)}</span>
-                {tag ? <Tag {...tag} shuttle={r.state === "shuttle"} /> : null}
+                {tag ? <Tag {...tag} label={labels[r.state]} shuttle={r.state === "shuttle"} /> : null}
+                {r.corners ? <Corners list={r.corners} /> : null}
               </span>
             </li>
           );
@@ -116,13 +123,24 @@ function Diagram({ d, color, lit }: { d: AlertDiagram; color: string; lit: Set<s
               <span aria-hidden className="flex w-4 shrink-0 justify-center"><span className="h-3 w-3 rounded-full border-[2.5px] border-[#60a5fa]" /></span>
               <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px]">
                 <span className="font-medium">{formatStationName(r.name)}</span>
-                <Tag label={`Change for the ${r.off!.join(", ")}`} bg="#2563eb" fg="#ffffff" />
+                <Tag label={`${labels.transfer}: ${r.off!.join(", ")}`} bg="#2563eb" fg="#ffffff" />
+                {r.corners ? <Corners list={r.corners} /> : null}
               </span>
             </li>
           ))}
         </ul>
       ) : null}
     </div>
+  );
+}
+
+/** Where the shuttle bus stops for a station, in the MTA's words. */
+function Corners({ list }: { list: Corner[] }) {
+  return (
+    <span className="flex basis-full items-start gap-1 text-[12px] leading-snug text-[#fcd34d]">
+      <Bus className="mt-px h-3 w-3 shrink-0" aria-label="Shuttle bus stop" />
+      <span>{list.map((c) => (c.note ? `${c.text} (${c.note})` : c.text)).join("; ")}</span>
+    </span>
   );
 }
 
@@ -140,17 +158,43 @@ function Tag({ label, bg, fg, shuttle }: { label: string; bg: string; fg: string
  * draw shows its first sentence or two instead.
  */
 export default function NoticeDiagram({ alert, sys, route, color, auto }: { alert: TransitAlert; sys: StaticSystem | undefined; route: string; color: string; auto: boolean }) {
-  const diagram = useMemo(() => alertDiagram(alert, sys, route), [alert, sys, route]);
+  // Start from the rider's nearest station when they share where they are; about 100 m is close enough.
+  const here = useSharedLocation();
+  const nearKey = here.status === "on" && here.coords ? `${here.coords.lon.toFixed(3)},${here.coords.lat.toFixed(3)}` : "";
+  const near = useMemo(() => (nearKey ? { lon: Number(nearKey.split(",")[0]), lat: Number(nearKey.split(",")[1]) } : null), [nearKey]);
+  const diagram = useMemo(() => alertDiagram(alert, sys, route, near), [alert, sys, route, near]);
   const full = useMemo(() => cleanAlertText([alert.text, alert.description].filter(Boolean).join("\n\n")).replace(/\n{3,}/g, "\n\n").trim(), [alert]);
   const short = useMemo(() => shortNotice(alert.description || alert.text), [alert]);
-  const steps = useMemo(() => diagram?.steps ?? [{ text: short, ids: [] }], [diagram, short]);
-  const walk = useNoticeWalk(steps, auto);
+  const english = useMemo(() => diagram?.steps ?? [{ text: short, ids: [] }, ...laterSteps(alert, sys, route)], [diagram, short, alert, sys, route]);
+  // One call translates the steps, the tags and the heading together (owner, 2026-11-08: "in user preffered language").
+  const lang = useAppLang();
+  const words = useMemo(() => [...english.map((s) => s.text), ...TAG_KEYS.map((k) => TAG[k]!.label), "Change here", diagram?.heading ?? ""], [english, diagram]);
+  const said = useNoticeLines(words, lang);
+  const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i] })), [english, said.lines]);
+  const labels = useMemo(() => {
+    const t = said.lines.slice(english.length);
+    return { ...Object.fromEntries(TAG_KEYS.map((k, i) => [k, t[i]])), transfer: t[TAG_KEYS.length], heading: diagram?.heading ? t[TAG_KEYS.length + 1] : "" } as Record<StopState, string> & { heading: string };
+  }, [said.lines, english.length, diagram]);
+  const walk = useNoticeWalk(steps, auto && said.ready, lang === "en" || said.failed ? "en-US" : lang);
   const [more, setMore] = useState(false);
   const lit = walk.step !== null && steps[walk.step].ids.length ? new Set(steps[walk.step].ids) : null;
+  // The map follows the walk: this step's stations, their shuttle bus corners, the buses a tip names.
+  const corners = useMemo(() => new Map((diagram?.rows ?? []).flatMap((r) => (!isGap(r) && r.corners ? [[r.id, r.corners] as const] : []))), [diagram]);
+  const current = walk.step === null ? null : english[walk.step];
+  useEffect(() => {
+    if (!current) { setWalkFocus(null); return; }
+    setWalkFocus({
+      ids: current.ids,
+      corners: (current.corners ?? []).flatMap((id) => (corners.get(id) ?? []).map((c) => ({ id, text: c.note ? `${c.text} (${c.note})` : c.text }))),
+      bus: current.bus ?? [],
+    });
+  }, [current, corners]);
+  useEffect(() => () => setWalkFocus(null), []);
   const btn = "flex h-9 items-center gap-1.5 rounded-[18px] border border-[rgba(148,163,184,0.3)] px-3 text-[13px] font-semibold text-[#f1f5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
   return (
     <div data-testid="notice-walk" data-step={walk.step ?? undefined} className="flex flex-col gap-2.5 rounded-[14px] border border-[rgba(148,163,184,0.16)] bg-[rgba(15,23,42,0.35)] p-3 text-[#f1f5f9]">
-      {diagram ? <Diagram d={diagram} color={color} lit={lit} /> : null}
+      {diagram ? <Diagram d={diagram} color={color} lit={lit} labels={labels} /> : null}
+      {said.failed ? <p className="text-[12px] text-[#a5b4cb]">Could not translate this notice, so it is in English.</p> : null}
       <ol className="flex flex-col gap-1 text-[13px] leading-[1.4]" aria-label="What it means" aria-live="polite">
         {steps.map((s, i) => (
           <li key={i} data-testid="notice-step" className={walk.step === i ? "font-semibold text-white" : walk.playing ? "text-[#a5b4cb]" : "text-[#e2e8f0]"}>{s.text}</li>

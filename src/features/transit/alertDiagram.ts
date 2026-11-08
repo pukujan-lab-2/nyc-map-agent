@@ -1,4 +1,4 @@
-import { formatStationName } from "@/lib/streetName";
+import { formatStationName, formatStreetText } from "@/lib/streetName";
 import { sameStation, towardEnd } from "@/lib/transit/serviceChanges";
 import { routeEnds, skippedStations } from "./alertFocus";
 import type { TransitAlert } from "./hooks";
@@ -11,11 +11,29 @@ import { stationOf, type StaticSystem } from "./model";
  * steps that a voice reads while the diagram lights each one up. Pure.
  */
 export type StopState = "skip" | "closed" | "shuttle" | "local" | "transfer" | "open";
-export interface DiagramStop { id: string; name: string; state: StopState; /** Lines to change to, for a station off this line. */ off?: string[] }
+export interface DiagramStop {
+  id: string; name: string; state: StopState;
+  /** Lines to change to, for a station off this line. */
+  off?: string[];
+  /** Where the shuttle bus stops for this station, from the MTA's own note. */
+  corners?: Corner[];
+}
+/** "Broadway at 231 Street", with "northbound", "toward Lefferts Boulevard" or "for the A" when the note gives one. */
+export interface Corner { text: string; note?: string }
 /** Stations left out between two rows. */
 export interface DiagramGap { gap: number }
 export type DiagramRow = DiagramStop | DiagramGap;
-export interface DiagramStep { text: string; ids: string[] }
+export interface DiagramStep {
+  text: string;
+  /** Stations lit, and framed on the map, while this step is said. */
+  ids: string[];
+  /** Stations whose shuttle bus corners the map marks for this step. */
+  corners?: string[];
+  /** Bus routes this step names (a travel tip's M4), shown on the map. */
+  bus?: string[];
+}
+/** Where the rider is, when they share it: the guidance starts from the nearest station. */
+type Near = { lon: number; lat: number } | null | undefined;
 export interface AlertDiagram {
   kind: "skip" | "suspended" | "shuttle" | "local";
   /** Who it is for: "Uptown A", "Both ways", "No 1 trains". */
@@ -95,7 +113,7 @@ function stationWords(names: string[]): string {
 }
 const orWords = (parts: string[]) => (parts.length > 1 ? `${parts.slice(0, -1).join(", ")} or ${parts.at(-1)}` : parts[0] ?? "");
 
-type Transfer = { text: string; at: Array<{ name: string; lines: string[] }> };
+type Transfer = { text: string; at: Array<{ name: string; lines: string[] }>; bus?: true };
 const withArticle = (s: string) => `${/^[aeiou]/i.test(s) ? "an" : "a"} ${s}`;
 
 /**
@@ -123,7 +141,7 @@ function transfers(text: string, multi: boolean): Transfer[] {
     }
   }
   // The shuttle changes read as one sentence: "Change at Dyckman St for the 1, or at Inwood-207 St for the A."
-  if (bus.length) out.push({ text: `Change at ${bus.map((t) => `${said(t.name)}${t.lines.length ? ` for the ${orWords(t.lines)}` : ""}`).join(", or at ")}.`, at: bus });
+  if (bus.length) out.push({ text: `Change at ${bus.map((t) => `${said(t.name)}${t.lines.length ? ` for the ${orWords(t.lines)}` : ""}`).join(", or at ")}.`, at: bus, bus: true });
   return out;
 }
 
@@ -201,11 +219,86 @@ function between(sys: StaticSystem, seq: string[], onLine: Record<string, number
 }
 
 /** The diagram for one alert on one line, or null when nothing in it maps onto stations. */
-export function alertDiagram(a: TransitAlert, sys: StaticSystem | undefined, route: string): AlertDiagram | null {
+export function alertDiagram(a: TransitAlert, sys: StaticSystem | undefined, route: string, near?: Near): AlertDiagram | null {
   if (!sys || !sys.stopM[route]) return null;
   const all = `${a.text}\n${a.description ?? ""}`;
-  return suspension(a, sys, route, all) ?? skipStops(a, sys, route, all) ?? local(a, sys, route, all);
+  const d = suspension(a, sys, route, all, near) ?? skipStops(a, sys, route, all) ?? local(a, sys, route, all);
+  if (d) d.steps.push(...laterSteps(a, sys, route));
+  return d;
 }
+
+/** The steps every notice ends with, drawn or not: the travel tips, then when it applies. */
+export function laterSteps(a: TransitAlert, sys: StaticSystem | undefined, route: string): DiagramStep[] {
+  const out: DiagramStep[] = travelTips(`${a.text}\n${a.description ?? ""}`).map((t) => ({ text: t.text, ids: sys?.stopM[route] ? namedOnLine(sys, route, t.text) : [], bus: t.bus }));
+  const when = periodWords(a.period ?? "");
+  if (when) out.push({ text: `When: ${/^(?:beginning|starting|until|from)\b/i.test(when) ? when.charAt(0).toLowerCase() + when.slice(1) : when}.`, ids: [] });
+  return out;
+}
+
+const DAYS: Record<string, string> = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
+const MONTHS: Record<string, string> = { Jan: "January", Feb: "February", Mar: "March", Apr: "April", Jun: "June", Jul: "July", Aug: "August", Sep: "September", Oct: "October", Nov: "November", Dec: "December" };
+/** "Nov 13 - Dec 7, Fri 11:45 PM to Mon 5:00 AM (Weekends)" -> "November 13 to December 7, Friday 11:45 PM to Monday 5:00 AM". */
+export function periodWords(period: string): string {
+  return period.replace(/\s*\((?:weekends?|weekdays?|nights?)\)\s*$/i, "")
+    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b(?!day)/g, (_m, d: string) => DAYS[d])
+    .replace(/\b(Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b\.?/g, (_m, m: string) => MONTHS[m])
+    .replace(/\s+-\s+/g, " to ").replace(/\s+/g, " ").replace(/[.\s]+$/, "").trim();
+}
+
+const BUS_ROUTE = /\b(?:Bx|BX|B|M|Q|S|SIM|X|QM|BM|T)\d{1,3}[A-Z]?\+?(?![\w-])/g;
+/**
+ * "Travel tips: Transfer … at 137 St-City College, or take the M4/M104 to 116 St* for 1. Consider the M125 to the
+ * 125 St A/C B/D Station. *(except when …). Note: …" -> one step a sentence, with the buses it names.
+ */
+export function travelTips(text: string): Array<{ text: string; bus: string[] }> {
+  const clean = cleanAlertText(text);
+  const at = clean.search(/\bTravel tips?:?/i);
+  if (at < 0) return [];
+  // The tips run to a blank line, a note, or the next heading.
+  const body = clean.slice(at).replace(/^Travel tips?:?\s*/i, "").split(/\n\s*\n|\bNote:|What's happening\??|Travel Alternatives:/i)[0];
+  return body.split(/(?<=\.)\s+|\n/).map((x) => x.trim())
+    .filter((x) => x && !/^\*?\(/.test(x))
+    .map((x) => x.replace(/\*/g, "").replace(/\b([A-Z]{1,3}\d{1,3}[A-Z]?|[A-Z0-9])\/(?=[A-Z0-9])/g, "$1 or ")
+      .replace(/^Consider (?:taking )?the /i, "You can also take the ").replace(/^Consider /i, "You can also use ").replace(/\s+([,.])/g, "$1"))
+    .map((x) => ({ text: /[.!?]$/.test(x) ? x : `${x}.`, bus: [...new Set(x.match(BUS_ROUTE) ?? [])] }));
+}
+
+/** Stations of this line a sentence names ("137 St-City College", "116 St"), on the line's own names. */
+function namedOnLine(sys: StaticSystem, route: string, text: string): string[] {
+  const out: string[] = [];
+  for (const id of Object.keys(sys.stopM[route] ?? {})) {
+    const name = nameOf(sys, id);
+    const head = name.split("-")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`(^|[^\\w-])${head}(?![\\w])`, "i").test(text)) out.push(id);
+  }
+  return out;
+}
+
+/**
+ * The MTA's note for each station (`station_alternative`), as the corners its shuttle bus stops at:
+ * "[shuttle bus icon] W 231 St at Broadway (S/B)" -> { text: "West 231 Street at Broadway", note: "southbound" }.
+ */
+export function shuttleCorners(a: TransitAlert, sys: StaticSystem): Map<string, Corner[]> {
+  const out = new Map<string, Corner[]>();
+  for (const alt of a.alternatives ?? []) {
+    const id = stationOf(sys.system, alt.stop);
+    const corners = alt.notes.split(/\n/).filter((l) => /\[shuttle bus icon\]/i.test(l)).map((l) => {
+      const raw = l.replace(/\[[^\]]*icon\]/gi, "").trim();
+      const m = /^(.*?)\s*\(([^)]+)\)\s*$/.exec(raw);
+      const where = m ? m[1] : raw;
+      const tag = m?.[2] ?? "";
+      const note = /^N\/?B$/i.test(tag) ? "northbound" : /^S\/?B$/i.test(tag) ? "southbound" : /^E\/?B$/i.test(tag) ? "eastbound" : /^W\/?B$/i.test(tag) ? "westbound"
+        : /^to /i.test(tag) ? `toward ${formatStationName(tag.slice(3))}` : /^[A-Z0-9]$/.test(tag) ? `for the ${tag}` : tag || undefined;
+      return { text: formatStreetText(where), ...(note ? { note } : {}) };
+    }).filter((c) => c.text);
+    if (corners.length) out.set(id, [...(out.get(id) ?? []), ...corners]);
+  }
+  return out;
+}
+
+const cornerWords = (cs: Corner[]) => orWords(cs.map((c) => (c.note ? `${c.text} (${c.note})` : c.text)));
+const coordOf = (sys: StaticSystem, id: string) => sys.stations.features.find((f) => f.properties.id === id)?.geometry.coordinates as [number, number] | undefined;
+const metres = (p: [number, number], q: { lon: number; lat: number }) => Math.hypot((p[0] - q.lon) * 84_400, (p[1] - q.lat) * 111_320);
 
 /**
  * A branch the line's track order does not hold (the A's Lefferts Blvd branch): the named ends and the
@@ -229,7 +322,7 @@ function branchOrder(sys: StaticSystem, onLine: Record<string, number>, ends: st
   return out;
 }
 
-function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: string): AlertDiagram | null {
+function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: string, near?: Near): AlertDiagram | null {
   const change = a.changes?.find((c) => c.kind === "suspended" && c.route === route);
   const bus = shuttleRange(all);
   const ends = change?.names ?? (/^(?:In [\w ]+, )?no /i.test(a.text.trim()) ? bus : null);
@@ -270,15 +363,82 @@ function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: stri
   const hi = Math.min(seq.length - 1, span[1] + (open(span[1]) ? 1 : 0));
   const seen = new Set(seq.slice(lo, hi + 1));
   const off = offRows(sys, changes.flatMap((t) => t.at), onLine, seen);
-  const rows = [...rowsFor(seq, lo, hi, state, sys, seq === trackOrder(sys, route, []).seq ? drawReversed(sys, route, null) : false), ...off];
-  const steps: DiagramStep[] = [{ text: `No ${route} trains between ${said(ends[0])} and ${said(ends[1])}.`, ids: closed }];
-  if (shuttle) {
-    const sameEnds = !bus || bus.every((n) => ends.some((e) => sameStation(n, e) || sameStation(e, n)));
-    const busIds = bused.length ? bused : closed;
-    steps.push({ text: sameEnds ? "Take the free shuttle bus instead." : `Take the free shuttle bus between ${said(bus[0])} and ${said(bus[1])}.`, ids: [...busIds, ...[...changeIds].filter((id) => !busIds.includes(id))] });
-  }
-  for (const t of changes) steps.push({ text: t.text, ids: idsOf(sys, t, onLine) });
+  const corners = shuttleCorners(a, sys);
+  const withCorners = (r: DiagramRow): DiagramRow => (!isGap(r) && corners.has(r.id) ? { ...r, corners: corners.get(r.id) } : r);
+  const rows = [...rowsFor(seq, lo, hi, state, sys, seq === trackOrder(sys, route, []).seq ? drawReversed(sys, route, null) : false), ...off].map(withCorners);
+  const steps: DiagramStep[] = [{ text: `No ${route} trains between ${said(ends[0])} and ${said(ends[1])}.${shuttle ? " Free shuttle buses run instead." : ""}`, ids: closed }];
+  const busTransfers = changes.find((t) => t.bus)?.at ?? [];
+  if (shuttle) steps.push(...shuttleGuide(sys, route, a, { seq, span: busSpan ?? span, state, bused: bused.length ? bused : closed, corners, busTransfers, onLine, near }));
+  for (const t of changes) if (!t.bus || !shuttle) steps.push({ text: t.text, ids: idsOf(sys, t, onLine) });
   return { kind: shuttle ? "shuttle" : "suspended", heading: `No ${route} trains`, rows, steps };
+}
+
+/**
+ * The owner's "guide me on whats going on where to take shuttle bus etc" (2026-11-08): where to leave
+ * the train, the corner the bus stops at, where to get back on. Starts from the end nearest the rider.
+ */
+function shuttleGuide(sys: StaticSystem, route: string, a: TransitAlert, g: {
+  seq: string[]; span: [number, number]; state: Map<string, StopState>; bused: string[]; corners: Map<string, Corner[]>;
+  busTransfers: Transfer["at"]; onLine: Record<string, number>; near: Near;
+}): DiagramStep[] {
+  const steps: DiagramStep[] = [];
+  const name = (id: string) => said(nameOf(sys, id));
+  // The trains at each end of the bus stretch: this line where it still runs, else the lines the notice names there.
+  // "[J] runs between Jamaica Center-York College and Myrtle Av, the last stop": the line still reaches these.
+  const runs = /\b([A-Z0-9])\b (?:trains? )?runs? between (.+?) and ([^,.\n]+)/i.exec(cleanAlertText(a.description ?? ""));
+  const reached = new Set(runs && runs[1] === route ? [runs[2], runs[3]].map((n) => findStation(sys, trimName(n), g.onLine)?.properties.id) : []);
+  const trainsAt = (id: string): string[] => {
+    const s = g.state.get(id);
+    if (!s || s === "transfer" || s === "open" || reached.has(id)) return [route];
+    const named = g.busTransfers.find((t) => findStation(sys, t.name, g.onLine, t.lines)?.properties.id === id)?.lines ?? [];
+    if (named.length) return named;
+    // The station's own note lists the trains there during the change ("[F]" at Delancey St-Essex St).
+    const noted = notes(id).flatMap((l) => (/shuttle bus icon/i.test(l) ? [] : [...l.matchAll(/\[([A-Z0-9])\]/g)].map((m) => m[1])));
+    if (noted.length) return [...new Set(noted)];
+    const here = String(sys.stations.features.find((f) => f.properties.id === id)?.properties.routes ?? "").split(/[\s,]+/).filter(Boolean);
+    // Not the suspended line's express either (the 7X at Flushing-Main St).
+    return here.filter((r) => !a.routes.some((x) => r === x || r === `${x}X`));
+  };
+  const notes = (id: string) => (a.alternatives ?? []).filter((x) => stationOf(sys.system, x.stop) === id).flatMap((x) => x.notes.split(/\n/));
+  const goTicket = (id: string) => notes(id).some((l) => /GO ticket/i.test(l)) ? " Get a GO ticket on the way out, so you can get back in free." : "";
+  const pos = (id: string) => coordOf(sys, id);
+  const dist = (id: string) => { const p = pos(id); return g.near && p ? metres(p, g.near) : 0; };
+  const ends = [...new Set([g.seq[g.span[0]], g.seq[g.span[1]]])].filter((id) => trainsAt(id).length).sort((x, y) => dist(x) - dist(y));
+  const at = (id: string) => g.corners.get(id) ?? [];
+  const cornerIds = (ids: string[]) => ids.filter((id) => at(id).length);
+  // Near a closed station: its own bus corner first.
+  const mine = g.near ? g.bused.filter((id) => pos(id)).sort((x, y) => dist(x) - dist(y))[0] : undefined;
+  if (mine && dist(mine) < 1200 && !ends.includes(mine)) {
+    steps.push(at(mine).length
+      ? { text: `Nearest to you is ${name(mine)}. Its shuttle bus stops at ${cornerWords(at(mine))}.`, ids: [mine], corners: [mine] }
+      : { text: `Nearest to you is ${name(mine)}. The notice does not say where its shuttle bus stops.`, ids: [mine] });
+  }
+  const start = ends[0];
+  if (start) {
+    const by = trainsAt(start);
+    steps.push({ text: `Ride the ${orWords(by)} to ${name(start)} and go up to the street.${goTicket(start)}`, ids: [start], corners: cornerIds([start]) });
+    steps.push(at(start).length
+      ? { text: `The shuttle bus stops at ${cornerWords(at(start))}.`, ids: [start], corners: [start] }
+      : { text: `The notice does not say where the shuttle bus stops at ${name(start)}.`, ids: [start] });
+  }
+  const along = g.bused.filter((id) => !ends.includes(id));
+  if (along.length) {
+    const listed = cornerIds(along);
+    steps.push(listed.length
+      ? { text: `It stops near ${stationWords(along.map((id) => nameOf(sys, id)))}. The corners are on the map.`, ids: along, corners: listed }
+      : { text: `It stops near ${stationWords(along.map((id) => nameOf(sys, id)))}. The notice does not say at which corners.`, ids: along });
+  }
+  const back = ends[1];
+  if (back) steps.push({ text: `Get off the bus at ${name(back)} and change to the ${orWords(trainsAt(back))}.`, ids: [back], corners: cornerIds([back]) });
+  else if (start) steps.push({ text: `Coming back, take the shuttle bus to ${name(start)} and get back on the ${route} there.`, ids: [start], corners: cornerIds([start]) });
+  // Stations off this line where the bus meets another train (Inwood-207 St for the A).
+  for (const t of g.busTransfers) {
+    const f = findStation(sys, t.name, g.onLine, t.lines);
+    if (!f || f.properties.id in g.onLine || !t.lines.length) continue;
+    const id = f.properties.id;
+    steps.push({ text: `You can also change between the bus and the ${orWords(t.lines)} at ${name(id)}${at(id).length ? `, where it stops at ${cornerWords(at(id))}` : ""}.`, ids: [id], corners: cornerIds([id]) });
+  }
+  return steps;
 }
 
 /** The direction of a skip: "Uptown", "Flushing", or null for both. */
