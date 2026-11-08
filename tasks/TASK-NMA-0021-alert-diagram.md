@@ -85,6 +85,30 @@ Blocked/uncertain:
 Next:
 - After deploy, open a notice on a phone and listen to the walk
 
+### 2026-11-08 05:45:14 UTC — agent:claude-code/39bc49e4-4388-4090-97d5-748e0ac5c5f3
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/39bc49e4-4388-4090-97d5-748e0ac5c5f3","blocked":[],"changed":["New route POST /api/agent/translate; notice chunk budget 10 kB, whole-app JS limit 1114 kB"],"completed":["A tapped subway notice guides the rider: where to leave the train, the shuttle bus corner from the feed's station notes, where to get back on, travel-tip buses and dates","The map frames each step's stations and labels the bus corners while the voice speaks; steps are translated into the app language through POST /api/agent/translate"],"decisions":["Bus corners are marked at the station, since the geocoder cannot place intersections"],"evidence":["After rebasing on main: unit suite passes (1679 tests); tsc, eslint and size-limit pass; line-notices, line-chooser and responsive e2e passed 72 of 72 at all four layout sizes"],"next_action":"After pull request #61 deploys, open a shuttle notice on a phone with the voice on, then again in Spanish","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0021","timestamp":"2026-11-08T05:45:14Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"63dc07b0658180f376031c8b3b0083beb23eaa6ab30d9d2ac6b71bd4e0cae6a6","request_id":"8c629753c9584d6aa4d14ec7251fdf28","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0021"} -->
+
+Completed:
+- A tapped subway notice guides the rider: where to leave the train, the shuttle bus corner from the feed's station notes, where to get back on, travel-tip buses and dates
+- The map frames each step's stations and labels the bus corners while the voice speaks; steps are translated into the app language through POST /api/agent/translate
+
+Evidence:
+- After rebasing on main: unit suite passes (1679 tests); tsc, eslint and size-limit pass; line-notices, line-chooser and responsive e2e passed 72 of 72 at all four layout sizes
+
+Decisions:
+- Bus corners are marked at the station, since the geocoder cannot place intersections
+
+Changed:
+- New route POST /api/agent/translate; notice chunk budget 10 kB, whole-app JS limit 1114 kB
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request #61 deploys, open a shuttle notice on a phone with the voice on, then again in Spanish
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
