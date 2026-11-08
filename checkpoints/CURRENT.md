@@ -6,15 +6,19 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Current projection
 
-*Updated 2026-11-03, 21:30 UTC. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-11-08, 15:45 UTC. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
 
 ## Completed recently
+
+- **Voice on the live site reached Whisper through a socat bridge on port 18799 that is being removed.** Speech-to-text, spoken answers and the voice keeper now go to the shared speech gateway on the VPS (`STT_BASE_URL=http://host.docker.internal:18800` in `~/apps/nyc-map-agent.env`), and every request says `X-Speech-Project: nyc-map` (`STT_PROJECT`). The gateway sends multilingual turns to the Windows PC first, then the Pro. Routing and fallbacks live in `voice-agent-research`'s gateway `routes.toml`, not here (AGENTS.md).
 
 - **A phone showed no way to choose the language (#54).** The rail's language chip sat in the wider-screens column and showed nowhere, and the Settings chip is past the right edge of the task row. The chip now sits under Layers on a phone and opens the phone's own picker; the same stored language drives the app's text, the agent's reply language and the voice. Not done: asking once on first launch when the phone's language is not one of the eight, which waits for the owner's call under `docs/DESIGN_RULES.md`.
 
 ## In flight
 
 **A subway notice now guides the rider instead of repeating the MTA paragraph (#55, pull request #61, branch `feat/55-alert-diagram`).** Tapping a notice in the line panel draws the stretch of line it touches and reads short steps aloud while the map frames each step's stations: what is happening, where to leave the train, the street corner the shuttle bus stops at (from the feed's per-station notes), where to get back on, bus alternatives from the travel tips, and when it applies. With the rider's location shared it starts from the nearest closed station. Steps are translated into the app language by the agent's model through `POST /api/agent/translate`, with station names kept as on the map. Other ways is gone. Not done: nobody has listened to it on a phone.
+
+**Street view stopped at the pavement: you could not walk into a station (#62, merged as pull request #63).** Each station now gets a walkable model on first approach (`src/lib/map/stationWalk.ts`), built from the x-ray data and a new `public/transit/elevated.json` (`pnpm build:elevated`, from OpenStreetMap). Walking onto a street stair takes you down to the platforms, drawn on their own canvas because MapLibre won't put the camera under the ground; at an elevated station the stairs take you up and the map camera rises to the platform, 10 m over the city. Walls and platform edges hold you in. Not done: 13 of 274 underground and 7 of 155 elevated stations still have a platform you cannot reach, OpenStreetMap maps street stairs at only 21 elevated stations (the rest get one added at the entrance), and nobody has walked it on a phone.
 
 **A phone shows one bottom sheet at a time (#53, branch `fix/53-one-phone-sheet`).** Opening a station and tapping one of its line chips used to stack the line sheet on the station sheet, each with its own handle. Now every phone sheet built on `PullSheet` joins one stack (`src/lib/store/pullSheet.ts`): only the newest draws, a Back arrow returns to the one under it, and Close line empties the sheet. The station sheet moved off the old vaul drawer onto `PullSheet`, so it sits above the chat bar. Not done: nobody has dragged it on a real phone yet.
 
@@ -24,6 +28,7 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Next
 
+- **After #62 merges, walk into Fulton St and an elevated station on a phone.** Check that the stairs feel right with the on-screen pad, and that the view below the street keeps up on a mid-range phone.
 - **After #53 merges, try station, line chip, Back and Close on a phone.** Check the drag between peek, half and full on the station sheet too, since it no longer uses vaul.
 - **After pull request #61 deploys, open a shuttle notice on a phone with the voice on (#55).** Check that the steps say where to leave the train, which corner the shuttle bus stops at and where to get back on, that the map moves to each step's stations and labels the bus corners while the voice speaks, and that Kokoro starts without a long silence. Then switch the app to Spanish and check the steps come back translated.
 - **After #44 deploys, check sleep and wake on the VPS.** Both containers should show `Exited (0)` 10 minutes after the last request, the first trip after that should come from OTP rather than the built-in router, and OTP's real cold start should be written into `deploy/README.md` and server-management's `vps/services.toml`.
