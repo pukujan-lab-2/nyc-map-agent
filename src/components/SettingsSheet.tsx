@@ -7,15 +7,15 @@ import type { SheetLevel } from "@/components/sheetSwipe";
 import { useMenuT } from "@/lib/i18n/menuText";
 
 /**
- * On a phone's home, language and the QR code come up from behind the chat
- * from the Settings chip, so the top right keeps only view, zoom and north
- * (owner, 2026-10-25). Swiping it all the way down closes it.
+ * On a phone's home, the model and the QR code come up from behind the chat
+ * from the Settings chip (owner, 2026-10-25); language is here too, and also
+ * the rail's chip (#54). Swiping it all the way down closes it.
  */
 export default function SettingsSheet({ onClose }: { onClose: () => void }) {
   const t = useMenuT();
   const [level, setLevel] = useState<SheetLevel>(1);
   return (
-    <PullSheet testId="settings-sheet" label={t("settings")} level={level} onLevel={(l) => (l ? setLevel(l) : onClose())}
+    <PullSheet testId="settings-sheet" label={t("settings")} level={level} onLevel={(l) => (l ? setLevel(l) : onClose())} onClose={onClose}
       header={
         <div className="flex min-h-12 items-center gap-3 px-1">
           <Settings className="h-5 w-5 shrink-0 text-slate-300" aria-hidden />

@@ -42,7 +42,9 @@
     "build:transit-holds": "tsx scripts/build-transit-holds.ts",
     "build:e2e": "VITE_E2E=1 VITE_DATA_BACKEND=octo vite build --outDir .e2e-build --emptyOutDir",
     "e2e": "playwright test",
-    "build:xray": "tsx scripts/build-xray.ts"
+    "build:xray": "tsx scripts/build-xray.ts",
+    "build:elevated": "tsx scripts/build-elevated.ts",
+    "build:xray-overrides": "tsx scripts/xray-overrides.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "3.0.71",
@@ -94,7 +96,6 @@
     "tailwindcss-animate": "1.0.7",
     "three": "0.186.1",
     "typescript": "5.6.3",
-    "vaul": "1.1.2",
     "xstate": "5.33.2",
     "zod": "4.6.7"
   },
