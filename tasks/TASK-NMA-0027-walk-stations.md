@@ -57,6 +57,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-08 07:07:52 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["stationWalk, stationNear, stationScene, StationInside, MapView walk loop, elevated.json and its build script"],"completed":["Street view walks down station stairs to the platforms, and up to elevated platforms over the city; walls and edges hold you in"],"decisions":["no new decisions"],"evidence":["10 walk unit tests pass; 261 of 274 underground and 148 of 155 elevated stations reach every platform; e2e station-walk passes 12 of 12 at four sizes"],"evidence_class":"observed","next_action":"after the pull request merges, walk into Fulton St and an elevated station on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0027","timestamp":"2026-11-08T07:07:52Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a3e40f4950ae1e6bcb4fd356358c88d8b488f628751f6ce3f2649ea6236c6885","request_id":"1ae09bb2c85748fcb324e12202c50588","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0027"} -->
+
+Completed:
+- Street view walks down station stairs to the platforms, and up to elevated platforms over the city; walls and edges hold you in
+
+Evidence:
+- 10 walk unit tests pass; 261 of 274 underground and 148 of 155 elevated stations reach every platform; e2e station-walk passes 12 of 12 at four sizes
+
+Decisions:
+- no new decisions
+
+Changed:
+- stationWalk, stationNear, stationScene, StationInside, MapView walk loop, elevated.json and its build script
+
+Blocked/uncertain:
+- none
+
+Next:
+- after the pull request merges, walk into Fulton St and an elevated station on a phone
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
