@@ -109,6 +109,29 @@ Blocked/uncertain:
 Next:
 - After pull request #61 deploys, open a shuttle notice on a phone with the voice on, then again in Spanish
 
+### 2026-11-08 23:10:37 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["Merged main (with #63) into the branch; kept both CURRENT entries and raised the all-JS budget to 1119 kB for both changes"],"decisions":["no new decisions"],"evidence":["size-limit passes; 1,689 unit tests pass; types clean"],"evidence_class":"observed","next_action":"auto-merge lands it when CI passes; then open a shuttle notice on a phone with the voice on","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0021","timestamp":"2026-11-08T23:10:37Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"03e861b84198a860455dd7c01c5ed5e79cf04474740d11f5308f3df386494da7","request_id":"d703bcd44bdc4dee88ec64a7c38dfa24","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0021"} -->
+
+Completed:
+- Merged main (with #63) into the branch; kept both CURRENT entries and raised the all-JS budget to 1119 kB for both changes
+
+Evidence:
+- size-limit passes; 1,689 unit tests pass; types clean
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- auto-merge lands it when CI passes; then open a shuttle notice on a phone with the voice on
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
