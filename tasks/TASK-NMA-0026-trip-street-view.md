@@ -77,6 +77,29 @@ Blocked/uncertain:
 Next:
 - merge the pull request, then watch a trip preview on a phone
 
+### 2026-11-08 23:10:43 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["Fixed the PR title to a Conventional Commit and merged main (with #63); all-JS budget 1111 kB"],"decisions":["no new decisions"],"evidence":["size-limit passes; 1,687 unit tests pass; types clean"],"evidence_class":"observed","next_action":"auto-merge lands it when CI passes; if #61 lands first, merge main again for the size budget and CURRENT.md","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0026","timestamp":"2026-11-08T23:10:43Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6734f3bcb548d34c8ea55c9b68eab32ee32543f5bd4a96460f16f33913276e49","request_id":"e7ae3b7e84a4485c98afe8f991fafcc7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0026"} -->
+
+Completed:
+- Fixed the PR title to a Conventional Commit and merged main (with #63); all-JS budget 1111 kB
+
+Evidence:
+- size-limit passes; 1,687 unit tests pass; types clean
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- auto-merge lands it when CI passes; if #61 lands first, merge main again for the size budget and CURRENT.md
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
