@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { expectLayout } from "./layout";
+import { expectLayout, SIZES } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
@@ -75,6 +75,62 @@ test("escalators out at one station are one card, and the Lines list counts what
   await card.click();
   await expect(card).toContainText("mezzanine to 7 Av & 34 St (NE corner), both ways");
 });
+
+// Owner, 2026-11-07: notices read as paragraphs, and "Other ways" was no use. A tapped notice is its stretch
+// of line, read aloud a step at a time, with Stop and the MTA's words one tap away.
+for (const size of SIZES) {
+  test(`a skip notice opens as a line diagram that walks its steps at ${size.width}×${size.height}`, async ({ page }) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    // A voice that records what it is asked to say and never finishes, so the walk holds on its first step.
+    await page.addInitScript(() => {
+      const said: string[] = [];
+      Object.assign(window, { __said: said });
+      Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+        speaking: false, paused: false, pending: false, getVoices: () => [], addEventListener: () => undefined, removeEventListener: () => undefined,
+        speak: (u: SpeechSynthesisUtterance) => said.push(u.text), cancel: () => undefined, pause: () => undefined, resume: () => undefined,
+      } });
+    });
+    await mockNetwork(page);
+    const body = JSON.parse(liveNow()) as { alerts: { alerts: unknown[] } };
+    const names = ["Christopher St-Stonewall", "Houston St"];
+    body.alerts.alerts.push({
+      id: "lmm:planned_work:e2e", kind: "planned", type: "Planned - Stops Skipped", reroute: true, agency: "MTASBWY", routes: ["2"], stops: ["133S", "134S"],
+      text: "In Manhattan, downtown [2] skips Christopher St-Stonewall and Houston St",
+      description: "For service to these stations, take the [2] to Canal St and transfer to an uptown [1].\n\nFor service from these stations, take the [2] to 14 St and transfer to a downtown [1].",
+      changes: [{ alertId: "lmm:planned_work:e2e", route: "2", kind: "skip", names, toward: "Downtown", notice: "Skipped Downtown-bound" }], skipNames: names,
+    });
+    await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(body) }));
+    await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+    await page.goto("/");
+    await page.getByRole("button", { name: "My train" }).click({ timeout: slow(15_000) });
+    await page.getByRole("button", { name: /^7 Avenue Express/ }).first().click({ timeout: slow(15_000) });
+    const panel = page.getByTestId("line-panel");
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Other ways" })).toHaveCount(0);
+    const notice = panel.locator("[data-notice]", { hasText: "skips" });
+    await notice.scrollIntoViewIfNeeded();
+    await notice.click();
+
+    const diagram = panel.getByTestId("notice-diagram");
+    await expect(diagram).toBeVisible();
+    // Downtown, top to bottom: 14 St, the two skipped stops, Canal St.
+    await expect(diagram.locator("[data-stop]")).toHaveText([/14 Street/, /Christopher Street-Stonewall.*Skipped/, /Houston Street.*Skipped/, /Canal Street/]);
+    await expect(panel.getByTestId("notice-step").first()).toHaveText("Downtown 2 trains skip Christopher Street-Stonewall and Houston Street.");
+    // The tap started the walk: the first step's stations are lit, and Stop ends it.
+    const walk = panel.getByTestId("notice-walk");
+    await expect(walk).toHaveAttribute("data-step", "0");
+    await expect(diagram.locator("[data-lit]")).toHaveCount(2);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.join(" "))).toContain("Christopher Street-Stonewall");
+    await expectLayout(page);
+    await walk.getByRole("button", { name: "Stop" }).click();
+    await expect(walk).not.toHaveAttribute("data-step");
+    await expect(walk.getByRole("button", { name: "Read it to me" })).toBeVisible();
+    // The MTA's own words stay one tap away.
+    await walk.getByRole("button", { name: "Full notice" }).click();
+    await expect(walk.getByTestId("notice-full")).toContainText("transfer to an uptown 1");
+    await expectLayout(page);
+  });
+}
 
 // Owner, 2026-10-27: on a weekday the 7's weekend work was nowhere on the map. "This weekend" shows it.
 for (const [width, height] of [[375, 667], [1280, 800]]) {

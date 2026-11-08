@@ -275,7 +275,7 @@ function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: stri
   if (shuttle) {
     const sameEnds = !bus || bus.every((n) => ends.some((e) => sameStation(n, e) || sameStation(e, n)));
     const busIds = bused.length ? bused : closed;
-    steps.push({ text: sameEnds ? "Take the free shuttle bus instead." : `Take the free shuttle bus between ${said(bus![0])} and ${said(bus![1])}.`, ids: [...busIds, ...[...changeIds].filter((id) => !busIds.includes(id))] });
+    steps.push({ text: sameEnds ? "Take the free shuttle bus instead." : `Take the free shuttle bus between ${said(bus[0])} and ${said(bus[1])}.`, ids: [...busIds, ...[...changeIds].filter((id) => !busIds.includes(id))] });
   }
   for (const t of changes) steps.push({ text: t.text, ids: idsOf(sys, t, onLine) });
   return { kind: shuttle ? "shuttle" : "suspended", heading: `No ${route} trains`, rows, steps };
