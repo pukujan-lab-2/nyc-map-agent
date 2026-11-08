@@ -54,6 +54,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-08 05:11:22 UTC — agent:claude-code/707af18f-ccd3-4e8f-917c-cd07000185b4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/707af18f-ccd3-4e8f-917c-cd07000185b4","blocked":[],"changed":["src/features/agent (usePlayer, flythrough, stationStairs, tripCamera), src/lib/transit/stationXray.ts, .size-limit.json"],"completed":["The trip preview walked overhead and slid through walls into the station; it now walks at eye level, goes down the mapped stairs with x-ray, and eases to and from the overhead camera at board and alight"],"decisions":["no new decisions"],"evidence":["unit tests (stationStairs.test.ts, tripCamera.test.ts) pass; a headless run of the e2e trip fixture showed an 85 degree eye on the walks, the Union Sq stairs in x-ray, an overhead ride and a plain switch at Grand Central"],"next_action":"merge the pull request, then watch a trip preview on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0026","timestamp":"2026-11-08T05:11:22Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"7fd17d50a0f6a9a356ea9f6f642b35597e24e88533b7248e9513fb3ff7db8ffe","request_id":"4f0c6464299141c2847a1c81a11761aa","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0026"} -->
+
+Completed:
+- The trip preview walked overhead and slid through walls into the station; it now walks at eye level, goes down the mapped stairs with x-ray, and eases to and from the overhead camera at board and alight
+
+Evidence:
+- unit tests (stationStairs.test.ts, tripCamera.test.ts) pass; a headless run of the e2e trip fixture showed an 85 degree eye on the walks, the Union Sq stairs in x-ray, an overhead ride and a plain switch at Grand Central
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/agent (usePlayer, flythrough, stationStairs, tripCamera), src/lib/transit/stationXray.ts, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- merge the pull request, then watch a trip preview on a phone
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
