@@ -275,17 +275,13 @@ export async function installCity3d(map: MapLibreMap): Promise<void> {
     map.setLayoutProperty(HYDRANTS_3D_LAYER, "visibility", map.getLayoutProperty("city3d-props", "visibility") ?? "none");
     map.setFilter("city3d-props", ["!=", ["get", "kind"], "hydrant"]);
   }
-  // Motorway and trunk overpasses lifted off the street (three.js); the tall decks above stay the tiles'.
-  const { createOverpassLayer, OVERPASSES_LAYER } = await import("./threeLayer");
-  if (!map.getLayer(OVERPASSES_LAYER)) {
-    map.addLayer(createOverpassLayer(), beforeId);
-    map.setLayoutProperty(OVERPASSES_LAYER, "visibility", map.getLayoutProperty("city3d-bridges", "visibility") ?? "none");
-  }
-  // Hero landmarks (glTF); the tiles leave their footprints out.
-  const { createLandmarksLayer, LANDMARKS_3D_LAYER } = await import("./threeLayer");
-  if (!map.getLayer(LANDMARKS_3D_LAYER)) {
-    map.addLayer(createLandmarksLayer(), beforeId);
-    map.setLayoutProperty(LANDMARKS_3D_LAYER, "visibility", map.getLayoutProperty("city3d-walls", "visibility") ?? "none");
+  // Hero landmarks (glTF), whose footprints the tiles leave out, and motorway
+  // and trunk overpasses lifted off the street (the tall decks stay the tiles').
+  const { createLandmarksLayer, createOverpassLayer } = await import("./threeLayer");
+  for (const [id, make] of [["city3d-landmarks", createLandmarksLayer], ["city3d-overpasses", createOverpassLayer]] as const) {
+    if (map.getLayer(id)) continue;
+    map.addLayer(make(), beforeId);
+    map.setLayoutProperty(id, "visibility", map.getLayoutProperty("city3d-walls", "visibility") ?? "none");
   }
 }
 
