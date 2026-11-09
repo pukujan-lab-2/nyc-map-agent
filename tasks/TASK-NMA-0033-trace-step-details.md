@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-09 15:52:54 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge the pull request, then ask about Fulton Street and read its trace","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0033","timestamp":"2026-11-09T15:52:54Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f9ad2f96180b9d458ed6a2a02a69c5feb2ff8e34436572df0169a515450ab5e1","request_id":"ae42fedbb6224cf78cbd739c820f7329","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0033"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then ask about Fulton Street and read its trace
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
