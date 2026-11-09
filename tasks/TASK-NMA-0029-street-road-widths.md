@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-09 04:39:16 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["src/lib/map/basemap.ts, src/lib/map/three/overpasses.ts, src/lib/map/city3d.ts, src/components/MapView.tsx"],"completed":["Roads at NYC widths by class; motorway and trunk overpasses lifted to 6 m with ramps and piers; walking skips raised decks"],"decisions":["no new decisions"],"evidence":["vitest 1702 passed; e2e street-roads and street-xray pass; before/after screenshots at E 7th St, 5th Ave, Park Ave under the BQE and South St under the FDR"],"next_action":"Merge the pull request, then walk under the FDR at South St on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0029","timestamp":"2026-11-09T04:39:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e4bf3ff55111c59f96b8f09c1fc68c0c95c6e57f2e35f76d1465e266de544ad6","request_id":"417e6a255b974c9bb78621e74ef52af5","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0029"} -->
+
+Completed:
+- Roads at NYC widths by class; motorway and trunk overpasses lifted to 6 m with ramps and piers; walking skips raised decks
+
+Evidence:
+- vitest 1702 passed; e2e street-roads and street-xray pass; before/after screenshots at E 7th St, 5th Ave, Park Ave under the BQE and South St under the FDR
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/basemap.ts, src/lib/map/three/overpasses.ts, src/lib/map/city3d.ts, src/components/MapView.tsx
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then walk under the FDR at South St on a phone
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
