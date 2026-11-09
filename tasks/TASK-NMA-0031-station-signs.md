@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-09 06:53:40 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge the pull request, then walk a station on a phone and fix the floor and ceiling edge gaps","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0031","timestamp":"2026-11-09T06:53:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4f7a1f6688958271df1e4fe342d6fa5ffb572ace610d78a1f43250d631036632","request_id":"40b0a996ced04c00bc3b52f6de371c2b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0031"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then walk a station on a phone and fix the floor and ceiling edge gaps
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
