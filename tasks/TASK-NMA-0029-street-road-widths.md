@@ -76,6 +76,29 @@ Blocked/uncertain:
 Next:
 - Merge the pull request, then walk under the FDR at South St on a phone
 
+### 2026-11-09 04:59:58 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":[".size-limit.json"],"completed":["Raised the all-JS size budget to 1126 kB for the lazy overpass layer"],"decisions":["no new decisions"],"evidence":["size job failed by 1.27 kB on the first run"],"next_action":"Merge the pull request, then walk under the FDR at South St on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0029","timestamp":"2026-11-09T04:59:58Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"21346bb9d770967b86e481fc4fe7c587b4f2386fc9642716a474230829e870a7","request_id":"7cc3d62224b948d3a9ce8fd6119016a6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0029"} -->
+
+Completed:
+- Raised the all-JS size budget to 1126 kB for the lazy overpass layer
+
+Evidence:
+- size job failed by 1.27 kB on the first run
+
+Decisions:
+- no new decisions
+
+Changed:
+- .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then walk under the FDR at South St on a phone
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
