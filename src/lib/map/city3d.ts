@@ -29,7 +29,7 @@ export const FACADES = [
 const SOURCE = "city3d";
 const STOREFRONT_M = 4.5;
 
-export const CITY3D_LAYERS = ["city3d-storefront", "city3d-walls", "city3d-roofs", "city3d-props", "city3d-bridges", "city3d-signs", "city3d-furniture", "city3d-hydrants", "city3d-landmarks", "city3d-storefront-signs"] as const;
+export const CITY3D_LAYERS = ["city3d-storefront", "city3d-walls", "city3d-roofs", "city3d-props", "city3d-bridges", "city3d-overpasses", "city3d-signs", "city3d-furniture", "city3d-hydrants", "city3d-landmarks", "city3d-storefront-signs"] as const;
 
 /** Source layers only three.js reads; an invisible style layer keeps them in overzoomed tiles. */
 export const KEEP_SOURCE_LAYERS = ["storefronts", "signs"] as const;
@@ -274,6 +274,12 @@ export async function installCity3d(map: MapLibreMap): Promise<void> {
     map.addLayer(createHydrantLayer(), beforeId);
     map.setLayoutProperty(HYDRANTS_3D_LAYER, "visibility", map.getLayoutProperty("city3d-props", "visibility") ?? "none");
     map.setFilter("city3d-props", ["!=", ["get", "kind"], "hydrant"]);
+  }
+  // Motorway and trunk overpasses lifted off the street (three.js); the tall decks above stay the tiles'.
+  const { createOverpassLayer, OVERPASSES_LAYER } = await import("./threeLayer");
+  if (!map.getLayer(OVERPASSES_LAYER)) {
+    map.addLayer(createOverpassLayer(), beforeId);
+    map.setLayoutProperty(OVERPASSES_LAYER, "visibility", map.getLayoutProperty("city3d-bridges", "visibility") ?? "none");
   }
   // Hero landmarks (glTF); the tiles leave their footprints out.
   const { createLandmarksLayer, LANDMARKS_3D_LAYER } = await import("./threeLayer");
