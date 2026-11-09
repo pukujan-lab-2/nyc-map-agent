@@ -99,6 +99,29 @@ Blocked/uncertain:
 Next:
 - Merge the pull request, then walk under the FDR at South St on a phone
 
+### 2026-11-09 05:20:41 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["src/lib/map/city3d.ts, .size-limit.json"],"completed":["city3d chunk back near its budget; cap 2.9 kB"],"decisions":["no new decisions"],"evidence":["size-limit locally: no budget exceeded"],"next_action":"Merge the pull request, then walk under the FDR at South St on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0029","timestamp":"2026-11-09T05:20:41Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e323b5a24f70ed482511a4b0a781dbe081691a6c50145bf9182e5edb153eca60","request_id":"e4cd8df915fa493bad1d70f8f59bb075","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0029"} -->
+
+Completed:
+- city3d chunk back near its budget; cap 2.9 kB
+
+Evidence:
+- size-limit locally: no budget exceeded
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/city3d.ts, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then walk under the FDR at South St on a phone
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
