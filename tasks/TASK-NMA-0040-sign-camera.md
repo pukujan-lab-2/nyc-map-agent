@@ -1,11 +1,11 @@
 # TASK-NMA-0040 — Sign Camera
 
-<!-- continuity:task {"acceptance":["matchSign finds the right sign from partial and misread words, unit tested","the sign camera opens behind ?flags=+signCamera and passes the layout bar at four sizes","issue #88 records what was and was not tested on a phone"],"depends_on":[],"goal":"Tell a rider where they are in a station and which way they face from a sign the camera reads","id":"NMA-0040","issue_url":"https://github.com/pukujan-lab-2/nyc-map-agent/issues/88","next_action":"after pull request #87 merges, pass its street corner names to the sign camera, then try /?flags=+signCamera on a phone at Fulton St","owner":"unassigned","priority":"P2","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"GPS is weak below the street and slow to settle at the top of the exit stairs"} -->
+<!-- continuity:task {"acceptance":["matchSign finds the right sign from partial and misread words, unit tested","the sign camera opens behind ?flags=+signCamera and passes the layout bar at four sizes","issue #88 records what was and was not tested on a phone"],"depends_on":[],"goal":"Tell a rider where they are in a station and which way they face from a sign the camera reads","id":"NMA-0040","issue_url":"https://github.com/pukujan-lab-2/nyc-map-agent/issues/88","next_action":"try /?flags=+signCamera on a phone at Fulton St and read about 15 photos of real signs with the text reader","owner":"unassigned","priority":"P2","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"GPS is weak below the street and slow to settle at the top of the exit stairs"} -->
 
 - Status: active
 - Owner: unassigned
 - Priority: P2
-- Depends on: pull request #87 (street corner names on Exit signs) for a read to pin a spot
+- Depends on: none (pull request #87, which names the corner on Exit signs, has merged)
 
 ## Goal
 

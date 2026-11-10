@@ -5,10 +5,13 @@ import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
 import { sharedCoords } from "@/lib/geo/sharedLocation";
 import { useAppLang } from "@/lib/i18n/appLang";
+import { cornerLine } from "@/lib/map/cornerLine";
 import { getMapInstance } from "@/lib/map/mapInstance";
+import { readMap } from "@/lib/map/mapRead";
 import { bearingBetween, exitToward, facingFrom, matchSign, turnBetween, type SignMatch } from "@/lib/map/signMatch";
 import { stationAt } from "@/lib/map/stationNear";
 import { placeSigns, type Sign } from "@/lib/map/stationSigns";
+import { toLngLat } from "@/lib/map/stationWalk";
 import { watchCompass } from "./compass";
 import { FRAME_W, openReader, type SignReader } from "./reader";
 import { signText } from "./text";
@@ -24,10 +27,9 @@ type Place = { name: string; signs: Sign[] };
 
 /** A sign as its face reads: "Exit · Broadway & Fulton St", "Fulton St A C", "Uptown 4 5". Never translated. */
 function label(s: Sign): string {
-  const words = (s as Sign & { words?: string }).words;
   const bullets = s.routes.map((r) => r.short).join(" ");
-  if (s.kind === "exit") return words ? `Exit · ${words}` : "Exit";
-  return [s.kind === "name" ? s.name : words, bullets].filter(Boolean).join(" ");
+  if (s.kind === "exit") return s.words ? `Exit · ${s.words}` : "Exit";
+  return [s.kind === "name" ? s.name : s.words, bullets].filter(Boolean).join(" ");
 }
 
 /**
@@ -72,10 +74,14 @@ export default function SignCamera() {
 
   /** The station at a point: where you shared you are, else the middle of the map. */
   const locate = useCallback(async (at?: { lon: number; lat: number }) => {
-    const mid = getMapInstance()?.getCenter();
+    const map = getMapInstance();
+    const mid = map?.getCenter();
     const c = at ?? sharedCoords() ?? (mid ? { lon: mid.lng, lat: mid.lat } : null);
     const st = c ? await stationAt(c.lon, c.lat) : null;
-    const next = st ? { name: st.signs.stations[0]?.name ?? "", signs: placeSigns(st.model, st.signs) } : null;
+    // A street exit's sign names its corner, from the streets the map has drawn there; without them it just says Exit.
+    const streets = map ? readMap(map) : null;
+    const corner = st && streets ? (x: number, y: number) => cornerLine(streets.placeAt(toLngLat(st.model, x, y))) : undefined;
+    const next = st ? { name: st.signs.stations[0]?.name ?? "", signs: placeSigns(st.model, st.signs, corner) } : null;
     placeRef.current = next;
     setPlace(next);
     return next;

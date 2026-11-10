@@ -44,7 +44,8 @@ for (const size of SIZES) {
 
     // Signs that hang in one place give the spot, and the exit with it.
     await feed(page, CLARK, "Exit");
-    await expect(page.getByTestId("sign-near")).toHaveText("Exit", { timeout: slow(20_000) });
+    // With street names on the map the sign also names its corner ("Exit · Clark St & Henry St").
+    await expect(page.getByTestId("sign-near")).toHaveText(/^Exit/, { timeout: slow(20_000) });
     await expect(sheet).toContainText("You are near");
     await expect(page.getByTestId("sign-exit")).toContainText("This exit");
     await expectLayout(page);

@@ -42,9 +42,9 @@ export interface SignMatch<S extends ReadableSign = ReadableSign> {
 }
 
 /** Signs this close together count as one place. */
-export const SPOT_M = 12;
+const SPOT_M = 12;
 /** Below this the read is not called a match. */
-export const MIN_SCORE = 0.5;
+const MIN_SCORE = 0.5;
 /** Wordings within this of the best are equals. */
 const TIE = 0.05;
 /** A sign this much nearer `near` than the next equal is taken as the one. */
