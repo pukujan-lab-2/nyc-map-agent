@@ -451,7 +451,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
       alive = false;
       cancelAnimationFrame(rafId.current);
     };
-  }, [pb.status, pb.seg, pb.run, reduced, leaveEye, showStairs, showInside, hideInside]);
+  }, [pb.status, pb.seg, pb.run, reduced, leaveEye, showStairs, showInside, hideInside, inLang]);
 
   // Where the trip ended: the street and what to look for at the destination.
   useEffect(() => {
