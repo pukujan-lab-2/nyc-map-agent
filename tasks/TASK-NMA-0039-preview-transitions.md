@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - Set the size budget once measured, then watch a preview in Chinese on the live site
 
+### 2026-11-10 23:01:28 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge the pull request, then watch a preview in Chinese on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0039","timestamp":"2026-11-10T23:01:28Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1c59f000c802989eb47a11ecb8bd08b5bc4543cfa4db9f79fc9ae0715c4246d3","request_id":"d3ea3a785f094782a0f7e833d5b80019","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0039"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then watch a preview in Chinese on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
