@@ -53,3 +53,26 @@ Someone standing in a station points their phone at a sign and the app says wher
 ## Checkpoint log
 
 No checkpoints yet.
+
+### 2026-11-10 23:06:51 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["Not tested on any phone or on photos of real signs"],"changed":["src/lib/map/signMatch.ts, src/features/signcam/, e2e/sign-camera.spec.ts, flag registry, size limits, vite chunk name, tesseract.js 7.0.0"],"completed":["The sign matching function with 29 unit tests, and a camera screen behind the signCamera flag that passes the layout bar at four sizes"],"decisions":["Ship the screen behind a flag that is off by default, because the text reader missed every dim rendered sign and nothing was tried on a phone"],"evidence":["Unit tests, typecheck, boundary, licence and size checks pass locally; e2e/sign-camera.spec.ts passes at 320, 375, 390 and 1280 px; issue #88 holds the reader's results on rendered signs"],"next_action":"Try /?flags=+signCamera on a phone at Fulton St and read about 15 photos of real signs with the text reader","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0040","timestamp":"2026-11-10T23:06:51Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f16f80e7101655cf0d55fb6158fe6b8f88c903c6217f6ea2ea810a98f4b68b1a","request_id":"e120224005354230acf4828770b07272","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0040"} -->
+
+Completed:
+- The sign matching function with 29 unit tests, and a camera screen behind the signCamera flag that passes the layout bar at four sizes
+
+Evidence:
+- Unit tests, typecheck, boundary, licence and size checks pass locally; e2e/sign-camera.spec.ts passes at 320, 375, 390 and 1280 px; issue #88 holds the reader's results on rendered signs
+
+Decisions:
+- Ship the screen behind a flag that is off by default, because the text reader missed every dim rendered sign and nothing was tried on a phone
+
+Changed:
+- src/lib/map/signMatch.ts, src/features/signcam/, e2e/sign-camera.spec.ts, flag registry, size limits, vite chunk name, tesseract.js 7.0.0
+
+Blocked/uncertain:
+- Not tested on any phone or on photos of real signs
+
+Next:
+- Try /?flags=+signCamera on a phone at Fulton St and read about 15 photos of real signs with the text reader
