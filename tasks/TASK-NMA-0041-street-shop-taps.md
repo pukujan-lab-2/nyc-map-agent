@@ -59,6 +59,30 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-10 23:23:10 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["Brand logos on signs still depend on the public OpenStreetMap query service, which was not answering on 2026-11-10 (left open in the record of issue 92)"],"changed":["src/lib/map/streetPick.ts, eyePick.ts, storefrontPick.ts, storefrontLinks.ts, three/storefronts.ts; src/components/MapView.tsx, MapPanel.tsx, StorefrontCard.tsx, StreetMiniMap.tsx"],"completed":["Street-level taps follow the camera's ray: a shop's sign or window opens that shop, and a bus stop pole behind the walker no longer answers","The shop card links to the street photo facing the shop and to the shop on Google Maps"],"decisions":["no new decisions"],"evidence":["e2e/street-shops.spec.ts passes at 320x568, 375x667, 390x844 and 1280x800 with the layout bar; 1,758 unit tests pass"],"next_action":"Merge the pull request, then tap the Gong Cha sign at Broadway and Fulton Street on the live site at phone size","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0041","timestamp":"2026-11-10T23:23:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"46c4d34bc5cd7914a41d4f8573ad32f6d4f71814a8a07e8be15037d8c76ffc6c","request_id":"2eae37d515f7416abe2095302a9eaaee","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0041"} -->
+
+Completed:
+- Street-level taps follow the camera's ray: a shop's sign or window opens that shop, and a bus stop pole behind the walker no longer answers
+- The shop card links to the street photo facing the shop and to the shop on Google Maps
+
+Evidence:
+- e2e/street-shops.spec.ts passes at 320x568, 375x667, 390x844 and 1280x800 with the layout bar; 1,758 unit tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/streetPick.ts, eyePick.ts, storefrontPick.ts, storefrontLinks.ts, three/storefronts.ts; src/components/MapView.tsx, MapPanel.tsx, StorefrontCard.tsx, StreetMiniMap.tsx
+
+Blocked/uncertain:
+- Brand logos on signs still depend on the public OpenStreetMap query service, which was not answering on 2026-11-10 (left open in the record of issue 92)
+
+Next:
+- Merge the pull request, then tap the Gong Cha sign at Broadway and Fulton Street on the live site at phone size
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
