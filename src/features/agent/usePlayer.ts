@@ -7,7 +7,6 @@ import { ZoomKeeper, bindPreviewRelease, followMode, followRig, setFollowMode, s
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 import { readMap } from "@/lib/map/mapRead";
 import { getAppLang } from "@/lib/i18n/appLang";
-import { translateLines } from "@/lib/i18n/translateLines";
 import { approachBearing } from "@/lib/map/walk";
 import { getStreetXray, setStreetXray } from "@/lib/transit/streetXray";
 import { setXray as setStationXray } from "@/lib/transit/stationXray";
@@ -144,7 +143,8 @@ export function usePlayer(onCallout?: (text: string) => void) {
     if (lang === "en") return;
     // What is said or shown as a step: each scene's label and its spoken callouts. Stop names stay as the signs read.
     const lines = t.flatMap((seg) => [seg.label, ...seg.callouts.filter((c) => !c.quiet).map((c) => c.text)]);
-    void translateLines(lines, lang).then((got) => {
+    // Loaded only for another language, so English previews carry none of it.
+    void import("@/lib/i18n/translateLines").then(({ translateLines }) => translateLines(lines, lang)).then((got) => {
       if (pbRef.current.tripId !== tripId || !got.size) return;
       words.current = got;
       // The step on screen now, said again in its language.
