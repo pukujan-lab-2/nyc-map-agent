@@ -212,6 +212,29 @@ Blocked/uncertain:
 Next:
 - Merge the follow-up pull request, then play a preview in Chinese on the live site once more
 
+### 2026-11-11 00:29:55 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge the pull request, then check it on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0039","timestamp":"2026-11-11T00:29:55Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b1a033874a8efe0152eb7e5bebf69aea191c374f79d775bf96890dbd261651a0","request_id":"e9b22e57a5aa43f9b5da3042d3b42cf7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0039"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then check it on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
