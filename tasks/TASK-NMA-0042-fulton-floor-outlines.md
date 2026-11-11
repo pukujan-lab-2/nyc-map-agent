@@ -55,6 +55,52 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-11 01:41:04 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["scripts/xray-overrides/fulton.json, public/transit/xray.json, src/lib/map/stationWalk.ts, scripts/xray-overrides.ts, src/features/transit/xray.ts, src/features/agent/stationStairs.ts"],"completed":["Fulton St has nine traced rooms and a closed corridor outline is read as a room"],"decisions":["no new decisions"],"evidence":["pnpm build:xray-overrides passes its reachability check; 656 unit tests for the map, assistant, transit and scripts pass; preview recorded at 390x844 before and after in a local build"],"next_action":"Merge the pull request, then watch the Fulton St walk on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0042","timestamp":"2026-11-11T01:41:04Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"30042d7ecab7ab1d7417f15ee2291ad13a95e8c8314442506e8838e6a62f48dd","request_id":"2e85476c86e446e7b060659c75c9649c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0042"} -->
+
+Completed:
+- Fulton St has nine traced rooms and a closed corridor outline is read as a room
+
+Evidence:
+- pnpm build:xray-overrides passes its reachability check; 656 unit tests for the map, assistant, transit and scripts pass; preview recorded at 390x844 before and after in a local build
+
+Decisions:
+- no new decisions
+
+Changed:
+- scripts/xray-overrides/fulton.json, public/transit/xray.json, src/lib/map/stationWalk.ts, scripts/xray-overrides.ts, src/features/transit/xray.ts, src/features/agent/stationStairs.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then watch the Fulton St walk on the live site
+
+### 2026-11-11 01:41:14 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["scripts/xray-overrides/fulton.json, public/transit/xray.json, src/lib/map/stationWalk.ts, scripts/xray-overrides.ts, src/features/transit/xray.ts, src/features/agent/stationStairs.ts"],"completed":["Fulton St has nine traced rooms and a closed corridor outline is read as a room"],"decisions":["no new decisions"],"evidence":["pnpm build:xray-overrides passes its reachability check; 656 unit tests for the map, assistant, transit and scripts pass; preview recorded at 390x844 before and after in a local build"],"next_action":"Merge the pull request, then watch the Fulton St walk on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0042","timestamp":"2026-11-11T01:41:14Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"30042d7ecab7ab1d7417f15ee2291ad13a95e8c8314442506e8838e6a62f48dd","request_id":"ee698ed38f144c0c9d89ad854742f80c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0042"} -->
+
+Completed:
+- Fulton St has nine traced rooms and a closed corridor outline is read as a room
+
+Evidence:
+- pnpm build:xray-overrides passes its reachability check; 656 unit tests for the map, assistant, transit and scripts pass; preview recorded at 390x844 before and after in a local build
+
+Decisions:
+- no new decisions
+
+Changed:
+- scripts/xray-overrides/fulton.json, public/transit/xray.json, src/lib/map/stationWalk.ts, scripts/xray-overrides.ts, src/features/transit/xray.ts, src/features/agent/stationStairs.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then watch the Fulton St walk on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
