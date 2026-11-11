@@ -60,6 +60,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-11 06:32:01 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["src/lib/map/stationWalk.ts, src/lib/map/three/stationScene.ts, src/lib/map/stationWalk.test.ts, .size-limit.json"],"completed":["Stairwell edges in ceilings and floors follow the stair's outline, with rims, a floor head strip and filled bends"],"decisions":["no new decisions"],"evidence":["1,819 unit tests passed; typecheck and lint clean; 26 under-stair and climb views at Fulton St compared before and after"],"next_action":"Merge the pull request, then watch the 4 train trip to Fulton St on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0047","timestamp":"2026-11-11T06:32:01Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"214feab893cf48b6e69cda38dcae97e4b2aefbf5a0170e0b1f1010ec2dd477b2","request_id":"9777fef40d874f189ef29da5baba0625","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0047"} -->
+
+Completed:
+- Stairwell edges in ceilings and floors follow the stair's outline, with rims, a floor head strip and filled bends
+
+Evidence:
+- 1,819 unit tests passed; typecheck and lint clean; 26 under-stair and climb views at Fulton St compared before and after
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/stationWalk.ts, src/lib/map/three/stationScene.ts, src/lib/map/stationWalk.test.ts, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then watch the 4 train trip to Fulton St on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
