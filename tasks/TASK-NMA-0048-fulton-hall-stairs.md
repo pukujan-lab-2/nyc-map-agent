@@ -59,6 +59,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-11 07:31:56 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["src/lib/map/three/stationScene.ts"],"completed":["Fulton St's hall shows a stairwell with a parapet where it showed a box, and the walk onto the next stair stays clear of its side walls"],"decisions":["no new decisions"],"evidence":["Views every 3 m along the route to the E exit rendered before and after; 1,819 unit tests passed; typecheck and lint clean"],"next_action":"Merge the pull request, then record the 4 train trip to Fulton St on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0048","timestamp":"2026-11-11T07:31:56Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9df0776bb1585462d32e6ec507c86b2d9b4101cb15385b8d2256cc0a29787ba2","request_id":"ab841934cb6c4c9194ef9f46f158fe1b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0048"} -->
+
+Completed:
+- Fulton St's hall shows a stairwell with a parapet where it showed a box, and the walk onto the next stair stays clear of its side walls
+
+Evidence:
+- Views every 3 m along the route to the E exit rendered before and after; 1,819 unit tests passed; typecheck and lint clean
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/three/stationScene.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then record the 4 train trip to Fulton St on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
