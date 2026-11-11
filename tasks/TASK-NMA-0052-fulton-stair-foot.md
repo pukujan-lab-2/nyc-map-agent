@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-11 15:02:07 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge the pull request, then record the 4 train trip to Fulton St and watch 50 to 66 s","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0052","timestamp":"2026-11-11T15:02:07Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d8c56ec5bed588f87ceb3b0f6d185b14cd928a6c048141fd526e14a05d40b899","request_id":"baaa7fb8afe84dc9be7c114281977321","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0052"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then record the 4 train trip to Fulton St and watch 50 to 66 s
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
