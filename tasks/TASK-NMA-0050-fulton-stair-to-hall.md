@@ -62,3 +62,26 @@ Starting revision d13b69e. Ask the live app "take the 4 train from Grand Central
 ## Checkpoint log
 
 No checkpoints yet.
+
+### 2026-11-11 11:02:04 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["src/lib/map/stationWalk.ts, src/lib/map/three/stationScene.ts"],"completed":["The floor round a stair follows the stair as drawn, room walls open where a stair going up crosses them, and a stair's own ceiling is drawn from below only under the floor above"],"decisions":["no new decisions"],"evidence":["Replaying the player's camera along the live route shows a clean opening and no wall across the stair down to the hall; 1,820 unit tests pass"],"next_action":"Merge the pull request, then record the 4 train trip to Fulton St on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0050","timestamp":"2026-11-11T11:02:04Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6949d1433b28ba50419f0c0f43157a4f3c56baf04888c1ad5613ae729a7ec500","request_id":"0cf89b03053e4c4798be41d5d5b34804","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0050"} -->
+
+Completed:
+- The floor round a stair follows the stair as drawn, room walls open where a stair going up crosses them, and a stair's own ceiling is drawn from below only under the floor above
+
+Evidence:
+- Replaying the player's camera along the live route shows a clean opening and no wall across the stair down to the hall; 1,820 unit tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/stationWalk.ts, src/lib/map/three/stationScene.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then record the 4 train trip to Fulton St on the live site
