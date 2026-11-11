@@ -1,6 +1,6 @@
-# TASK-NMA-0043 — Line Directory Signs
+# TASK-NMA-0044 — Line Directory Signs
 
-<!-- continuity:task {"acceptance":["replace this with observable, task-specific acceptance checks"],"depends_on":[],"goal":"Point to each line from where riders come into a station","id":"NMA-0043","issue_url":"https://github.com/pukujan-lab-2/nyc-map-agent/issues/105","next_action":"define scope and observable acceptance checks, then begin bounded work","owner":"unassigned","priority":"P1","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"Only the stair down to a platform named its lines, so nothing at the entrance said which way each line was"} -->
+<!-- continuity:task {"acceptance":["replace this with observable, task-specific acceptance checks"],"depends_on":[],"goal":"Point to each line from where riders come into a station","id":"NMA-0044","issue_url":"https://github.com/pukujan-lab-2/nyc-map-agent/issues/105","next_action":"define scope and observable acceptance checks, then begin bounded work","owner":"unassigned","priority":"P1","protocol_version":"0.1.0-draft","schema":"project-continuity.task.v1","status":"active","why":"Only the stair down to a platform named its lines, so nothing at the entrance said which way each line was"} -->
 
 - Status: active
 - Owner: unassigned
@@ -53,8 +53,8 @@ No checkpoints yet.
 
 ### 2026-11-11 04:27:37 UTC — claude-code
 
-<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge the pull request, then look at Fulton St's entrances on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0043","timestamp":"2026-11-11T04:27:37Z"} -->
-<!-- continuity:checkpoint-operation {"payload_sha256":"d3ed5939f33af9d418ebc9fee667e15583c58dae667738ac93c46a26cecb17f1","request_id":"1ef501ca5fc94590bd5344bb7aa9593a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0043"} -->
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge the pull request, then look at Fulton St's entrances on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0044","timestamp":"2026-11-11T04:27:37Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d3ed5939f33af9d418ebc9fee667e15583c58dae667738ac93c46a26cecb17f1","request_id":"1ef501ca5fc94590bd5344bb7aa9593a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0044"} -->
 
 Completed:
 - work completed
