@@ -60,3 +60,26 @@ Starting revision 5c0934e. Ask the live app "take the 4 train from Grand Central
 ## Checkpoint log
 
 No checkpoints yet.
+
+### 2026-11-11 08:14:34 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["src/features/agent/flythrough.ts, src/lib/map/three/stationScene.ts"],"completed":["The trip preview's eye looks 1.5 m ahead inside a station, and a stair's side is open over its last half metre of rise where a floor runs beside it"],"decisions":["no new decisions"],"evidence":["Replaying the player's camera up the stair out of Fulton St's hall shows no wall at arm's length; 1,819 unit tests pass"],"next_action":"Merge the pull request, then record the 4 train trip to Fulton St on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0049","timestamp":"2026-11-11T08:14:34Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"0e11fbf4635f5829eefca002e4e33d49badea10e87a49efda77199e86814bc38","request_id":"2cbc865ee5f9432293e68d7d9a8e373d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0049"} -->
+
+Completed:
+- The trip preview's eye looks 1.5 m ahead inside a station, and a stair's side is open over its last half metre of rise where a floor runs beside it
+
+Evidence:
+- Replaying the player's camera up the stair out of Fulton St's hall shows no wall at arm's length; 1,819 unit tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/agent/flythrough.ts, src/lib/map/three/stationScene.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then record the 4 train trip to Fulton St on the live site
