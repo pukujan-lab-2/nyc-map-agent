@@ -54,5 +54,5 @@ describe("which part of the train stops by the stairs", () => {
     const foot = route[platformFoot(route, track)];
     expect(Math.abs((foot[0] - track.at[0]) * -Math.sin(track.angle) + (foot[1] - track.at[1]) * Math.cos(track.angle))).toBeLessThanOrEqual(12);
     expect(trainPartAt(fulton, foot, track.angle)).not.toBeNull();
-  });
+  }, 30_000); // Building and routing the whole Fulton St model takes several seconds on CI.
 });
