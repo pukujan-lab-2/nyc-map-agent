@@ -58,3 +58,26 @@ Starting revision e297663. Ask the live app "take the 4 train from Grand Central
 ## Checkpoint log
 
 No checkpoints yet.
+
+### 2026-11-11 12:15:35 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["src/lib/map/stationRoute.ts, src/lib/map/stationRoute.test.ts"],"completed":["Route points on a stair within 0.3 m of its line move onto it, so the walk goes down the middle of Fulton St's stair to the hall"],"decisions":["Points further than 0.3 m from a stair's line stay put; moving them made two later stairs worse"],"evidence":["Replaying the player's camera, the eye goes down that stair 1 m from each wall instead of 0.76 and 1.22 m; 1,821 unit tests pass"],"next_action":"Merge the pull request, then record the 4 train trip to Fulton St on the live site and check 60 to 70 s","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0051","timestamp":"2026-11-11T12:15:35Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"0628d10e81ad37e344df0d3dd9442006bbaa546b34485ad3f64ad9ef50c680ed","request_id":"43e41757decb47e0a1f38fa34d6cb081","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0051"} -->
+
+Completed:
+- Route points on a stair within 0.3 m of its line move onto it, so the walk goes down the middle of Fulton St's stair to the hall
+
+Evidence:
+- Replaying the player's camera, the eye goes down that stair 1 m from each wall instead of 0.76 and 1.22 m; 1,821 unit tests pass
+
+Decisions:
+- Points further than 0.3 m from a stair's line stay put; moving them made two later stairs worse
+
+Changed:
+- src/lib/map/stationRoute.ts, src/lib/map/stationRoute.test.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request, then record the 4 train trip to Fulton St on the live site and check 60 to 70 s
