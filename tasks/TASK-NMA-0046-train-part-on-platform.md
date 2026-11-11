@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-11 05:29:27 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge #109, then record the Fulton trip again and read the step-off","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0046","timestamp":"2026-11-11T05:29:27Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f1bc61d16b90a4e489f7746772033b8e8d2475fca3c202fdfe48d605f404aa42","request_id":"b4c6e56d3f1d4578b49afe23d041922b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0046"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge #109, then record the Fulton trip again and read the step-off
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
