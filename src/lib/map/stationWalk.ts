@@ -30,7 +30,7 @@ const SUBSTEP_M = 0.2;
 /** Half-widths: a passage, a platform drawn as a line, a stair, and the landing at a stair's foot. */
 const CORRIDOR_R = 1.5;
 const PLATFORM_R = 3;
-const STAIR_R = 1.4;
+const STAIR_R = 1;
 /** A stair's width. */
 export const STAIR_W = STAIR_R * 2;
 const LANDING_R = 1.8;
