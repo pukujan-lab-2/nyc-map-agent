@@ -81,3 +81,26 @@ Blocked/uncertain:
 
 Next:
 - Merge the pull request, then record the 4 train trip to Fulton St on the live site and check 60 to 70 s
+
+### 2026-11-11 12:18:20 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge #120, then record the live Fulton trip and check 60-70 s","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0051","timestamp":"2026-11-11T12:18:20Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3eb789ca64afbf3bc201fbee048c0d3b4bbe55e415efa6d62fbe53c996551fb2","request_id":"d088633373864442977ed6a61f552427","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0051"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge #120, then record the live Fulton trip and check 60-70 s
