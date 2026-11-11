@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - Merge #109, then record the Fulton trip again and read the step-off
 
+### 2026-11-11 05:35:06 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge #110, then record the Fulton trip again and read the step-off","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0046","timestamp":"2026-11-11T05:35:06Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9ce12d6518242fea767c8d76abca9aa47dea0561816d404f6892a4fa244744be","request_id":"8cdac920ed254a5a8bdfca4a76c72fb3","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0046"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge #110, then record the Fulton trip again and read the step-off
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
