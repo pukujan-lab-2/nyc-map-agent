@@ -16,6 +16,8 @@ import { initialPlayback, isActive, playback, type Playback } from "./playback";
 import type { PlaybackSpeed, Trip } from "./schema";
 import { setMarker, setPreviewDim, setXray } from "./tripLayer";
 import { walkLine, walkPlace } from "./walkPlace";
+import { dollhouseLeg } from "./dollhouseLeg";
+import { useFlag } from "@/lib/flags";
 
 export type Speed = PlaybackSpeed;
 export interface PlayerState extends Playback {
@@ -182,7 +184,9 @@ export function usePlayer(onCallout?: (text: string) => void) {
   /** The station shown in x-ray on the stairs, and whether the ground was see-through before. */
   const stairs = useRef<{ station: string; streetXray: boolean } | null>(null);
   /** A station walked at eye level: the leg, the eye and train it draws each frame, its canvas below the street, and how to take it down. */
-  const inside = useRef<{ seg: Segment; eye: StationEye | null; train: number | null; canvas: HTMLCanvasElement | null; stop: () => void } | null>(null);
+  const inside = useRef<{ seg: Segment; eye: StationEye | null; train: number | null; canvas: HTMLCanvasElement | null; stop: () => void; /** How far along the dollhouse walk the figure is, when this leg plays in that view. */ doll?: number } | null>(null);
+  const dollhouseOn = useRef(false);
+  dollhouseOn.current = useFlag("dollhouseWalk");
   const hideInside = useCallback(() => {
     inside.current?.stop();
     inside.current = null;
@@ -203,6 +207,17 @@ export function usePlayer(onCallout?: (text: string) => void) {
     const line = ride?.kind === "ride" && ride.route ? ride.route.replace(/^([0-9A-Z])X$/, "$1") : null;
     const bullets = walk.station.signs.stations.flatMap((s) => s.routes).filter((b) => b.route === line).slice(0, 1);
     const trip = { guide: walk.guide, board: walk.board, track: walk.track, color: walk.color, train: () => view.train, signs: { exit: seg.kind === "ascend", routes: bullets, words: exitStreet(seg) } };
+    // Leaving a downtown 4 or 5 at Fulton St, a figure walks the station model seen from above (#129).
+    if (dollhouseOn.current && dollhouseLeg(seg, ride)) {
+      view.doll = 0;
+      void import("@/lib/map/dollhousePreview").then(({ openDollhouse }) => openDollhouse(map.getContainer(), () => view.doll ?? null, "trip-dollhouse")).then(({ canvas, stop }) => {
+        if (inside.current !== view) { stop(); return; }
+        canvas.style.display = "none";
+        view.canvas = canvas;
+        view.stop = stop;
+      });
+      return;
+    }
     void import("@/lib/map/three/stationScene").then(({ createStationLayer, mountStationView, STATION_LAYER }) => {
       if (inside.current !== view) return;
       const { model, tracks, signs } = walk.station;
@@ -435,7 +450,9 @@ export function usePlayer(onCallout?: (text: string) => void) {
         const wide = Math.min(1, Math.max(0, (INSIDE_M - depth) / FOV_OVER_M));
         view.eye = { lon: mark[0], lat: mark[1], bearing: eye.current?.bearing ?? pose.bearing, pitch: wait !== null ? 86 : lookPitch(seg, fm), z: depth, fov: base + (INSIDE_FOV - base) * wide };
         view.train = trainAt(seg, wait);
-        if (view.canvas) view.canvas.style.display = eyeLeg && depth < INSIDE_M ? "" : "none";
+        if (view.doll != null) view.doll = fm;
+        // The dollhouse shows the whole walk, the top of the stair included; first person hands over to the map near the street.
+        if (view.canvas) view.canvas.style.display = eyeLeg && (view.doll != null || depth < INSIDE_M) ? "" : "none";
       }
       camMode.current = mode;
       camKind.current = eyeLeg ? "eye" : "other";
