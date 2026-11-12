@@ -198,6 +198,21 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
+    // The dollhouse view of the Fulton St walk (#129) draws over the map and leaves every control usable.
+    test("the dollhouse view of a station walk", async ({ page }) => {
+      await open(page);
+      await page.waitForFunction(() => "__dollhouse" in window, undefined, { timeout: 20_000 });
+      for (const at of [0, 0.6, 1]) {
+        await page.evaluate(async (f) => {
+          const w = window as unknown as { __dollhouse: (o: { at: number }) => Promise<() => void>; __stopDollhouse?: () => void };
+          w.__stopDollhouse?.();
+          w.__stopDollhouse = await w.__dollhouse({ at: f });
+        }, at);
+        await expect(page.getByTestId("dollhouse")).toHaveCount(1);
+        await expectLayout(page);
+      }
+    });
+
     // The station model's source is credited in the map's credits at every size.
     test("the map credits the station model's source", async ({ page }) => {
       await open(page);
