@@ -20,10 +20,10 @@ export type DollhouseModel = {
   walk: Array<[number, number, number]>;
 };
 
-export type WalkPose = { x: number; y: number; z: number; /** Radians, 0 = north, clockwise. */ heading: number; /** Metres walked so far. */ walked: number };
+type WalkPose = { x: number; y: number; z: number; /** Radians, 0 = north, clockwise. */ heading: number; /** Metres walked so far. */ walked: number };
 
 /** How far the cut sits above the figure's feet: over its head, under the next floor up. */
-export const CUT_ABOVE_FEET_M = 2.3;
+const CUT_ABOVE_FEET_M = 2.3;
 const FIGURE_M = 1.75;
 const BACK_M = 13;
 const UP_M = 14;
