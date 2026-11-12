@@ -120,6 +120,29 @@ Blocked/uncertain:
 Next:
 - Hook the dollhouse view into the trip preview at Fulton St
 
+### 2026-11-12 23:13:40 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Update PR 130 to close #129 (it now plays in the trip), let it merge, check the Fulton St walk on the live site, then comment live on #126","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-12T23:13:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"ab62e8e84eaed9a78b207facd3459bfbf7e38491d7db6a61274f2b80fea102e2","request_id":"b52079b73016405db9bcb8a776dea2b4","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Update PR 130 to close #129 (it now plays in the trip), let it merge, check the Fulton St walk on the live site, then comment live on #126
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
