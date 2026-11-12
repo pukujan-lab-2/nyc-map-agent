@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-12 21:09:07 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Open the pull request once the credit test passes locally, then read the credit on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0054","timestamp":"2026-11-12T21:09:07Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e8cbb817af3dd0eb503982f4ac8d1c43880002afbd7a663623bd940b0f541408","request_id":"8c8a8cef3e8a4f0191e803063c12f76e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0054"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request once the credit test passes locally, then read the credit on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
