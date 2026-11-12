@@ -51,6 +51,52 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-12 22:18:41 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Owner decides how much of the model goes in the public repo; then commit it, open the PR, hook the view into the trip","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-12T22:18:41Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"822a77608a31d82c2571ec84977119f7c228a7391f85a312374f766a8501a20f","request_id":"add94851bf2546aea978205a360a398f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Owner decides how much of the model goes in the public repo; then commit it, open the PR, hook the view into the trip
+
+### 2026-11-12 22:18:47 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Owner decides how much of the model goes in the public repo; then commit it, open the PR, hook the view into the trip","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-12T22:18:47Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"822a77608a31d82c2571ec84977119f7c228a7391f85a312374f766a8501a20f","request_id":"e69c44dd6908478b8916af5778314ed6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Owner decides how much of the model goes in the public repo; then commit it, open the PR, hook the view into the trip
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
