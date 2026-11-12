@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-12 18:41:47 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Check the language chip on the live site on a laptop after the deploy","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0053","timestamp":"2026-11-12T18:41:47Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"37a42dbd21414ae4a0924f6165460d57bc05d9c2842e6b8eae35c66e1923d8b4","request_id":"9c08d3cca4054e5bad81c460f01f68b8","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0053"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Check the language chip on the live site on a laptop after the deploy
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
