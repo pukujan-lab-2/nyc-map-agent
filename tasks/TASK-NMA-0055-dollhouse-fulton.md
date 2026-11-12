@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - Owner decides how much of the model goes in the public repo; then commit it, open the PR, hook the view into the trip
 
+### 2026-11-12 23:05:04 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Hook the dollhouse view into the trip preview at Fulton St","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-12T23:05:04Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3defff79996c0c3e805881bf1b852bed926bb4584a708e161c28cec741cedab6","request_id":"922e3350aeba44b3be7ba05d119e3d06","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Hook the dollhouse view into the trip preview at Fulton St
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
