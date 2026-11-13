@@ -557,6 +557,29 @@ Blocked/uncertain:
 Next:
 - After #165 deploys, open Street view at Broadway and Dey on the live site, press Walk inside Fulton St, walk to the downtown platform and board; then show the owner before the live comment on #126
 
+### 2026-11-13 15:05:09 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Close the 57 remaining hole spots in the outline shell (stairwell columns between stair and level ceilings, plus ceiling-to-wall cracks), fix the shell gap test for the ceiling-step strips, then record the walk, run Pro checks and open the PR","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:05:09Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d4aadfced53aff84ba663abdfed3eee734b597324348086d357822167b5226c6","request_id":"2ecd89139ae9443282c0e3162e018d3e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Close the 57 remaining hole spots in the outline shell (stairwell columns between stair and level ceilings, plus ceiling-to-wall cracks), fix the shell gap test for the ceiling-step strips, then record the walk, run Pro checks and open the PR
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
