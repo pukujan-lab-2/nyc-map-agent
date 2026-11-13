@@ -174,6 +174,29 @@ Blocked/uncertain:
 Next:
 - Let PR 140 merge, then repeat the live check: trip to Fulton St, close the card, Find exit, then offline and in Spanish
 
+### 2026-11-13 04:50:22 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Find exit after a trip to Fulton St by the M15 bus (the 4 was out) now guesses Fulton St instead of saying it cannot tell (pull request #149)"],"decisions":["no new decisions"],"evidence":["The live agent's trip for the same question had legs walk, ride M15, walk with no subway exit; lostGuess tests with that trip pass (14 cases)"],"next_action":"After #149 deploys, ask for the same trip on the live site, close the card, tap Find exit and check it guesses Fulton St","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T04:50:22Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9c1367b99bd53e359a338117b3dae0910f1ff5cdcc1a58fc93f8a1794ca348de","request_id":"e106bff2643443b1a058ca9bf927e921","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Find exit after a trip to Fulton St by the M15 bus (the 4 was out) now guesses Fulton St instead of saying it cannot tell (pull request #149)
+
+Evidence:
+- The live agent's trip for the same question had legs walk, ride M15, walk with no subway exit; lostGuess tests with that trip pass (14 cases)
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #149 deploys, ask for the same trip on the live site, close the card, tap Find exit and check it guesses Fulton St
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
