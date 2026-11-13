@@ -695,6 +695,29 @@ Blocked/uncertain:
 Next:
 - Compare the Blender-baked shell (boolean union, dev ?baked-shell) against stationShell at the owner's reported spots and send screenshots; switch over if it looks right; fix the three stationShell tests
 
+### 2026-11-13 16:15:40 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Owner to choose: try a Manifold (manifold-3d) union of the walkable prisms for straight walls, or keep fixing stationShell; the voxel bake was no better. Then fix the three shell tests","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:15:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"fab30339a3c54ac44b5351a10a9341af51031b3a47bdcc0e0afd0c7254fed766","request_id":"062a9b31dee147f8bf3f351691b629df","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Owner to choose: try a Manifold (manifold-3d) union of the walkable prisms for straight walls, or keep fixing stationShell; the voxel bake was no better. Then fix the three shell tests
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
