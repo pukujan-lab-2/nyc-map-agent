@@ -105,11 +105,29 @@
     "limit": "705 kB"
   },
   {
-    "name": "all JS except the station walk",
+    "name": "station walk: shell code shared by the scene and the page fallback (lazy; the fallback is fetched only when no worker starts)",
+    "path": [
+      ".size-build/assets/walkShell-*.js",
+      ".size-build/assets/walkShellBuild-*.js",
+      ".size-build/assets/stationWalkGeometry-*.js"
+    ],
+    "limit": "10 kB"
+  },
+  {
+    "name": "station walk: shell worker (builds Fulton St's walls and colliders off the page)",
+    "path": ".size-build/assets/walkShell.worker-*.js",
+    "limit": "9 kB"
+  },
+  {
+    "name": "all JS except the station walk and its shell builder",
     "path": [
       ".size-build/assets/*.js",
-      "!.size-build/assets/StationWalkScene-*.js"
+      "!.size-build/assets/StationWalkScene-*.js",
+      "!.size-build/assets/walkShell-*.js",
+      "!.size-build/assets/walkShell.worker-*.js",
+      "!.size-build/assets/walkShellBuild-*.js",
+      "!.size-build/assets/stationWalkGeometry-*.js"
     ],
-    "limit": "1226 kB"
+    "limit": "1227 kB"
   }
 ]

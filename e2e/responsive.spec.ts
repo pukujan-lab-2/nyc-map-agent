@@ -228,10 +228,15 @@ for (const size of SIZES) {
       }
     });
 
-    // Fulton St's card offers Walk inside (#126); the walk fills the screen with its back button and,
-    // on a screen without touch, the keys hint; Back to the map closes it.
+    // Fulton St's card offers Walk inside (#126); a loading card with a progress line covers the
+    // screen until the walker is on it, then the walk fills the screen with its back button and, on
+    // a screen without touch, the keys hint; Back to the map closes it.
     test("walking inside Fulton St", async ({ page }) => {
       await open(page);
+      // Hold the station model back, so the loading card stays up long enough to check.
+      let release = () => {};
+      const held = new Promise<void>((r) => { release = r; });
+      await page.route("**/transit/fulton-model.json", async (route) => { await held; await route.continue(); });
       // Open the card the way a map tap does, so it carries the station's details.
       await page.waitForFunction(() => "__openStation" in window, undefined, { timeout: 20_000 });
       await page.evaluate(() => (window as unknown as { __openStation: (system: string, id: string, name: string) => void }).__openStation("subway", "418", "Fulton St"));
@@ -241,9 +246,15 @@ for (const size of SIZES) {
       await expect(walkInside).toBeVisible({ timeout: 15_000 });
       await expectLayout(page);
       await walkInside.click();
+      const loading = page.getByTestId("station-walk-loading");
+      await expect(loading).toBeVisible();
+      await expect(loading.getByRole("progressbar")).toBeVisible();
+      await expect(loading.getByRole("status")).toContainText("Fetching the station");
+      await expectLayout(page);
+      release();
       const walk = page.getByTestId("station-walk");
-      await expect(walk).toBeVisible();
-      await expect(walk.locator("canvas")).toBeVisible({ timeout: 30_000 });
+      await expect(loading).toHaveCount(0, { timeout: 60_000 });
+      await expect(walk.locator("canvas")).toBeVisible();
       await expectLayout(page);
       await page.getByTestId("station-walk-close").click();
       await expect(walk).toHaveCount(0);
