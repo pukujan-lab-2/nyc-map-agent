@@ -132,6 +132,11 @@ for (const size of SIZES) {
       await preview.getByLabel("Play preview", { exact: true }).click();
       await preview.getByLabel("Pause preview").click();
       await expect(preview.getByLabel("Play preview", { exact: true })).toBeVisible();
+      // The bar drags like a video's: paused, it holds the spot it was dragged to (owner, 2026-11-12).
+      const seek = preview.getByLabel("Preview progress");
+      await seek.fill("500");
+      await expect(seek).toHaveValue("500");
+      await expect(preview.getByLabel("Play preview", { exact: true })).toBeVisible();
       if (size.width < 640) {
         await expect(page.getByTestId("trip-caption")).toBeVisible();
         const box = (await preview.boundingBox())!;
@@ -198,7 +203,7 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
-    // The dollhouse view of the Fulton St walk (#129) draws over the map and leaves every control usable.
+    // The dollhouse view of the Fulton St walk (#129) draws in the map and leaves every control usable.
     test("the dollhouse view of a station walk", async ({ page }) => {
       await open(page);
       await page.waitForFunction(() => "__dollhouse" in window, undefined, { timeout: 20_000 });
@@ -208,7 +213,7 @@ for (const size of SIZES) {
           w.__stopDollhouse?.();
           w.__stopDollhouse = await w.__dollhouse({ at: f });
         }, at);
-        await expect(page.getByTestId("dollhouse")).toHaveCount(1);
+        expect(await page.evaluate(() => Boolean((window as unknown as { __map: { getLayer: (id: string) => unknown } }).__map.getLayer("dollhouse")))).toBe(true);
         await expectLayout(page);
       }
     });

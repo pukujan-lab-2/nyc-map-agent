@@ -20,6 +20,8 @@ export function TripPreview(p: {
   onToggle: () => void; onSpeed: (s: PlaybackSpeed) => void;
   /** Back one step of the walkthrough, and on to the next. */
   onBack: () => void; onNext: () => void;
+  /** Drag the bar to a spot (0 to 1) of the preview, back or forward, as on a video. */
+  onSeek?: (f: number) => void;
   onClose: () => void; onUse: () => void; onOther: () => void;
   /** Ask again by subway, by bus, on foot or with the least walking (src/features/agent/tripChoices.ts). */
   onChoice?: (c: TripChoice) => void;
@@ -66,7 +68,12 @@ export function TripPreview(p: {
   const notice = alert ? <button type="button" disabled={!alertRoute || !p.onAlert} onClick={() => alertRoute && p.onAlert?.(alertRoute)}
     className="task-panel flex max-w-full items-center gap-1.5 rounded-full border-amber-500/40 px-3 py-2 text-left text-[13px] text-amber-200">
     <TriangleAlert size={14} className="shrink-0" aria-hidden /><span className="truncate">{plainAlertText(alert)}</span></button> : null;
-  const bar = <div role="progressbar" aria-label="Preview progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-1.5 shrink-0 overflow-hidden rounded bg-slate-400/25"><div className="h-full bg-amber-500" style={{ width: `${progress}%` }} /></div>;
+  // The bar drags like a video's: back to see the station walk again, or ahead (owner, 2026-11-12).
+  const bar = p.onSeek
+    ? <input type="range" aria-label="Preview progress" data-testid="trip-seek" min={0} max={1000} step={1} value={Math.round(progress * 10)}
+      onChange={(e) => p.onSeek?.(Number(e.target.value) / 1000)}
+      className="h-6 w-full shrink-0 cursor-pointer accent-amber-500" />
+    : <div role="progressbar" aria-label="Preview progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} className="h-1.5 shrink-0 overflow-hidden rounded bg-slate-400/25"><div className="h-full bg-amber-500" style={{ width: `${progress}%` }} /></div>;
   const place = trip.destination.label.split(",")[0];
   const stepBtn = (label: string, onClick: () => void, icon: ReactNode) =>
     <button type="button" className="task-action task-secondary h-10 w-10 shrink-0 rounded-full p-0" aria-label={label} onClick={onClick}>{icon}</button>;
