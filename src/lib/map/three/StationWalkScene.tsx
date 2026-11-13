@@ -313,7 +313,7 @@ export function StationWalk({ exit, onClose: close }: { exit: [number, number] |
   const geo = useMemo(() => {
     if (!model || !shell) return null;
     const g = walkGeometry(model, shell);
-    return baked ? { ...g, ...bakedShellSurfaces(shell, baked) } : g;
+    return baked ? { ...g, ...bakedShellSurfaces(model, shell, baked) } : g;
   }, [model, shell, baked]);
   const [ride, setRide] = useState<Ride>("walking");
   const [nearDoor, setNearDoor] = useState(false);

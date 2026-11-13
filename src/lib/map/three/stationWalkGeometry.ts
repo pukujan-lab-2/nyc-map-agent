@@ -112,13 +112,7 @@ export function walkGeometry(model: DollhouseModel, shell: Shell = stationShell(
 
   // One collider per part: Rapier smooths the seams inside each mesh by its edges, and a ramp laid over
   // a floor in the same mesh confuses that and catches the body.
-  const colliders = Object.values(walkCollider(model, shell)).filter((t) => t.length).map((solid) => {
-    const vertices = new Float32Array(solid.length);
-    for (let i = 0; i < solid.length; i += 3) vertices.set(toYUp(solid[i], solid[i + 1], solid[i + 2]), i);
-    const indices = new Uint32Array(solid.length / 3);
-    for (let i = 0; i < indices.length; i++) indices[i] = i;
-    return { vertices, indices };
-  });
+  const colliders = collidersOf(walkCollider(model, shell));
 
   let lowest = Infinity;
   for (let i = 2; i < shell.floors.length; i += 3) lowest = Math.min(lowest, shell.floors[i]);
@@ -126,18 +120,33 @@ export function walkGeometry(model: DollhouseModel, shell: Shell = stationShell(
 }
 
 /**
- * Dev, on trial (#126): walls and ceilings baked once in Blender from the walkable space (every floor
- * and stair pushed up 3 m and merged into one solid, its inside kept), drawn in place of the shell's.
+ * Dev, on trial (#126): walls and ceilings baked from the walkable space (every floor and stair pushed
+ * up 3 m and merged into one solid with manifold-3d, its inside kept), drawn and collided with in place
+ * of the shell's.
  * The model's own uprights stay, as in walkGeometry.
  */
-export function bakedShellSurfaces(shell: Shell, baked: { walls: number[]; ceiling: number[] }): Pick<WalkGeometry, "walls" | "ceiling"> {
+function collidersOf(parts: Record<string, number[]>): WalkGeometry["colliders"] {
+  return Object.values(parts).filter((t) => t.length).map((solid) => {
+    const vertices = new Float32Array(solid.length);
+    for (let i = 0; i < solid.length; i += 3) vertices.set(toYUp(solid[i], solid[i + 1], solid[i + 2]), i);
+    const indices = new Uint32Array(solid.length / 3);
+    for (let i = 0; i < indices.length; i++) indices[i] = i;
+    return { vertices, indices };
+  });
+}
+
+export function bakedShellSurfaces(model: DollhouseModel, shell: Shell, baked: { walls: number[]; ceiling: number[] }): Pick<WalkGeometry, "walls" | "ceiling" | "colliders"> {
   const wallTris: number[] = [];
   for (let i = 0; i < shell.uprights.length; i += 9) {
     const t = shell.uprights.slice(i, i + 9);
     if (!isGatePanel(t)) wallTris.push(...t);
   }
   for (const v of baked.walls) wallTris.push(v);
-  return { walls: surface(wallTris, uprightUv), ceiling: surface(baked.ceiling, (x, y) => [x / WALL_TILE_M, y / WALL_TILE_M]) };
+  // The body bumps into the walls it sees: the baked ones, not the shell's (and not the rails that
+  // stood in for the shell's walls where they were cleared off the walks).
+  const parts = walkCollider(model, shell);
+  const colliders = collidersOf({ ...parts, walls: baked.walls, rails: [] });
+  return { walls: surface(wallTris, uprightUv), ceiling: surface(baked.ceiling, (x, y) => [x / WALL_TILE_M, y / WALL_TILE_M]), colliders };
 }
 
 /**
