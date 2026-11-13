@@ -373,6 +373,29 @@ Blocked/uncertain:
 Next:
 - After PRs 151, 152 and 153 merge, check the live site on React 19 (map, 3D, Street, a trip), then build the Fulton St walk scene on ecctrl with closed corners and stair side walls
 
+### 2026-11-13 05:48:53 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After PRs 151, 152 and 153 merge, build the Fulton St walk scene on ecctrl: WASD and joystick, drag to look, wall corners closed, stair side walls, a gap test, and a Walk inside button on the station card","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T05:48:53Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"54c90cf3314d9cc1666fc284f0aa7adf4896a69439ca9c5fa0f019ec7bbec1b6","request_id":"39fbba6ad78f4b2788966d81fdf1c78e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After PRs 151, 152 and 153 merge, build the Fulton St walk scene on ecctrl: WASD and joystick, drag to look, wall corners closed, stair side walls, a gap test, and a Walk inside button on the station card
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
