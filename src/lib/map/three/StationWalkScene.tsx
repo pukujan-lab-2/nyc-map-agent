@@ -70,7 +70,7 @@ function Station({ geo, walls }: { geo: WalkGeometry; walls: React.MutableRefObj
     const floor = new THREE.Mesh(geometryOf(geo.floors), new THREE.MeshLambertMaterial({ map: concreteTexture(), color: 0xc9c6bf, side: THREE.DoubleSide }));
     const stairs = new THREE.Mesh(geometryOf(geo.stairs), new THREE.MeshLambertMaterial({ map: treadTexture(), color: 0xbdb9b1, side: THREE.DoubleSide }));
     const wall = new THREE.Mesh(geometryOf(geo.walls), new THREE.MeshLambertMaterial({ map: wallTexture(), side: THREE.DoubleSide }));
-    const ceiling = new THREE.Mesh(geometryOf(geo.ceiling), new THREE.MeshLambertMaterial({ color: 0x8f8c86, side: THREE.DoubleSide }));
+    const ceiling = new THREE.Mesh(geometryOf(geo.ceiling), new THREE.MeshLambertMaterial({ color: 0x8f8c86, side: THREE.FrontSide }));
     return [floor, stairs, wall, ceiling];
   }, [geo]);
   useEffect(() => {

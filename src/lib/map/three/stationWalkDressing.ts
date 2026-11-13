@@ -153,7 +153,10 @@ export function walkDressing(model: DollhouseModel, corner: (exit: [number, numb
     // Walks that come up within 4 m of each other share one way out, and one picture.
     if (!prev || placed.some((q) => Math.hypot(q[0] - end[0], q[1] - end[1]) < 4 && Math.abs(q[2] - end[2]) < 1)) continue;
     placed.push(end);
-    const heading = Math.atan2(end[0] - prev[0], end[1] - prev[1]);
+    // Face down the stair: the way from a point 3 m back along the walk, not the last short step.
+    let from = prev;
+    for (let i = n - 2; i >= 0; i--) { from = walk.path[i]; if (Math.hypot(end[0] - from[0], end[1] - from[1]) > 3) break; }
+    const heading = Math.atan2(end[0] - from[0], end[1] - from[1]);
     const back = STREET_PICTURE_IN_M;
     const pic = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.6), new THREE.MeshBasicMaterial({ map: streetPicture(name, sideOf(walk, name)) }));
     pic.rotation.x = Math.PI / 2;

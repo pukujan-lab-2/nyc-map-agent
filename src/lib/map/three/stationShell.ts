@@ -544,11 +544,9 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
     }
     for (let q = 0; q < 3; q++) ceiling.push(t[q][0], t[q][1], capped ? caps[q] : t[q][2] + SHELL_WALL_M);
   };
-  for (const t of stairTris) {
-    const cx = (t[0][0] + t[1][0] + t[2][0]) / 3, cy = (t[0][1] + t[1][1] + t[2][1]) / 3, cz = (t[0][2] + t[1][2] + t[2][2]) / 3;
-    if (under(cx, cy).some((h) => h > cz + 0.5 && h < cz + SHELL_WALL_M)) continue;
-    roof(t);
-  }
+  // Every stair gets a ceiling that slopes with it, a wall's height over its treads (owner,
+  // 2026-11-13), kept just under any floor that passes over it.
+  for (const t of stairTris) roof(t);
   return { floors, stairs, uprights, walls, bridges, ceiling };
 }
 
