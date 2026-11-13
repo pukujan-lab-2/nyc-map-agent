@@ -896,6 +896,29 @@ Blocked/uncertain:
 Next:
 - PR #168 fixes pushed (CI licence step removed at owner's ask, walk bot setup timeout, signs test canvas stub). Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.
 
+### 2026-11-13 18:06:19 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"PR #168: all tests pass in CI; knip flagged unused polygon-clipping, removed. Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T18:06:19Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"ffceb441e409b1b277c812e692715b6248fa293ee7365f3d24848f3b968d057a","request_id":"24d1865a33e54485ac3c8487863245e2","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- PR #168: all tests pass in CI; knip flagged unused polygon-clipping, removed. Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
