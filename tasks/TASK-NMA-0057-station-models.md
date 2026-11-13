@@ -143,6 +143,29 @@ Blocked/uncertain:
 Next:
 - After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site
 
+### 2026-11-13 14:31:23 UTC — agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063","blocked":[],"changed":["src/lib/map/three/dollhouse.ts, checkpoints/CURRENT.md"],"completed":["Merged main (#165's walk dressing) into PR #162; the dollhouse train now comes from the shared trainCars and still follows carPose"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0057","timestamp":"2026-11-13T14:31:23Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f46b04fa707a7a36b196b949917d37b1881ff62adb8f9c5b38c1780e46590449","request_id":"9ed69662cf5f44bd9fb2fa00e0b71d4a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0057"} -->
+
+Completed:
+- Merged main (#165's walk dressing) into PR #162; the dollhouse train now comes from the shared trainCars and still follows carPose
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/three/dollhouse.ts, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
