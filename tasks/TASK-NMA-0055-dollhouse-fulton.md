@@ -327,6 +327,29 @@ Blocked/uncertain:
 Next:
 - After PR 151 merges, use the live site on React 19 (map, 3D, Street, a trip), then build walking inside Fulton St on Rapier and ecctrl once the owner picks it
 
+### 2026-11-13 05:42:17 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Build the Fulton St walk on ecctrl: new scene file that draws and collides the same shapes, wall corners extended to overlap, short walls kept, stair side walls down to the level below, a gap test, then the Walk inside button on the station card","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T05:42:17Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"06be57739134e22ac3c425136cfe5c1b3f62d7ff2e3db46b8fc1ebebc77a20a5","request_id":"97994dbb5af04445a419843388b1ebb3","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Build the Fulton St walk on ecctrl: new scene file that draws and collides the same shapes, wall corners extended to overlap, short walls kept, stair side walls down to the level below, a gap test, then the Walk inside button on the station card
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
