@@ -919,6 +919,29 @@ Blocked/uncertain:
 Next:
 - PR #168: all tests pass in CI; knip flagged unused polygon-clipping, removed. Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.
 
+### 2026-11-13 18:17:40 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"PR #168: merged main (CURRENT.md conflict, both kept), sign test timeout raised. Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T18:17:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"daeee8afca36dc153ee7e24618cc0dd9a13da8afae82f4bf640a1e26cdb8322c","request_id":"dd41cce0fc7645f6923a0173dbf772b0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- PR #168: merged main (CURRENT.md conflict, both kept), sign test timeout raised. Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
