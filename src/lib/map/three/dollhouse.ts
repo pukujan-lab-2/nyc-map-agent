@@ -859,7 +859,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   /** Stands the train with its front car's middle `front` metres along the track. */
   const placeTrain = (front: number) => {
     if (!track.line) {
-      placeTrain(front);
+      train.position.set(track.at[0] + Math.cos(track.angle) * front, track.at[1] + Math.sin(track.angle) * front, track.at[2]);
       return;
     }
     // On a curve each car follows the line; `front` counts from the point beside track.at.
@@ -980,7 +980,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     train.visible = k < 1;
     if (train.visible) {
       const front = standing + 170 * k * k;
-      train.position.set(track.at[0] + dir[0] * front, track.at[1] + dir[1] * front, track.at[2]);
+      placeTrain(front);
     }
     // The ring fades as the camera comes down from the overview.
     const zoomIn = st.wait == null ? 1 : Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END);
