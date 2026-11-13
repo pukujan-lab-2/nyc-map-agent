@@ -758,6 +758,29 @@ Next:
 - Owner is walking the Manifold shell (?baked-shell); on their OK move the merge script into the repo, use it for walls, ceilings and collisions, replace the three shell tests
 - Owner to walk Fulton St on the live site after #169 deploys: one green Exit board over each exit stair's middle, facing the walker; the parent rebases feat/126-level-shell onto it
 
+### 2026-11-13 16:30:54 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Owner walks ?baked-shell (Manifold walls now also collide); signs session adds fork and dead-end boards; on owner OK move the merge script into the repo and replace the three shell tests","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:30:54Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"8d047273bcdfcaabdfa9ad787b9c257e192d64d1a31ccb2e6ac85fd7241e7b72","request_id":"023f0af8dc544b77a53b54c40b197bd7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Owner walks ?baked-shell (Manifold walls now also collide); signs session adds fork and dead-end boards; on owner OK move the merge script into the repo and replace the three shell tests
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
