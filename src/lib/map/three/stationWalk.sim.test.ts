@@ -8,7 +8,8 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import RAPIER from "@dimforge/rapier3d-compat";
 import type { DollhouseModel } from "./dollhouse";
-import { SMOOTH_SEAMS, toYUp, walkGeometry } from "./stationWalkGeometry";
+import { bakedShellSurfaces, SMOOTH_SEAMS, toYUp, walkGeometry } from "./stationWalkGeometry";
+import { stationShell } from "./stationShell";
 
 const model = JSON.parse(readFileSync("public/transit/fulton-model.json", "utf8")) as DollhouseModel;
 /** The body: centre this far over the feet (capsule half height 0.5 + radius 0.3 + float 0.25). */
@@ -27,7 +28,10 @@ beforeAll(async () => {
   // The colliders the walk scene builds, with the flags it gives them.
   const flags = RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES | RAPIER.TriMeshFlags.MERGE_DUPLICATE_VERTICES;
   expect(flags).toBe(SMOOTH_SEAMS);
-  const geo = walkGeometry(model);
+  // BAKED_SHELL=<file>: walk the trial shell baked with manifold-3d instead (#126).
+  const baked = process.env.BAKED_SHELL;
+  const shell = stationShell(model);
+  const geo = baked ? { ...walkGeometry(model, shell), ...bakedShellSurfaces(model, shell, JSON.parse(readFileSync(baked, "utf8"))) } : walkGeometry(model, shell);
   for (const c of geo.colliders) world.createCollider(RAPIER.ColliderDesc.trimesh(c.vertices, c.indices, flags));
   lowest = geo.lowest;
 }, 60_000);
