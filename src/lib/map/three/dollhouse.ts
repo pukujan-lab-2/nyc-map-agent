@@ -311,6 +311,99 @@ function box(w: number, d: number, h: number, color: number, clip: THREE.Plane[]
   return new THREE.Mesh(new THREE.BoxGeometry(w, d, h), new THREE.MeshLambertMaterial({ color, clippingPlanes: clip }));
 }
 
+/** Whether the model has flat floor under (x, y) within half a metre of height `z`. */
+function floorAt(model: DollhouseModel, x: number, y: number, z: number): boolean {
+  const { v, t } = model;
+  for (let i = 0; i < t.length; i += 3) {
+    const [a, b, c] = [t[i] * 3, t[i + 1] * 3, t[i + 2] * 3];
+    if (Math.abs(v[a + 2] - z) > 0.5 || Math.abs(v[b + 2] - z) > 0.5 || Math.abs(v[c + 2] - z) > 0.5) continue;
+    const d1 = (x - v[b]) * (v[a + 1] - v[b + 1]) - (v[a] - v[b]) * (y - v[b + 1]);
+    const d2 = (x - v[c]) * (v[b + 1] - v[c + 1]) - (v[b] - v[c]) * (y - v[c + 1]);
+    const d3 = (x - v[a]) * (v[c + 1] - v[a + 1]) - (v[c] - v[a]) * (y - v[a + 1]);
+    if (!((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))) return true;
+  }
+  return false;
+}
+
+/**
+ * The unit normal of a platform edge that points onto the platform: the side with floor at the
+ * edge's own height (the track bed on the other side is lower), else away from the nearest track.
+ */
+const normals = new WeakMap<DollhouseModel, Map<object, [number, number]>>();
+function platformNormal(model: DollhouseModel, edge: [number, number, number, number, number]): [number, number] {
+  // Worked out once per edge: the layer asks for every upright piece of the model.
+  let seen = normals.get(model);
+  if (!seen) normals.set(model, (seen = new Map<object, [number, number]>()));
+  const known = seen.get(edge);
+  if (known) return known;
+  const [x1, y1, x2, y2, z] = edge;
+  const L = Math.hypot(x2 - x1, y2 - y1) || 1e-9;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L;
+  const mid: [number, number] = [(x1 + x2) / 2, (y1 + y2) / 2];
+  const tracks = [model.track, ...(model.otherTracks ?? [])].map((t) => t.at);
+  let nx = -uy, ny = ux;
+  const on = (sgn: number) => [0.25, 0.5, 0.75].reduce((n, f) => n + [0.5, 1, 2, 3].filter((d) => floorAt(model, x1 + ux * L * f + nx * d * sgn, y1 + uy * L * f + ny * d * sgn, z)).length, 0);
+  const [plus, minus] = [on(1), on(-1)];
+  if (plus === minus) {
+    const [tx, ty] = [...tracks].sort((a, b) => Math.hypot(a[0] - mid[0], a[1] - mid[1]) - Math.hypot(b[0] - mid[0], b[1] - mid[1]))[0];
+    if ((tx - x1) * nx + (ty - y1) * ny > 0) { nx = -nx; ny = -ny; }
+  } else if (minus > plus) { nx = -nx; ny = -ny; }
+  seen.set(edge, [nx, ny]);
+  return [nx, ny];
+}
+
+/**
+ * Whether (x, y, z) lies over a track beside a platform: within 4 m of an edge on the side away from
+ * the platform, from the platform's height up to 5 m above it. Nothing upright stands there: the
+ * train pulls in along it (owner, 2026-11-12). Pure, for tests.
+ */
+export function overTrack(model: DollhouseModel, x: number, y: number, z: number): boolean {
+  return model.edges.some((edge) => {
+    const [x1, y1, x2, y2, ez] = edge;
+    if (z < ez - 2 || z > ez + 5) return false;
+    const L = Math.hypot(x2 - x1, y2 - y1) || 1e-9;
+    const t = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / L;
+    if (t < 0 || t > L) return false;
+    const [nx, ny] = platformNormal(model, edge);
+    const s = (x - x1) * nx + (y - y1) * ny;
+    return s < -0.2 && s > -4;
+  });
+}
+
+/** How far in from a platform's end its barrier stands, and the widest it is drawn. */
+const END_IN_M = 0.4, END_MAX_W_M = 14;
+
+/**
+ * Where each platform ends (owner, 2026-11-12: past the end the model stops and the map shows
+ * through, which looked like an open drop). One barrier per end of each platform edge: its middle
+ * point, the way it runs (radians, across the platform), and its width, from the platform's edge to
+ * the farthest floor found beside that end. Pure, for tests.
+ */
+export function platformEnds(model: DollhouseModel): Array<{ at: P3; angle: number; width: number }> {
+  const out: Array<{ at: P3; angle: number; width: number }> = [];
+  for (const edge of model.edges) {
+    const [x1, y1, x2, y2, z] = edge;
+    const L = Math.hypot(x2 - x1, y2 - y1);
+    if (L < 10) continue;
+    const ux = (x2 - x1) / L, uy = (y2 - y1) / L;
+    const [nx, ny] = platformNormal(model, edge);
+    for (const t0 of [0, L]) {
+      // The floor beside this end: level with the edge, on the platform's side, within a few metres of the end.
+      let width = 0;
+      for (let k = 0; k < model.v.length; k += 3) {
+        const dx = model.v[k] - x1, dy = model.v[k + 1] - y1;
+        if (Math.abs(model.v[k + 2] - z) > 0.5) continue;
+        const t = dx * ux + dy * uy, s = dx * nx + dy * ny;
+        if (Math.abs(t - t0) < 4 && s > 0 && s <= END_MAX_W_M) width = Math.max(width, s);
+      }
+      if (width < 1.5) continue;
+      const tin = t0 === 0 ? END_IN_M : L - END_IN_M;
+      out.push({ at: [x1 + ux * tin + nx * (width / 2), y1 + uy * tin + ny * (width / 2), z], angle: Math.atan2(ny, nx), width });
+    }
+  }
+  return out;
+}
+
 /** A simple blocky figure, feet at the group's origin, facing +y. Its limbs swing as it walks. */
 function buildFigure(): { group: THREE.Group; stride: (walkedM: number, moving: boolean) => void } {
   const group = new THREE.Group();
@@ -525,6 +618,66 @@ function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small
     group.add(rod);
   }
   return group;
+}
+
+/** How far below the platform the track bed lies, and how wide it is drawn. */
+const BED_DROP_M = 1.2, BED_W_M = 4.2;
+
+/**
+ * The track bed beside a platform edge, as a group whose x runs along the edge and whose y points
+ * away from the platform (owner, 2026-11-12: past the edge looked like empty floor you could walk
+ * onto). Dark ballast a step below, the edge's drop face and two rails on sleepers, so it reads
+ * as track, not floor.
+ */
+function trackBed(length: number, clip: THREE.Plane[]): THREE.Group {
+  const g = new THREE.Group();
+  const bed = box(length, BED_W_M, 0.1, 0x3a3631, clip); bed.position.set(length / 2, BED_W_M / 2, -BED_DROP_M - 0.05); g.add(bed);
+  const face = box(length, 0.1, BED_DROP_M, 0x8a8478, clip); face.position.set(length / 2, 0.05, -BED_DROP_M / 2); g.add(face);
+  const mid = BED_W_M / 2 + 0.2;
+  for (const off of [-0.72, 0.72]) {
+    const rail = box(length, 0.08, 0.15, 0x9aa3ad, clip); rail.position.set(length / 2, mid + off, -BED_DROP_M + 0.2); g.add(rail);
+  }
+  // Sleepers: one mesh, many copies.
+  const n = Math.floor(length / 0.9);
+  const ties = new THREE.InstancedMesh(new THREE.BoxGeometry(0.25, 2.4, 0.1), new THREE.MeshLambertMaterial({ color: 0x5a4a3c, clippingPlanes: clip }), n);
+  const m = new THREE.Matrix4();
+  for (let i = 0; i < n; i++) ties.setMatrixAt(i, m.makeTranslation(0.45 + i * 0.9, mid, -BED_DROP_M + 0.05));
+  g.add(ties);
+  return g;
+}
+
+/** Yellow and black stripes with END OF PLATFORM across the middle, for the barrier's panel. */
+function endTexture(): THREE.Texture {
+  const [c, g] = canvas2d(512, 128);
+  g.fillStyle = "#f2c94c"; g.fillRect(0, 0, 512, 128);
+  g.fillStyle = "#1b1b1b";
+  for (let x = -128; x < 512; x += 48) { g.beginPath(); g.moveTo(x, 128); g.lineTo(x + 24, 128); g.lineTo(x + 152, 0); g.lineTo(x + 128, 0); g.fill(); }
+  g.fillStyle = "#ffffff"; g.fillRect(96, 34, 320, 60);
+  g.fillStyle = "#c62828"; g.font = SIGN_FONT(36); g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("END OF PLATFORM", 256, 65);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** A waist-high barrier `width` long along x: posts, a top rail and a striped panel, both faces. */
+function endBarrier(width: number, clip: THREE.Plane[]): THREE.Group {
+  const g = new THREE.Group();
+  // Two faces back to back, so the words read the right way round from either side.
+  const mat = new THREE.MeshBasicMaterial({ map: endTexture(), clippingPlanes: clip });
+  for (const turn of [0, Math.PI]) {
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(width, 0.6), mat);
+    panel.rotation.set(Math.PI / 2, turn, 0); panel.position.z = 0.75;
+    g.add(panel);
+  }
+  const rail = box(width, 0.08, 0.08, 0x1b1b1b, clip); rail.position.z = 1.1; g.add(rail);
+  // Posts at the two ends only, so none stands in front of the words.
+  for (const x of [-width / 2, width / 2]) {
+    const post = box(0.1, 0.1, 1.1, 0x1b1b1b, clip);
+    post.position.set(x, 0, 0.55);
+    g.add(post);
+  }
+  return g;
 }
 
 /** A waist-high turnstile, walked through along +y: its body to the right of the lane, its three arms across it. */
@@ -752,6 +905,8 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, readS
       // The model's own waist-high upright pieces come in short, angled lengths that read as broken
       // walls standing on the floor (owner, 2026-11-12); no walk passes them, so they are left out.
       if (Math.max(a[2], b[2], c[2]) - foot <= LOW_PIECE_M) continue;
+      // Nothing upright between a platform's edge and its track.
+      if (overTrack(model, (a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, foot)) continue;
       // Tile coordinates: along the wall, and up it from the triangle's foot.
       const ux = -n[1] / Math.hypot(n[0], n[1]), uy = n[0] / Math.hypot(n[0], n[1]);
       for (const p of [a, b, c]) { wv.push(...p); wuv.push((p[0] * ux + p[1] * uy) / 0.6, (p[2] - foot) / WALL_PATTERN_M); }
@@ -799,21 +954,30 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, readS
   // figure's head, and the figure shows through anything in front of it (its ghost, below).
   station.add(new THREE.Mesh(wallGeo, new THREE.MeshLambertMaterial({ map: tiles, side: THREE.DoubleSide, clippingPlanes: [wallCut, cut] })));
 
-  // The yellow strip along each platform edge, on the platform's side.
-  for (const [x1, y1, x2, y2, z] of model.edges) {
+  // The yellow strip along each platform edge, on the platform's side, and the track bed on the other.
+  for (const edge of model.edges) {
+    const [x1, y1, x2, y2, z] = edge;
     const L = Math.hypot(x2 - x1, y2 - y1);
-    const strip = box(L, 0.6, 0.02, 0xf2c94c, [cut]);
     const ang = Math.atan2(y2 - y1, x2 - x1);
-    // Toward the platform: away from the track when the track is near, else either side.
-    const nx = -Math.sin(ang), ny = Math.cos(ang);
-    const mid: [number, number] = [(x1 + x2) / 2, (y1 + y2) / 2];
-    const [tx, ty] = [model.track, ...(model.otherTracks ?? [])]
-      .map((t) => t.at)
-      .sort((a, b) => Math.hypot(a[0] - mid[0], a[1] - mid[1]) - Math.hypot(b[0] - mid[0], b[1] - mid[1]))[0];
-    const side = (tx - x1) * nx + (ty - y1) * ny > 0 ? -1 : 1;
-    strip.position.set((x1 + x2) / 2 + nx * 0.3 * side, (y1 + y2) / 2 + ny * 0.3 * side, z + 0.01);
+    const [pnx, pny] = platformNormal(model, edge);
+    const strip = box(L, 0.6, 0.02, 0xf2c94c, [cut]);
+    strip.position.set((x1 + x2) / 2 + pnx * 0.3, (y1 + y2) / 2 + pny * 0.3, z + 0.01);
     strip.rotation.z = ang;
     station.add(strip);
+    // The bed's y points away from the platform: run it from whichever end puts the platform on its -y.
+    const onLeft = -Math.sin(ang) * pnx + Math.cos(ang) * pny > 0;
+    const bed = trackBed(L, [cut]);
+    bed.position.set(...(onLeft ? [x2, y2, z] : [x1, y1, z]) as P3);
+    bed.rotation.z = onLeft ? ang + Math.PI : ang;
+    station.add(bed);
+  }
+
+  // A barrier across each platform's ends, so the end of the model reads as the end of the platform.
+  for (const end of platformEnds(model)) {
+    const barrier = endBarrier(end.width, [cut]);
+    barrier.position.set(...end.at);
+    barrier.rotation.z = end.angle;
+    station.add(barrier);
   }
 
   // Ceiling lights along the walk: a solid ceiling would sit between the chase camera and the figure.
