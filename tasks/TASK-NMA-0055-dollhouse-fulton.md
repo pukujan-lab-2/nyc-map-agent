@@ -942,6 +942,29 @@ Blocked/uncertain:
 Next:
 - PR #168: merged main (CURRENT.md conflict, both kept), sign test timeout raised. Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.
 
+### 2026-11-13 20:32:18 UTC — agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8","blocked":[],"changed":["none"],"completed":["Fulton St walk reaches the A/C platform: 4 new walks, crop 58.9 KB, walls rebaked, station tests pass on the Pro"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Open the PR, arm auto-merge, then walk the A/C level on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T20:32:18Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"71a0114478ffec8172bb0b88967ba81569b8fbc935e8156a45aa2d61263adeab","request_id":"bb3ecba219884836b44eefd2e88ac8d7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- Fulton St walk reaches the A/C platform: 4 new walks, crop 58.9 KB, walls rebaked, station tests pass on the Pro
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the PR, arm auto-merge, then walk the A/C level on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
