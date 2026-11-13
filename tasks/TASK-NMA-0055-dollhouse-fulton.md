@@ -304,6 +304,52 @@ Blocked/uncertain:
 Next:
 - After #139 merges, check the thick walls live; then build the partner's entering walk once the owner picks dollhouse or Street view
 
+### 2026-11-13 05:34:18 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After PR 151 merges, use the live site on React 19 (map, 3D, Street, a trip), then build walking inside Fulton St on Rapier and ecctrl once the owner picks it","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T05:34:18Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f44fc298bf43356fedb99ebea4fd551eb22abed1c302e042f8c35212d7df7a58","request_id":"3b7153cb6e70409ebf2e378cd1ccb9ab","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After PR 151 merges, use the live site on React 19 (map, 3D, Street, a trip), then build walking inside Fulton St on Rapier and ecctrl once the owner picks it
+
+### 2026-11-13 05:48:12 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After PRs 151, 152 and 153 merge, check the live site on React 19 (map, 3D, Street, a trip), then build the Fulton St walk scene on ecctrl with closed corners and stair side walls","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T05:48:12Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"933029d62ae54fe05600095ce990f27c0402fde6564d6e4bb02f1d37597edc33","request_id":"e1d008bdbe3c4d4ea85e215ce3f85c5d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After PRs 151, 152 and 153 merge, check the live site on React 19 (map, 3D, Street, a trip), then build the Fulton St walk scene on ecctrl with closed corners and stair side walls
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
