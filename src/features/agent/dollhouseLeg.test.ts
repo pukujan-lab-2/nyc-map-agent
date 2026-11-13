@@ -14,8 +14,10 @@ describe("which station leg plays in the dollhouse view", () => {
   it("is the walk off a downtown 4, 5 or 6 at Brooklyn Bridge–City Hall", () => {
     for (const route of ["4", "5", "6"]) expect(dollhouseLeg(seg({}), seg({ kind: "ride", route, coords: [GRAND_CENTRAL, CITY_HALL] }))).toBe("cityhall");
   });
-  it("is the walk off a Brooklyn-bound 2, 3, 4 or 5 at Atlantic Av–Barclays Ctr", () => {
-    for (const route of ["2", "3", "4", "5"]) expect(dollhouseLeg(seg({}), seg({ kind: "ride", route, coords: [FULTON, ATLANTIC] }))).toBe("barclays");
+  it("is the walk off a Brooklyn-bound 2 or 3 at Atlantic Av–Barclays Ctr, whose local platform the model walks from", () => {
+    for (const route of ["2", "3"]) expect(dollhouseLeg(seg({}), seg({ kind: "ride", route, coords: [FULTON, ATLANTIC] }))).toBe("barclays");
+    // The 4 and 5 stop at the express island, which has no walks yet.
+    for (const route of ["4", "5"]) expect(dollhouseLeg(seg({}), seg({ kind: "ride", route, coords: [FULTON, ATLANTIC] }))).toBe(null);
     expect(dollhouseLeg(seg({}), seg({ kind: "ride", route: "Q", coords: [CITY_HALL, ATLANTIC] }))).toBe(null);
   });
   it("is not an uptown train, another line, another station or the walk down", () => {

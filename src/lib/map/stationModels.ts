@@ -24,8 +24,9 @@ export const STATION_MODELS: readonly StationModelInfo[] = [
   { id: "fulton", url: "/transit/fulton-model.json", platform: [-74.00957, 40.71042], routes: /^[45]X?$/, street: "Fulton Street" },
   // The downtown island at Brooklyn Bridge–City Hall, where the 4, 5 and 6 stop.
   { id: "cityhall", url: "/transit/cityhall-model.json", platform: [-74.0043, 40.71287], routes: /^[456]X?$/, street: "Centre Street" },
-  // The Brooklyn-bound island of the 2, 3, 4 and 5 at Atlantic Av–Barclays Ctr.
-  { id: "barclays", url: "/transit/barclays-model.json", platform: [-73.97795, 40.68463], routes: /^[2345]X?$/, street: "Atlantic Avenue" },
+  // The Brooklyn-bound local platform at Atlantic Av–Barclays Ctr, where the 2 and 3 stop. The 4 and 5
+  // stop at the express island, which has no walks yet, so their riders keep the plain view.
+  { id: "barclays", url: "/transit/barclays-model.json", platform: [-73.97795, 40.68463], routes: /^[23]X?$/, street: "Atlantic Avenue" },
 ];
 
 export function stationModel(id: StationModelId): StationModelInfo {
