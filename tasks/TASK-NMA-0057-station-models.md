@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - After #162 deploys, play a 4 train trip from Grand Central to Brooklyn Bridge and one to Atlantic Av on the live site; once #153 merges, run its shell and gap tests over all three models
 
+### 2026-11-13 13:48:36 UTC — agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063","blocked":[],"changed":["public/transit/barclays-model.json, public/transit/cityhall-model.json, src/lib/map/three/dollhouse.ts, src/lib/map/three/dollhouse.test.ts, src/lib/map/three/stationShell.test.ts, src/lib/map/three/stationWalkGeometry.test.ts"],"completed":["Barclays and City Hall walks now start on the real platforms (the source draws them as separate objects beside open-box track beds); #153's shell and gap tests pass on all three models"],"decisions":["no new decisions"],"evidence":["dollhouse, station shell, walk geometry, dollhouseLeg and underground tests: 110 passed on the Pro; tsc OK"],"next_action":"Finish the full Pro suite and the second independent review, then arm auto-merge on PR #162 and check the deploy","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0057","timestamp":"2026-11-13T13:48:36Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"49e9feb71dff738e6d9e1f4e36bdb337bcb6610008267ccf4c44de84374a5520","request_id":"35c10c466f3c4a46ae6938fc1785e1ab","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0057"} -->
+
+Completed:
+- Barclays and City Hall walks now start on the real platforms (the source draws them as separate objects beside open-box track beds); #153's shell and gap tests pass on all three models
+
+Evidence:
+- dollhouse, station shell, walk geometry, dollhouseLeg and underground tests: 110 passed on the Pro; tsc OK
+
+Decisions:
+- no new decisions
+
+Changed:
+- public/transit/barclays-model.json, public/transit/cityhall-model.json, src/lib/map/three/dollhouse.ts, src/lib/map/three/dollhouse.test.ts, src/lib/map/three/stationShell.test.ts, src/lib/map/three/stationWalkGeometry.test.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Finish the full Pro suite and the second independent review, then arm auto-merge on PR #162 and check the deploy
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
