@@ -15,6 +15,15 @@ export function setAskedLang(lang: AppLang): void {
   sendLanguage({ type: "QUESTION", text: "", lang });
 }
 
+/**
+ * A question with no clear language: one plainly in the Latin alphabet after a Chinese, Russian,
+ * Bengali or Korean one lets go of that language (owner's partner, 2026-11-12). The rule is the
+ * machine's (`leavesAskedScript` in ./language.ts).
+ */
+export function leaveAskedScript(question: string): void {
+  sendLanguage({ type: "QUESTION", text: question, lang: null });
+}
+
 export function getAppLang(): AppLang {
   return getLanguage().app;
 }

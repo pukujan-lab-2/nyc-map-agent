@@ -97,8 +97,8 @@ const browserTag = (): string | null => {
  * English question after a Chinese one was answered with Chinese buttons and a Chinese voice).
  */
 const NON_LATIN = new Set<AppLang>(["zh", "ru", "bn", "ko"]);
-/** Anything outside Latin letters, punctuation and spaces (a string, since the general punctuation range trips the whitespace lint). */
-const NOT_LATIN = new RegExp("[^ -\\u024F\\u2000-\\u206F\\s]");
+/** Letters of the scripts that keep the asked language: Cyrillic, Bengali, kana, Chinese, Hangul. */
+const NOT_LATIN = /[\u0400-\u04FF\u0980-\u09FF\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/;
 export function leavesAskedScript(asked: AppLang | null, question: string): boolean {
   return !!asked && NON_LATIN.has(asked) && /[A-Za-z]{2,}/.test(question) && !NOT_LATIN.test(question);
 }
