@@ -649,6 +649,29 @@ Blocked/uncertain:
 Next:
 - Fix the three stationShell tests broken by the padded wall caps, then in the owner's order: one MTA-coloured board per exit, ceilings that slope with each stair, the wall across the passage at (-65.2, 30.2), walking into a street picture returns to Street view; screenshot each in the pane
 
+### 2026-11-13 15:49:42 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Owner to choose: rebuild walls and ceilings once in Blender on the Pro (extrude walkable 3 m, voxel remesh, flip inward, bake) or keep fixing stationShell; fix the three shell tests either way","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:49:42Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"7f880b1cf2f7afa28b016d9047563b39ea2c8659505a0aa21517f7017a2bb80c","request_id":"2e10da1d76fc4e4da99b749eda7b7b61","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Owner to choose: rebuild walls and ceilings once in Blender on the Pro (extrude walkable 3 m, voxel remesh, flip inward, bake) or keep fixing stationShell; fix the three shell tests either way
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
