@@ -220,6 +220,29 @@ Blocked/uncertain:
 Next:
 - After #144 and #149 merge, run Find exit after a Grand Central to Fulton St trip on the live site and answer the questions
 
+### 2026-11-13 07:54:44 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Merged main (with #155's pull sheet layout fix) into the trip-end-station guess branch; CURRENT.md keeps both entries"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Let CI pass and auto-merge #149, then ask for the 4 train trip to Fulton St on the live site, close the card, tap Find exit and read the guess","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T07:54:44Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"dc7b8911b5cdf01b628997e5131636d9b9e2efd55c4be593f6a7b6b451493e9d","request_id":"f30ab7db2eb24f1fa678bda3543e22ed","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Merged main (with #155's pull sheet layout fix) into the trip-end-station guess branch; CURRENT.md keeps both entries
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let CI pass and auto-merge #149, then ask for the 4 train trip to Fulton St on the live site, close the card, tap Find exit and read the guess
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
