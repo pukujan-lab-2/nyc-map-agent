@@ -4,6 +4,12 @@ import { expectLayout, SIZES } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
+/** The trip card shows only where to, where you are and the bar; the rest opens from "Trip details". */
+async function tripDetails(page: import("@playwright/test").Page) {
+  const b = page.getByRole("button", { name: "Trip details", exact: true });
+  if ((await b.getAttribute("aria-expanded")) === "false") await b.click();
+}
+
 /**
  * Every main screen meets the layout bar in e2e/layout.ts at every size in
  * SIZES: nothing off the side, no tap target under 24 px, nothing covering a
@@ -92,6 +98,7 @@ for (const size of SIZES) {
         { type: "text", text: "This way doesn't work on Saturday." },
       ]);
       await ask(page, "Plan a trip from Union Square to Grand Central this weekend");
+      await tripDetails(page);
       const box = page.getByTestId("trip-impact");
       await expect(box).toBeVisible();
       await expect(box).toContainText("can't get off there");
@@ -108,6 +115,7 @@ for (const size of SIZES) {
       const walk = (trip.legs as { kind: string; coords?: number[][] }[])[0].coords!;
       await page.route("**/routed-foot/route/**", (r) => r.fulfill({ json: { code: "Ok", routes: [{ distance: 105, duration: 90, geometry: { type: "LineString", coordinates: walk }, legs: [{ steps: walk.map((location, i) => ({ distance: 50, name: "E 14 St", maneuver: { location, type: i === walk.length - 1 ? "arrive" : "depart", bearing_after: 30 } })) }] }] } }));
       await ask(page, "Plan a trip from Union Square to Grand Central");
+      await tripDetails(page);
       await page.getByRole("button", { name: "Use this route", exact: true }).click();
       await expect(page.getByRole("region", { name: "Walking guidance", exact: true })).toBeVisible();
       const next = page.getByRole("region", { name: "Next on this trip" });
