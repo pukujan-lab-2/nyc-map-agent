@@ -781,6 +781,29 @@ Blocked/uncertain:
 Next:
 - Owner walks ?baked-shell (Manifold walls now also collide); signs session adds fork and dead-end boards; on owner OK move the merge script into the repo and replace the three shell tests
 
+### 2026-11-13 16:40:16 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Compare walk bot and defect counts, old shell vs Manifold shell (BAKED_SHELL), on the Pro; report to the owner","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:40:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f592153e04fac66bb6a6e279616057f7cf6e6257983276731df5f11a62846c8b","request_id":"cb715dc434b1474a9417c60a43694dcb","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Compare walk bot and defect counts, old shell vs Manifold shell (BAKED_SHELL), on the Pro; report to the owner
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
