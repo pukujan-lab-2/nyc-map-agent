@@ -174,6 +174,29 @@ Blocked/uncertain:
 Next:
 - Let PR 140 merge, then repeat the live check: trip to Fulton St, close the card, Find exit, then offline and in Spanish
 
+### 2026-11-13 04:15:43 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["At Fulton St the where-am-I helper asks tap questions and the nearest sign's words, then says where in the station you probably are and the steps to the exit (pull request #144)"],"decisions":["no new decisions"],"evidence":["Placement replays: 65% of spots land in the right stretch with no trip known, 90% on the trip's walk; changed unit tests pass (stationPlace, placeFlow, prompt)"],"next_action":"After #144 merges, pin down a spot inside Fulton St on the live site: Find exit, Yes, answer the questions, then Show me","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T04:15:43Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"81b7560693fa8f3cd17c7f91f75a98454f2a4f1ffafba8fb01343ffa50778b05","request_id":"2b22dbf58640456bab3cb1c89d773391","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- At Fulton St the where-am-I helper asks tap questions and the nearest sign's words, then says where in the station you probably are and the steps to the exit (pull request #144)
+
+Evidence:
+- Placement replays: 65% of spots land in the right stretch with no trip known, 90% on the trip's walk; changed unit tests pass (stationPlace, placeFlow, prompt)
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #144 merges, pin down a spot inside Fulton St on the live site: Find exit, Yes, answer the questions, then Show me
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
