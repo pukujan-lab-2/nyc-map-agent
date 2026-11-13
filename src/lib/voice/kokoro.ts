@@ -32,46 +32,6 @@ export function pcm16ToFloat(b: Uint8Array): Float32Array {
   return out;
 }
 
-/** Cache Storage name for kept lines; a new version drops the old. */
-export const VOICE_CACHE = "nyc-map-voice-v1";
-/** Lines kept, newest first out; about 150 KB each, so a few trips' walks. */
-export const VOICE_MAX = 80;
-
-/** FNV-1a, for a short cache key. Pure. */
-export function voiceKey(text: string, lang: string): string {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
-  return `/__voice/v1/${lang}/${h.toString(16)}-${text.length}`;
-}
-
-const voiceUrl = (text: string, lang: string) => new URL(voiceKey(text, lang), typeof location === "undefined" ? "http://localhost" : location.origin).href;
-
-/** A kept line's sound, or null. The stored text is checked, so a key that collides is a miss. */
-export async function keptVoice(text: string, lang: string): Promise<{ pcm: Uint8Array; rate: number } | null> {
-  if (typeof caches === "undefined") return null;
-  try {
-    const hit = await (await caches.open(VOICE_CACHE)).match(voiceUrl(text, lang));
-    if (!hit || hit.headers.get("x-text") !== encodeURIComponent(text)) return null;
-    return { pcm: new Uint8Array(await hit.arrayBuffer()), rate: Number(hit.headers.get("x-sample-rate")) || 24000 };
-  } catch {
-    return null;
-  }
-}
-
-/** Saves a line's sound, dropping the oldest past VOICE_MAX. */
-export async function keepVoice(text: string, lang: string, pcm: Uint8Array, rate: number): Promise<void> {
-  if (typeof caches === "undefined" || !pcm.length) return;
-  try {
-    const cache = await caches.open(VOICE_CACHE);
-    const headers = { "content-type": "application/octet-stream", "x-sample-rate": String(rate), "x-text": encodeURIComponent(text) };
-    await cache.put(voiceUrl(text, lang), new Response(pcm.slice().buffer, { headers }));
-    const keys = await cache.keys();
-    for (const k of keys.slice(0, Math.max(0, keys.length - VOICE_MAX))) await cache.delete(k);
-  } catch {
-    /* full or blocked: the line is asked for again next time */
-  }
-}
-
 /** Speaks `text`; returns cancel. `onEnd` fires once (after the last sound, on cancel, or on a failure after sound began). `onFail` fires instead if nothing played. */
 export function speakKokoro(text: string, lang: string, onEnd: () => void, onFail: () => void, keep = false): () => void {
   const ctrl = new AbortController();
@@ -110,19 +70,21 @@ export function speakKokoro(text: string, lang: string, onEnd: () => void, onFai
     heard = true;
     return at + buf.duration;
   };
+  const ended = () => {
+    const last = sources.at(-1);
+    if (!last) return fail();
+    last.onended = finish;
+  };
   void (async () => {
     try {
       if (keep) {
-        const saved = await keptVoice(text, lang);
+        const saved = await import("./voiceKeep").then((m) => m.keptVoice(text, lang), () => null);
         if (done) return;
         if (saved) {
           ctx = new AudioContext();
           await ctx.resume().catch(() => undefined);
-          play(pcm16ToFloat(saved.pcm), saved.rate, 0);
-          const last = sources.at(-1);
-          if (!last) return fail();
-          last.onended = finish;
-          return;
+          play(saved.f, saved.rate, 0);
+          return ended();
         }
         // Nothing kept and the server was down a moment ago: the browser voice, without asking again.
         if (!kokoroUp()) { done = true; onFail(); return; }
@@ -155,15 +117,8 @@ export function speakKokoro(text: string, lang: string, onEnd: () => void, onFai
         }
         if (end) break;
       }
-      const last = sources.at(-1);
-      if (!last) return fail();
-      last.onended = finish;
-      if (keep) {
-        const all = new Uint8Array(whole.reduce((n, b) => n + b.length, 0));
-        let at = 0;
-        for (const b of whole) { all.set(b, at); at += b.length; }
-        void keepVoice(text, lang, all, rate);
-      }
+      ended();
+      if (keep && heard) void import("./voiceKeep").then((m) => m.keepVoice(text, lang, whole, rate)).catch(() => undefined);
     } catch {
       fail();
     }

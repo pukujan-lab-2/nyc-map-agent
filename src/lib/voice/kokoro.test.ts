@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { keepVoice, keptVoice, kokoroLang, pcm16ToFloat, VOICE_MAX, voiceKey } from "./kokoro";
+import { kokoroLang, pcm16ToFloat } from "./kokoro";
+import { keepVoice, keptVoice, VOICE_MAX, voiceKey } from "./voiceKeep";
 
 describe("kokoro", () => {
   it("speaks the app's English, Spanish, French and Chinese, and leaves the rest to the browser", () => {
@@ -42,10 +43,10 @@ describe("spoken trip steps kept on the phone (#132)", () => {
   it("plays back a kept line's sound and sample rate, and misses a line never kept", async () => {
     const { caches } = fakeCaches();
     vi.stubGlobal("caches", caches);
-    await keepVoice("Turn left to the fare gates", "en", new Uint8Array([1, 2, 3, 4]), 22050);
+    await keepVoice("Turn left to the fare gates", "en", [new Uint8Array([0, 0]), new Uint8Array([0, 0x40])], 22050);
     const got = await keptVoice("Turn left to the fare gates", "en");
     expect(got?.rate).toBe(22050);
-    expect([...(got?.pcm ?? [])]).toEqual([1, 2, 3, 4]);
+    expect([...(got?.f ?? [])]).toEqual([0, 0.5]);
     expect(await keptVoice("Turn right", "en")).toBeNull();
     expect(await keptVoice("Turn left to the fare gates", "es")).toBeNull();
   });
@@ -53,7 +54,7 @@ describe("spoken trip steps kept on the phone (#132)", () => {
   it(`keeps the newest ${VOICE_MAX} lines`, async () => {
     const { caches, store } = fakeCaches();
     vi.stubGlobal("caches", caches);
-    for (let i = 0; i < VOICE_MAX + 5; i++) await keepVoice(`step ${i}`, "en", new Uint8Array([i, 0]), 24000);
+    for (let i = 0; i < VOICE_MAX + 5; i++) await keepVoice(`step ${i}`, "en", [new Uint8Array([i, 0])], 24000);
     expect(store.size).toBe(VOICE_MAX);
     expect(await keptVoice("step 0", "en")).toBeNull();
     expect(await keptVoice(`step ${VOICE_MAX + 4}`, "en")).not.toBeNull();
@@ -61,7 +62,7 @@ describe("spoken trip steps kept on the phone (#132)", () => {
 
   it("does nothing without Cache Storage", async () => {
     vi.stubGlobal("caches", undefined);
-    await keepVoice("x", "en", new Uint8Array([1, 2]), 24000);
+    await keepVoice("x", "en", [new Uint8Array([1, 2])], 24000);
     expect(await keptVoice("x", "en")).toBeNull();
   });
 });
