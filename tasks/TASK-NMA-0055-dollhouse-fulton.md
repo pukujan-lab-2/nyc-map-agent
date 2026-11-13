@@ -315,6 +315,29 @@ Next:
 - After #141 merges, play a real trip from Broadway & Fulton St on the uptown A on the live site and on a phone
 - After #139 merges, check the thick walls live; then build the partner's entering walk once the owner picks dollhouse or Street view
 
+### 2026-11-13 04:12:22 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #141 merges, play a real trip from Broadway & Fulton St on the uptown A on the live site and on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T04:12:22Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4db73ad29ef496963b90059a619077450513503adf82724148246d188573a879","request_id":"95fcac66a7034014ace0c4451b93e62e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #141 merges, play a real trip from Broadway & Fulton St on the uptown A on the live site and on a phone
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
