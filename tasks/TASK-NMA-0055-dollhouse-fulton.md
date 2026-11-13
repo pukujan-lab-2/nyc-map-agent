@@ -850,6 +850,29 @@ Blocked/uncertain:
 Next:
 - Owner OK'd the switch: Fulton St's walk now draws walls baked by pnpm build:station-shell (manifold-3d). Waiting on Pro checks (walk bot, defects, lint, tsc, size; size was 8.3 kB over). Then mark #168 ready, arm auto-merge, check the VPS deploy.
 
+### 2026-11-13 17:49:16 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"PR #168 ready with auto-merge: Fulton St walk draws Manifold-baked walls; all 17 walk tests pass. After it deploys, walk it on the live site and show the owner.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T17:49:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"385305c66e8480315edc0b4ec2f833f2b603aeb038d899b8038b7e26a196fae3","request_id":"3f32a063fdfc4be590aa199b78c6dd6e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- PR #168 ready with auto-merge: Fulton St walk draws Manifold-baked walls; all 17 walk tests pass. After it deploys, walk it on the live site and show the owner.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
