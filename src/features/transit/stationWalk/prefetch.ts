@@ -7,7 +7,6 @@
  */
 import { useSyncExternalStore } from "react";
 import { loadModel } from "@/lib/map/dollhousePreview";
-import { loadWalkShell } from "@/lib/map/three/walkShell";
 
 export type WalkStep = "code" | "model" | "station" | "physics";
 export type WalkLoad = { done: ReadonlySet<WalkStep>; failed: boolean };
@@ -38,7 +37,8 @@ async function run(): Promise<void> {
   });
   const station = loadModel().then((model) => {
     finish("model");
-    return loadWalkShell(model).then(() => finish("station"));
+    // Imported here, not at the top, so the shell's code stays out of the app's first download.
+    return import("@/lib/map/three/walkShell").then((m) => m.loadWalkShell(model)).then(() => finish("station"));
   });
   await Promise.all([code, station]);
 }
