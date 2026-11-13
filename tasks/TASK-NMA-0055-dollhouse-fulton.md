@@ -580,6 +580,29 @@ Blocked/uncertain:
 Next:
 - After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s
 
+### 2026-11-13 15:15:08 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:15:08Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"acdf048308738ab604961d94e368e680f7e5cb3abc5306c700e64d101948ff04","request_id":"e6347ec46ff9409a9a3043d298197b39","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
