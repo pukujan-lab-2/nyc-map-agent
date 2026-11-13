@@ -580,6 +580,29 @@ Blocked/uncertain:
 Next:
 - Close the 57 remaining hole spots in the outline shell (stairwell columns between stair and level ceilings, plus ceiling-to-wall cracks), fix the shell gap test for the ceiling-step strips, then record the walk, run Pro checks and open the PR
 
+### 2026-11-13 15:19:01 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Replace the 0.5 m wall slabs with one continuous wall per level outline whose top stops under any floor overhead, then check it at the broken stair (-104.5, 23.8, floor -2.1) in the pane using the dev readout","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:19:01Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"994341a7680ea0ea19a685521ce1c5e6e0b3604a6c197ac50d24fa383280d2d8","request_id":"2d60f3ed799a45b1a036f91671368607","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Replace the 0.5 m wall slabs with one continuous wall per level outline whose top stops under any floor overhead, then check it at the broken stair (-104.5, 23.8, floor -2.1) in the pane using the dev readout
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
