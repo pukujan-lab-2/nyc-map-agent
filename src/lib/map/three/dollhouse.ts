@@ -75,7 +75,7 @@ const EXIT_MATCH_M = 50;
 const GLIDE_MS = 1500;
 /** Lexington Avenue line green, for the train's stripe. */
 const LEX_GREEN = 0x00933c;
-const CAR_M = 15.5, CARS = 10;
+export const CAR_M = 15.5, CARS = 10;
 /** The train pulls out over this many metres of the figure's walk, then it is gone. */
 const PULL_OUT_M = 25;
 /** The share of the wait spent on the overview of the platform before the camera eases in. */
@@ -122,6 +122,16 @@ export function alongLine(line: Array<[number, number]>, s: number): { x: number
 }
 
 /** Length of a walk in metres, stairs measured along their slope. */
+/**
+ * Where car `i` (0 is the front) stands, with the front car's middle `front` metres along the track
+ * from the point beside `track.at`: on a curve each car follows the centre line, else the straight run.
+ */
+export function carPose(track: DollhouseTrack, front: number, i: number): { x: number; y: number; angle: number } {
+  const along = front - i * CAR_M;
+  if (track.line) return alongLine(track.line, lineArc(track.line, track.at[0], track.at[1]) + along);
+  return { x: track.at[0] + Math.cos(track.angle) * along, y: track.at[1] + Math.sin(track.angle) * along, angle: track.angle };
+}
+
 export function walkLength(walk: P3[]): number {
   let total = 0;
   for (let i = 1; i < walk.length; i++) total += Math.hypot(walk[i][0] - walk[i - 1][0], walk[i][1] - walk[i - 1][1], walk[i][2] - walk[i - 1][2]);
@@ -697,6 +707,12 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   const tracks = [model.track, ...model.walks.flatMap((w) => (w.track ? [w.track] : []))];
   const nearestTrack = ([x, y]: [number, number]) =>
     tracks.reduce((a, b) => (Math.hypot(b.at[0] - x, b.at[1] - y) < Math.hypot(a.at[0] - x, a.at[1] - y) ? b : a));
+  /** The point of a track beside (x, y): on its centre line, or square to its straight run. */
+  const trackBeside = (t: DollhouseTrack, x: number, y: number): [number, number] => {
+    if (t.line) { const p = alongLine(t.line, lineArc(t.line, x, y)); return [p.x, p.y]; }
+    const c = Math.cos(t.angle), sn = Math.sin(t.angle), k = (x - t.at[0]) * c + (y - t.at[1]) * sn;
+    return [t.at[0] + c * k, t.at[1] + sn * k];
+  };
   const scene = new THREE.Scene();
   const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const wallCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
@@ -780,8 +796,9 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const ang = Math.atan2(y2 - y1, x2 - x1);
     // Toward the platform: away from the track when the track is near, else either side.
     const nx = -Math.sin(ang), ny = Math.cos(ang);
-    const [tx, ty] = nearestTrack([(x1 + x2) / 2, (y1 + y2) / 2]).at;
-    const side = (tx - x1) * nx + (ty - y1) * ny > 0 ? -1 : 1;
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const [tx, ty] = trackBeside(nearestTrack([mx, my]), mx, my);
+    const side = (tx - mx) * nx + (ty - my) * ny > 0 ? -1 : 1;
     strip.position.set((x1 + x2) / 2 + nx * 0.3 * side, (y1 + y2) / 2 + ny * 0.3 * side, z + 0.01);
     strip.rotation.z = ang;
     station.add(strip);
@@ -857,21 +874,12 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   }
   const cars = train.children;
   /** Stands the train with its front car's middle `front` metres along the track. */
-  const placeTrain = (front: number) => {
-    if (!track.line) {
-      train.position.set(track.at[0] + Math.cos(track.angle) * front, track.at[1] + Math.sin(track.angle) * front, track.at[2]);
-      return;
-    }
-    // On a curve each car follows the line; `front` counts from the point beside track.at.
-    const s0 = lineArc(track.line, track.at[0], track.at[1]);
-    cars.forEach((car, i) => {
-      const p = alongLine(track.line!, s0 + front - i * CAR_M);
-      car.position.set(p.x, p.y, 0);
-      car.rotation.z = p.angle;
-    });
-  };
-  if (track.line) train.position.set(0, 0, track.at[2]);
-  else { train.position.set(...track.at); train.rotation.z = track.angle; }
+  const placeTrain = (front: number) => cars.forEach((car, i) => {
+    const p = carPose(track, front, i);
+    car.position.set(p.x, p.y, 0);
+    car.rotation.z = p.angle;
+  });
+  train.position.set(0, 0, track.at[2]);
   scene.add(train);
 
   const { group: figure, stride } = buildFigure();

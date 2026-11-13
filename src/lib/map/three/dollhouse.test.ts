@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { alongLine, forCells, lineArc, outlineWalls, pickWalk, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
+import { alongLine, CAR_M, CARS, carPose, forCells, lineArc, outlineWalls, pickWalk, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
 
 const load = (name: string) => JSON.parse(readFileSync(`public/transit/${name}-model.json`, "utf8")) as DollhouseModel;
 const model = load("fulton");
@@ -31,6 +31,59 @@ function floorUnder(x: number, y: number, z: number, m: DollhouseModel = model):
 const NASSAU_EXIT: [number, number] = [-74.0075959, 40.710219];
 
 describe.each(MODELS)("the dollhouse walks in the $name model", ({ name, model }) => {
+  /** Each walk's train as the station view builds it: its own track, or the shared one, with the shared centre line. */
+  const trainOf = (walk: DollhouseModel["walks"][number]) => {
+    const own = walk.track ?? model.track;
+    const track = { ...own, line: own.line ?? model.track.line };
+    const [sx, sy] = walk.path[0];
+    const door = track.line
+      ? lineArc(track.line, sx, sy) - lineArc(track.line, track.at[0], track.at[1])
+      : (sx - track.at[0]) * Math.cos(track.angle) + (sy - track.at[1]) * Math.sin(track.angle);
+    return { track, standing: door + CAR_M * (CARS / 2) };
+  };
+
+  it("stands every walk's train in one piece and pulls it out along the track", () => {
+    for (const walk of model.walks) {
+      const { track, standing } = trainOf(walk);
+      for (const front of [standing, standing + 40, standing + 170]) {
+        const poses = Array.from({ length: CARS }, (_, i) => carPose(track, front, i));
+        for (const p of poses) expect([p.x, p.y, p.angle].every(Number.isFinite)).toBe(true);
+        for (let i = 1; i < CARS; i++) expect(Math.abs(Math.hypot(poses[i].x - poses[i - 1].x, poses[i].y - poses[i - 1].y) - CAR_M)).toBeLessThan(1);
+      }
+    }
+  });
+
+  it("leaves no floor or stair inside the standing train: it stands on its track bed, not on a platform", () => {
+    const { v, t } = model;
+    /** Heights of every face of the model over (x, y). */
+    const heights = (x: number, y: number) => {
+      const out: number[] = [];
+      for (let i = 0; i < t.length; i += 3) {
+        const [a, b, c] = [t[i] * 3, t[i + 1] * 3, t[i + 2] * 3];
+        const d = (v[b + 1] - v[c + 1]) * (v[a] - v[c]) + (v[c] - v[b]) * (v[a + 1] - v[c + 1]);
+        if (Math.abs(d) < 1e-9) continue;
+        const u = ((v[b + 1] - v[c + 1]) * (x - v[c]) + (v[c] - v[b]) * (y - v[c + 1])) / d;
+        const w = ((v[c + 1] - v[a + 1]) * (x - v[c]) + (v[a] - v[c]) * (y - v[c + 1])) / d;
+        if (u < 0 || w < 0 || u + w > 1) continue;
+        out.push(u * v[a + 2] + w * v[b + 2] + (1 - u - w) * v[c + 2]);
+      }
+      return out;
+    };
+    for (const walk of model.walks) {
+      const { track, standing } = trainOf(walk);
+      const inside: string[] = [];
+      for (let i = 0; i < CARS; i++) {
+        const p = carPose(track, standing, i), c = Math.cos(p.angle), s = Math.sin(p.angle);
+        // The car body: 15 m long, 2.4 m wide, from 0.4 m over the rail to its roof.
+        for (let a = -7; a <= 7; a += 1) for (const b of [-1.2, -0.6, 0, 0.6, 1.2]) {
+          const x = p.x + c * a - s * b, y = p.y + s * a + c * b;
+          if (heights(x, y).some((h) => h > track.at[2] + 0.4 && h < track.at[2] + 3.4)) inside.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+        }
+      }
+      expect(inside.slice(0, 10), `floor inside the train for the walk to ${walk.exit.join(",")}`).toEqual([]);
+    }
+  });
+
   it("has a walk for each exit it reaches, each from the platform to the street", () => {
     expect(model.walks.length).toBeGreaterThanOrEqual(2);
     for (const { path } of model.walks) {
