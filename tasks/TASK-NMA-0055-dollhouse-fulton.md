@@ -361,6 +361,29 @@ Blocked/uncertain:
 Next:
 - After #141 merges, play a real trip from Broadway & Fulton St on the uptown A on the live site and on a phone
 
+### 2026-11-13 05:04:04 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After the follow camera PR merges, play the Fulton St walk on the live site and check the camera stays behind the figure under the ceiling on every stair","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T05:04:04Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"2fff094d6e6c51980060f474bc1a1b3b8578cf4612b51f5c0f4c4e241794fb3b","request_id":"54b24298c3234cd9b73ee3525accfe8d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After the follow camera PR merges, play the Fulton St walk on the live site and check the camera stays behind the figure under the ceiling on every stair
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
