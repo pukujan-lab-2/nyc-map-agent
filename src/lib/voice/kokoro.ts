@@ -1,3 +1,4 @@
+import { getLanguage } from "@/lib/i18n/language";
 /**
  * The answer read aloud by Kokoro through POST /api/tts (#37), instead of the browser's own voice.
  * The server streams 16-bit mono PCM; each piece is queued on a Web Audio clock as it arrives, so
@@ -15,7 +16,7 @@ let downUntil = 0;
 export function kokoroLang(text: string, lang?: string | null): string | null {
   if (OTHER_SCRIPT.test(text)) return null;
   if (/[一-鿿]/.test(text)) return "zh";
-  const base = (lang || (typeof navigator === "undefined" ? "en" : navigator.language) || "en").slice(0, 2).toLowerCase();
+  const base = (lang || getLanguage().request || "en").slice(0, 2).toLowerCase();
   return LANGS.has(base) ? base : null;
 }
 

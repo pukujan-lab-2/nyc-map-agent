@@ -39,7 +39,7 @@ import { useSpeech } from "@/lib/voice/useSpeech";
 import { turnAroundLine, useWrongWay } from "@/lib/geo/wrongWay";
 import { spokenSummary } from "@/lib/voice/tts";
 import { executeCommand, type ExecutorContext } from "./executor";
-import { PLAYBACK_SPEEDS, langTag, type Leg, type MapAction, type PlaybackSpeed, type Trip, type TripMode } from "./schema";
+import { PLAYBACK_SPEEDS, type Leg, type MapAction, type PlaybackSpeed, type Trip, type TripMode } from "./schema";
 import { askAgent } from "./stream";
 import { TripSummary, selectAlternative } from "./TripSummary";
 import { TRIP_CHOICES, tripChoiceQuestion } from "./tripChoices";
@@ -71,7 +71,8 @@ import { rememberCommute, useHomeWork } from "./commute";
 import { memorySummary } from "./memorySummary";
 import { recentTurns } from "./chatWindow";
 import { rememberChat, rememberLookup } from "@/lib/memory/memory";
-import { parseLang, useLangPref, type AppLang } from "@/lib/voice/langPref";
+import { parseLang } from "@/lib/voice/langPref";
+import { getLanguage, sendLanguage, takeHeard, useLanguage, voiceTag } from "@/lib/i18n/language";
 import { useVoicePrefs } from "@/lib/voice/voicePrefs";
 import { useFollowed } from "@/lib/transit/follow";
 import { useLinesControl } from "@/lib/transit/linesControl";
@@ -79,7 +80,7 @@ import { useStationHelpVisible } from "@/lib/underground/stationHelp";
 import { noteTrip, openLostHelper, sendToLost, useLostHelper } from "@/lib/underground/lostHelper";
 import { applyStep, statusLine, type AgentStep } from "./agentSteps";
 import { detectLang, speechTag, statusLang } from "./statusLines";
-import { getAppLang, setAskedLang, tr, useAppLang } from "@/lib/i18n/appLang";
+import { tr } from "@/lib/i18n/appLang";
 import { languageList, languagePrompt, matchSpokenLanguage } from "@/lib/voice/languagePrompt";
 import { needsSharedOrigin, ORIGIN_PROMPT, replyAsksForOrigin } from "./needsOrigin";
 import { framePadding, frameRestrooms } from "@/lib/map/mapCover";
@@ -133,12 +134,6 @@ interface Msg { id: string; role: "user" | "assistant"; content: string; offerLo
 const STATUS_AFTER_MS = 2500;
 const VOICE_UNSUPPORTED = "Voice input isn't available in this browser. Type your question instead.";
 
-/** The browser language, when it is a tag the server accepts. */
-function browserLang(): string | undefined {
-  const l = typeof navigator === "undefined" ? undefined : navigator.language;
-  return l && langTag.safeParse(l).success ? l : undefined;
-}
-
 const MODES: Array<{ id: TripMode; Icon: typeof Bus }> = [
   { id: "walk", Icon: Footprints },
   { id: "transit", Icon: Bus },
@@ -162,10 +157,12 @@ export default function AgentOverlay() {
   const stationHelpVisible = useStationHelpVisible();
   const lost = useLostHelper();
   const homeInput = useRef<HTMLInputElement>(null);
-  // A stored language wins; otherwise the browser's, read when it changes.
-  const storedLang = useLangPref();
-  const lang = storedLang ?? browserLang();
-  const appLang = useAppLang();
+  // One language machine (src/lib/i18n/language.ts, #145) answers for the buttons, the mic, the voice and the agent.
+  // `lang` is the tag for the agent and the status lines: picked, else the browser's.
+  const lang = useLanguage((v) => v.request) ?? undefined;
+  const appLang = useLanguage((v) => v.app);
+  const listenTag = useLanguage((v) => v.listen);
+  const detectVoice = useLanguage((v) => v.detect);
   // One panel at a time (#225): opening Ask closes the drawer and any sheet.
   useEffect(() => {
     if (chatOpen) closeAll();
@@ -208,11 +205,11 @@ export default function AgentOverlay() {
   /** The question waiting on a shared location, so the button can ask it again. */
   const pendingQuestion = useRef<string | null>(null);
   // Hands-free opened with the spoken language question (#42): the next thing said picks the
-  // language rather than being sent to the agent as a question. State, not a ref, so the
-  // hands-free loop sees it flip and keeps its arm for the real question.
-  const [langAsked, setLangAsked] = useState(false);
-  // Bumped when the spoken language question is answered: hands-free opens the mic once more.
-  const [languagePicked, setLanguagePicked] = useState(0);
+  // language rather than being sent to the agent as a question. The language machine holds the
+  // round, so the hands-free loop sees it end and keeps its arm for the real question; `picks`
+  // ticks when it is answered, and hands-free opens the mic once more.
+  const langAsked = useLanguage((v) => v.asking);
+  const languagePicked = useLanguage((v) => v.picks);
   const [handsFree, setHandsFree] = useState(false);
   const askReq = useAskRequest();
   const compact = askReq !== null;
@@ -226,8 +223,6 @@ export default function AgentOverlay() {
   // The small mic dictates into the text box; the big button holds a hands-free conversation.
   const [dictating, setDictating] = useState(false);
   const dictatingRef = useRef(false);
-  // The language the server heard on the last voice turn (phones with no language picked).
-  const heardLangRef = useRef<AppLang | null>(null);
   const speech = useSpeech({
     onFinalTranscript: (t, heard) => {
       if (dictatingRef.current) {
@@ -237,32 +232,33 @@ export default function AgentOverlay() {
         return;
       }
       // Hands-free just asked which language: this turn answers that, and is not a question.
-      if (langAsked) {
-        setLangAsked(false);
+      const now = getLanguage();
+      if (now.asking) {
         const picked = matchSpokenLanguage(t);
         if (picked) {
-          setAskedLang(picked);
-          // A `languagePicked` tick tells the hands-free loop to open the mic once more for the real
-          // question, now that the language round is over (#42).
-          setLanguagePicked((n) => n + 1);
-          speech.speak(languageList([picked]), { lang: speechTag(picked, lang) });
+          // A sure answer ticks `picks`, which tells the hands-free loop to open the mic once more for the
+          // real question, now that the language round is over (#42).
+          sendLanguage({ type: "ROUND_ANSWER", lang: picked, sure: true });
+          speech.speak(languageList([picked]), { lang: voiceTag(picked, now.request) });
           return;
         }
         // Heard no language it knows, or two: read the guess back and ask again.
-        const guess = parseLang(heard) ?? appLang;
-        setAskedLang(guess);
-        speech.speak(`${languageList([guess])}?`, { lang: speechTag(guess, lang) });
+        const guess = parseLang(heard) ?? now.app;
+        sendLanguage({ type: "ROUND_ANSWER", lang: guess, sure: false });
+        speech.speak(`${languageList([guess])}?`, { lang: voiceTag(guess, now.request) });
         return;
       }
-      heardLangRef.current = parseLang(heard);
+      sendLanguage({ type: "HEARD", lang: parseLang(heard) });
       voiceTurn.current = true;
       // The real question is here, so the language round is over.
-      setLangAsked(false);
+      sendLanguage({ type: "ROUND_CLOSE" });
       void send(t);
     },
-    lang: home ? lang : undefined,
+    // The mic listens in the app's language: picked, else the one last asked in, else the browser's.
+    // It used only the picked one, so Chinese said after a Chinese question was heard as English (2026-11-12).
+    lang: home ? listenTag : undefined,
     // No language picked: detect it from the voice, so anyone can just speak (2026-10-25).
-    detectLang: home && storedLang === null,
+    detectLang: home && detectVoice,
   });
   // Dictation that ends without words (silence, an error) lets go of the mic button.
   const wasListening = useRef(false);
@@ -274,7 +270,7 @@ export default function AgentOverlay() {
     wasListening.current = speech.listening;
   }, [speech.listening]);
   // The preview's steps are said in the app's language, with that language's voice.
-  const player = usePlayer((text) => speech.speak(text, { lang: speechTag(getAppLang(), lang) }));
+  const player = usePlayer((text) => { const l = getLanguage(); speech.speak(text, { lang: voiceTag(l.app, l.request) }); });
   /** Speed the next Play uses: the agent's pick or the person's last tap. */
   const [prefSpeed, setPrefSpeed] = useState<PlaybackSpeed>(10);
   // Ask, the route fit, and the preview all move the camera. Follow and street
@@ -410,8 +406,10 @@ export default function AgentOverlay() {
     const byVoice = voiceTurn.current;
     voiceTurn.current = false;
     // Spoken in another language: ask, answer and speak in that one.
-    const heard = byVoice ? heardLangRef.current : null;
-    heardLangRef.current = null;
+    const heardNow = takeHeard();
+    const heard = byVoice ? heardNow : null;
+    // Read now, not from the render that made this callback: a pick or an asked language may have just changed.
+    const lang = getLanguage().request ?? undefined;
     const askLang = heard ?? lang;
     if (!q) return;
     setNotice(null);
@@ -460,7 +458,8 @@ export default function AgentOverlay() {
     const sayIn = heard ?? statusLang(q, lang);
     // A question clearly in another language switches the app's own text to it (unless one is picked in the menu).
     const asked = heard ?? detectLang(q);
-    if (asked) setAskedLang(asked);
+    // A plainly Latin question after a Chinese, Russian, Bengali or Korean one lets go of that language.
+    sendLanguage({ type: "QUESTION", text: q, lang: asked });
     const statusTimer = home && byVoice ? window.setTimeout(() => speech.speak(statusLine(stepsRef.current, sayIn), { lang: speechTag(sayIn, lang) }), STATUS_AFTER_MS) : undefined;
     try {
       const memory = home ? memorySummary() : null;
@@ -508,8 +507,8 @@ export default function AgentOverlay() {
     }
     // Short spoken answer; the full detail stays on screen. In hands-free the
     // person can talk over it to interrupt.
-    if (spoken) speech.speak(spokenSummary(nameLocationButton(nameRemindButton(spoken, replyActions, tr(getAppLang(), "remindMe")), offersLocation, tr(getAppLang(), "useMyLocation"))), { bargeIn: handsFree, ...(heard ? { lang: heard } : {}) });
-  }, [mode, setChatOpen, speech, askReq, handsFree, closeAll, home, lang, stopPlayer]);
+    if (spoken) speech.speak(spokenSummary(nameLocationButton(nameRemindButton(spoken, replyActions, tr(getLanguage().app, "remindMe")), offersLocation, tr(getLanguage().app, "useMyLocation"))), { bargeIn: handsFree, lang: heard ?? voiceTag(getLanguage().app, lang ?? null) });
+  }, [mode, setChatOpen, speech, askReq, handsFree, closeAll, home, stopPlayer]);
 
   /** Exit: the answer stops where it is. No more text, map moves, trip or speech from it (owner, 2026-10-27). */
   const stopAnswer = useCallback(() => {
@@ -568,18 +567,18 @@ export default function AgentOverlay() {
   useEffect(() => sendScreen({ type: "VOICE", on: orbShown }), [orbShown]);
   useEffect(() => () => { sendScreen({ type: "ANSWER", on: false }); sendScreen({ type: "VOICE", on: false }); sendScreen({ type: "TASK", on: false }); }, []);
   const toggleHandsFree = () => {
-    if (handsFree) { setHandsFree(false); setLangAsked(false); speech.stopListening(); speech.stopSpeaking(); return; }
+    if (handsFree) { setHandsFree(false); sendLanguage({ type: "ROUND_CLOSE" }); speech.stopListening(); speech.stopSpeaking(); return; }
     speech.setMuted(false);
     speech.clearError();
     setHandsFree(true);
     // A hands-free conversation is answer-in-one-language for its whole length, and the only signal
     // used to be Whisper's guess at the first thing said. Ask out loud first, every time hands-free
     // starts, so a handed-over phone or a misheard word cannot fix the wrong language for a session.
-    setLangAsked(true);
+    sendLanguage({ type: "ROUND_OPEN" });
     speech.speakSequence(languagePrompt(appLang));
   };
 
-  useWakePhrase(wake && speech.sttSupported, speech.listening || busy || speech.speaking, (t) => { voiceTurn.current = true; void send(t); }, speechTag(appLang, lang));
+  useWakePhrase(wake && speech.sttSupported, speech.listening || busy || speech.speaking, (t) => { voiceTurn.current = true; void send(t); }, listenTag);
   useEffect(() => () => abort.current?.abort(), []);
   // Other features (underground help) prepare for the trip on screen through core.
   useEffect(() => { publishActiveTrip(trip); if (trip) noteTrip(trip); }, [trip]);

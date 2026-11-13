@@ -1,51 +1,26 @@
-import { useSyncExternalStore } from "react";
-import { APP_LANGS, readLang, useLangPref, type AppLang } from "@/lib/voice/langPref";
+import { appLangOf, getLanguage, resolveAppLang, sendLanguage, useLanguage, type AppLang } from "./language";
 
 /**
  * The app's own text on the first screens (task buttons, the ask bar, the
  * answer card, the station prompt). A language picked in the menu wins;
  * otherwise the app follows the language the person last asked in, so someone
  * who asks in Chinese sees the buttons in Chinese too; before any question,
- * the browser's language. The asked language is kept on this device only.
+ * the browser's language. All three live in the language machine
+ * (./language.ts, #145), which the mic, the voice and the agent read too.
  */
-const ASKED_KEY = "nma.askedLang";
-const SUPPORTED = new Set<string>(APP_LANGS);
-
-/** Base language of a BCP 47 tag when the app has text for it ("es-US" → "es"), else null. */
-export function appLangOf(tag: string | null | undefined): AppLang | null {
-  const b = tag?.split("-")[0].toLowerCase();
-  return b && SUPPORTED.has(b) ? (b as AppLang) : null;
-}
-
-let asked: AppLang | null = (() => {
-  try { return appLangOf(globalThis.localStorage?.getItem(ASKED_KEY)); } catch { return null; }
-})();
-const listeners = new Set<() => void>();
+export { appLangOf, resolveAppLang };
 
 /** Record the language of a question (only when it is clear from the text). */
 export function setAskedLang(lang: AppLang): void {
-  if (lang === asked) return;
-  asked = lang;
-  try { globalThis.localStorage?.setItem(ASKED_KEY, lang); } catch { /* storage blocked */ }
-  for (const l of listeners) l();
-}
-
-const subscribe = (cb: () => void) => { listeners.add(cb); return () => { listeners.delete(cb); }; };
-const browser = () => appLangOf(typeof navigator === "undefined" ? undefined : navigator.language);
-
-/** Picked, else asked, else browser, else English. */
-export function resolveAppLang(picked: AppLang | null, askedLang: AppLang | null, browserLang: AppLang | null): AppLang {
-  return picked ?? askedLang ?? browserLang ?? "en";
+  sendLanguage({ type: "QUESTION", text: "", lang });
 }
 
 export function getAppLang(): AppLang {
-  return resolveAppLang(readLang(), asked, browser());
+  return getLanguage().app;
 }
 
 export function useAppLang(): AppLang {
-  const picked = useLangPref();
-  const askedLang = useSyncExternalStore(subscribe, () => asked, () => null);
-  return resolveAppLang(picked, askedLang, browser());
+  return useLanguage((v) => v.app);
 }
 
 type Key =
