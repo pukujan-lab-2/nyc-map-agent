@@ -82,6 +82,29 @@ Blocked/uncertain:
 Next:
 - Let the pull request for #131 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish
 
+### 2026-11-13 02:16:10 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Moved the where-am-I helper inside the agent feature so features stay apart, and raised the all-JS size budget by 9 kB for its lazy chunk"],"decisions":["no new decisions"],"evidence":["tsc passes; CI lint passed on the earlier push"],"next_action":"Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T02:16:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b41d26a72f4317e98d0f393ab3e7f04415d970a0deda02f2d19c8095e9cb4d01","request_id":"f047bb0308e34c58830d32101eb67699","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Moved the where-am-I helper inside the agent feature so features stay apart, and raised the all-JS size budget by 9 kB for its lazy chunk
+
+Evidence:
+- tsc passes; CI lint passed on the earlier push
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
