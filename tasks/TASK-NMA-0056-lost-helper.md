@@ -197,6 +197,29 @@ Blocked/uncertain:
 Next:
 - After #144 merges, pin down a spot inside Fulton St on the live site: Find exit, Yes, answer the questions, then Show me
 
+### 2026-11-13 04:19:28 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Raised the all-JS size budget from 1171 kB to 1180 kB for the Fulton St questions (#144), whose new code loads only at Fulton St"],"decisions":["no new decisions"],"evidence":["CI size check: all JS was 8.21 kB over 1171 kB; every per-chunk budget passed"],"next_action":"After #144 merges, pin down a spot inside Fulton St on the live site: Find exit, Yes, answer the questions, then Show me","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T04:19:28Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e60556281916bf533f7557f2839dfe0fbd2f893800df7de6e0c16073de824c4f","request_id":"2f48208b2d4549c3ab2b46d84e764f7e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Raised the all-JS size budget from 1171 kB to 1180 kB for the Fulton St questions (#144), whose new code loads only at Fulton St
+
+Evidence:
+- CI size check: all JS was 8.21 kB over 1171 kB; every per-chunk budget passed
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #144 merges, pin down a spot inside Fulton St on the live site: Find exit, Yes, answer the questions, then Show me
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
