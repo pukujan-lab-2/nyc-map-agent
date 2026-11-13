@@ -105,8 +105,12 @@
     "limit": "705 kB"
   },
   {
-    "name": "station walk: shell builder (lazy, loaded near Fulton St in Street view; the worker's fallback and the shell code the walk shares)",
-    "path": ".size-build/assets/walkShell-*.js",
+    "name": "station walk: shell code shared by the scene and the page fallback (lazy; the fallback is fetched only when no worker starts)",
+    "path": [
+      ".size-build/assets/walkShell-*.js",
+      ".size-build/assets/walkShellBuild-*.js",
+      ".size-build/assets/stationWalkGeometry-*.js"
+    ],
     "limit": "10 kB"
   },
   {
@@ -120,7 +124,9 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js",
       "!.size-build/assets/walkShell-*.js",
-      "!.size-build/assets/walkShell.worker-*.js"
+      "!.size-build/assets/walkShell.worker-*.js",
+      "!.size-build/assets/walkShellBuild-*.js",
+      "!.size-build/assets/stationWalkGeometry-*.js"
     ],
     "limit": "1227 kB"
   }

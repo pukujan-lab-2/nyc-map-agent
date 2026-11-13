@@ -3,12 +3,13 @@
  * built off the main thread. stationShell plus walkGeometry take about 2 s on a laptop and four
  * times that on a phone; run on the page they froze it between the tap and the walk. Here they run
  * in a worker (walkShell.worker.ts) and come back as plain arrays, the geometry's buffers moved
- * rather than copied. Where a worker can't start (tests, an old browser) they run on the page.
+ * rather than copied. Where a worker can't start (tests, an old browser) they run on the page,
+ * from walkShellBuild.ts, fetched only then.
  *
  * Call stationShell for the walk only through loadWalkShell, so the shell can change underneath.
  */
 import type { DollhouseModel } from "./dollhouse";
-import { buildWalkShell, type WalkShell, type WalkShellReply } from "./walkShellBuild";
+import type { WalkShell, WalkShellReply } from "./walkShellBuild";
 
 export type { WalkShell } from "./walkShellBuild";
 
@@ -31,7 +32,8 @@ let built: { model: DollhouseModel; promise: Promise<WalkShell> } | null = null;
 /** The shell and walk geometry for `model`, built once (in a worker where it can be) and kept. */
 export function loadWalkShell(model: DollhouseModel): Promise<WalkShell> {
   if (built?.model === model) return built.promise;
-  const promise = inWorker(model).catch(() => buildWalkShell(model));
+  // The fallback is fetched only when it is needed, so this file never carries the shell's code.
+  const promise = inWorker(model).catch(() => import("./walkShellBuild").then((m) => m.buildWalkShell(model)));
   built = { model, promise };
   // A failed build is tried again next time, not kept.
   promise.catch(() => { if (built?.promise === promise) built = null; });
