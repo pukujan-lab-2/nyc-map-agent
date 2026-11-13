@@ -873,6 +873,29 @@ Blocked/uncertain:
 Next:
 - PR #168 ready with auto-merge: Fulton St walk draws Manifold-baked walls; all 17 walk tests pass. After it deploys, walk it on the live site and show the owner.
 
+### 2026-11-13 17:58:53 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"PR #168 fixes pushed (CI licence step removed at owner's ask, walk bot setup timeout, signs test canvas stub). Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T17:58:53Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9e7cfb43f3dc8e5a9be1bf4e68efefe4c3843e3b098a709ba6444b4bd1bc2bf5","request_id":"55f5be3d85a24b9095370b17d24ad6fe","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- PR #168 fixes pushed (CI licence step removed at owner's ask, walk bot setup timeout, signs test canvas stub). Waiting on CI; auto-merge armed. After deploy, walk it live and show the owner.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
