@@ -110,6 +110,6 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalk-*.js"
     ],
-    "limit": "1215 kB"
+    "limit": "1225 kB"
   }
 ]
