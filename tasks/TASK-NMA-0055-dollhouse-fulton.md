@@ -442,6 +442,29 @@ Blocked/uncertain:
 Next:
 - The real ecctrl body still stops on 4 walks and falls through to a lower floor on 3 (the Rapier test does not show it); a headless probe is locating each spot. Fix those, then let #153 merge and comment live on #126
 
+### 2026-11-13 09:12:32 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"All 13 Fulton St walks reach their platform with the real ecctrl body; wait for #153's CI and auto-merge, check the walk on the live site, then comment live on #126","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T09:12:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"7ef2b389fe411128c29908e6d5d5a01ed4ddc8213b493165b1d9073f638ad3d9","request_id":"444ad200c16c4144908479401d0a8f7b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- All 13 Fulton St walks reach their platform with the real ecctrl body; wait for #153's CI and auto-merge, check the walk on the live site, then comment live on #126
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
