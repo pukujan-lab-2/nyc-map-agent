@@ -230,8 +230,11 @@ for (const size of SIZES) {
     // on a screen without touch, the keys hint; Back to the map closes it.
     test("walking inside Fulton St", async ({ page }) => {
       await open(page);
-      await page.waitForFunction(() => "__pushPanel" in window, undefined, { timeout: 20_000 });
-      await page.evaluate(() => (window as unknown as { __pushPanel: (c: object) => void }).__pushPanel({ id: "transit:station:subway:418", title: "Fulton St", subtitle: "Subway station" }));
+      // Open the card the way a map tap does, so it carries the station's details.
+      await page.waitForFunction(() => "__openStation" in window, undefined, { timeout: 20_000 });
+      await page.evaluate(() => (window as unknown as { __openStation: (system: string, id: string, name: string) => void }).__openStation("subway", "418", "Fulton St"));
+      // On a phone the card opens as a short pull sheet; pull it up to reach its buttons.
+      if (size.width < 640) await page.getByTestId("details-sheet").getByTestId("sheet-grip").click();
       const walkInside = page.getByTestId("walk-inside");
       await expect(walkInside).toBeVisible({ timeout: 15_000 });
       await expectLayout(page);

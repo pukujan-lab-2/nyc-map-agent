@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { closeStationWalk, openStationWalk, useStationWalk } from "./store";
 
 const StationWalk = lazy(() => import("@/lib/map/three/StationWalkScene").then((m) => ({ default: m.StationWalk })));
@@ -12,10 +13,19 @@ export function StationWalkHost() {
     w.__walkInside = (exit) => openStationWalk(exit ?? null);
     return () => { delete w.__walkInside; };
   }, []);
+  // The walk covers the whole screen: the app behind it takes no taps, keys or screen-reader focus.
+  useEffect(() => {
+    const app = document.getElementById("root");
+    if (!open || !app) return;
+    app.inert = true;
+    return () => { app.inert = false; };
+  }, [open]);
   if (!open) return null;
-  return (
+  // Drawn beside the app, not inside it, so the inert app does not take the walk with it.
+  return createPortal(
     <Suspense fallback={null}>
       <StationWalk exit={open.exit} onClose={closeStationWalk} />
-    </Suspense>
+    </Suspense>,
+    document.body,
   );
 }
