@@ -465,6 +465,29 @@ Blocked/uncertain:
 Next:
 - All 13 Fulton St walks reach their platform with the real ecctrl body; wait for #153's CI and auto-merge, check the walk on the live site, then comment live on #126
 
+### 2026-11-13 12:04:40 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Watch #153's CI; if trip-station e2e still fails (Send stays disabled after typing), debug the Ask box remount on the React 19 branch","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T12:04:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"2ffee9ef44040dbd12028dbbb64995cc5f7ccb33afb6f36d163819139bd87e14","request_id":"c417d72a71fc4e48beebb42a69e3fc8f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Watch #153's CI; if trip-station e2e still fails (Send stays disabled after typing), debug the Ask box remount on the React 19 branch
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
