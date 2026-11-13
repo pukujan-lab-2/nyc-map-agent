@@ -95,12 +95,15 @@ export function walkDefects(model: DollhouseModel, geo: WalkGeometry): Defect[] 
   const hit = (o: THREE.Vector3, d: THREE.Vector3, far = FAR_M) => {
     ray.set(o, d.clone().normalize());
     ray.far = far;
-    const h = ray.intersectObject(mesh, false)[0];
+    // Ceilings are drawn from below only (FrontSide): a ray that meets one from its back sees through it.
+    // The bounds tree reorders the index, so faceIndex no longer counts triangles in order; a vertex does.
+    const partOf = (x: THREE.Intersection) => part[x.face ? Math.floor(x.face.a / 3) : 0];
+    const h = ray.intersectObject(mesh, false).find((x) => partOf(x) !== "ceiling" || !x.face || ray.ray.direction.dot(x.face.normal) < 0);
     if (!h) return null;
     // Which way the face hit points, turned to face up: a ray going down onto it sees its top.
     const n = h.face ? h.face.normal.clone() : new THREE.Vector3(0, 1, 0);
     if (n.y < 0) n.negate();
-    return { dist: h.distance, part: part[h.faceIndex ?? 0], y: h.point.y, fromAbove: ray.ray.direction.dot(n) < -1e-3 && n.y > 0.5 };
+    return { dist: h.distance, part: partOf(h), y: h.point.y, fromAbove: ray.ray.direction.dot(n) < -1e-3 && n.y > 0.5 };
   };
   /** Whether a ray from (x, z) along (dx, dz), seen from above, crosses the platform's edge over a track. */
   const tracks = model.edges.map(([x1, y1, x2, y2, ez]) => [...toYUp(x1, y1, ez), ...toYUp(x2, y2, ez)]);

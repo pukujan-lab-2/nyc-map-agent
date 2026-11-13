@@ -17,7 +17,8 @@ const surf = (quads: Array<[P3, P3, P3, P3]>): Surface => {
 function box(leave?: "north") {
   const L = 30, W = 4, H = 3;
   const floor: [P3, P3, P3, P3] = [[0, 0, 0], [L, 0, 0], [L, W, 0], [0, W, 0]];
-  const roof: [P3, P3, P3, P3] = [[0, 0, H], [L, 0, H], [L, W, H], [0, W, H]];
+  // Wound to face down, as walkGeometry winds every ceiling: drawn from below only.
+  const roof: [P3, P3, P3, P3] = [[0, 0, H], [0, W, H], [L, W, H], [L, 0, H]];
   const walls: Array<[P3, P3, P3, P3]> = [
     [[0, 0, 0], [L, 0, 0], [L, 0, H], [0, 0, H]],
     ...(leave === "north" ? [] : [[[0, W, 0], [L, W, 0], [L, W, H], [0, W, H]] as [P3, P3, P3, P3]]),
