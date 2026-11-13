@@ -304,6 +304,52 @@ Blocked/uncertain:
 Next:
 - After #139 merges, check the thick walls live; then build the partner's entering walk once the owner picks dollhouse or Street view
 
+### 2026-11-13 03:40:57 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After the deploy, translate a trip step on the live site and read the translate span back from Phoenix","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T03:40:57Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"71367ee129c399a410b810c7bd9180cca280aba9cfd034162e6256a6e66ff162","request_id":"6a079ba5c0b24dc4840d460fb143a7a9","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After the deploy, translate a trip step on the live site and read the translate span back from Phoenix
+
+### 2026-11-13 04:46:27 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #142 merges, check a translate span shows in Phoenix through the Octo read route","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T04:46:27Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"31e3d3be880bcdbc6227964879f410827aa5a38d59bfd25de0adb743454651f0","request_id":"7bec686d2cf444cebfd1562f590d41f1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #142 merges, check a translate span shows in Phoenix through the Octo read route
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
