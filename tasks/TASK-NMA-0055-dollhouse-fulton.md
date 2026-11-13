@@ -804,6 +804,29 @@ Blocked/uncertain:
 Next:
 - Compare walk bot and defect counts, old shell vs Manifold shell (BAKED_SHELL), on the Pro; report to the owner
 
+### 2026-11-13 16:52:48 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Defect check fixed (faceIndex bug). Manifold shell 149 spots vs old 163: no ceilings from above, in-the-way, low-head or open-up; track side 97 vs 85, holes 52 vs 59. Walk bot still stops on both shells (old 3, Manifold 4 plus 1 wedge on walk 6). On owner OK: move the Manifold script into the repo and switch.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:52:48Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b86bffb6788fbacd5a1c629942afa2923cebdaee30a349687a8125ef8fb37ac9","request_id":"019be8d497f94093b86fde5ca08f7200","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Defect check fixed (faceIndex bug). Manifold shell 149 spots vs old 163: no ceilings from above, in-the-way, low-head or open-up; track side 97 vs 85, holes 52 vs 59. Walk bot still stops on both shells (old 3, Manifold 4 plus 1 wedge on walk 6). On owner OK: move the Manifold script into the repo and switch.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
