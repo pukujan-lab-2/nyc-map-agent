@@ -105,6 +105,29 @@ Blocked/uncertain:
 Next:
 - Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish
 
+### 2026-11-13 02:19:07 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Raised the boot chunk's size budget by 0.5 kB; the new labels put it 153 B over"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T02:19:07Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"38b2857032eabcc503e4a3a99f238fe55d77bbe73fe3ce7ce09390283b752cbd","request_id":"f70197b25bc64aceafc57906a83ff60d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Raised the boot chunk's size budget by 0.5 kB; the new labels put it 153 B over
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
