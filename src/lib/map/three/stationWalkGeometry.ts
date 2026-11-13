@@ -126,6 +126,21 @@ export function walkGeometry(model: DollhouseModel, shell: Shell = stationShell(
 }
 
 /**
+ * Dev, on trial (#126): walls and ceilings baked once in Blender from the walkable space (every floor
+ * and stair pushed up 3 m and merged into one solid, its inside kept), drawn in place of the shell's.
+ * The model's own uprights stay, as in walkGeometry.
+ */
+export function bakedShellSurfaces(shell: Shell, baked: { walls: number[]; ceiling: number[] }): Pick<WalkGeometry, "walls" | "ceiling"> {
+  const wallTris: number[] = [];
+  for (let i = 0; i < shell.uprights.length; i += 9) {
+    const t = shell.uprights.slice(i, i + 9);
+    if (!isGatePanel(t)) wallTris.push(...t);
+  }
+  wallTris.push(...baked.walls);
+  return { walls: surface(wallTris, uprightUv), ceiling: surface(baked.ceiling, (x, y) => [x / WALL_TILE_M, y / WALL_TILE_M]) };
+}
+
+/**
  * What the body collides with (model frame, nine numbers per triangle). The drawn station's walls sit
  * on the model's floor edges, and the model's walks run close by them: a wall's end pokes into a turn,
  * two walls meet on the walk, a stair's side wall stands across its foot. A body 0.6 m wide catches on
