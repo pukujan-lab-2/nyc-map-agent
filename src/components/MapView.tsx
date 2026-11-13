@@ -615,7 +615,7 @@ export function MapView({
     if (import.meta.env.DEV || import.meta.env.VITE_E2E) {
       (window as unknown as { __map?: unknown }).__map = map;
       // Opens the dollhouse view of the Fulton St walk over the map (#129), until it is part of a trip.
-      (window as unknown as { __dollhouse?: unknown }).__dollhouse = (opts?: { seconds?: number; at?: number; exit?: [number, number] }) =>
+      (window as unknown as { __dollhouse?: unknown }).__dollhouse = (opts?: { seconds?: number; at?: number; wait?: number; exit?: [number, number]; enter?: boolean }) =>
         import("@/lib/map/dollhousePreview").then(({ showDollhouse }) => showDollhouse(map, opts));
     }
     // A style swap (the raster fallback) replaces every source, so the data
