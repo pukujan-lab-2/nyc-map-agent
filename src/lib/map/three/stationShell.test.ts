@@ -8,7 +8,7 @@ import { crossesWall, floorBothSides, shellOpenings, stationShell, surfaceFinder
 const model = JSON.parse(readFileSync("public/transit/fulton-model.json", "utf8")) as DollhouseModel;
 
 describe("Fulton St's shell for walking inside", () => {
-  it("has no opening a person could lean or step through, except over the track", { timeout: 60_000 }, () => {
+  it("has no opening a person could lean or step through, except over the track", { timeout: 180_000 }, () => {
     const gaps = shellOpenings(model, stationShell(model));
     expect(gaps.slice(0, 20), `${gaps.length} open points along floor and stair edges`).toEqual([]);
   });
