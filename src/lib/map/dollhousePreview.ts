@@ -31,12 +31,29 @@ export type DollhouseView = {
 /**
  * Adds the dollhouse layer for the walk that comes up at `exit` and draws whatever `getState`
  * says. Null when the model has no walk to that exit (the trip then keeps the first-person walk).
- * The exit signs name the exit's street corner as the map reads it, or else `street`.
+ * The exit signs name the exit's street corner as the map reads it, or else `street`. With `enter`,
+ * `exit` is the trip's entrance and the walk goes in, down to the platform (#126).
  */
-export async function openDollhouse(map: MaplibreMap, exit: [number, number] | null, getState: () => DollhouseState, street: string | null): Promise<DollhouseView | null> {
-  const [{ dollhouseLayer, pickWalk, walkLength, DOLLHOUSE_LAYER }, { walkCallouts }, m] = await Promise.all([
+export async function openDollhouse(map: MaplibreMap, exit: [number, number] | null, getState: () => DollhouseState, street: string | null, enter = false): Promise<DollhouseView | null> {
+  const [{ dollhouseLayer, pickWalk, pickEnter, enterModel, walkLength, DOLLHOUSE_LAYER }, { walkCallouts, enterCallouts }, m] = await Promise.all([
     import("@/lib/map/three/dollhouse"), import("@/lib/map/three/dollhouseCallouts"), loadModel(),
   ]);
+  if (enter) {
+    const e = exit ? pickEnter(m, exit) : m.enters?.[0] ?? null;
+    if (!e) return null;
+    const { model: em, walk } = enterModel(m, e);
+    if (map.getLayer(DOLLHOUSE_LAYER)) map.removeLayer(DOLLHOUSE_LAYER);
+    let corner: string | null = null;
+    try { corner = cornerLine(readMap(map).placeAt(e.entrance)); } catch { corner = null; }
+    const view = dollhouseLayer(em, walk, getState, corner, { direction: e.direction });
+    map.addLayer(view.layer);
+    return {
+      rig: view.rig,
+      lengthM: walkLength(walk.path),
+      callouts: enterCallouts(em, walk.path, corner, e.direction),
+      stop: () => { if (map.getLayer(DOLLHOUSE_LAYER)) map.removeLayer(DOLLHOUSE_LAYER); },
+    };
+  }
   // No exit asked for (the dev hook): the longest walk, through the most of the station.
   const walk = exit ? pickWalk(m, exit) : [...m.walks].sort((a, b) => walkLength(b.path) - walkLength(a.path))[0];
   if (!walk) return null;
@@ -56,6 +73,8 @@ export async function openDollhouse(map: MaplibreMap, exit: [number, number] | n
 
 /** Points the map's camera along a dollhouse rig. */
 function aimAt(map: MaplibreMap, rig: DollhouseRig): void {
+  // The lens first: how far the camera sits for a given zoom depends on it.
+  if (Math.abs(map.getVerticalFieldOfView() - rig.fov) > 0.05) map.setVerticalFieldOfView(rig.fov);
   const cam = map.calculateCameraOptionsFromTo(new LngLat(...rig.eye), rig.eyeAlt, new LngLat(...rig.look), rig.lookAlt);
   map.jumpTo({ center: rig.look, zoom: cam.zoom, pitch: cam.pitch, bearing: cam.bearing, elevation: rig.lookAlt });
 }
@@ -66,7 +85,7 @@ function aimAt(map: MaplibreMap, rig: DollhouseRig): void {
  * the camera following, and it starts again. `at` (0 to 1) holds the figure at one spot of the
  * walk; `wait` (0 to 1) holds that moment of the wait; `exit` picks the walk to that exit.
  */
-export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; at?: number; wait?: number; exit?: [number, number]; street?: string } = {}): Promise<() => void> {
+export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; at?: number; wait?: number; exit?: [number, number]; street?: string; enter?: boolean } = {}): Promise<() => void> {
   const seconds = opts.seconds ?? 60, wait = 6, pause = 2;
   const began = performance.now();
   const state: DollhouseState = { walk: 0, wait: null, street: null };
@@ -74,12 +93,18 @@ export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; 
     if (opts.wait != null) { state.walk = 0; state.wait = opts.wait; return; }
     if (opts.at != null) { state.walk = opts.at; state.wait = null; return; }
     const t = ((performance.now() - began) / 1000) % (wait + seconds + pause);
+    if (opts.enter) {
+      // Walk in first, then wait for the train.
+      state.wait = t > seconds ? Math.min((t - seconds) / wait, 1) : null;
+      state.walk = state.wait != null ? 0 : Math.min(t / seconds, 1);
+      return;
+    }
     state.wait = t < wait ? t / wait : null;
     state.walk = Math.min(Math.max(t - wait, 0) / seconds, 1);
   };
-  const maxZoom = map.getMaxZoom();
+  const maxZoom = map.getMaxZoom(), fov = map.getVerticalFieldOfView();
   map.setMaxZoom(24);
-  const view = await openDollhouse(map, opts.exit ?? null, () => { tick(); return state; }, opts.street ?? "Fulton Street");
+  const view = await openDollhouse(map, opts.exit ?? null, () => { tick(); return state; }, opts.street ?? "Fulton Street", opts.enter);
   if (!view) { map.setMaxZoom(maxZoom); return () => {}; }
   let frame = 0, last = performance.now();
   const step = (now: number) => {
@@ -89,5 +114,5 @@ export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; 
     frame = requestAnimationFrame(step);
   };
   frame = requestAnimationFrame(step);
-  return () => { cancelAnimationFrame(frame); view.stop(); map.setMaxZoom(maxZoom); };
+  return () => { cancelAnimationFrame(frame); view.stop(); map.setMaxZoom(maxZoom); map.setVerticalFieldOfView(fov); };
 }

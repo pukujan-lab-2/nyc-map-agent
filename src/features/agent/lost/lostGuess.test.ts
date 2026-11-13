@@ -84,7 +84,8 @@ describe("best guess (#131)", () => {
     expect(guessText(g, "en")).toBe("You're on your walk to Fulton St. Look for St. Paul's Chapel. Is that right?");
   });
   it("reads the station walk's train parts", () => {
-    expect(partOf("between the middle and the back")).toBe("backMid");
+    expect(partOf("near the middle back")).toBe("backMid");
+    expect(partOf("near the front")).toBe("nearFront");
     expect(partOf("somewhere")).toBeNull();
   });
   it("offline, the exit's signs are the way meanwhile", () => {

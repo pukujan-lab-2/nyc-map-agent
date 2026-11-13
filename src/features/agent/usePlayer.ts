@@ -16,7 +16,7 @@ import { initialPlayback, isActive, playback, type Playback } from "./playback";
 import type { PlaybackSpeed, Trip } from "./schema";
 import { setMarker, setPreviewDim, setXray } from "./tripLayer";
 import { walkLine, walkPlace } from "./walkPlace";
-import { dollhouseLeg } from "./dollhouseLeg";
+import { dollhouseEnterLeg, dollhouseLeg } from "./dollhouseLeg";
 import type { DollhouseView } from "@/lib/map/dollhousePreview";
 import type { DollhouseState } from "@/lib/map/three/dollhouse";
 import { useFlag } from "@/lib/flags";
@@ -188,7 +188,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
    * The rider's-eye camera while it drives the map: its steadied heading, the pose it
    * eases in from and for how long so far, and the map settings it changed.
    */
-  const eye = useRef<{ bearing: number; from: Cam | null; t: number; maxZoom: number } | null>(null);
+  const eye = useRef<{ bearing: number; from: Cam | null; t: number; maxZoom: number; fov: number } | null>(null);
   /** The station shown in x-ray on the stairs, and whether the ground was see-through before. */
   const stairs = useRef<{ station: string; streetXray: boolean } | null>(null);
   /** A station walked at eye level: the leg, the eye and train it draws each frame, its canvas below the street, and how to take it down. */
@@ -246,12 +246,15 @@ export function usePlayer(onCallout?: (text: string) => void) {
     });
     // Leaving a downtown 4 or 5 at Fulton St, a figure walks the station model seen from above (#129),
     // to the exit the trip chose; with no walk to that exit, the first-person walk plays instead.
-    if (!dollhouseOn.current || !dollhouseLeg(seg, ride)) { firstPerson(); return; }
-    const d: NonNullable<typeof doll.current> = { seg, next: segsRef.current[at + 1], state: { walk: null, wait: null, street: null }, view: null, stop: () => {} };
+    // Going in to an uptown A or C there, the figure walks down from the street to the platform (#126).
+    const enter = dollhouseEnterLeg(seg, ride);
+    if (!dollhouseOn.current || !(enter || dollhouseLeg(seg, ride))) { firstPerson(); return; }
+    // Coming up, the dollhouse carries on along the street walk after; going in, it ends with its leg.
+    const d: NonNullable<typeof doll.current> = { seg, next: enter ? undefined : segsRef.current[at + 1], state: { walk: null, wait: null, street: null }, view: null, stop: () => {} };
     doll.current = d;
-    const exit = seg.coords[seg.coords.length - 1] ?? null;
+    const exit = (enter ? seg.coords[0] : seg.coords[seg.coords.length - 1]) ?? null;
     void import("@/lib/map/dollhousePreview")
-      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null))
+      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null, enter))
       .catch(() => null)
       .then((opened) => {
         if (doll.current !== d) { opened?.stop(); return; }
@@ -262,7 +265,11 @@ export function usePlayer(onCallout?: (text: string) => void) {
         // voice says where on the train the figure got off, then each turn and stair, in the app's language.
         seg.paced = { seconds: DOLL_WAIT_S + opened.lengthM / DOLL_WALK_MPS, waitS: DOLL_WAIT_S };
         const w = DOLL_WAIT_S / seg.paced.seconds;
-        seg.callouts = opened.callouts.map((c) => ({ f: c.wait ? 0 : w + (1 - w) * Math.min(c.f, 0.97), text: c.text }));
+        // Coming up, the wait on the platform comes first; going in, last.
+        seg.callouts = opened.callouts.map((c) => ({
+          f: enter ? (c.wait ? 1 - w : (1 - w) * Math.min(c.f, 0.97)) : c.wait ? 0 : w + (1 - w) * Math.min(c.f, 0.97),
+          text: c.text,
+        }));
         const tripId = pbRef.current.tripId;
         if (tripId) translate(tripId, segsRef.current, true);
       });
@@ -271,6 +278,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
   const leaveEye = useCallback((map: MapLibreMap) => {
     if (!eye.current) return;
     map.setMaxZoom(eye.current.maxZoom);
+    map.setVerticalFieldOfView(eye.current.fov);
     setPreviewEye(false);
     eye.current = null;
   }, []);
@@ -469,7 +477,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
         // On foot the preview sees through the rider's eyes, from the start until the train and from
         // getting off to the door (owner, 2026-11-07); it eases in from wherever the camera was.
         if (!eye.current) {
-          eye.current = { bearing: pose.bearing, from: reduced ? null : camNow(map), t: 0, maxZoom: map.getMaxZoom() };
+          eye.current = { bearing: pose.bearing, from: reduced ? null : camNow(map), t: 0, maxZoom: map.getMaxZoom(), fov: map.getVerticalFieldOfView() };
           map.setMaxZoom(EYE_MAX_ZOOM);
           // The map takes street view's haze, pavement and buildings while this is on (MapView).
           setPreviewEye(true);
@@ -479,6 +487,9 @@ export function usePlayer(onCallout?: (text: string) => void) {
         // watching the train leave meant seconds of dark tunnel (owner, 2026-11-10).
         e.bearing = approachBearing(e.bearing, seg.inside && wait !== null && seg.kind !== "ascend" ? faceTrain(seg.inside, false) : pose.bearing, dt, 4);
         const rig = (dh?.view && dh.view.rig(dt)) || eyeRig(mark, e.bearing, depth, !seg.inside);
+        // The station walk widens the lens once its camera is down inside; anything else keeps the map's own.
+        const fov = (rig as { fov?: number }).fov ?? e.fov;
+        if (Math.abs(map.getVerticalFieldOfView() - fov) > 0.05) map.setVerticalFieldOfView(fov);
         const cam = map.calculateCameraOptionsFromTo(new LngLat(...rig.eye), rig.eyeAlt, new LngLat(...rig.look), rig.lookAlt);
         const to: Cam = { center: rig.look, zoom: cam.zoom ?? map.getZoom(), pitch: cam.pitch ?? 0, bearing: cam.bearing ?? e.bearing, elevation: rig.lookAlt };
         e.t += dt;
@@ -499,7 +510,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
       }
       const view = inside.current;
       if (view) {
-        const base = map.getVerticalFieldOfView();
+        const base = eye.current?.fov ?? map.getVerticalFieldOfView();
         const wide = Math.min(1, Math.max(0, (INSIDE_M - depth) / FOV_OVER_M));
         view.eye = { lon: mark[0], lat: mark[1], bearing: eye.current?.bearing ?? pose.bearing, pitch: wait !== null ? 86 : lookPitch(seg, fm), z: depth, fov: base + (INSIDE_FOV - base) * wide };
         view.train = trainAt(seg, wait);

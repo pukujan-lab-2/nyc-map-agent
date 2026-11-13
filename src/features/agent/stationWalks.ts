@@ -3,6 +3,7 @@ import { stationAt } from "@/lib/map/stationNear";
 import { nearestOnLine, routeThrough, type RoutePoint } from "@/lib/map/stationRoute";
 import { floorsAt, toLngLat, toLocal, walkIn, walls, type StationModel } from "@/lib/map/stationWalk";
 import { lineColor } from "@/lib/transit/bullets";
+import { fromMiddle, trainPart } from "@/lib/transit/trainPart";
 import { bearing, cumulative, waitShare, type InsideWalk, type Segment } from "./flythrough";
 import type { LngLatTuple } from "./schema";
 import { loadStationInsides, withStairs } from "./stationStairs";
@@ -164,22 +165,7 @@ export function trainPartAt(m: StationModel, at: RoutePoint, travel: number): st
   return trainPart((at[0] * ux + at[1] * uy - lo) / (hi - lo));
 }
 
-/** Where a part of the train is for someone standing at its middle. */
-export function fromMiddle(part: string): string {
-  // Said by the train's ends, not "ahead" or "behind": stepping off, the rider may face either way.
-  if (part === "in the middle") return "right by you";
-  if (part === "at the front" || part === "at the back") return `${part} of the train`;
-  return /front/.test(part) ? "a little toward the front of the train" : "a little toward the back of the train";
-}
-
-/** A share of the way along the train, 0 its back and 1 its front, in five plain parts. */
-export function trainPart(f: number): string {
-  if (f >= 0.8) return "at the front";
-  if (f >= 0.6) return "between the middle and the front";
-  if (f > 0.4) return "in the middle";
-  if (f > 0.2) return "between the middle and the back";
-  return "at the back";
-}
+export { fromMiddle, trainPart };
 
 /** Route the trip's station legs through the walkable stations, falling back to the x-ray stairs. */
 export async function withStationWalks(segs: Segment[]): Promise<Segment[]> {

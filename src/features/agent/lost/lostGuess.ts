@@ -4,6 +4,7 @@
  * now. Pure functions; LostHelper.tsx feeds them and lostText.ts words them.
  */
 import type { ActiveTrip } from "@/lib/transit/activeTrip";
+import type { TrainPartWords } from "@/lib/transit/trainPart";
 import type { UndergroundNow } from "@/lib/underground/whereNow";
 import type { LostContext, NotedTrain } from "@/lib/underground/lostHelper";
 import { metres, type Pt } from "@/lib/map/mapRead";
@@ -39,17 +40,19 @@ export function readSignal(p: { online: boolean; connection?: Connection | null;
 /** Whether the helper should say the signal is poor. */
 export const signalPoor = (s: Signal) => s.net !== "ok" || s.gps !== "ok";
 
-/** The five parts of a train, back to front, as the station walk names them (stationWalks.ts trainPart). */
-export type Part = "front" | "frontMid" | "middle" | "backMid" | "back";
+/** The seven parts of a train, front to back, as the station walk names them (lib/transit/trainPart.ts). */
+export type Part = "front" | "nearFront" | "frontMid" | "middle" | "backMid" | "nearBack" | "back";
+const PART_KEYS: Record<TrainPartWords, Part> = {
+  "at the front": "front",
+  "near the front": "nearFront",
+  "near the middle front": "frontMid",
+  "in the middle": "middle",
+  "near the middle back": "backMid",
+  "near the back": "nearBack",
+  "at the back": "back",
+};
 export function partOf(words: string | null | undefined): Part | null {
-  switch (words) {
-    case "at the front": return "front";
-    case "between the middle and the front": return "frontMid";
-    case "in the middle": return "middle";
-    case "between the middle and the back": return "backMid";
-    case "at the back": return "back";
-    default: return null;
-  }
+  return (words && PART_KEYS[words as TrainPartWords]) || null;
 }
 
 export interface Guess {

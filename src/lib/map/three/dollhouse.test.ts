@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { forCells, outlineWalls, pickWalk, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
+import { enterModel, forCells, outlineWalls, overTrack, pickWalk, platformEnds, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
 
 const model = JSON.parse(readFileSync("public/transit/fulton-model.json", "utf8")) as DollhouseModel;
 
@@ -169,5 +169,29 @@ describe("the dollhouse walks at Fulton St", () => {
 
   it("stays small enough to load on a phone", () => {
     expect(readFileSync("public/transit/fulton-model.json").byteLength).toBeLessThan(2_000_000);
+  });
+
+  it("puts a barrier across both ends of each platform, on the platform and short of the drop (owner, 2026-11-12)", () => {
+    const walkIn = enterModel(model, model.enters![0]).model;
+    for (const m of [model, walkIn]) {
+      const ends = platformEnds(m);
+      expect(ends.length).toBeGreaterThanOrEqual(2);
+      for (const e of ends) {
+        expect(e.width).toBeGreaterThan(2);
+        expect(e.width).toBeLessThanOrEqual(14);
+      }
+    }
+  });
+
+  it("keeps the space between a platform's edge and its track clear (owner, 2026-11-12)", () => {
+    const walkIn = enterModel(model, model.enters![0]).model;
+    const [x1, y1, x2, y2, z] = model.enters![0].edges[0];
+    const L = Math.hypot(x2 - x1, y2 - y1), mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    // The A/C track lies on this side of the edge.
+    const [tx, ty] = model.enters![0].track.at;
+    const sgn = Math.sign((tx - x1) * -(y2 - y1) / L + (ty - y1) * (x2 - x1) / L);
+    const nx = (-(y2 - y1) / L) * sgn, ny = ((x2 - x1) / L) * sgn;
+    expect(overTrack(walkIn, mx + nx * 2, my + ny * 2, z)).toBe(true);
+    expect(overTrack(walkIn, mx - nx * 2, my - ny * 2, z)).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dollhouseLeg } from "./dollhouseLeg";
+import { dollhouseEnterLeg, dollhouseLeg } from "./dollhouseLeg";
 import type { Segment } from "./flythrough";
 
 const seg = (over: Partial<Segment>): Segment => ({ kind: "ascend", label: "", coords: [], realS: 60, underground: true, callouts: [], ...over });
@@ -16,5 +16,19 @@ describe("which station leg plays in the dollhouse view", () => {
     expect(dollhouseLeg(seg({}), seg({ kind: "ride", route: "4", coords: [CITY_HALL, WALL] }))).toBe(false);
     expect(dollhouseLeg(seg({ kind: "descend" }), seg({ kind: "ride", route: "4", coords: [CITY_HALL, FULTON] }))).toBe(false);
     expect(dollhouseLeg(seg({}), undefined)).toBe(false);
+  });
+});
+
+const FULTON_AC: [number, number] = [-74.00792, 40.71036], CHAMBERS: [number, number] = [-74.00909, 40.71411];
+describe("which walk in plays in the dollhouse view (#126)", () => {
+  it("is the walk down to an uptown A or C at Fulton St", () => {
+    expect(dollhouseEnterLeg(seg({ kind: "descend" }), seg({ kind: "ride", route: "A", coords: [FULTON_AC, CHAMBERS] }))).toBe(true);
+    expect(dollhouseEnterLeg(seg({ kind: "descend" }), seg({ kind: "ride", route: "C", coords: [FULTON_AC, CHAMBERS] }))).toBe(true);
+  });
+  it("is not a downtown train, another line, another station or the walk up", () => {
+    expect(dollhouseEnterLeg(seg({ kind: "descend" }), seg({ kind: "ride", route: "A", coords: [FULTON_AC, WALL] }))).toBe(false);
+    expect(dollhouseEnterLeg(seg({ kind: "descend" }), seg({ kind: "ride", route: "4", coords: [FULTON_AC, CHAMBERS] }))).toBe(false);
+    expect(dollhouseEnterLeg(seg({ kind: "descend" }), seg({ kind: "ride", route: "A", coords: [CHAMBERS, [-74.0078, 40.7186]] }))).toBe(false);
+    expect(dollhouseEnterLeg(seg({}), seg({ kind: "ride", route: "A", coords: [FULTON_AC, CHAMBERS] }))).toBe(false);
   });
 });

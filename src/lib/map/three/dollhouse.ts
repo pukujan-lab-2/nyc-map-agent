@@ -1,8 +1,9 @@
 /**
  * The dollhouse view of a station walk (owner, 2026-11-12, #129): a blocky figure seen from above
  * and behind, inside the station's model drawn in the map itself, so the streets show around it and
- * the walk carries on out of the exit. Walls are see-through and every level above the figure is
- * cut away, so nothing hides it.
+ * the walk carries on out of the exit. From the overview above, every level over the figure is cut
+ * away so nothing hides it; once the camera is down behind the figure it follows at head height,
+ * inside full-height walls under a ceiling, and walls pull it in rather than hide the figure.
  *
  * It opens on the whole platform from above, with the 4/5 train standing at it and the figure by
  * the door it just stepped out of; the camera then eases down behind the figure while the train
@@ -40,6 +41,26 @@ export type DollhouseModel = {
   lines: Array<[string, string]>;
   /** The other routes this station connects to, for the transfer signs. */
   transfers: Array<[string, string]>;
+  /** Other tracks beside platform edges in `edges`, for which side of an edge the platform is on. */
+  otherTracks?: Array<{ at: P3; angle: number }>;
+  /** Walks into the station from a street entrance down to a platform (#126), each with that platform's own edge, track and lines. */
+  enters?: DollhouseEnter[];
+};
+/**
+ * A walk in from the street (#126: the owner's partner's trip home from Fulton & Broadway to the
+ * uptown A/C). Its path is stored like an exit walk, platform first, and played backwards.
+ */
+export type DollhouseEnter = {
+  /** Where the walk comes down from the street. */
+  entrance: [number, number];
+  path: P3[];
+  edges: Array<[number, number, number, number, number]>;
+  /** The track at the platform; `angle` points opposite to the way the train runs, as it is played backwards. */
+  track: { at: P3; angle: number };
+  lines: Array<[string, string]>;
+  transfers: Array<[string, string]>;
+  /** The way the platform's trains run, for its signs: "Uptown". */
+  direction: string;
 };
 
 type WalkPose = { x: number; y: number; z: number; /** Radians, 0 = north, clockwise. */ heading: number; /** Metres walked so far. */ walked: number };
@@ -47,19 +68,35 @@ type WalkPose = { x: number; y: number; z: number; /** Radians, 0 = north, clock
 /** What the trip says each frame: how far along the walk (0 to 1), how far the train has pulled out (0 to 1), or where on the street. */
 export type DollhouseState = { walk: number | null; wait: number | null; street: { lon: number; lat: number; heading: number } | null };
 /** A camera in the map's terms: eye and the point looked at, with their heights in metres (negative is underground). */
-export type DollhouseRig = { eye: [number, number]; eyeAlt: number; look: [number, number]; lookAlt: number };
+/** `fov` is the map's vertical field of view to use, in degrees: wider once the camera is down inside. */
+export type DollhouseRig = { eye: [number, number]; eyeAlt: number; look: [number, number]; lookAlt: number; fov: number };
 
 /** How far the cut sits above the figure's feet: over its head, under the next floor up. */
 const CUT_ABOVE_FEET_M = 2.3;
 /** Walls stop at this height above the figure's feet, over the tile band, so the rooms read from above. */
 const WALL_ABOVE_FEET_M = 2.6;
 const FIGURE_M = 1.75;
-/** The chase camera: close behind the figure's back and a little over its head (owner, 2026-11-12). */
-const BACK_M = 7;
-const UP_M = 4.4;
-const LOOK_M = 1.2;
+/**
+ * The follow camera: just behind the figure and a little over its head, inside the corridor under
+ * its ceiling (owner, 2026-11-13: "follow camera is the best one as it's most intuitive", "so we
+ * also have a ceiling"). It replaced the chase from high above, which needed the levels cut away.
+ */
+const BACK_M = 2.8;
+const UP_M = 1.9;
+const LOOK_M = 1.3;
+/** The camera never comes nearer the figure than this when a wall pulls it in. */
+const MIN_BACK_M = 0.9;
+/** How far in front of a wall, floor or ceiling the camera stops. */
+const CAM_PAD_M = 0.25;
+/** Below this height over the feet the camera is inside: full walls and the ceiling show. */
+const INSIDE_BELOW_M = 2.8;
+const CEILING_COLOR = 0x6f6c66;
+/** Ceiling lower than this over the figure's feet is left out (see `ceilFloor`). */
+const CEIL_ABOVE_FEET_M = 2.1;
 /** An exit this close to where a walk comes up is that walk's exit. */
 const EXIT_MATCH_M = 50;
+/** A trip's entrance this close to where an entering walk comes down plays that walk. */
+const ENTER_MATCH_M = 160;
 /** How long the figure takes to glide from the model's last stair onto the street walk. */
 const GLIDE_MS = 1500;
 /** Lexington Avenue line green, for the train's stripe. */
@@ -73,6 +110,11 @@ const OVERVIEW_END = 0.4;
 const OVERVIEW_TILT = (15 * Math.PI) / 180;
 /** The map's vertical field of view (MapLibre's default), to fit the train in the overview. */
 const MAP_FOV = (36.87 * Math.PI) / 180;
+/**
+ * Inside, the lens widens to this (degrees): through the map's own narrow lens a figure 3 m away
+ * filled half the screen and the corridor around it was cut off.
+ */
+const INSIDE_FOV = 64;
 /** Ceiling lights: a strip this far above the walk, every few metres, cut away above this height over the feet. */
 const LIGHT_UP_M = 2.9, LIGHT_EVERY_M = 5, LIGHT_CUT_M = 3.2, LIGHT_ASIDE_M = 1.3;
 /** Signs on the levels above are cut away over this height above the feet. */
@@ -118,6 +160,50 @@ export function pickWalk(model: DollhouseModel, exit: [number, number]): Dollhou
     if (d < bestD) { best = w; bestD = d; }
   }
   return best;
+}
+
+/**
+ * Where the fare line goes on a walk in (#126): 3.5 m into the first level stretch at least 6 m long
+ * below the street, facing the way in. `path` runs from the street.
+ */
+export function enterGates(path: P3[]): { at: P3; heading: number } | null {
+  const top = path[0]?.[2] ?? 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    if (path[i][2] > top - 1.5) continue;
+    let level = 0, j = i;
+    while (j < path.length - 1 && Math.abs(path[j + 1][2] - path[i][2]) < 0.2) { level += Math.hypot(path[j + 1][0] - path[j][0], path[j + 1][1] - path[j][1]); j++; }
+    if (level < 6) { i = j; continue; }
+    let left = 3.5;
+    for (let k = i; k < j; k++) {
+      const [a, b] = [path[k], path[k + 1]];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (len >= left) {
+        const t = left / len;
+        return { at: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2]], heading: Math.atan2(b[0] - a[0], b[1] - a[1]) };
+      }
+      left -= len;
+    }
+  }
+  return null;
+}
+
+/** The walk in from the street nearest the trip's entrance `portal` (any of the station's), or null. */
+export function pickEnter(model: DollhouseModel, portal: [number, number]): DollhouseEnter | null {
+  let best: DollhouseEnter | null = null, bestD = ENTER_MATCH_M;
+  for (const e of model.enters ?? []) {
+    const d = metresBetween(e.entrance, portal);
+    if (d < bestD) { best = e; bestD = d; }
+  }
+  return best;
+}
+
+/** The model as the walk in sees it: that platform's edge, track and lines, the others' edges kept. */
+export function enterModel(model: DollhouseModel, e: DollhouseEnter): { model: DollhouseModel; walk: DollhouseWalk } {
+  const walk = { exit: e.entrance, path: e.path };
+  return {
+    model: { ...model, walks: [...model.walks, walk], edges: [...e.edges, ...model.edges], track: e.track, otherTracks: [model.track], lines: e.lines, transfers: e.transfers },
+    walk,
+  };
 }
 
 /** Where along the walk things go: the stair feet and heads (signs) and the fare line (gates). */
@@ -209,8 +295,133 @@ export function planSigns(model: DollhouseModel, walk: DollhouseWalk, corner: st
   return out;
 }
 
+/**
+ * The signs along a walk in (#126), facing whoever walks down from the street: over each stair down,
+ * "↓" with the platform's bullets and its direction; the station's name at the foot of the street
+ * stair; on the platform, its bullets and direction. `path` is the walk from the street.
+ */
+export function planEnterSigns(model: DollhouseModel, path: P3[], direction: string): SignPlan[] {
+  const out: SignPlan[] = [];
+  const L = walkLength(path);
+  const platform: SignLine = { bullets: model.lines, text: direction };
+  const places = walkPlaces(path);
+  let first = true;
+  for (const s of places.signs) {
+    if (s.up) continue;
+    if (first) {
+      // The first stair down is the street stair: the station's name over its foot.
+      first = false;
+      continue;
+    }
+    out.push({ at: [s.at[0] - Math.sin(s.heading) * 1.5, s.at[1] - Math.cos(s.heading) * 1.5, s.at[2] + 2.4], heading: s.heading, lines: [{ arrow: "down", ...platform }, null] });
+  }
+  // The foot of the street stair: the first level stretch well below the street.
+  const foot = path.findIndex((p, i) => i < path.length - 1 && p[2] < path[0][2] - 1.5 && Math.abs(path[i + 1][2] - p[2]) < 0.2);
+  if (foot > 0) {
+    const a = path[foot], b = path[Math.min(foot + 1, path.length - 1)];
+    const heading = Math.atan2(b[0] - a[0], b[1] - a[1]);
+    out.push({ at: [a[0] + Math.sin(heading) * 3, a[1] + Math.cos(heading) * 3, a[2] + 2.6], heading, lines: [{ text: "Fulton St" }, { bullets: [...model.lines, ...model.transfers] }] });
+  }
+  const end = walkAt(path, 1), hung = walkAt(path, Math.max(0, 1 - 8 / Math.max(L, 1)));
+  out.push({ at: [hung.x, hung.y, end.z + 2.6], heading: hung.heading, lines: [{ bullets: model.lines, text: "Fulton St" }, { text: `${direction} this track` }] });
+  return out;
+}
+
 function box(w: number, d: number, h: number, color: number, clip: THREE.Plane[] = []): THREE.Mesh {
   return new THREE.Mesh(new THREE.BoxGeometry(w, d, h), new THREE.MeshLambertMaterial({ color, clippingPlanes: clip }));
+}
+
+/** Whether the model has flat floor under (x, y) within half a metre of height `z`. */
+function floorAt(model: DollhouseModel, x: number, y: number, z: number): boolean {
+  const { v, t } = model;
+  for (let i = 0; i < t.length; i += 3) {
+    const [a, b, c] = [t[i] * 3, t[i + 1] * 3, t[i + 2] * 3];
+    if (Math.abs(v[a + 2] - z) > 0.5 || Math.abs(v[b + 2] - z) > 0.5 || Math.abs(v[c + 2] - z) > 0.5) continue;
+    const d1 = (x - v[b]) * (v[a + 1] - v[b + 1]) - (v[a] - v[b]) * (y - v[b + 1]);
+    const d2 = (x - v[c]) * (v[b + 1] - v[c + 1]) - (v[b] - v[c]) * (y - v[c + 1]);
+    const d3 = (x - v[a]) * (v[c + 1] - v[a + 1]) - (v[c] - v[a]) * (y - v[a + 1]);
+    if (!((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))) return true;
+  }
+  return false;
+}
+
+/**
+ * The unit normal of a platform edge that points onto the platform: the side with floor at the
+ * edge's own height (the track bed on the other side is lower), else away from the nearest track.
+ */
+const normals = new WeakMap<DollhouseModel, Map<object, [number, number]>>();
+function platformNormal(model: DollhouseModel, edge: [number, number, number, number, number]): [number, number] {
+  // Worked out once per edge: the layer asks for every upright piece of the model.
+  let seen = normals.get(model);
+  if (!seen) normals.set(model, (seen = new Map<object, [number, number]>()));
+  const known = seen.get(edge);
+  if (known) return known;
+  const [x1, y1, x2, y2, z] = edge;
+  const L = Math.hypot(x2 - x1, y2 - y1) || 1e-9;
+  const ux = (x2 - x1) / L, uy = (y2 - y1) / L;
+  const mid: [number, number] = [(x1 + x2) / 2, (y1 + y2) / 2];
+  const tracks = [model.track, ...(model.otherTracks ?? [])].map((t) => t.at);
+  let nx = -uy, ny = ux;
+  const on = (sgn: number) => [0.25, 0.5, 0.75].reduce((n, f) => n + [0.5, 1, 2, 3].filter((d) => floorAt(model, x1 + ux * L * f + nx * d * sgn, y1 + uy * L * f + ny * d * sgn, z)).length, 0);
+  const [plus, minus] = [on(1), on(-1)];
+  if (plus === minus) {
+    const [tx, ty] = [...tracks].sort((a, b) => Math.hypot(a[0] - mid[0], a[1] - mid[1]) - Math.hypot(b[0] - mid[0], b[1] - mid[1]))[0];
+    if ((tx - x1) * nx + (ty - y1) * ny > 0) { nx = -nx; ny = -ny; }
+  } else if (minus > plus) { nx = -nx; ny = -ny; }
+  seen.set(edge, [nx, ny]);
+  return [nx, ny];
+}
+
+/**
+ * Whether (x, y, z) lies over a track beside a platform: within 4 m of an edge on the side away from
+ * the platform, from the platform's height up to 5 m above it. Nothing upright stands there: the
+ * train pulls in along it (owner, 2026-11-12). Pure, for tests.
+ */
+export function overTrack(model: DollhouseModel, x: number, y: number, z: number): boolean {
+  return model.edges.some((edge) => {
+    const [x1, y1, x2, y2, ez] = edge;
+    if (z < ez - 2 || z > ez + 5) return false;
+    const L = Math.hypot(x2 - x1, y2 - y1) || 1e-9;
+    const t = ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / L;
+    if (t < 0 || t > L) return false;
+    const [nx, ny] = platformNormal(model, edge);
+    const s = (x - x1) * nx + (y - y1) * ny;
+    return s < -0.2 && s > -4;
+  });
+}
+
+/** How far in from a platform's end its barrier stands, and the widest it is drawn. */
+const END_IN_M = 0.4, END_MAX_W_M = 14;
+
+/**
+ * Where each platform ends (owner, 2026-11-12: past the end the model stops and the map shows
+ * through, which looked like an open drop). One barrier per end of each platform edge: its middle
+ * point, the way it runs (radians, across the platform), and its width, from the platform's edge to
+ * the farthest floor found beside that end. Pure, for tests.
+ */
+export function platformEnds(model: DollhouseModel): Array<{ at: P3; angle: number; width: number }> {
+  const out: Array<{ at: P3; angle: number; width: number }> = [];
+  for (const edge of model.edges) {
+    const [x1, y1, x2, y2, z] = edge;
+    const L = Math.hypot(x2 - x1, y2 - y1);
+    if (L < 10) continue;
+    const ux = (x2 - x1) / L, uy = (y2 - y1) / L;
+    const [nx, ny] = platformNormal(model, edge);
+    for (const t0 of [0, L]) {
+      // The floor beside this end: level with the edge, on the platform's side, within a few metres of the end.
+      let width = 0;
+      for (let k = 0; k < model.v.length; k += 3) {
+        const dx = model.v[k] - x1, dy = model.v[k + 1] - y1;
+        if (Math.abs(model.v[k + 2] - z) > 0.5) continue;
+        const t = dx * ux + dy * uy, s = dx * nx + dy * ny;
+        if (Math.abs(t - t0) < 4 && s > 0 && s <= END_MAX_W_M) width = Math.max(width, s);
+      }
+      if (width < 1.5) continue;
+      const tin = t0 === 0 ? END_IN_M : L - END_IN_M;
+      out.push({ at: [x1 + ux * tin + nx * (width / 2), y1 + uy * tin + ny * (width / 2), z], angle: Math.atan2(ny, nx), width });
+    }
+  }
+  return out;
 }
 
 /** A simple blocky figure, feet at the group's origin, facing +y. Its limbs swing as it walks. */
@@ -427,6 +638,84 @@ function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small
     group.add(rod);
   }
   return group;
+}
+
+/** How far below the platform the track bed lies, and how wide it is drawn. */
+const BED_DROP_M = 1.2, BED_W_M = 4.2;
+/** Distance between the direction arrows on a track bed. */
+const ARROW_GAP_M = 12;
+
+/**
+ * The track bed beside a platform edge, as a group whose x runs along the edge and whose y points
+ * away from the platform (owner, 2026-11-12: past the edge looked like empty floor you could walk
+ * onto). Dark ballast a step below, the edge's drop face and two rails on sleepers, so it reads
+ * as track, not floor.
+ */
+function trackBed(length: number, clip: THREE.Plane[], arrows: { color: number; forward: boolean; mats: THREE.Material[] } | null = null): THREE.Group {
+  const g = new THREE.Group();
+  const bed = box(length, BED_W_M, 0.1, 0x3a3631, clip); bed.position.set(length / 2, BED_W_M / 2, -BED_DROP_M - 0.05); g.add(bed);
+  const face = box(length, 0.1, BED_DROP_M, 0x8a8478, clip); face.position.set(length / 2, 0.05, -BED_DROP_M / 2); g.add(face);
+  const mid = BED_W_M / 2 + 0.2;
+  for (const off of [-0.72, 0.72]) {
+    const rail = box(length, 0.08, 0.15, 0x9aa3ad, clip); rail.position.set(length / 2, mid + off, -BED_DROP_M + 0.2); g.add(rail);
+  }
+  // Sleepers: one mesh, many copies.
+  const n = Math.floor(length / 0.9);
+  const ties = new THREE.InstancedMesh(new THREE.BoxGeometry(0.25, 2.4, 0.1), new THREE.MeshLambertMaterial({ color: 0x5a4a3c, clippingPlanes: clip }), n);
+  const m = new THREE.Matrix4();
+  for (let i = 0; i < n; i++) ties.setMatrixAt(i, m.makeTranslation(0.45 + i * 0.9, mid, -BED_DROP_M + 0.05));
+  g.add(ties);
+  // Which way the trains run: a chevron in the line's colour every few car lengths (owner, 2026-11-12).
+  if (arrows) {
+    const shape = new THREE.Shape([new THREE.Vector2(-1.5, -1.3), new THREE.Vector2(1.5, 0), new THREE.Vector2(-1.5, 1.3), new THREE.Vector2(-0.6, 0)]);
+    const geo = new THREE.ShapeGeometry(shape);
+    // In the overview they are drawn over everything, so they show on top of a train standing at the
+    // platform; the layer turns that off once the camera comes down to walk (`mats`).
+    const mat = new THREE.MeshBasicMaterial({ color: arrows.color, side: THREE.DoubleSide, clippingPlanes: clip, depthTest: false, transparent: true, opacity: 0.9 });
+    arrows.mats.push(mat);
+    for (let x = ARROW_GAP_M / 2; x < length; x += ARROW_GAP_M) {
+      const a = new THREE.Mesh(geo, mat);
+      a.position.set(x, mid, -BED_DROP_M + 0.3);
+      a.renderOrder = 2;
+      if (!arrows.forward) a.rotation.z = Math.PI;
+      g.add(a);
+    }
+  }
+  return g;
+}
+
+/** Yellow and black stripes with END OF PLATFORM across the middle, for the barrier's panel. */
+function endTexture(): THREE.Texture {
+  const [c, g] = canvas2d(512, 128);
+  g.fillStyle = "#f2c94c"; g.fillRect(0, 0, 512, 128);
+  g.fillStyle = "#1b1b1b";
+  for (let x = -128; x < 512; x += 48) { g.beginPath(); g.moveTo(x, 128); g.lineTo(x + 24, 128); g.lineTo(x + 152, 0); g.lineTo(x + 128, 0); g.fill(); }
+  g.fillStyle = "#ffffff"; g.fillRect(96, 34, 320, 60);
+  g.fillStyle = "#c62828"; g.font = SIGN_FONT(36); g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("END OF PLATFORM", 256, 65);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+/** A waist-high barrier `width` long along x: posts, a top rail and a striped panel, both faces. */
+function endBarrier(width: number, clip: THREE.Plane[]): THREE.Group {
+  const g = new THREE.Group();
+  // Two faces back to back, so the words read the right way round from either side.
+  const mat = new THREE.MeshBasicMaterial({ map: endTexture(), clippingPlanes: clip });
+  for (const turn of [0, Math.PI]) {
+    const panel = new THREE.Mesh(new THREE.PlaneGeometry(width, 0.6), mat);
+    panel.rotation.set(Math.PI / 2, turn, 0); panel.position.z = 0.75;
+    g.add(panel);
+  }
+  const rail = box(width, 0.08, 0.08, 0x1b1b1b, clip); rail.position.z = 1.1; g.add(rail);
+  // Posts at the two ends only, so none stands in front of the words.
+  for (const x of [-width / 2, width / 2]) {
+    const post = box(0.1, 0.1, 1.1, 0x1b1b1b, clip);
+    post.position.set(x, 0, 0.55);
+    g.add(post);
+  }
+  return g;
 }
 
 /** A waist-high turnstile, walked through along +y: its body to the right of the lane, its three arms across it. */
@@ -650,12 +939,19 @@ export function outlineWalls(model: DollhouseModel): WallRun[] {
  * frame, and point the map's camera with `rig`. `corner` is the exit's street corner for the exit
  * signs ("Fulton St & Nassau St · NE corner"), or failing that the street's name, or null.
  */
-export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getState: () => DollhouseState, corner: string | null): Dollhouse {
+export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, readState: () => DollhouseState, corner: string | null, enter: { direction: string } | null = null): Dollhouse {
+  // A walk in plays the walk backwards (#126): from the street down to the platform, then the train
+  // pulls in while the camera rises to the overview, the exit walk's opening run in reverse.
+  const getState = enter
+    ? (): DollhouseState => { const st = readState(); return { ...st, walk: st.walk == null ? null : 1 - st.walk, wait: st.wait == null ? null : 1 - st.wait }; }
+    : readState;
   const scene = new THREE.Scene();
   const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const wallCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const lightCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const signCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+  /** Keeps only ceiling over the figure's head: a lower level's ceiling under a stair would cross its chest. */
+  const ceilFloor = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
   const station = new THREE.Group();
 
   // Flat floors, stairs and walls apart: each has its own surface.
@@ -679,6 +975,8 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
       // The model's own waist-high upright pieces come in short, angled lengths that read as broken
       // walls standing on the floor (owner, 2026-11-12); no walk passes them, so they are left out.
       if (Math.max(a[2], b[2], c[2]) - foot <= LOW_PIECE_M) continue;
+      // Nothing upright between a platform's edge and its track.
+      if (overTrack(model, (a[0] + b[0] + c[0]) / 3, (a[1] + b[1] + c[1]) / 3, foot)) continue;
       // Tile coordinates: along the wall, and up it from the triangle's foot.
       const h = Math.hypot(n[0], n[1]), ux = -n[1] / h, uy = n[0] / h;
       // Thickened behind its face, so the side people see stays where the model puts it.
@@ -727,18 +1025,58 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   station.add(new THREE.Mesh(wallGeo, new THREE.MeshLambertMaterial({ map: tiles, side: THREE.FrontSide, clippingPlanes: [wallCut, cut] })));
   station.add(new THREE.Mesh(wallGeo, new THREE.MeshBasicMaterial({ color: WALL_CAP_COLOR, side: THREE.BackSide, clippingPlanes: [wallCut, cut] })));
 
-  // The yellow strip along each platform edge, on the platform's side.
-  for (const [x1, y1, x2, y2, z] of model.edges) {
+  // The ceiling: every floor and stair again, a wall's height up, so the corridors close over the
+  // follow camera. It shows only while the camera is inside; from the overview above it would hide all.
+  const lifted = (pos: number[]) => pos.map((x, i) => (i % 3 === 2 ? x + WALL_M : x));
+  const ceilGeo = new THREE.BufferGeometry();
+  ceilGeo.setAttribute("position", new THREE.Float32BufferAttribute([...lifted(fv), ...lifted(sv)], 3));
+  ceilGeo.computeVertexNormals();
+  const ceilMat = new THREE.MeshLambertMaterial({ color: CEILING_COLOR, side: THREE.DoubleSide, clippingPlanes: [ceilFloor] });
+  const ceiling = new THREE.Group();
+  ceiling.add(new THREE.Mesh(ceilGeo, ceilMat));
+  // What the follow camera may not pass through: walls, floors and stairs pull it in toward the
+  // figure; the ceiling only lowers it (pulling in under a stair's sloping ceiling put it on the figure's back).
+  const solids: THREE.Object3D[] = [new THREE.Mesh(wallGeo), new THREE.Mesh(floorGeo), new THREE.Mesh(stairGeo)];
+  const ground = [new THREE.Mesh(floorGeo), new THREE.Mesh(stairGeo)];
+
+  // The yellow strip along each platform edge, on the platform's side, and the track bed on the other.
+  const arrowMats: THREE.Material[] = [];
+  for (const edge of model.edges) {
+    const [x1, y1, x2, y2, z] = edge;
     const L = Math.hypot(x2 - x1, y2 - y1);
-    const strip = box(L, 0.6, 0.02, 0xf2c94c, [cut]);
     const ang = Math.atan2(y2 - y1, x2 - x1);
-    // Toward the platform: away from the track when the track is near, else either side.
-    const nx = -Math.sin(ang), ny = Math.cos(ang);
-    const [tx, ty] = model.track.at;
-    const side = (tx - x1) * nx + (ty - y1) * ny > 0 ? -1 : 1;
-    strip.position.set((x1 + x2) / 2 + nx * 0.3 * side, (y1 + y2) / 2 + ny * 0.3 * side, z + 0.01);
+    const [pnx, pny] = platformNormal(model, edge);
+    const strip = box(L, 0.6, 0.02, 0xf2c94c, [cut]);
+    strip.position.set((x1 + x2) / 2 + pnx * 0.3, (y1 + y2) / 2 + pny * 0.3, z + 0.01);
     strip.rotation.z = ang;
     station.add(strip);
+    // The bed's y points away from the platform: run it from whichever end puts the platform on its -y.
+    const onLeft = -Math.sin(ang) * pnx + Math.cos(ang) * pny > 0;
+    // The track beside this edge, if one is near its bed: its trains run against its `angle`.
+    const rot = onLeft ? ang + Math.PI : ang;
+    const bx = (x1 + x2) / 2 - pnx * (BED_W_M / 2), by = (y1 + y2) / 2 - pny * (BED_W_M / 2);
+    const runs = [{ t: model.track, color: model.lines[0] ? parseInt(model.lines[0][1].slice(1), 16) : LEX_GREEN }, ...(model.otherTracks ?? []).map((t) => ({ t, color: 0xe8e8e8 }))]
+      .map((r) => ({ ...r, off: Math.abs((r.t.at[0] - bx) * pnx + (r.t.at[1] - by) * pny) }))
+      .filter((r) => r.off < BED_W_M)
+      .sort((a, b) => a.off - b.off)[0];
+    const arrows = runs ? { mats: arrowMats, color: runs.color, forward: -Math.cos(runs.t.angle) * Math.cos(rot) - Math.sin(runs.t.angle) * Math.sin(rot) > 0 } : null;
+    // The ceiling carries on over the track, so looking out from the platform there is no hole above.
+    const over = new THREE.Mesh(new THREE.PlaneGeometry(L, BED_W_M + 0.4), ceilMat);
+    over.position.set(bx, by, z + WALL_M);
+    over.rotation.z = ang;
+    ceiling.add(over);
+    const bed = trackBed(L, [cut], arrows);
+    bed.position.set(...(onLeft ? [x2, y2, z] : [x1, y1, z]) as P3);
+    bed.rotation.z = rot;
+    station.add(bed);
+  }
+
+  // A barrier across each platform's ends, so the end of the model reads as the end of the platform.
+  for (const end of platformEnds(model)) {
+    const barrier = endBarrier(end.width, [cut]);
+    barrier.position.set(...end.at);
+    barrier.rotation.z = end.angle;
+    station.add(barrier);
   }
 
   // Ceiling lights along the walk: a solid ceiling would sit between the chase camera and the figure.
@@ -755,18 +1093,19 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   }
 
   // The way to follow, painted on the floor: a line along the walk with an arrow every few metres.
-  station.add(guideLine(walk.path, [cut]));
+  const fromStreet = [...walk.path].reverse();
+  station.add(guideLine(enter ? fromStreet : walk.path, [cut]));
 
   // Signs, placed from the walk and the model's lines (see planSigns).
   const start = walk.path[0];
   const away = Math.atan2(walk.path[1][0] - start[0], walk.path[1][1] - start[1]);
-  for (const plan of planSigns(model, walk, corner)) {
+  for (const plan of enter ? planEnterSigns(model, fromStreet, enter.direction) : planSigns(model, walk, corner)) {
     const sign = signMesh(plan.lines, [signCut], plan.small);
     sign.position.set(...plan.at);
     sign.rotation.z = -plan.heading;
     station.add(sign);
   }
-  const places = walkPlaces(walk.path);
+  const places = enter ? { ...walkPlaces(walk.path), gates: enterGates(fromStreet) } : walkPlaces(walk.path);
 
   // The fare line: turnstiles, the high exit gate and the emergency gate, the walk through the middle turnstile.
   const rotors: Array<{ rotor: THREE.Group; at: THREE.Vector3 }> = [];
@@ -805,7 +1144,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const shell = box(CAR_M - 0.5, 2.7, 3.2, 0xb8bec6); shell.position.z = 1.9; car.add(shell);
     const roof = box(CAR_M - 0.9, 2.2, 0.12, 0x8e959e); roof.position.z = 3.56; car.add(roof);
     const windows = box(CAR_M - 1.2, 2.72, 0.7, 0x2b3038); windows.position.z = 2.5; car.add(windows);
-    const stripe = box(CAR_M - 0.6, 2.74, 0.18, LEX_GREEN); stripe.position.z = 1.7; car.add(stripe);
+    const stripe = box(CAR_M - 0.6, 2.74, 0.18, enter ? parseInt(model.lines[0][1].slice(1), 16) : LEX_GREEN); stripe.position.z = 1.7; car.add(stripe);
     car.position.x = -i * CAR_M;
     train.add(car);
   }
@@ -818,6 +1157,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   const ringMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, side: THREE.DoubleSide, depthTest: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(2.4, 3.4, 48), ringMat);
   ring.renderOrder = 1;
+  station.add(ceiling);
   scene.add(station, figure, ring);
   // The scene is z-up; three's hemisphere light assumes y-up unless told.
   // Warm light from above and a low key light from one side, so floors, stairs and walls read apart.
@@ -832,7 +1172,10 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   const dir: [number, number] = [Math.cos(model.track.angle), Math.sin(model.track.angle)];
   const along = (p: P3) => (p[0] - model.track.at[0]) * dir[0] + (p[1] - model.track.at[1]) * dir[1];
   const doorAlong = along(start);
-  const standing = doorAlong + CAR_M * (CARS / 2);
+  // Coming up, the train stands with the middle of a car at the door. Going in, it stops along the
+  // platform with its leading car at the platform's far end (the train runs against `dir`).
+  const platformLo = enter && model.edges[0] ? Math.min(along([model.edges[0][0], model.edges[0][1], 0]), along([model.edges[0][2], model.edges[0][3], 0])) : null;
+  const standing = platformLo != null ? platformLo + 3 + (CARS - 0.5) * CAR_M : doorAlong + CAR_M * (CARS / 2);
   /**
    * The overview's middle: halfway between the track and the figure's side of the platform, level
    * with the middle of the standing train.
@@ -842,6 +1185,11 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     (model.track.at[0] + dir[0] * midAlong + start[0] + dir[0] * (midAlong - doorAlong)) / 2,
     (model.track.at[1] + dir[1] * midAlong + start[1] + dir[1] * (midAlong - doorAlong)) / 2,
   ];
+  /** From where the walk meets the platform, straight toward the track. */
+  const faceTrack = (() => {
+    const d = along(start);
+    return Math.atan2(model.track.at[0] + dir[0] * d - start[0], model.track.at[1] + dir[1] * d - start[1]);
+  })();
   /** The track's compass bearing (0 = north, clockwise). */
   const trackBearing = Math.atan2(dir[0], dir[1]);
 
@@ -873,6 +1221,11 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   let feet: P3 = [...start];
   let heading = away;
   let glide: { from: P3; at: number } | null = null;
+  /** The camera is inside, under the ceiling: nothing is cut away and the ceiling shows (set by `rig`). */
+  let inside = false;
+  /** The follow camera's distance behind the figure, pulled in by walls and eased back out. */
+  let camD = BACK_M;
+  const ray = new THREE.Raycaster();
   const place = () => {
     const st = getState();
     if (st.street) {
@@ -902,19 +1255,28 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const f = st.wait != null ? 0 : st.walk ?? 0;
     const pose = walkAt(walk.path, f);
     feet = [pose.x, pose.y, pose.z];
-    heading = st.wait != null ? away : pose.heading;
+    // Walking in, the figure faces the way it goes; on the platform, the track.
+    heading = !enter ? (st.wait != null ? away : pose.heading) : st.wait != null ? faceTrack : pose.heading + Math.PI;
     figure.position.set(pose.x, pose.y, pose.z);
     figure.rotation.z = -heading;
     stride(pose.walked, st.wait == null);
-    cut.constant = pose.z + CUT_ABOVE_FEET_M;
-    wallCut.constant = pose.z + WALL_ABOVE_FEET_M;
-    lightCut.constant = pose.z + LIGHT_CUT_M;
-    signCut.constant = pose.z + SIGN_CUT_M;
+    // From above, the levels over the figure are cut away; inside, the ceiling closes over it instead.
+    const open = inside ? 1e4 : 0;
+    cut.constant = pose.z + CUT_ABOVE_FEET_M + open;
+    wallCut.constant = pose.z + WALL_ABOVE_FEET_M + open;
+    lightCut.constant = pose.z + LIGHT_CUT_M + open;
+    signCut.constant = pose.z + SIGN_CUT_M + open;
+    ceilFloor.constant = -(pose.z + CEIL_ABOVE_FEET_M);
+    ceiling.visible = inside;
     // The train stands through the overview, starts to pull out as the camera comes down, and is
     // into the tunnel (about 40 km/h) by the time the figure has walked PULL_OUT_M.
-    const k = st.wait != null
-      ? Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END) / 2
-      : 0.5 + Math.min(pose.walked / PULL_OUT_M, 1) / 2;
+    // Going in, played backwards: out of sight while the figure walks, then in from the tunnel and
+    // slowing to a stop as the camera rises to the overview.
+    const k = enter
+      ? st.wait != null ? Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END) : 1
+      : st.wait != null
+        ? Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END) / 2
+        : 0.5 + Math.min(pose.walked / PULL_OUT_M, 1) / 2;
     train.visible = k < 1;
     if (train.visible) {
       const front = standing + 170 * k * k;
@@ -925,6 +1287,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     ring.visible = zoomIn < 1;
     ring.position.set(pose.x, pose.y, pose.z + 0.05);
     ringMat.opacity = 0.9 * (1 - zoomIn);
+    for (const m of arrowMats) m.depthTest = zoomIn >= 1;
     for (const r of rotors) {
       const d = Math.hypot(r.at.x - pose.x, r.at.y - pose.y);
       if (d < 0.8) r.rotor.rotation.y = ((0.8 - d) / 0.8) * (Math.PI / 3);
@@ -994,9 +1357,34 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
       const turn = Math.atan2(Math.sin(heading - behind), Math.cos(heading - behind));
       behind += turn * Math.min(dt * 1.2, 1);
     }
-    // The chase camera: BACK_M behind the figure's back and UP_M over its feet, looking at its chest.
+    // The follow camera: BACK_M behind the figure's back and UP_M over its feet, looking at its chest.
     // The layer lifts the station so the feet are at street level (see `lift`), so heights here are over the feet.
-    const chaseD = Math.hypot(BACK_M, UP_M - LOOK_M), chaseTilt = Math.atan2(BACK_M, UP_M - LOOK_M);
+    const chaseTilt = Math.atan2(BACK_M, UP_M - LOOK_M);
+    let chaseD = Math.hypot(BACK_M, UP_M - LOOK_M) * (camD / BACK_M);
+    if (station.visible) {
+      // A wall, floor or stair between the figure and the camera pulls the camera in front of it,
+      // at once; it eases back out once the way is clear.
+      const back = new THREE.Vector3(-Math.sin(behind) * Math.sin(chaseTilt), -Math.cos(behind) * Math.sin(chaseTilt), Math.cos(chaseTilt));
+      ray.set(new THREE.Vector3(feet[0], feet[1], feet[2] + LOOK_M), back);
+      ray.far = Math.hypot(BACK_M, UP_M - LOOK_M) + CAM_PAD_M;
+      const hit = ray.intersectObjects(solids, false)[0];
+      let room = hit ? Math.max(hit.distance - CAM_PAD_M, MIN_BACK_M) : Infinity;
+      // Under the ceiling: the ceiling over a spot is a wall's height over its floor, so behind someone
+      // climbing a stair it is lower than the camera would be. Come in until the camera is under it.
+      const chest = new THREE.Vector3(feet[0], feet[1], feet[2] + LOOK_M), down = new THREE.Vector3(0, 0, -1);
+      for (let d = Math.min(room, Math.hypot(BACK_M, UP_M - LOOK_M)); d > MIN_BACK_M; d -= 0.3) {
+        const eye = chest.clone().addScaledVector(back, d);
+        ray.set(new THREE.Vector3(eye.x, eye.y, feet[2] + LOOK_M), down);
+        ray.far = 8;
+        const floor = ray.intersectObjects(ground, false)[0];
+        if (!floor || eye.z <= floor.point.z + WALL_M - CAM_PAD_M) { room = Math.min(room, d); break; }
+        room = Math.max(d - 0.3, MIN_BACK_M);
+      }
+      const want = Math.min(Math.hypot(BACK_M, UP_M - LOOK_M), room);
+      const full = Math.hypot(BACK_M, UP_M - LOOK_M);
+      camD = want < (camD / BACK_M) * full ? (want / full) * BACK_M : camD + (((want / full) * BACK_M) - camD) * Math.min(dt * 2, 1);
+      chaseD = Math.min(want, (camD / BACK_M) * full);
+    } else camD = BACK_M;
     // While the train stands at the platform: the whole platform and train from above, the train
     // along the screen's long side; then the camera eases down into the chase as the train pulls out.
     const st = getState();
@@ -1019,7 +1407,10 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
       dist = Math.exp(Math.log(overD) + (Math.log(chaseD) - Math.log(overD)) * ease);
       tilt = OVERVIEW_TILT + (chaseTilt - OVERVIEW_TILT) * ease;
     }
-    const ex = tx - Math.sin(bearing) * dist * Math.sin(tilt), ey = ty - Math.cos(bearing) * dist * Math.sin(tilt), ez = tz + dist * Math.cos(tilt);
+    const ex = tx - Math.sin(bearing) * dist * Math.sin(tilt), ey = ty - Math.cos(bearing) * dist * Math.sin(tilt);
+    const ez = tz + dist * Math.cos(tilt);
+    inside = station.visible && ez < INSIDE_BELOW_M;
+
     // The map draws custom layers as if the screen's centre were at street level, whatever elevation
     // the camera is given. So look at where the line from the eye to the point looked at crosses
     // street level: that point stays in the middle of the screen.
@@ -1029,6 +1420,8 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
       eyeAlt: ez,
       look: toLngLat(ex + (tx - ex) * k, ey + (ty - ey) * k),
       lookAlt: 0,
+      // Widens as the camera comes down from the overview (over 4 m) to the follow height (2 m).
+      fov: (MAP_FOV * 180) / Math.PI + (INSIDE_FOV - (MAP_FOV * 180) / Math.PI) * (station.visible ? Math.min(Math.max((4 - ez) / 2, 0), 1) : 0),
     };
   };
 
