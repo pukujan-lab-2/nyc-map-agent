@@ -4,7 +4,7 @@
  * figure collides with the same floors and walls, cleared along every walk so nothing catches a body
  * there (stationWalkGeometry.ts). Loaded only when opened: the physics engine is large.
  */
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { CameraControls } from "@react-three/drei";
@@ -19,6 +19,7 @@ import { fultonCorner } from "@/lib/map/fultonCorners";
 import { SMOOTH_SEAMS, toYUp, walkGeometry, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
 import { stationShell } from "@/lib/map/three/stationShell";
 import { loadModel } from "@/lib/map/dollhousePreview";
+import { forgetWalkSpot, savedWalkSpot, WalkDevHud } from "@/lib/map/three/WalkDevHud";
 
 /** The figure's body: a capsule 1.6 m tall floating 0.25 m over the floor, so it climbs stairs. */
 const BODY = { halfHeight: 0.5, radius: 0.3, float: 0.25 };
@@ -286,7 +287,8 @@ function Dressing({ dressing }: { dressing: WalkDressing }) {
   return <group rotation-x={-Math.PI / 2}><primitive object={dressing.group} /></group>;
 }
 
-export function StationWalk({ exit, onClose }: { exit: [number, number] | null; onClose: () => void }) {
+export function StationWalk({ exit, onClose: close }: { exit: [number, number] | null; onClose: () => void }) {
+  const onClose = useCallback(() => { if (import.meta.env.DEV) forgetWalkSpot(); close(); }, [close]);
   const [model, setModel] = useState<DollhouseModel | null>(null);
   const [failed, setFailed] = useState(false);
   const walls = useRef<THREE.Object3D[]>([]);
@@ -323,6 +325,9 @@ export function StationWalk({ exit, onClose }: { exit: [number, number] | null; 
     const len = walkLength(walk.path);
     const p = walkAt(walk.path, 1 - START_IN_M / len);
     const [x, y, z] = toYUp(p.x, p.y, p.z + 1.2);
+    // Dev: a reload puts the walker back where it stood, facing the same way.
+    const saved = import.meta.env.DEV ? savedWalkSpot() : null;
+    if (saved) return { at: new THREE.Vector3(saved.x, saved.y, saved.z), heading: saved.heading, path: walk.path };
     // Face down the walk, into the station.
     return { at: new THREE.Vector3(x, y, z), heading: p.heading + Math.PI, path: walk.path };
   }, [model, exit]);
@@ -370,6 +375,7 @@ export function StationWalk({ exit, onClose }: { exit: [number, number] | null; 
           </div>
         </div>
       ) : null}
+      {import.meta.env.DEV ? <WalkDevHud /> : null}
       {touch && ride === "walking" ? (
         <Joystick joystickWrapperStyle={{ left: 24, bottom: "calc(env(safe-area-inset-bottom) + 24px)", position: "absolute" }} />
       ) : ride !== "walking" ? null : (
