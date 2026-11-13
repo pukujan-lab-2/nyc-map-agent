@@ -188,7 +188,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
    * The rider's-eye camera while it drives the map: its steadied heading, the pose it
    * eases in from and for how long so far, and the map settings it changed.
    */
-  const eye = useRef<{ bearing: number; from: Cam | null; t: number; maxZoom: number } | null>(null);
+  const eye = useRef<{ bearing: number; from: Cam | null; t: number; maxZoom: number; fov: number } | null>(null);
   /** The station shown in x-ray on the stairs, and whether the ground was see-through before. */
   const stairs = useRef<{ station: string; streetXray: boolean } | null>(null);
   /** A station walked at eye level: the leg, the eye and train it draws each frame, its canvas below the street, and how to take it down. */
@@ -278,6 +278,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
   const leaveEye = useCallback((map: MapLibreMap) => {
     if (!eye.current) return;
     map.setMaxZoom(eye.current.maxZoom);
+    map.setVerticalFieldOfView(eye.current.fov);
     setPreviewEye(false);
     eye.current = null;
   }, []);
@@ -476,7 +477,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
         // On foot the preview sees through the rider's eyes, from the start until the train and from
         // getting off to the door (owner, 2026-11-07); it eases in from wherever the camera was.
         if (!eye.current) {
-          eye.current = { bearing: pose.bearing, from: reduced ? null : camNow(map), t: 0, maxZoom: map.getMaxZoom() };
+          eye.current = { bearing: pose.bearing, from: reduced ? null : camNow(map), t: 0, maxZoom: map.getMaxZoom(), fov: map.getVerticalFieldOfView() };
           map.setMaxZoom(EYE_MAX_ZOOM);
           // The map takes street view's haze, pavement and buildings while this is on (MapView).
           setPreviewEye(true);
@@ -486,6 +487,9 @@ export function usePlayer(onCallout?: (text: string) => void) {
         // watching the train leave meant seconds of dark tunnel (owner, 2026-11-10).
         e.bearing = approachBearing(e.bearing, seg.inside && wait !== null && seg.kind !== "ascend" ? faceTrain(seg.inside, false) : pose.bearing, dt, 4);
         const rig = (dh?.view && dh.view.rig(dt)) || eyeRig(mark, e.bearing, depth, !seg.inside);
+        // The station walk widens the lens once its camera is down inside; anything else keeps the map's own.
+        const fov = (rig as { fov?: number }).fov ?? e.fov;
+        if (Math.abs(map.getVerticalFieldOfView() - fov) > 0.05) map.setVerticalFieldOfView(fov);
         const cam = map.calculateCameraOptionsFromTo(new LngLat(...rig.eye), rig.eyeAlt, new LngLat(...rig.look), rig.lookAlt);
         const to: Cam = { center: rig.look, zoom: cam.zoom ?? map.getZoom(), pitch: cam.pitch ?? 0, bearing: cam.bearing ?? e.bearing, elevation: rig.lookAlt };
         e.t += dt;
@@ -506,7 +510,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
       }
       const view = inside.current;
       if (view) {
-        const base = map.getVerticalFieldOfView();
+        const base = eye.current?.fov ?? map.getVerticalFieldOfView();
         const wide = Math.min(1, Math.max(0, (INSIDE_M - depth) / FOV_OVER_M));
         view.eye = { lon: mark[0], lat: mark[1], bearing: eye.current?.bearing ?? pose.bearing, pitch: wait !== null ? 86 : lookPitch(seg, fm), z: depth, fov: base + (INSIDE_FOV - base) * wide };
         view.train = trainAt(seg, wait);

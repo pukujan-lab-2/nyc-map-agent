@@ -73,6 +73,8 @@ export async function openDollhouse(map: MaplibreMap, exit: [number, number] | n
 
 /** Points the map's camera along a dollhouse rig. */
 function aimAt(map: MaplibreMap, rig: DollhouseRig): void {
+  // The lens first: how far the camera sits for a given zoom depends on it.
+  if (Math.abs(map.getVerticalFieldOfView() - rig.fov) > 0.05) map.setVerticalFieldOfView(rig.fov);
   const cam = map.calculateCameraOptionsFromTo(new LngLat(...rig.eye), rig.eyeAlt, new LngLat(...rig.look), rig.lookAlt);
   map.jumpTo({ center: rig.look, zoom: cam.zoom, pitch: cam.pitch, bearing: cam.bearing, elevation: rig.lookAlt });
 }
@@ -100,7 +102,7 @@ export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; 
     state.wait = t < wait ? t / wait : null;
     state.walk = Math.min(Math.max(t - wait, 0) / seconds, 1);
   };
-  const maxZoom = map.getMaxZoom();
+  const maxZoom = map.getMaxZoom(), fov = map.getVerticalFieldOfView();
   map.setMaxZoom(24);
   const view = await openDollhouse(map, opts.exit ?? null, () => { tick(); return state; }, opts.street ?? "Fulton Street", opts.enter);
   if (!view) { map.setMaxZoom(maxZoom); return () => {}; }
@@ -112,5 +114,5 @@ export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; 
     frame = requestAnimationFrame(step);
   };
   frame = requestAnimationFrame(step);
-  return () => { cancelAnimationFrame(frame); view.stop(); map.setMaxZoom(maxZoom); };
+  return () => { cancelAnimationFrame(frame); view.stop(); map.setMaxZoom(maxZoom); map.setVerticalFieldOfView(fov); };
 }
