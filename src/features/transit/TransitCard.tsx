@@ -8,7 +8,7 @@ import { formatStreetText } from "@/lib/streetName";
 import { liveProgress } from "./monotonic";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Accessibility, ChevronDown, Crosshair, Footprints, ScanEye, Star } from "lucide-react";
-import { hasWalkInside, openStationWalk } from "@/features/stationWalk/store";
+import { hasWalkInside, openStationWalk } from "./stationWalk/store";
 import { Button } from "@/components/ui/button";
 import { arrivalsAt, directionLabel, estimateTrain, minutesUntil, stationOf, SYSTEM_LABELS, type LiveSystem, type StaticSystem, type SystemId, type Vehicle } from "./model";
 import { useAlerts, useBusRoute, useBusTrip, useNow, useStarred, useTransitData, type Outage, type TransitAlert } from "./hooks";

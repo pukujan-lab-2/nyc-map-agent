@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
-import { openStationWalk, useStationWalk } from "./store";
+import { closeStationWalk, openStationWalk, useStationWalk } from "./store";
 
-const StationWalk = lazy(() => import("./StationWalk").then((m) => ({ default: m.StationWalk })));
+const StationWalk = lazy(() => import("@/lib/map/three/StationWalkScene").then((m) => ({ default: m.StationWalk })));
 
 /** Mounts the walk inside Fulton St while it is open; nothing (and no download) otherwise. */
 export function StationWalkHost() {
@@ -15,7 +15,7 @@ export function StationWalkHost() {
   if (!open) return null;
   return (
     <Suspense fallback={null}>
-      <StationWalk exit={open.exit} />
+      <StationWalk exit={open.exit} onClose={closeStationWalk} />
     </Suspense>
   );
 }

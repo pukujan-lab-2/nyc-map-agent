@@ -16,7 +16,6 @@ import type { DollhouseModel } from "@/lib/map/three/dollhouse";
 import { buildFigure, concreteTexture, pickWalk, treadTexture, walkAt, walkLength, wallTexture } from "@/lib/map/three/dollhouse";
 import { SMOOTH_SEAMS, toYUp, walkGeometry, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
 import { loadModel } from "@/lib/map/dollhousePreview";
-import { closeStationWalk } from "./store";
 
 /** The figure's body: a capsule 1.6 m tall floating 0.25 m over the floor, so it climbs stairs. */
 const BODY = { halfHeight: 0.5, radius: 0.3, float: 0.25 };
@@ -157,7 +156,7 @@ function Walker({ start, heading, lowest, walls }: { start: THREE.Vector3; headi
   );
 }
 
-export function StationWalk({ exit }: { exit: [number, number] | null }) {
+export function StationWalk({ exit, onClose }: { exit: [number, number] | null; onClose: () => void }) {
   const [model, setModel] = useState<DollhouseModel | null>(null);
   const [failed, setFailed] = useState(false);
   const walls = useRef<THREE.Object3D[]>([]);
@@ -168,10 +167,10 @@ export function StationWalk({ exit }: { exit: [number, number] | null }) {
     return () => { live = false; };
   }, []);
   useEffect(() => {
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape" && !typing(e.target)) closeStationWalk(); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape" && !typing(e.target)) onClose(); };
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
-  }, []);
+  }, [onClose]);
   const geo = useMemo(() => (model ? walkGeometry(model) : null), [model]);
   const start = useMemo(() => {
     if (!model) return null;
@@ -203,7 +202,7 @@ export function StationWalk({ exit }: { exit: [number, number] | null }) {
       ) : (
         <p className="absolute inset-0 grid place-items-center text-sm text-white/80">{failed ? "Couldn't load the station." : "Loading Fulton St…"}</p>
       )}
-      <button type="button" onClick={closeStationWalk} data-testid="station-walk-close"
+      <button type="button" onClick={onClose} data-testid="station-walk-close"
         className="absolute left-[var(--edge,12px)] top-[calc(env(safe-area-inset-top)+12px)] flex h-11 items-center gap-1.5 rounded-full bg-black/55 px-4 text-sm font-semibold text-white backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
         <ArrowLeft className="h-4 w-4" aria-hidden />
         Back to the map
