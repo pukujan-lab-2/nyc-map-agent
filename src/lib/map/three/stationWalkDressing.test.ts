@@ -74,7 +74,8 @@ describe("Fulton St's dressing for walking inside", () => {
     expect(ahead.length).toBeGreaterThan(0);
   });
 
-  it("keeps every sign's board, rods and all, out of every wall", () => {
+  // Tests every board against every wall slab: about 5 s on a CI runner.
+  it("keeps every sign's board, rods and all, out of every wall", { timeout: 30_000 }, () => {
     const stuck: string[] = [];
     for (const s of signs()) {
       // The board's own box, turned and scaled as it hangs, sampled every 3 cm.
