@@ -23,7 +23,12 @@ import type { CustomLayerInterface, Map as MaplibreMap } from "maplibre-gl";
 import { LEGACY_LIGHT, MercatorCoordinate, sharedRenderer } from "./core";
 
 type P3 = [number, number, number];
-type DollhouseTrack = { at: P3; angle: number };
+/**
+ * Where the train stands: rail height beside the walk's start, and the way it leaves (radians from
+ * east). On a curved platform `line` is the track's centre line, in the direction trains leave, and
+ * the cars follow it.
+ */
+type DollhouseTrack = { at: P3; angle: number; line?: Array<[number, number]> };
 /** A walk may carry its own track: on a curved platform the stretch beside its start, where the train stands. */
 type DollhouseWalk = { exit: [number, number]; path: P3[]; track?: DollhouseTrack };
 export type DollhouseModel = {
@@ -87,6 +92,34 @@ const SIGN_CUT_M = 4;
 const STEP_RISE_M = 0.178;
 /** The raised walls' tile pattern covers this height from the wall's foot. */
 const WALL_PATTERN_M = 3;
+
+/** How far along a polyline the point nearest (x, y) lies, in metres from its first point. */
+export function lineArc(line: Array<[number, number]>, x: number, y: number): number {
+  let best = Infinity, arc = 0, done = 0;
+  for (let i = 1; i < line.length; i++) {
+    const [ax, ay] = line[i - 1], [bx, by] = line[i], L = Math.hypot(bx - ax, by - ay) || 1e-9;
+    const k = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / (L * L)));
+    const d = Math.hypot(x - ax - (bx - ax) * k, y - ay - (by - ay) * k);
+    if (d < best) { best = d; arc = done + L * k; }
+    done += L;
+  }
+  return arc;
+}
+
+/** The point `s` metres along a polyline, carried on straight past either end, and its heading (radians from east). */
+export function alongLine(line: Array<[number, number]>, s: number): { x: number; y: number; angle: number } {
+  let done = 0;
+  for (let i = 1; i < line.length; i++) {
+    const [ax, ay] = line[i - 1], [bx, by] = line[i], L = Math.hypot(bx - ax, by - ay) || 1e-9;
+    if (s <= done + L || i === line.length - 1) {
+      const k = i === 1 && s < 0 ? s / L : (s - done) / L;
+      return { x: ax + (bx - ax) * k, y: ay + (by - ay) * k, angle: Math.atan2(by - ay, bx - ax) };
+    }
+    done += L;
+  }
+  const [x, y] = line[0] ?? [0, 0];
+  return { x, y, angle: 0 };
+}
 
 /** Length of a walk in metres, stairs measured along their slope. */
 export function walkLength(walk: P3[]): number {
@@ -657,7 +690,13 @@ export function outlineWalls(model: DollhouseModel): WallRun[] {
  * signs ("Fulton St & Nassau St · NE corner"), or failing that the street's name, or null.
  */
 export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getState: () => DollhouseState, corner: string | null): Dollhouse {
-  const track = walk.track ?? model.track;
+  // A walk's own track keeps the shared one's centre line, so its cars still follow the curve.
+  const own = walk.track ?? model.track;
+  const track: DollhouseTrack = { ...own, line: own.line ?? model.track.line };
+  /** The track (shared or a walk's own) nearest a point: on a curved platform the shared one can be far off. */
+  const tracks = [model.track, ...model.walks.flatMap((w) => (w.track ? [w.track] : []))];
+  const nearestTrack = ([x, y]: [number, number]) =>
+    tracks.reduce((a, b) => (Math.hypot(b.at[0] - x, b.at[1] - y) < Math.hypot(a.at[0] - x, a.at[1] - y) ? b : a));
   const scene = new THREE.Scene();
   const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const wallCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
@@ -741,7 +780,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const ang = Math.atan2(y2 - y1, x2 - x1);
     // Toward the platform: away from the track when the track is near, else either side.
     const nx = -Math.sin(ang), ny = Math.cos(ang);
-    const [tx, ty] = model.track.at;
+    const [tx, ty] = nearestTrack([(x1 + x2) / 2, (y1 + y2) / 2]).at;
     const side = (tx - x1) * nx + (ty - y1) * ny > 0 ? -1 : 1;
     strip.position.set((x1 + x2) / 2 + nx * 0.3 * side, (y1 + y2) / 2 + ny * 0.3 * side, z + 0.01);
     strip.rotation.z = ang;
@@ -816,8 +855,23 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     car.position.x = -i * CAR_M;
     train.add(car);
   }
-  train.position.set(...track.at);
-  train.rotation.z = track.angle;
+  const cars = train.children;
+  /** Stands the train with its front car's middle `front` metres along the track. */
+  const placeTrain = (front: number) => {
+    if (!track.line) {
+      placeTrain(front);
+      return;
+    }
+    // On a curve each car follows the line; `front` counts from the point beside track.at.
+    const s0 = lineArc(track.line, track.at[0], track.at[1]);
+    cars.forEach((car, i) => {
+      const p = alongLine(track.line!, s0 + front - i * CAR_M);
+      car.position.set(p.x, p.y, 0);
+      car.rotation.z = p.angle;
+    });
+  };
+  if (track.line) train.position.set(0, 0, track.at[2]);
+  else { train.position.set(...track.at); train.rotation.z = track.angle; }
   scene.add(train);
 
   const { group: figure, stride } = buildFigure();
@@ -838,8 +892,9 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   // The train stands with the middle of a car at the door the figure steps out of.
   const dir: [number, number] = [Math.cos(track.angle), Math.sin(track.angle)];
   const along = (p: P3) => (p[0] - track.at[0]) * dir[0] + (p[1] - track.at[1]) * dir[1];
-  const doorAlong = along(start);
+  const doorAlong = track.line ? lineArc(track.line, start[0], start[1]) - lineArc(track.line, track.at[0], track.at[1]) : along(start);
   const standing = doorAlong + CAR_M * (CARS / 2);
+  placeTrain(standing);
   /**
    * The overview's middle: halfway between the track and the figure's side of the platform, level
    * with the middle of the standing train.

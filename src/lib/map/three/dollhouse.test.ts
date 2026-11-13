@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { forCells, outlineWalls, pickWalk, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
+import { alongLine, forCells, lineArc, outlineWalls, pickWalk, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
 
 const load = (name: string) => JSON.parse(readFileSync(`public/transit/${name}-model.json`, "utf8")) as DollhouseModel;
 const model = load("fulton");
@@ -117,16 +117,32 @@ describe.each(MODELS)("the dollhouse walks in the $name model", ({ name, model }
     }
   });
 
+  it("never takes a walk more than a floor below its platform, through another line's track bed", () => {
+    // Fulton St's deepest walk goes 8.4 m down to the A/C passage; a model's walk deeper than 10 m
+    // is running along a track bed the mesh left as a trench.
+    for (const { path, exit } of model.walks) {
+      const lowest = Math.min(...path.map((p) => p[2]));
+      expect(path[0][2] - lowest, `the walk to ${exit.join(",")}`).toBeLessThanOrEqual(10);
+    }
+  });
+
   it("never walks the figure into the train standing at the platform", () => {
     // The car body is 2.7 m wide on the track's line; the figure is about 0.6 m across.
+    // On a curved platform the cars follow the track's centre line: measure from that.
     for (const { path, exit, track } of model.walks) {
       const { at: [tx, ty, tz], angle } = track ?? model.track;
+      const line = model.track.line;
       const nx = -Math.sin(angle), ny = Math.cos(angle);
+      const off = (x: number, y: number) => {
+        if (!line) return Math.abs((x - tx) * nx + (y - ty) * ny);
+        const q = alongLine(line, lineArc(line, x, y));
+        return Math.hypot(x - q.x, y - q.y);
+      };
       const n = Math.ceil(walkLength(path) * 4);
       for (let i = 0; i <= n; i++) {
         const p = walkAt(path, i / n);
         if (Math.abs(p.z - tz) > 2) continue;
-        expect(Math.abs((p.x - tx) * nx + (p.y - ty) * ny), `the walk to ${exit.join(",")} runs into the train at ${Math.round((i / n) * 100)}%`).toBeGreaterThan(1.35 + 0.3);
+        expect(off(p.x, p.y), `the walk to ${exit.join(",")} runs into the train at ${Math.round((i / n) * 100)}%`).toBeGreaterThan(1.35 + 0.3);
       }
     }
   });
@@ -181,5 +197,23 @@ describe("the dollhouse walks at Fulton St", () => {
     }
     expect(signs.some(({ lines: [first, second] }) => first.arrow === "up" && words(second) === corner)).toBe(true);
     expect(signs.some(({ small, lines: [first] }) => small && first.text === "Exit")).toBe(true);
+  });
+});
+
+describe("a curved track's centre line", () => {
+  const line: Array<[number, number]> = [[0, 0], [10, 0], [20, 10]];
+  it("finds how far along it a point lies, and the point that far along", () => {
+    expect(lineArc(line, 5, 3)).toBeCloseTo(5);
+    expect(lineArc(line, 15, 5)).toBeCloseTo(10 + Math.hypot(5, 5));
+    const p = alongLine(line, 10 + Math.hypot(5, 5));
+    expect(p.x).toBeCloseTo(15);
+    expect(p.y).toBeCloseTo(5);
+    expect(p.angle).toBeCloseTo(Math.PI / 4);
+  });
+  it("carries on straight past either end, so a long train still stands in line", () => {
+    expect(alongLine(line, -4)).toMatchObject({ x: -4, y: 0 });
+    const end = alongLine(line, 10 + Math.hypot(10, 10) + Math.SQRT2);
+    expect(end.x).toBeCloseTo(21);
+    expect(end.y).toBeCloseTo(11);
   });
 });
