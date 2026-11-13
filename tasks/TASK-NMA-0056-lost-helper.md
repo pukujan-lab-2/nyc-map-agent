@@ -220,6 +220,29 @@ Blocked/uncertain:
 Next:
 - After #144 merges, pin down a spot inside Fulton St on the live site: Find exit, Yes, answer the questions, then Show me
 
+### 2026-11-13 06:50:24 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Merged main (with the 45-minute e2e limit from #152) into feat/lost-pin-in-station so its checks run again"],"decisions":["no new decisions"],"evidence":["Merge conflicts in CURRENT.md and the all-JS size limit resolved; the changed unit tests pass"],"next_action":"After #144 and #149 merge, run Find exit after a Grand Central to Fulton St trip on the live site and answer the questions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T06:50:24Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"93789232513d6d143ac9fdc55b97ceae970d076f628aa3d324d7b0bd741f3d49","request_id":"8269d86b09fb4303b24e73aa9ee64c7a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Merged main (with the 45-minute e2e limit from #152) into feat/lost-pin-in-station so its checks run again
+
+Evidence:
+- Merge conflicts in CURRENT.md and the all-JS size limit resolved; the changed unit tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #144 and #149 merge, run Find exit after a Grand Central to Fulton St trip on the live site and answer the questions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
