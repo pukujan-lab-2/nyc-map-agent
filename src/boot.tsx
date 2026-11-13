@@ -12,7 +12,6 @@ import { DataViewProvider } from "@/lib/store/DataViewContext";
 import { MapStateProvider } from "@/lib/store/MapStateContext";
 import { PanelProvider } from "@/lib/store/PanelContext";
 import { keepLastData } from "@/lib/queryKeep";
-import { registerOfflineWorker } from "@/lib/offline/worker";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./index.css";
 
@@ -27,7 +26,7 @@ const queryClient = new QueryClient({
 // The previous visit's line shapes and stations show at once; fresh data replaces them (#368).
 keepLastData(queryClient);
 // Station data, trip steps and the page itself stay on the phone once seen, for below the street (#132).
-registerOfflineWorker();
+void import("@/lib/offline/worker").then((m) => m.registerOfflineWorker()).catch(() => undefined);
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing #root element");
