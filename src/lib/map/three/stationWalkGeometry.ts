@@ -134,10 +134,6 @@ export function walkCollider(model: DollhouseModel, shell: Shell): Record<"groun
   }));
   // Lintels stay out: they sit over doorways at head height above the walk's line, and where a walk
   // starts down a stair the floor under the body is higher than that line, so a head would hit them.
-  for (const w of shell.walls) {
-    if (w.door === "lintel") continue;
-    wallsOut.push(...(cuts.has(w) ? cutWall(w, cuts.get(w)!) : [w]).filter((p) => p.door !== "lintel").flatMap(wallTriangles));
-  }
 
   // The model's own upright pieces (a stair's side, a column): one in a walk's way is left out whole.
   const cell = (x: number, y: number) => `${Math.floor(x)},${Math.floor(y)}`;
@@ -173,6 +169,24 @@ export function walkCollider(model: DollhouseModel, shell: Shell): Record<"groun
   // never across any walk (a turn's inside, a crossing walk).
   const tri = (a: number[]) => { const o: Array<[P3, P3, P3]> = []; for (let i = 0; i < a.length; i += 9) o.push([[a[i], a[i + 1], a[i + 2]], [a[i + 3], a[i + 4], a[i + 5]], [a[i + 6], a[i + 7], a[i + 8]]]); return o; };
   const under = surfaceFinder(tri(ground));
+  // A wall that stops short of the floor beside it (a stair's side wall over the corridor next to the
+  // stair) leaves a slot the body slips half under and wedges in. Each piece comes down to that floor,
+  // half a metre at a time, unless the longer piece would stand in a walk's way.
+  const newlyInWay = (was: ShellWall, now: ShellWall) => {
+    const xs = [now.a[0], now.b[0]], ys = [now.a[1], now.b[1]];
+    for (let gx = Math.floor(Math.min(...xs) - 1); gx <= Math.floor(Math.max(...xs) + 1); gx++)
+      for (let gy = Math.floor(Math.min(...ys) - 1); gy <= Math.floor(Math.max(...ys) + 1); gy++)
+        for (const [wi, i] of near.get(`${gx},${gy}`) ?? []) {
+          const [x, y, z] = walks[wi][i];
+          if (inWalkWay(now, x, y, z) && !inWalkWay(was, x, y, z)) return true;
+        }
+    return false;
+  };
+  for (const w of shell.walls) {
+    if (w.door === "lintel") continue;
+    for (const piece of (cuts.has(w) ? cutWall(w, cuts.get(w)!) : [w]).filter((p) => p.door !== "lintel"))
+      for (const seg of downToFloor(piece, under)) wallsOut.push(...wallTriangles(newlyInWay(seg.was, seg.now) ? seg.was : seg.now));
+  }
   const drop = (x: number, y: number, z: number) => !under(x, y).some((h) => Math.abs(h - z) < 0.5);
   const steps = model.walks.flatMap((w) => w.path.slice(1).map((q, i) => [w.path[i], q] as const));
   const clearOfWalks = (x: number, y: number, z: number) => !steps.some(([a, b]) => {
@@ -266,6 +280,27 @@ const underBody = (d: number) => (d < 0.3 ? 0.25 + 0.3 - Math.sqrt(0.09 - d * d)
  * hairpin one leg's ramp hangs over the other's: the body wedges under them and cannot move. A
  * triangle near a walk is split until its pieces are small, and the pieces over the walk are left out.
  */
+/** Lengths of at most half a metre of wall `w`, each with (`now`) its foot brought down to the highest floor within 2.2 m under it beside it, and (`was`) as it stood. */
+function downToFloor(w: ShellWall, floorAt: (x: number, y: number) => number[]): Array<{ was: ShellWall; now: ShellWall }> {
+  const dx = w.b[0] - w.a[0], dy = w.b[1] - w.a[1], L = Math.hypot(dx, dy);
+  if (L < 1e-6) return [{ was: w, now: w }];
+  const n = Math.ceil(L / 0.5), nx = -dy / L, ny = dx / L, off = w.thick / 2 + 0.15;
+  const at = (v: [number, number], k: number) => v[0] + (v[1] - v[0]) * k;
+  const out: Array<{ was: ShellWall; now: ShellWall }> = [];
+  for (let i = 0; i < n; i++) {
+    const k0 = i / n, k1 = (i + 1) / n;
+    const was: ShellWall = { ...w, a: [w.a[0] + dx * k0, w.a[1] + dy * k0], b: [w.a[0] + dx * k1, w.a[1] + dy * k1], foot: [at(w.foot, k0), at(w.foot, k1)], top: [at(w.top, k0), at(w.top, k1)] };
+    const lo = Math.min(...was.foot);
+    let g = -Infinity;
+    for (const k of [0.1, 0.5, 0.9]) for (const side of [off, -off]) {
+      const x = was.a[0] + (was.b[0] - was.a[0]) * k + nx * side, y = was.a[1] + (was.b[1] - was.a[1]) * k + ny * side;
+      for (const h of floorAt(x, y)) if (h < lo - 0.1 && h > lo - 2.2 && h > g) g = h;
+    }
+    out.push({ was, now: g === -Infinity ? was : { ...was, foot: [Math.min(was.foot[0], g - 0.05), Math.min(was.foot[1], g - 0.05)] } });
+  }
+  return out;
+}
+
 function clearHeadroom(ground: number[], walks: ReadonlyArray<ReadonlyArray<readonly number[]>>, near: Map<string, Array<[number, number]>>, cell: (x: number, y: number) => string, only?: number, clear?: number, cutOut?: number[]): number[] {
   const out: number[] = [];
   const over = (t: number[], small: boolean) => {
