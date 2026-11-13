@@ -166,6 +166,29 @@ Blocked/uncertain:
 Next:
 - After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site
 
+### 2026-11-13 14:44:26 UTC — agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063","blocked":[],"changed":[".size-limit.json"],"completed":["Raised the all-JS size limit to 1,226 kB; merging main put it 217 B over"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0057","timestamp":"2026-11-13T14:44:26Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"916d3b3bb0029a7eb7faab318e6b80601a1b881e2362244a8feab0e95c849db0","request_id":"8f64942547bd472e89d0def011e7f751","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0057"} -->
+
+Completed:
+- Raised the all-JS size limit to 1,226 kB; merging main put it 217 B over
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
