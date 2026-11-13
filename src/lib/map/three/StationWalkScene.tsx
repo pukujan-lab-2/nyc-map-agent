@@ -125,6 +125,7 @@ function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onR
   const last = useRef(start.clone());
   const dragged = useRef({ on: false, at: -Infinity });
   const near = useRef(false);
+  const marked = useRef(false);
   const doors = useRef(0);
   /** The boarding: from where the figure stood to the door and in, then the train pulls out. */
   const board = useRef<{ t: number; from: THREE.Vector3; door: THREE.Vector3; inside: THREE.Vector3 } | null>(null);
@@ -188,6 +189,8 @@ function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onR
   useFrame((state, dt) => {
     const b = body.current, c = cam.current;
     if (!b?.body) return;
+    // The first frame with the walker in it: what the load is timed to (e2e/walk-load.measure.spec.ts).
+    if (!marked.current) { marked.current = true; performance.mark("walk-ready"); }
     const p = b.currPos;
     const feet = p.y + FEET_Y;
     // The model's frame (z up) for the dressing: x, -z, y.
