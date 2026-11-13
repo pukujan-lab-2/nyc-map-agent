@@ -13,7 +13,6 @@ export function registerOfflineWorker(): void {
       const urls = new Set<string>();
       for (const e of performance.getEntriesByType("resource")) urls.add(e.name);
       document.querySelectorAll<HTMLScriptElement>("script[src]").forEach((s) => urls.add(s.src));
-      document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"], link[rel="modulepreload"]').forEach((l) => urls.add(l.href));
       reg.active?.postMessage({ type: "warm", urls: [...urls] });
     })
     .catch(() => {
