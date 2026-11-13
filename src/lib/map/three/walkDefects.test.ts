@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { DollhouseModel } from "./dollhouse";
 import { stationShell } from "./stationShell";
-import { bakedShellSurfaces, toYUp, walkGeometry, type Surface, type WalkGeometry } from "./stationWalkGeometry";
+import { bakedShellSurfaces, type BakedShell, toYUp, walkGeometry, type Surface, type WalkGeometry } from "./stationWalkGeometry";
 import { defectSpots, walkDefects } from "./walkDefects";
 
 const model = JSON.parse(readFileSync("public/transit/fulton-model.json", "utf8")) as DollhouseModel;
@@ -43,9 +43,9 @@ describe("the walk defect check", () => {
 
 describe("walking every Fulton St walk", () => {
   it("counts what a walker would see wrong", () => {
-    // BAKED_SHELL=<file>: count the trial shell baked with manifold-3d instead (#126).
-    const shell = stationShell(model), baked = process.env.BAKED_SHELL;
-    const geo = baked ? { ...walkGeometry(model, shell), ...bakedShellSurfaces(model, shell, JSON.parse(readFileSync(baked, "utf8"))) } : walkGeometry(model, shell);
+    const shell = stationShell(model);
+    // The walls the walk draws: baked by scripts/build-station-shell.ts. OLD_SHELL=1 counts the walls built at run time.
+    const geo = process.env.OLD_SHELL ? walkGeometry(model, shell) : { ...walkGeometry(model, shell), ...bakedShellSurfaces(model, shell, JSON.parse(readFileSync("public/transit/fulton-shell.json", "utf8")) as BakedShell) };
     const defects = walkDefects(model, geo);
     const spots = defectSpots(defects);
     const byKind: Record<string, number> = {};

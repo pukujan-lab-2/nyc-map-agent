@@ -164,7 +164,8 @@ export function surfaceFinder(tris: Array<[P3, P3, P3]>) {
 
 /** Triangle (x, y) grown outward by `d` on every side, as a closed ring rounded to the millimetre. */
 function grown(t: [P3, P3, P3], d: number): Array<[number, number]> | null {
-  let [a, b, c] = t.map((p) => [p[0], p[1]] as [number, number]);
+  const [a] = t.map((p) => [p[0], p[1]] as [number, number]);
+  let [b, c] = t.slice(1).map((p) => [p[0], p[1]] as [number, number]);
   const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
   if (Math.abs(area) < 1e-6) return null;
   if (area < 0) [b, c] = [c, b];

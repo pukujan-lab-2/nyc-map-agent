@@ -24,5 +24,3 @@ eval-runs/
 eval-snapshots/
 eval-cases/
 
-# Dev trial of the Blender-baked station shell (#126): derived from the station model, not committed.
-public/dev/

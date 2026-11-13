@@ -16,7 +16,7 @@ import type { DollhouseModel } from "@/lib/map/three/dollhouse";
 import { buildFigure, concreteTexture, pickWalk, treadTexture, walkAt, walkLength, wallTexture } from "@/lib/map/three/dollhouse";
 import { walkDressing, type WalkDressing } from "@/lib/map/three/stationWalkDressing";
 import { fultonCorner } from "@/lib/map/fultonCorners";
-import { bakedShellSurfaces, SMOOTH_SEAMS, toYUp, walkGeometry, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
+import { bakedShellSurfaces, SMOOTH_SEAMS, type BakedShell, toYUp, walkGeometry, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
 import { stationShell } from "@/lib/map/three/stationShell";
 import { loadModel } from "@/lib/map/dollhousePreview";
 import { forgetWalkSpot, savedWalkSpot, WalkDevHud } from "@/lib/map/three/WalkDevHud";
@@ -304,14 +304,17 @@ export function StationWalk({ exit, onClose: close }: { exit: [number, number] |
     return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
   const shell = useMemo(() => (model ? stationShell(model) : null), [model]);
-  // Dev trial: ?baked-shell draws the walls and ceilings baked in Blender (public/dev, not committed).
-  const [baked, setBaked] = useState<{ walls: number[]; ceiling: number[] } | null>(null);
+  // Walls and ceilings baked from the model (pnpm build:station-shell). Until they load nothing is
+  // drawn; if they fail, the walls built here stand in.
+  const [baked, setBaked] = useState<BakedShell | null | undefined>(undefined);
   useEffect(() => {
-    if (!import.meta.env.DEV || !new URLSearchParams(location.search).has("baked-shell")) return;
-    fetch("/dev/fulton-baked-shell.json").then((r) => (r.ok ? r.json() : null)).then(setBaked, () => {});
+    let live = true;
+    fetch("/transit/fulton-shell.json").then((r) => (r.ok ? (r.json() as Promise<BakedShell>) : null)).then(
+      (b) => { if (live) setBaked(b); }, () => { if (live) setBaked(null); });
+    return () => { live = false; };
   }, []);
   const geo = useMemo(() => {
-    if (!model || !shell) return null;
+    if (!model || !shell || baked === undefined) return null;
     const g = walkGeometry(model, shell);
     return baked ? { ...g, ...bakedShellSurfaces(model, shell, baked) } : g;
   }, [model, shell, baked]);

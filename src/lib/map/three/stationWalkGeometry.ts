@@ -135,7 +135,10 @@ function collidersOf(parts: Record<string, number[]>): WalkGeometry["colliders"]
   });
 }
 
-export function bakedShellSurfaces(model: DollhouseModel, shell: Shell, baked: { walls: number[]; ceiling: number[] }): Pick<WalkGeometry, "walls" | "ceiling" | "colliders"> {
+/** Walls and ceilings baked from the model by scripts/build-station-shell.ts, z up. */
+export type BakedShell = { walls: number[]; ceiling: number[] };
+
+export function bakedShellSurfaces(model: DollhouseModel, shell: Shell, baked: BakedShell): Pick<WalkGeometry, "walls" | "ceiling" | "colliders"> {
   const wallTris: number[] = [];
   for (let i = 0; i < shell.uprights.length; i += 9) {
     const t = shell.uprights.slice(i, i + 9);
