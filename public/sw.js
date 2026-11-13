@@ -1,15 +1,19 @@
 /*
- * Offline help for underground stations (issue #373). Hand-written, no build
- * step, registered by src/features/underground only while that flag is on.
+ * Offline help below the street (issue #373, widened in #132). Hand-written, no
+ * build step, registered for every visit by production builds
+ * (src/lib/offline/worker.ts): the signal drops in stations, and a station seen
+ * once should work there without the server.
  *
  * What it keeps: the app shell (the page and its built JS/CSS) and the static
- * transit files (stations and entrances, the MTA elevator/escalator list).
- * No station layouts. What it never keeps:
+ * transit files (stations and entrances, the MTA elevator/escalator list, the
+ * x-ray station data and the Fulton St station model the trip preview walks).
+ * Translated and spoken trip steps are kept by the page itself (POSTs cannot
+ * be cached here). What it never keeps:
  * /api/* (the assistant, live arrivals, alerts) and anything on another
  * origin (basemap tiles, live feeds). Live data is never served from here as
  * if it were fresh; the page labels anything it saved itself with its age.
  */
-const VERSION = "uw-1";
+const VERSION = "uw-2";
 const CACHE = `nyc-map-offline-${VERSION}`;
 /** Filled by the page (src/features/underground/offline.ts), small: one station area at a time. */
 const TILE_CACHE = "nyc-map-tiles-v1";
@@ -17,6 +21,10 @@ const TILE_CACHE = "nyc-map-tiles-v1";
 const PRECACHE = ["/", "/favicon.svg", "/transit/subway.json", "/transit/equipment.json"];
 /** A slow station signal should not hold the page hostage: fall back to the saved copy. */
 const NAV_TIMEOUT_MS = 3500;
+/** The same for station data, when a saved copy exists; with none, it waits for the network. */
+const DATA_TIMEOUT_MS = 4000;
+/** Built files older than this are dropped when a new worker starts; one a page still asks for is fetched again. */
+const ASSET_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
 
 /**
  * How one request is answered. "bypass" leaves it to the browser (never cached).
@@ -33,13 +41,23 @@ function strategyFor(url, req) {
   if (req.mode === "navigate") return "network-first-shell";
   // Vite's hashed build output never changes under the same name.
   if (url.pathname.startsWith("/assets/")) return "cache-first";
-  // Rebuilt daily: fresh when online, the saved copy when not.
-  if (/^\/transit\/[a-z]+\.json$/.test(url.pathname)) return "network-first";
+  // Rebuilt daily (or with the station model): fresh when online, the saved copy when not.
+  if (/^\/transit\/[a-z0-9-]+\.json$/.test(url.pathname)) return "network-first";
   if (url.pathname === "/favicon.svg") return "cache-first";
   return "bypass";
 }
 
-self.UW = { VERSION, CACHE, TILE_CACHE, PRECACHE, strategyFor };
+/**
+ * Whether a saved built file is old enough to drop: its Date header is more than
+ * `maxAge` before `now`. No date: kept. Pure, for the tests.
+ * @param {string | null} date
+ */
+function staleAsset(date, now, maxAge = ASSET_MAX_AGE_MS) {
+  const t = date ? Date.parse(date) : NaN;
+  return Number.isFinite(t) && now - t > maxAge;
+}
+
+self.UW = { VERSION, CACHE, TILE_CACHE, PRECACHE, strategyFor, staleAsset };
 
 async function put(req, res) {
   if (!res || !res.ok || res.type === "opaque") return res;
@@ -53,14 +71,27 @@ function timeout(ms) {
 }
 
 async function networkFirst(request, cacheKey, ms) {
+  const net = fetch(request).then((res) => put(cacheKey, res));
+  net.catch(() => undefined); // a late failure after the timeout is not an error
   try {
-    const net = fetch(request).then((res) => put(cacheKey, res));
-    net.catch(() => undefined); // a late failure after the timeout is not an error
     return await (ms ? Promise.race([net, timeout(ms)]) : net);
   } catch (err) {
     const hit = await caches.match(cacheKey);
     if (hit) return hit;
+    // Slow but not failed, and nothing saved: keep waiting for the network.
+    if (err instanceof Error && err.message === "timeout") return net;
     throw err;
+  }
+}
+
+/** Drop built files from old deploys so the cache does not grow with every release. */
+async function pruneAssets() {
+  const cache = await caches.open(CACHE);
+  const now = Date.now();
+  for (const req of await cache.keys()) {
+    if (!new URL(req.url).pathname.startsWith("/assets/")) continue;
+    const res = await cache.match(req);
+    if (res && staleAsset(res.headers.get("date"), now)) await cache.delete(req);
   }
 }
 
@@ -84,6 +115,7 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k.startsWith("nyc-map-offline-") && k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => pruneAssets().catch(() => undefined))
       .then(() => self.clients.claim()),
   );
 });
@@ -104,7 +136,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (how === "network-first-shell") event.respondWith(networkFirst(req, "/", NAV_TIMEOUT_MS));
-  else if (how === "network-first") event.respondWith(networkFirst(req, req, 0));
+  else if (how === "network-first") event.respondWith(networkFirst(req, req, DATA_TIMEOUT_MS));
   else event.respondWith(cacheFirst(req));
 });
 

@@ -40,3 +40,64 @@ describe("translateLines", () => {
     expect((await translateLines(["Board the 5 train"], "ko")).size).toBe(0);
   });
 });
+
+/** A Storage stand-in, since the tests run without a browser. */
+function memoryStorage(): Storage {
+  const m = new Map<string, string>();
+  return {
+    get length() { return m.size; },
+    clear: () => m.clear(),
+    getItem: (k) => m.get(k) ?? null,
+    key: (i) => [...m.keys()][i] ?? null,
+    removeItem: (k) => void m.delete(k),
+    setItem: (k, v) => void m.set(k, String(v)),
+  };
+}
+
+describe("translations kept on the phone (#132)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  it("a reload with no server still has the lines translated before", async () => {
+    const store = memoryStorage();
+    vi.stubGlobal("localStorage", store);
+    vi.stubGlobal("fetch", vi.fn((_url: string, init: { body: string }) => reply((JSON.parse(init.body) as { lines: string[] }).lines.map((l) => `zh:${l}`))));
+    vi.resetModules();
+    const first = await import("./translateLines");
+    await first.translateLines(["Up the stairs to Nassau St"], "zh");
+    expect(JSON.parse(store.getItem(first.KEPT_KEY) ?? "{}")).toEqual({ zh: { "Up the stairs to Nassau St": "zh:Up the stairs to Nassau St" } });
+
+    // A fresh page, offline.
+    const offline = vi.fn(() => Promise.reject(new Error("offline")));
+    vi.stubGlobal("fetch", offline);
+    vi.resetModules();
+    const again = await import("./translateLines");
+    const got = await again.translateLines(["Up the stairs to Nassau St"], "zh");
+    expect(got.get("Up the stairs to Nassau St")).toBe("zh:Up the stairs to Nassau St");
+    expect(offline).not.toHaveBeenCalled();
+  });
+
+  it("keeps each language's newest lines only", async () => {
+    const store = memoryStorage();
+    vi.stubGlobal("localStorage", store);
+    vi.stubGlobal("fetch", vi.fn((_url: string, init: { body: string }) => reply((JSON.parse(init.body) as { lines: string[] }).lines.map((l) => `es:${l}`))));
+    vi.resetModules();
+    const mod = await import("./translateLines");
+    const many = Array.from({ length: mod.KEPT_PER_LANG + 10 }, (_, i) => `line ${i}`);
+    await mod.translateLines(many, "es");
+    const es = (JSON.parse(store.getItem(mod.KEPT_KEY) ?? "{}") as Record<string, Record<string, string>>).es;
+    expect(Object.keys(es)).toHaveLength(mod.KEPT_PER_LANG);
+    expect(es["line 0"]).toBeUndefined();
+    expect(es[`line ${many.length - 1}`]).toBe(`es:line ${many.length - 1}`);
+  });
+
+  it("works when storage is blocked", async () => {
+    vi.stubGlobal("localStorage", { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); } });
+    vi.stubGlobal("fetch", vi.fn(() => reply(["fr:Exit"])));
+    vi.resetModules();
+    const mod = await import("./translateLines");
+    expect((await mod.translateLines(["Exit"], "fr")).get("Exit")).toBe("fr:Exit");
+  });
+});

@@ -15,6 +15,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "off",
+    // Production builds register the offline worker (#132), whose own requests skip page.route mocks.
+    // Specs that test it opt back in with test.use({ serviceWorkers: "allow" }) and context routes.
+    serviceWorkers: "block",
     launchOptions: { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],

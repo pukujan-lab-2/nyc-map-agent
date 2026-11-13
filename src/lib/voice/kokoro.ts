@@ -3,6 +3,8 @@
  * The server streams 16-bit mono PCM; each piece is queued on a Web Audio clock as it arrives, so
  * speech starts at the first sound. Before any sound has played, a failure calls `onFail` and the
  * caller speaks with the browser voice instead; a server that failed is not asked again for a minute.
+ * Lines marked `keep` (the trip preview's steps, #132) are saved on the phone once read, and played from
+ * there when the server cannot be reached, so a walk replayed underground keeps the same voice.
  */
 
 /** The app's languages Kokoro has a voice for (the server's TTS_LANGS). */
@@ -30,8 +32,48 @@ export function pcm16ToFloat(b: Uint8Array): Float32Array {
   return out;
 }
 
+/** Cache Storage name for kept lines; a new version drops the old. */
+export const VOICE_CACHE = "nyc-map-voice-v1";
+/** Lines kept, newest first out; about 150 KB each, so a few trips' walks. */
+export const VOICE_MAX = 80;
+
+/** FNV-1a, for a short cache key. Pure. */
+export function voiceKey(text: string, lang: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+  return `/__voice/v1/${lang}/${h.toString(16)}-${text.length}`;
+}
+
+const voiceUrl = (text: string, lang: string) => new URL(voiceKey(text, lang), typeof location === "undefined" ? "http://localhost" : location.origin).href;
+
+/** A kept line's sound, or null. The stored text is checked, so a key that collides is a miss. */
+export async function keptVoice(text: string, lang: string): Promise<{ pcm: Uint8Array; rate: number } | null> {
+  if (typeof caches === "undefined") return null;
+  try {
+    const hit = await (await caches.open(VOICE_CACHE)).match(voiceUrl(text, lang));
+    if (!hit || hit.headers.get("x-text") !== encodeURIComponent(text)) return null;
+    return { pcm: new Uint8Array(await hit.arrayBuffer()), rate: Number(hit.headers.get("x-sample-rate")) || 24000 };
+  } catch {
+    return null;
+  }
+}
+
+/** Saves a line's sound, dropping the oldest past VOICE_MAX. */
+export async function keepVoice(text: string, lang: string, pcm: Uint8Array, rate: number): Promise<void> {
+  if (typeof caches === "undefined" || !pcm.length) return;
+  try {
+    const cache = await caches.open(VOICE_CACHE);
+    const headers = { "content-type": "application/octet-stream", "x-sample-rate": String(rate), "x-text": encodeURIComponent(text) };
+    await cache.put(voiceUrl(text, lang), new Response(pcm.slice().buffer, { headers }));
+    const keys = await cache.keys();
+    for (const k of keys.slice(0, Math.max(0, keys.length - VOICE_MAX))) await cache.delete(k);
+  } catch {
+    /* full or blocked: the line is asked for again next time */
+  }
+}
+
 /** Speaks `text`; returns cancel. `onEnd` fires once (after the last sound, on cancel, or on a failure after sound began). `onFail` fires instead if nothing played. */
-export function speakKokoro(text: string, lang: string, onEnd: () => void, onFail: () => void): () => void {
+export function speakKokoro(text: string, lang: string, onEnd: () => void, onFail: () => void, keep = false): () => void {
   const ctrl = new AbortController();
   const sources: AudioBufferSourceNode[] = [];
   let ctx: AudioContext | null = null;
@@ -54,8 +96,37 @@ export function speakKokoro(text: string, lang: string, onEnd: () => void, onFai
     close();
     onFail();
   };
+  /** Queues one piece of sound on the clock; returns its end time. */
+  const play = (f: Float32Array, rate: number, next: number): number => {
+    if (!f.length || !ctx) return next;
+    const buf = ctx.createBuffer(1, f.length, rate);
+    buf.getChannelData(0).set(f);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    const at = Math.max(next, ctx.currentTime + 0.05);
+    src.start(at);
+    sources.push(src);
+    heard = true;
+    return at + buf.duration;
+  };
   void (async () => {
     try {
+      if (keep) {
+        const saved = await keptVoice(text, lang);
+        if (done) return;
+        if (saved) {
+          ctx = new AudioContext();
+          await ctx.resume().catch(() => undefined);
+          play(pcm16ToFloat(saved.pcm), saved.rate, 0);
+          const last = sources.at(-1);
+          if (!last) return fail();
+          last.onended = finish;
+          return;
+        }
+        // Nothing kept and the server was down a moment ago: the browser voice, without asking again.
+        if (!kokoroUp()) { done = true; onFail(); return; }
+      }
       const base = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
       const res = await fetch(`${base}/api/tts`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, lang }), signal: ctrl.signal });
       // A 415 or 429 says this text can't be read now, not that the server is down: the browser voice takes it.
@@ -69,34 +140,30 @@ export function speakKokoro(text: string, lang: string, onEnd: () => void, onFai
       const reader = res.body.getReader();
       let next = 0;
       let carry: Uint8Array = new Uint8Array(0);
+      const whole: Uint8Array[] = [];
       for (;;) {
         const { done: end, value } = await reader.read();
         if (done) return;
         if (value) {
+          if (keep) whole.push(value);
           const joined = new Uint8Array(carry.length + value.length);
           joined.set(carry);
           joined.set(value, carry.length);
           const even = joined.length - (joined.length % 2);
           carry = joined.slice(even);
-          const f = pcm16ToFloat(joined.subarray(0, even));
-          if (f.length && ctx) {
-            const buf = ctx.createBuffer(1, f.length, rate);
-            buf.getChannelData(0).set(f);
-            const src = ctx.createBufferSource();
-            src.buffer = buf;
-            src.connect(ctx.destination);
-            const at = Math.max(next, ctx.currentTime + 0.05);
-            src.start(at);
-            next = at + buf.duration;
-            sources.push(src);
-            heard = true;
-          }
+          next = play(pcm16ToFloat(joined.subarray(0, even)), rate, next);
         }
         if (end) break;
       }
       const last = sources.at(-1);
       if (!last) return fail();
       last.onended = finish;
+      if (keep) {
+        const all = new Uint8Array(whole.reduce((n, b) => n + b.length, 0));
+        let at = 0;
+        for (const b of whole) { all.set(b, at); at += b.length; }
+        void keepVoice(text, lang, all, rate);
+      }
     } catch {
       fail();
     }

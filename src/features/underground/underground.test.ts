@@ -318,11 +318,11 @@ describe("safety text", () => {
 });
 
 describe("offline cache list (public/sw.js)", () => {
-  type Policy = { PRECACHE: string[]; strategyFor: (u: URL, r: { mode?: string; method?: string; origin: string }) => string };
+  type Policy = { PRECACHE: string[]; strategyFor: (u: URL, r: { mode?: string; method?: string; origin: string }) => string; staleAsset: (date: string | null, now: number) => boolean };
   const src = readFileSync(new URL("../../../public/sw.js", import.meta.url), "utf8");
   const self: { UW?: Policy; addEventListener: () => void; location: { origin: string } } = { addEventListener: () => {}, location: { origin: "https://map.test" } };
   runInNewContext(src, { self });
-  const { PRECACHE, strategyFor } = self.UW!;
+  const { PRECACHE, strategyFor, staleAsset } = self.UW!;
   const how = (path: string, mode = "cors", method = "GET") => strategyFor(new URL(path, "https://map.test"), { mode, method, origin: "https://map.test" });
 
   it("precaches the app shell, stations and entrances, and the equipment list; no station layouts", () => {
@@ -344,6 +344,19 @@ describe("offline cache list (public/sw.js)", () => {
     expect(how("/assets/index-abc123.js")).toBe("cache-first");
     expect(how("/transit/subway.json")).toBe("network-first");
     expect(how("/transit/equipment.json")).toBe("network-first");
+  });
+
+  it("keeps the station data the trip preview walks once it has been seen (#132)", () => {
+    expect(how("/transit/fulton-model.json")).toBe("network-first");
+    expect(how("/transit/xray.json")).toBe("network-first");
+    expect(how("/transit/../api/x.json")).toBe("bypass");
+  });
+
+  it("drops built files from deploys more than 30 days old, and keeps undated ones", () => {
+    const now = Date.parse("2026-11-12T12:00:00Z");
+    expect(staleAsset("Mon, 05 Oct 2026 12:00:00 GMT", now)).toBe(true);
+    expect(staleAsset("Thu, 05 Nov 2026 12:00:00 GMT", now)).toBe(false);
+    expect(staleAsset(null, now)).toBe(false);
   });
 });
 
