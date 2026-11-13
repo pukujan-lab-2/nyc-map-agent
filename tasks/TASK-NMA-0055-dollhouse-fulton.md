@@ -561,6 +561,10 @@ Next:
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Close the 57 remaining hole spots in the outline shell (stairwell columns between stair and level ceilings, plus ceiling-to-wall cracks), fix the shell gap test for the ceiling-step strips, then record the walk, run Pro checks and open the PR","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:05:09Z"} -->
 <!-- continuity:checkpoint-operation {"payload_sha256":"d4aadfced53aff84ba663abdfed3eee734b597324348086d357822167b5226c6","request_id":"2ecd89139ae9443282c0e3162e018d3e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+### 2026-11-13 15:34:50 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Once the PR for feat/126-walk-signs-gates deploys, walk inside Fulton St on the live site: an Exit sign by a wall lies flat on it, the turnstile arms turn at the fare line, the blue accessible gate stands at a row's end, and the uptown platform has Uptown & The Bronx boards","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:34:50Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6032a45631aeed242add80623ab008ea436931b019c746e805ad8f1491c291d6","request_id":"31512711a9844912a87019a1521d71e4","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
 
 Completed:
 - work completed
@@ -584,6 +588,12 @@ Next:
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Replace the 0.5 m wall slabs with one continuous wall per level outline whose top stops under any floor overhead, then check it at the broken stair (-104.5, 23.8, floor -2.1) in the pane using the dev readout","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:19:01Z"} -->
 <!-- continuity:checkpoint-operation {"payload_sha256":"994341a7680ea0ea19a685521ce1c5e6e0b3604a6c197ac50d24fa383280d2d8","request_id":"2d60f3ed799a45b1a036f91671368607","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+- Once the PR for feat/126-walk-signs-gates deploys, walk inside Fulton St on the live site: an Exit sign by a wall lies flat on it, the turnstile arms turn at the fare line, the blue accessible gate stands at a row's end, and the uptown platform has Uptown & The Bronx boards
+
+### 2026-11-13 15:45:02 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Once #169 deploys, walk inside Fulton St on the live site: stand at -87.7, 35.1 looking SE and read Fulton St, Downtown & Brooklyn over the train; check an Exit sign flat on a wall, the turnstile arms at the fare line and the blue accessible gate","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:45:02Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"de6e4129e61ee6196f6420bfc02b67f1347811d91b3ee67b2e1d37202fde2638","request_id":"7dad7cad07ab4ff192b69934d650e394","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
 
 Completed:
 - work completed
@@ -607,6 +617,12 @@ Next:
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Fix the three stationShell tests broken by the padded wall caps, then in the owner's order: one MTA-coloured board per exit, ceilings that slope with each stair, the wall across the passage at (-65.2, 30.2), an exit at the top of each street stair; screenshot each in the pane","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:39:56Z"} -->
 <!-- continuity:checkpoint-operation {"payload_sha256":"37404ab678213fbdd4335a8bee346d2398fa6a2ebddd048e2c5244f7ec5c2ce4","request_id":"6326fbe74d8c41888fc0a72d7b299d79","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+- Once #169 deploys, walk inside Fulton St on the live site: stand at -87.7, 35.1 looking SE and read Fulton St, Downtown & Brooklyn over the train; check an Exit sign flat on a wall, the turnstile arms at the fare line and the blue accessible gate
+
+### 2026-11-13 16:06:31 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Owner to walk Fulton St on the live site after #169 deploys: one green Exit board over each exit stair's middle, facing the walker; the parent rebases feat/126-level-shell onto it","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:06:31Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1c9bc2fb14d886e421616070b19b8436ef5f0c4bf7b90e8f3527af4923f01a26","request_id":"8a33a89ec6834865bc625b2104990bc4","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
 
 Completed:
 - work completed
@@ -740,6 +756,7 @@ Blocked/uncertain:
 
 Next:
 - Owner is walking the Manifold shell (?baked-shell); on their OK move the merge script into the repo, use it for walls, ceilings and collisions, replace the three shell tests
+- Owner to walk Fulton St on the live site after #169 deploys: one green Exit board over each exit stair's middle, facing the walker; the parent rebases feat/126-level-shell onto it
 
 ## Handoff
 

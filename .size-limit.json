@@ -22,7 +22,7 @@
   {
     "name": "feature: agent (lazy overlay)",
     "path": ".size-build/assets/AgentOverlay-*.js",
-    "limit": "31.7 kB"
+    "limit": "31.8 kB"
   },
   {
     "name": "lib: screen space (xstate, lazy)",
@@ -102,7 +102,7 @@
   {
     "name": "feature: station walk (lazy, opens with Walk inside; Rapier physics inlines its WebAssembly)",
     "path": ".size-build/assets/StationWalkScene-*.js",
-    "limit": "705 kB"
+    "limit": "707 kB"
   },
   {
     "name": "all JS except the station walk",
@@ -110,6 +110,6 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js"
     ],
-    "limit": "1225 kB"
+    "limit": "1226 kB"
   }
 ]
