@@ -59,6 +59,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-13 01:58:40 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["src/features/underground/LostHelper.tsx, lostGuess.ts, lostText.ts; src/lib/underground/lostHelper.ts; AgentOverlay, TransitCard, RouteGuide; agent schema and prompt"],"completed":["Find exit, a train card's Exit help and a walk's I'm lost now open one where-am-I helper that states its guess in the app's language and chats by text"],"decisions":["no new decisions"],"evidence":["13 new unit tests for the guess, signal and wording pass; the helper's layout e2e case passes at 320x568, 375x667, 390x844 and 1280x800; the walk case asks the agent exactly once with stage lost"],"next_action":"Let the pull request for #131 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T01:58:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"da4d046bd0ee40a990854e40be5a332a983df8739778d510a90b3d3087d3e8e9","request_id":"d6bb39d4fa0d4e7d9d561ee91c4343b7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Find exit, a train card's Exit help and a walk's I'm lost now open one where-am-I helper that states its guess in the app's language and chats by text
+
+Evidence:
+- 13 new unit tests for the guess, signal and wording pass; the helper's layout e2e case passes at 320x568, 375x667, 390x844 and 1280x800; the walk case asks the agent exactly once with stage lost
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/underground/LostHelper.tsx, lostGuess.ts, lostText.ts; src/lib/underground/lostHelper.ts; AgentOverlay, TransitCard, RouteGuide; agent schema and prompt
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let the pull request for #131 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
