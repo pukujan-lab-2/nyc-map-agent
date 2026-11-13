@@ -120,6 +120,29 @@ Blocked/uncertain:
 Next:
 - After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site
 
+### 2026-11-13 14:18:38 UTC — agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063","blocked":[],"changed":[".size-limit.json, src/lib/map/stationWalk.test.ts"],"completed":["Fixed PR #162's three failing checks: a conventional title, the agent overlay limit raised to 31.8 kB for the two new stations, and a 30 s timeout on the slow stairwell test"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0057","timestamp":"2026-11-13T14:18:38Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"30df08d12144913c68f6971e73e1e2d5e5c3e8e1b465cbf40792f9ed4005de9c","request_id":"5041dac474ff4d9ba49280a2204f09d1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0057"} -->
+
+Completed:
+- Fixed PR #162's three failing checks: a conventional title, the agent overlay limit raised to 31.8 kB for the two new stations, and a 30 s timeout on the slow stairwell test
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- .size-limit.json, src/lib/map/stationWalk.test.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
