@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - Once #136 deploys, check on the live site a trip into 5 Av/53 St from the Madison Av side and an elevators-only trip to Fulton St, then post the receipt on #133
 
+### 2026-11-13 07:48:15 UTC — agent:claude-code/3271bd9a-a577-4c73-9c75-a7aa823b92d3
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/3271bd9a-a577-4c73-9c75-a7aa823b92d3","blocked":[],"changed":["none"],"completed":["Merged main into #136, fixed the lint error, the PR title and the boot chunk's size budget"],"decisions":["no new decisions"],"evidence":["On the MacBook Pro: tsc clean, eslint clean on the changed files, 61 tests in the six changed test files pass; size-limit over by 165 B before the budget change"],"next_action":"Once #136's checks pass and it deploys, check on the live site a trip into 5 Av/53 St from the Madison Av side and an elevators-only trip to Fulton St","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0057","timestamp":"2026-11-13T07:48:15Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d5f895007cd9a66df1bf0a473f891878e3b5d355b4ab2d7f39851ed45dd1c328","request_id":"4fb744325579426195f0637e3c533d3c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0057"} -->
+
+Completed:
+- Merged main into #136, fixed the lint error, the PR title and the boot chunk's size budget
+
+Evidence:
+- On the MacBook Pro: tsc clean, eslint clean on the changed files, 61 tests in the six changed test files pass; size-limit over by 165 B before the budget change
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Once #136's checks pass and it deploys, check on the live site a trip into 5 Av/53 St from the Madison Av side and an elevators-only trip to Fulton St
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
