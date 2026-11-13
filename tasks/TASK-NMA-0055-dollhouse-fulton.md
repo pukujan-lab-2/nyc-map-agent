@@ -262,6 +262,10 @@ Next:
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After the walk-in PR merges, play a real trip from Broadway & Fulton St on the uptown A on the live site and on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T03:34:31Z"} -->
 <!-- continuity:checkpoint-operation {"payload_sha256":"cc63aa3af694674fe8cdf8c338890359c3b48de87d5bb4e844b2ec71cb060d12","request_id":"41cd9d50703448228dbef080d7c575cb","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+### 2026-11-13 03:05:06 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Check thick walls live on the Fulton St walk, then plan the partner's entering walk to the uptown A/C platform","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T03:05:06Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"57a4a00f820662aa810223ddc8e1fe54262585c39ab34ca0a0d2711662c87bd6","request_id":"582ea3803bf44b34b81dfb339083ecf3","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
 
 Completed:
 - work completed
@@ -285,6 +289,12 @@ Next:
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #141 merges, play a real trip from Broadway & Fulton St on the uptown A on the live site and on a phone","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T04:11:04Z"} -->
 <!-- continuity:checkpoint-operation {"payload_sha256":"4db73ad29ef496963b90059a619077450513503adf82724148246d188573a879","request_id":"ee797dc227e94b70a2714375c7949659","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+- Check thick walls live on the Fulton St walk, then plan the partner's entering walk to the uptown A/C platform
+
+### 2026-11-13 03:06:20 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #139 merges, check the thick walls live; then build the partner's entering walk once the owner picks dollhouse or Street view","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T03:06:20Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4e92c7e06b7465d4fa77e0f759259e36e74d5f6bcb6a464c829fd50f2e349f77","request_id":"23e877a7b1a44a4d8a4d4c73bf87eeda","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
 
 Completed:
 - work completed
@@ -303,6 +313,7 @@ Blocked/uncertain:
 
 Next:
 - After #141 merges, play a real trip from Broadway & Fulton St on the uptown A on the live site and on a phone
+- After #139 merges, check the thick walls live; then build the partner's entering walk once the owner picks dollhouse or Street view
 
 ## Handoff
 
