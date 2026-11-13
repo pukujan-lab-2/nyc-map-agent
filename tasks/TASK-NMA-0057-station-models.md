@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - Finish the full Pro suite and the second independent review, then arm auto-merge on PR #162 and check the deploy
 
+### 2026-11-13 14:00:52 UTC — agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/d7f4e707-ecca-44ef-bcd3-b62d8ce1f063","blocked":[],"changed":["src/lib/map/stationModels.ts, src/features/agent/dollhouseLeg.test.ts, public/transit/barclays-model.json, checkpoints/CURRENT.md"],"completed":["Second independent review passed City Hall and Fulton St; Barclays now plays only for the 2 and 3, whose local platform its walks start on"],"decisions":["no new decisions"],"evidence":["tsc OK; 280 agent, station and underground tests pass on the Pro; full suite 1,927 passed before this narrow change"],"next_action":"After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0057","timestamp":"2026-11-13T14:00:52Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"76124a49707703113defec881af5a5ca0c03e872422cc931f5cfe947d5cdc5f6","request_id":"8a52764137d74dcfbb29995f463d2cd7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0057"} -->
+
+Completed:
+- Second independent review passed City Hall and Fulton St; Barclays now plays only for the 2 and 3, whose local platform its walks start on
+
+Evidence:
+- tsc OK; 280 agent, station and underground tests pass on the Pro; full suite 1,927 passed before this narrow change
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/map/stationModels.ts, src/features/agent/dollhouseLeg.test.ts, public/transit/barclays-model.json, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #162 merges and deploys, play the 4 from Grand Central to Brooklyn Bridge and the 2 from Fulton St to Atlantic Av on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
