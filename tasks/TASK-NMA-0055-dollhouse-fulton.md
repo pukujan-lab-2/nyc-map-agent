@@ -626,6 +626,29 @@ Blocked/uncertain:
 Next:
 - Owner to walk Fulton St on the live site after #169 deploys: one green Exit board over each exit stair's middle, facing the walker; the parent rebases feat/126-level-shell onto it
 
+### 2026-11-13 16:56:10 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Parent merges feat/126-walk-signs-gates into feat/126-level-shell again; owner walks the Fulton St dead end at (46.8, 13.9) and the forks to check the new boards","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:56:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6d4b8f9442c058e5bca9efef5d5d1c3631fabd07562553fa0860ce77479321a8","request_id":"97f6f32040524c53aa1d3a2cb5da0641","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Parent merges feat/126-walk-signs-gates into feat/126-level-shell again; owner walks the Fulton St dead end at (46.8, 13.9) and the forks to check the new boards
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
