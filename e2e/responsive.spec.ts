@@ -88,6 +88,19 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
+    // The classic preview bar (agentHome off): its play, skip and close buttons kept shrinking to 17 px beside a long step.
+    test("the classic trip preview bar", async ({ page }) => {
+      await mockNetwork(page);
+      await page.route("**/api/agent", (r) => r.fulfill({ contentType: "application/x-ndjson", body: stream([{ type: "command", command: { type: "playFlythrough", trip, speed: 30 } }, { type: "done" }]) }));
+      await page.goto("/?flags=-agentHome");
+      await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
+      await page.getByRole("button", { name: "Ask", exact: true }).click();
+      await ask(page, "preview it");
+      const bar = page.getByRole("region", { name: "Trip preview" });
+      await expect(bar.getByRole("button", { name: "Skip to next leg" })).toBeVisible();
+      await expectLayout(page);
+    });
+
     // A trip the day's service changes break says so whole, on the card (owner, 2026-10-27: the 7's weekend work never reached the plan).
     test("a trip the weekend's changes block", async ({ page }) => {
       const blocked = { ...trip, departIso: "2026-11-14T10:00", arriveIso: "2026-11-14T10:40",
