@@ -95,7 +95,7 @@ export async function portalFor(st: Station, ents: Entrance[], toward: LngLatTup
   return {
     lon: at[0], lat: at[1], type, elevatorOnly, outage,
     label: `${dir} ${word}${street ? ` ${onOrBy(street)} ${street}` : ""}${elevatorOnly ? " (elevator)" : ""}`,
-    ...(opts.stepFree ? { stepFree: elevatorOnly && !dead.has(pick!) } : {}),
+    ...(opts.stepFree ? { stepFree: elevatorOnly && !dead.has(pick) } : {}),
   };
 }
 

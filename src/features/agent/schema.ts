@@ -300,6 +300,14 @@ export const requestBody = z.object({
   /** Elevators only, from Settings (#133): every trip enters and leaves by working elevators and avoids stairs. */
   stepFree: z.boolean().optional(),
   /** Where the person is in the underground helper (riding, or at a station finding an exit). Never stored. */
-  underground: z.object({ stage: z.enum(["riding", "at-station"]), station: z.string().max(200), exit: z.string().max(200).nullable() }).optional(),
+  underground: z.object({
+    stage: z.enum(["riding", "at-station", "lost"]),
+    station: z.string().max(200),
+    exit: z.string().max(200).nullable(),
+    /** "lost": the where-am-I helper's best guess, said to the person, from what the app last knew (not a live position). */
+    guess: z.string().max(600).optional(),
+    /** "lost": how the network and the position fix look ("no network, last fix 6 min ago"). */
+    signal: z.string().max(200).optional(),
+  }).optional(),
 });
 export type AgentRequest = z.infer<typeof requestBody>;

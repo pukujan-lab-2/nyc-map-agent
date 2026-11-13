@@ -490,6 +490,75 @@ export const DOLLHOUSE_LAYER = "dollhouse";
 /** A wall to raise: from (x1, y1, z1) to (x2, y2, z2) along a floor's outer edge. */
 type WallRun = [number, number, number, number, number, number];
 const WALL_M = 3;
+/** The model's upright pieces up to this tall are left out (see the surfaces in dollhouseLayer). */
+const LOW_PIECE_M = 1.3;
+/** How thick walls are drawn (owner, 2026-11-13: one-sided walls read as sheets of paper). */
+const WALL_THICK_M = 0.25;
+/** The flat colour a wall shows where the cut above the figure slices through it: its cap. */
+const WALL_CAP_COLOR = 0xcfc6b2;
+
+/**
+ * Pushes a closed prism: the flat face `face` (3 or 4 corners, metres) pushed `by` metres along `dir`
+ * (a horizontal unit vector). Every triangle faces outward, so the inside shows only where a clipping
+ * plane opens the prism, and the back-face material paints that opening as a solid cap.
+ * Tile coordinates run along the wall (`along`) and up it from `foot`.
+ */
+function pushPrism(pos: number[], uv: number[], face: number[][], dir: [number, number], by: number, along: [number, number], foot: number) {
+  const back = face.map(([x, y, z]) => [x + dir[0] * by, y + dir[1] * by, z]);
+  const n = face.length;
+  const all = [...face, ...back];
+  const c = [0, 1, 2].map((k) => all.reduce((s, p) => s + p[k], 0) / all.length);
+  const tri = (a: number[], b: number[], d: number[]) => {
+    const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
+    const nn = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]];
+    const out = (a[0] + b[0] + d[0]) / 3 - c[0], outY = (a[1] + b[1] + d[1]) / 3 - c[1], outZ = (a[2] + b[2] + d[2]) / 3 - c[2];
+    const order = nn[0] * out + nn[1] * outY + nn[2] * outZ < 0 ? [a, d, b] : [a, b, d];
+    for (const p of order) { pos.push(p[0], p[1], p[2]); uv.push((p[0] * along[0] + p[1] * along[1]) / 0.6, (p[2] - foot) / WALL_PATTERN_M); }
+  };
+  for (let i = 1; i + 1 < n; i++) { tri(face[0], face[i], face[i + 1]); tri(back[0], back[i], back[i + 1]); }
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n;
+    tri(face[i], face[j], back[j]);
+    tri(face[i], back[j], back[i]);
+  }
+}
+/** The guide on the floor: its colour, the line's width, and an arrow this often (metres). */
+const GUIDE_COLOR = 0x1d6ff2;
+const GUIDE_W = 0.3;
+const ARROW_EVERY_M = 3;
+
+/**
+ * The walk drawn on the floor: a line a hand wide and arrows pointing the way. It rides a few
+ * centimetres over the floor, and higher on a stair so the step nosings do not cut it.
+ */
+function guideLine(path: P3[], clip: THREE.Plane[]): THREE.Mesh {
+  const total = walkLength(path);
+  const pos: number[] = [];
+  const at = (d: number) => walkAt(path, Math.min(Math.max(d / total, 0), 1));
+  const lift = (d: number) => (Math.abs(at(d + 0.25).z - at(d - 0.25).z) > 0.05 ? 0.22 : 0.04);
+  /** A point `side` metres to the right of the walk at `d`, and `ahead` metres along it. */
+  const off = (d: number, side: number, ahead = 0): P3 => {
+    const p = at(d), h = p.heading;
+    return [p.x + Math.cos(h) * side + Math.sin(h) * ahead, p.y - Math.sin(h) * side + Math.cos(h) * ahead, p.z + lift(d)];
+  };
+  const STEP = 0.4;
+  for (let d = 0; d < total; d += STEP) {
+    const e = Math.min(d + STEP, total);
+    const [a, b, c, q] = [off(d, -GUIDE_W / 2), off(d, GUIDE_W / 2), off(e, GUIDE_W / 2), off(e, -GUIDE_W / 2)];
+    pos.push(...a, ...b, ...c, ...a, ...c, ...q);
+  }
+  // Arrows on the level stretches, where they lie flat and read.
+  for (let d = ARROW_EVERY_M / 2; d < total - 1; d += ARROW_EVERY_M) {
+    if (lift(d) > 0.05) continue;
+    const tip = off(d, 0, 0.55), l = off(d, -0.45, -0.1), r = off(d, 0.45, -0.1);
+    [tip, l, r].forEach((p) => (p[2] += 0.01));
+    pos.push(...tip, ...r, ...l);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  const mat = new THREE.MeshBasicMaterial({ color: GUIDE_COLOR, side: THREE.DoubleSide, clippingPlanes: clip, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  return new THREE.Mesh(geo, mat);
+}
 
 /** The grid the wall finder buckets floors and steps in, metres a cell. */
 const CELL_M = 2;
@@ -606,10 +675,14 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     if (len < 1e-9) continue;
     const nz = Math.abs(n[2]) / len;
     if (nz < 0.3) {
-      // Tile coordinates: along the wall, and up it from the triangle's foot.
-      const ux = -n[1] / Math.hypot(n[0], n[1]), uy = n[0] / Math.hypot(n[0], n[1]);
       const foot = Math.min(a[2], b[2], c[2]);
-      for (const p of [a, b, c]) { wv.push(...p); wuv.push((p[0] * ux + p[1] * uy) / 0.6, (p[2] - foot) / WALL_PATTERN_M); }
+      // The model's own waist-high upright pieces come in short, angled lengths that read as broken
+      // walls standing on the floor (owner, 2026-11-12); no walk passes them, so they are left out.
+      if (Math.max(a[2], b[2], c[2]) - foot <= LOW_PIECE_M) continue;
+      // Tile coordinates: along the wall, and up it from the triangle's foot.
+      const h = Math.hypot(n[0], n[1]), ux = -n[1] / h, uy = n[0] / h;
+      // Thickened behind its face, so the side people see stays where the model puts it.
+      pushPrism(wv, wuv, [a, b, c], [-n[0] / h, -n[1] / h], WALL_THICK_M, [ux, uy], foot);
       continue;
     }
     const stair = nz < 0.97;
@@ -639,19 +712,20 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   // Raised walls along the floors' outer edges, tiled from their foot up.
   for (const [x1, y1, z1, x2, y2, z2] of outlineWalls(model)) {
     const L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L;
-    const u1 = x1 * ux + y1 * uy, u2 = x2 * ux + y2 * uy;
-    const quad: Array<[number, number, number, number, number]> = [
-      [x1, y1, z1, u1, 0], [x2, y2, z2, u2, 0], [x2, y2, z2 + WALL_M, u2, WALL_M],
-      [x1, y1, z1, u1, 0], [x2, y2, z2 + WALL_M, u2, WALL_M], [x1, y1, z1 + WALL_M, u1, WALL_M],
-    ];
-    for (const [x, y, z, u, h] of quad) { wv.push(x, y, z); wuv.push(u / 0.6, h / WALL_PATTERN_M); }
+    // Centred on the floor's edge: half a wall's thickness either side of it.
+    const nx = -uy, ny = ux, half = WALL_THICK_M / 2;
+    const face = [[x1 + nx * half, y1 + ny * half, z1], [x2 + nx * half, y2 + ny * half, z2], [x2 + nx * half, y2 + ny * half, z2 + WALL_M], [x1 + nx * half, y1 + ny * half, z1 + WALL_M]];
+    pushPrism(wv, wuv, face, [-nx, -ny], WALL_THICK_M, [ux, uy], Math.min(z1, z2));
   }
   const wallGeo = new THREE.BufferGeometry();
   wallGeo.setAttribute("position", new THREE.Float32BufferAttribute(wv, 3));
   wallGeo.setAttribute("uv", new THREE.Float32BufferAttribute(wuv, 2));
   wallGeo.computeVertexNormals();
-  // X-ray walls: see-through enough that a wall between the camera and the figure never hides the way.
-  station.add(new THREE.Mesh(wallGeo, new THREE.MeshLambertMaterial({ map: tiles, side: THREE.DoubleSide, clippingPlanes: [wallCut, cut], transparent: true, opacity: 0.6, depthWrite: false })));
+  // Solid walls (owner, 2026-11-12: see-through walls were confusing). They stop a little over the
+  // figure's head, and the figure shows through anything in front of it (its ghost, below).
+  // Walls are closed slabs: tile outside, and a flat cap where the cut over the figure opens them.
+  station.add(new THREE.Mesh(wallGeo, new THREE.MeshLambertMaterial({ map: tiles, side: THREE.FrontSide, clippingPlanes: [wallCut, cut] })));
+  station.add(new THREE.Mesh(wallGeo, new THREE.MeshBasicMaterial({ color: WALL_CAP_COLOR, side: THREE.BackSide, clippingPlanes: [wallCut, cut] })));
 
   // The yellow strip along each platform edge, on the platform's side.
   for (const [x1, y1, x2, y2, z] of model.edges) {
@@ -679,6 +753,9 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     lamp.rotation.z = -p.heading;
     station.add(lamp);
   }
+
+  // The way to follow, painted on the floor: a line along the walk with an arrow every few metres.
+  station.add(guideLine(walk.path, [cut]));
 
   // Signs, placed from the walk and the model's lines (see planSigns).
   const start = walk.path[0];
