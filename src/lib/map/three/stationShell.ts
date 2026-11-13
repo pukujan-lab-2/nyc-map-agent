@@ -5,18 +5,9 @@
  * open space under a stair's side down to the floor below. Here every wall runs a little past both
  * of its ends so corners overlap, and reaches down to the floor below it, so nothing is open.
  *
- * Walls follow outlines, not triangles (owner, 2026-11-13: "put a default ceiling, put ceiling for
- * top of stairs ... everywhere else mostly has walls"). Each level's floor and each stair is merged
- * from above into one outline, so the seams and slivers between the model's triangles disappear;
- * a wall stands along every stretch of outline except where it meets more floor or stair (a way
- * through) or the track. Each level gets one flat ceiling a wall's height over it, and each stair
- * one that follows it.
- *
- * Plain numbers in the model's frame (metres, x east, y north, z up): the walk scene draws these
- * and collides with the same shapes, and the tests check them for gaps.
+ * Plain numbers in the model's frame (metres, x east, y north, z up), no three.js: the walk scene
+ * draws these and collides with the same shapes, and the tests check them for gaps.
  */
-import polygonClipping, { type MultiPolygon, type Polygon } from "polygon-clipping";
-import { ShapeUtils, Vector2 } from "three";
 import type { DollhouseModel } from "./dollhouse";
 
 type P3 = [number, number, number];
@@ -41,14 +32,6 @@ const DOOR_HEAD_M = 2.2;
 const DOOR_END_M = 0.6;
 /** Wall tops and ceilings that pass under another floor are cut into pieces this long to follow it. */
 const CAP_PIECE_M = 0.5;
-/** Each triangle is grown this much before the merge, so slits narrower than twice this close. */
-const GROW_M = 0.06;
-/** How far either side of a wall's line a floor overhead still caps it: half its thickness and the outline's growth. */
-const CAP_PAD_M = SHELL_THICK_M / 2 + GROW_M;
-/** Floors whose heights differ by less than this are one level. */
-const LEVEL_GAP_M = 0.15;
-/** Outline edges are walked in pieces no longer than this, each with its own floor height at its ends. */
-const OUTLINE_PIECE_M = 0.5;
 /** With no floor below, a wall still reaches this far down, past the bottom of any view. */
 const SKIRT_M = 3;
 /** Steeper than this (|normal z| below) a piece of the model is an upright wall, not a floor. */
@@ -162,69 +145,9 @@ export function surfaceFinder(tris: Array<[P3, P3, P3]>) {
   };
 }
 
-/** Triangle (x, y) grown outward by `d` on every side, as a closed ring rounded to the millimetre. */
-function grown(t: [P3, P3, P3], d: number): Array<[number, number]> | null {
-  const [a] = t.map((p) => [p[0], p[1]] as [number, number]);
-  let [b, c] = t.slice(1).map((p) => [p[0], p[1]] as [number, number]);
-  const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-  if (Math.abs(area) < 1e-6) return null;
-  if (area < 0) [b, c] = [c, b];
-  const pts = [a, b, c];
-  const normal = (p: number[], q: number[]) => { const L = Math.hypot(q[0] - p[0], q[1] - p[1]); return [(q[1] - p[1]) / L, -(q[0] - p[0]) / L]; };
-  const ring = pts.map((v, i) => {
-    const n1 = normal(pts[(i + 2) % 3], v), n2 = normal(v, pts[(i + 1) % 3]);
-    const k = d / Math.max(0.25, 1 + n1[0] * n2[0] + n1[1] * n2[1]);
-    let ox = (n1[0] + n2[0]) * k, oy = (n1[1] + n2[1]) * k;
-    const len = Math.hypot(ox, oy);
-    if (len > 3 * d) { ox *= (3 * d) / len; oy *= (3 * d) / len; }
-    return [Math.round((v[0] + ox) * 1000) / 1000, Math.round((v[1] + oy) * 1000) / 1000] as [number, number];
-  });
-  return [...ring, ring[0]];
-}
-
-/** The triangles merged from above into one outline (rings closed, outer ones counter-clockwise). */
-function outlineOf(tris: Array<[P3, P3, P3]>, d = GROW_M): MultiPolygon {
-  const polys = tris.map((t) => grown(t, d)).filter((r): r is Array<[number, number]> => r != null).map((r): Polygon => [r]);
-  if (!polys.length) return [];
-  return polygonClipping.union(polys[0], ...polys.slice(1));
-}
-
-/** The model's floors split into levels (heights within LEVEL_GAP_M of each other) and its stairs into flights that touch. */
-function groupsOf(floors: Array<[P3, P3, P3]>, stairs: Array<[P3, P3, P3]>): Array<{ kind: "level" | "stair"; tris: Array<[P3, P3, P3]> }> {
-  const out: Array<{ kind: "level" | "stair"; tris: Array<[P3, P3, P3]> }> = [];
-  const mean = (t: [P3, P3, P3]) => (t[0][2] + t[1][2] + t[2][2]) / 3;
-  const sorted = floors.slice().sort((a, b) => mean(a) - mean(b));
-  for (const t of sorted) {
-    const last = out[out.length - 1];
-    // Measured from the level's lowest floor, so a run of landings a few centimetres apart never chains into one.
-    if (last && mean(t) - mean(last.tris[0]) < LEVEL_GAP_M) last.tris.push(t);
-    else out.push({ kind: "level", tris: [t] });
-  }
-  const key = (p: P3) => p.map((v) => Math.round(v * 20)).join(",");
-  const parent = stairs.map((_, i) => i);
-  const root = (i: number): number => (parent[i] === i ? i : (parent[i] = root(parent[i])));
-  const byCorner = new Map<string, number>();
-  stairs.forEach((t, i) => t.forEach((p) => {
-    const k = key(p), j = byCorner.get(k);
-    if (j == null) byCorner.set(k, i); else parent[root(i)] = root(j);
-  }));
-  const flights = new Map<number, Array<[P3, P3, P3]>>();
-  stairs.forEach((t, i) => { const r = root(i); (flights.get(r) ?? flights.set(r, []).get(r)!).push(t); });
-  for (const tris of flights.values()) out.push({ kind: "stair", tris });
-  return out;
-}
-
-/** Triangles (nine numbers each) filling polygon `poly` at height z(x, y). */
-function fill(poly: Polygon, z: (x: number, y: number) => number, out: number[]) {
-  const ring = (r: Array<[number, number]>) => r.slice(0, -1).map(([x, y]) => new Vector2(x, y));
-  const outer = ring(poly[0]), holes = poly.slice(1).map(ring);
-  const all = [...outer, ...holes.flat()];
-  for (const [i, j, k] of ShapeUtils.triangulateShape(outer, holes)) for (const v of [all[i], all[j], all[k]]) out.push(v.x, v.y, z(v.x, v.y));
-}
-
 export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind: string) => void): Shell {
   const floors: number[] = [], stairs: number[] = [], uprights: number[] = [];
-  const walkable: Array<[P3, P3, P3]> = [], floorTris: Array<[P3, P3, P3]> = [], stairTris: Array<[P3, P3, P3]> = [];
+  const walkable: Array<[P3, P3, P3]> = [];
   for (let i = 0; i < model.t.length; i += 3) {
     const t = tri(model.v, model.t, i);
     const nz = normalZ(t);
@@ -232,7 +155,6 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
     const flat = t.flat();
     if (nz < UPRIGHT_NZ) { uprights.push(...flat); continue; }
     walkable.push(t);
-    (nz < FLAT_NZ ? stairTris : floorTris).push(t);
     (nz < FLAT_NZ ? stairs : floors).push(...flat);
   }
   // Where a walk passes over nothing (the model leaves out the bottom of some stairs), lay a ramp
@@ -252,9 +174,7 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
     const n = Math.max(2, Math.ceil(L / 0.25));
     const bare = Array.from({ length: n + 1 }, (_, j) => {
       const k = j / n, z = a[2] + (b[2] - a[2]) * k;
-      // Any stair or floor of the model's within 0.6 m of the walk counts: a ramp laid over the
-      // model's own stair at the walk's slightly different slope shows as a second, crossing flight.
-      return !modelUnder(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, 0.02).some((h) => Math.abs(h - z) < 0.6);
+      return !modelUnder(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, 0.02).some((h) => Math.abs(h - z) < 0.15);
     });
     const nx = -(b[1] - a[1]) / L * RAMP_HALF_M, ny = (b[0] - a[0]) / L * RAMP_HALF_M;
     for (let j = 0; j < n; j++) {
@@ -276,60 +196,12 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
   }
   const under = surfaceFinder([...walkable, ...ramps]);
 
-  // Each level and each stair merged from above into one outline. Its edges, in half-metre pieces
-  // with the floor's height at each end, are where walls may go: [p, q, a point inside].
-  const groups = groupsOf(floorTris, stairTris).map((g) => ({ ...g, outline: outlineOf(g.tris) }));
-  const outlineEdges: Array<[P3, P3, P3]> = [];
-  for (const g of groups) {
-    const own = surfaceFinder(g.tris);
-    const zs = g.tris.flatMap((t) => t.map((p) => p[2]));
-    const mid = (Math.min(...zs) + Math.max(...zs)) / 2;
-    const heightAt = (x: number, y: number, nx: number, ny: number): number | null => {
-      for (const back of [0.1, 0.16, 0.25, 0.4]) {
-        const hs = own(x + nx * back, y + ny * back, 0.03);
-        if (hs.length) return hs.reduce((m, h) => (Math.abs(h - mid) < Math.abs(m - mid) ? h : m));
-      }
-      return null;
-    };
-    for (const poly of g.outline) for (const ring of poly) {
-      const pieces: Array<{ p: [number, number]; q: [number, number]; n: [number, number]; zp: number | null; zq: number | null }> = [];
-      for (let i = 0; i + 1 < ring.length; i++) {
-        const a = ring[i], b = ring[i + 1], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
-        if (L < 0.02) continue;
-        // Inside lies to the left of every ring's direction (outer rings run counter-clockwise, holes clockwise).
-        const ux = (b[0] - a[0]) / L, uy = (b[1] - a[1]) / L, n: [number, number] = [-uy, ux];
-        const m = Math.max(1, Math.ceil(L / OUTLINE_PIECE_M));
-        for (let j = 0; j < m; j++) {
-          const p: [number, number] = [a[0] + (b[0] - a[0]) * (j / m), a[1] + (b[1] - a[1]) * (j / m)];
-          const q: [number, number] = [a[0] + (b[0] - a[0]) * ((j + 1) / m), a[1] + (b[1] - a[1]) * ((j + 1) / m)];
-          const s = Math.min(0.05, L / m / 4);
-          pieces.push({ p, q, n, zp: heightAt(p[0] + ux * s, p[1] + uy * s, n[0], n[1]), zq: heightAt(q[0] - ux * s, q[1] - uy * s, n[0], n[1]) });
-        }
-      }
-      // A corner too sharp to find its floor from takes the nearest height found along the ring.
-      const known = pieces.flatMap((x) => [x.zp, x.zq]);
-      const fillAt = (i: number) => {
-        for (let d = 1; d < known.length; d++) for (const j of [i - d, i + d]) {
-          const v = known[(j + known.length) % known.length];
-          if (v != null) return v;
-        }
-        return mid;
-      };
-      pieces.forEach((x, i) => {
-        const zp = x.zp ?? fillAt(2 * i), zq = x.zq ?? fillAt(2 * i + 1);
-        const mx = (x.p[0] + x.q[0]) / 2, my = (x.p[1] + x.q[1]) / 2;
-        outlineEdges.push([[x.p[0], x.p[1], zp], [x.q[0], x.q[1], zq], [mx + x.n[0] * 0.3, my + x.n[1] * 0.3, (zp + zq) / 2]]);
-      });
-    }
-    // Under each level, its whole outline once more just below it, so no slit between its triangles shows.
-    if (g.kind === "level") {
-      const low = Math.min(...zs) - 0.03;
-      for (const poly of g.outline) fill(poly, () => low, bridges);
-    }
-  }
-
-  // Every stretch of outline either meets more floor a little way out, and is bridged to it, or it
-  // gets a wall. The platform's edge over the track stays open.
+  // Every open edge of a floor or stair (used by one triangle only) either meets more floor a little
+  // way out, and is bridged to it, or it gets a wall. The platform's edge over the track stays open.
+  const key = (p: P3) => `${Math.round(p[0] * 20)},${Math.round(p[1] * 20)},${Math.round(p[2] * 20)}`;
+  const edgeKey = (p: P3, q: P3) => [key(p), key(q)].sort().join("|");
+  const uses = new Map<string, number>();
+  for (const t of walkable) for (let e = 0; e < 3; e++) uses.set(edgeKey(t[e], t[(e + 1) % 3]), (uses.get(edgeKey(t[e], t[(e + 1) % 3])) ?? 0) + 1);
   const steps: Array<[P3, P3]> = model.walks.flatMap((w) => w.path.slice(1).map((q, i): [P3, P3] => [w.path[i], q]));
   const side = (a: number[], b: number[], p: number[]) => Math.sign((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]));
   /** Whether a walk steps across the edge p–q (within 1.5 m of its height). */
@@ -372,7 +244,9 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
     return false;
   };
   const walls: ShellWall[] = [];
-  for (const [p, q, o] of outlineEdges) {
+  for (const t of walkable) for (let e = 0; e < 3; e++) {
+    const p = t[e], q = t[(e + 1) % 3], o = t[(e + 2) % 3];
+    if (uses.get(edgeKey(p, q)) !== 1) continue;
     const L = Math.hypot(q[0] - p[0], q[1] - p[1]);
     if (L < 0.02) continue;
     const ux = (q[0] - p[0]) / L, uy = (q[1] - p[1]) / L;
@@ -406,18 +280,12 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
       const a0 = at(k0), a1 = at(k1), run = samples.slice(i, j + 1), kind = samples[i].kind;
       i = j + 1;
       onEdge?.(a0, a1, kind + (walked ? " (walked)" : ""));
-      if (kind === "seam" || kind === "bridge") {
+      if (kind === "seam") continue;
+      if (kind === "bridge") {
+        // A strip of floor from the edge out to the next surface, a hair past it so they overlap.
+        const r = Math.max(...run.map((x) => (x.r as [number, number])[0])) + 0.05;
         const h0 = (run[0].r as [number, number])[1], h1 = (run[run.length - 1].r as [number, number])[1];
-        // Where the floor beyond is higher, its ceiling is too: a strip of wall closes the step between the two.
-        if (Math.max(h0 - a0[2], h1 - a1[2]) > 0.1) walls.push({
-          a: [a0[0] - ux * OVERLAP_M, a0[1] - uy * OVERLAP_M], b: [a1[0] + ux * OVERLAP_M, a1[1] + uy * OVERLAP_M],
-          foot: [a0[2] + SHELL_WALL_M - 0.05, a1[2] + SHELL_WALL_M - 0.05], top: [Math.max(h0, a0[2]) + SHELL_WALL_M, Math.max(h1, a1[2]) + SHELL_WALL_M], thick: SHELL_THICK_M,
-        });
-        if (kind === "seam") continue;
-        // A strip of floor from the floor's own edge (inside the outline) out to the next surface, a hair past it.
-        const r = Math.max(...run.map((x) => (x.r as [number, number])[0])) + 0.05, back = GROW_M + 0.03;
-        const b0: P3 = [a0[0] - ox * back, a0[1] - oy * back, a0[2]], b1: P3 = [a1[0] - ox * back, a1[1] - oy * back, a1[2]];
-        bridges.push(...b0, ...b1, a1[0] + ox * r, a1[1] + oy * r, h1, ...b0, a1[0] + ox * r, a1[1] + oy * r, h1, a0[0] + ox * r, a0[1] + oy * r, h0);
+        bridges.push(...a0, ...a1, a1[0] + ox * r, a1[1] + oy * r, h1, ...a0, a1[0] + ox * r, a1[1] + oy * r, h1, a0[0] + ox * r, a0[1] + oy * r, h0);
         continue;
       }
       // A wall, centred on the edge, running past both ends so the corner with the next wall closes,
@@ -482,10 +350,7 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
   const capAt = (x: number, y: number, own: number) => {
     const top = own + SHELL_WALL_M;
     let cap = top;
-    // Across the wall's whole thickness and the outline's growth, not only its centre line: a flight
-    // stacked over another runs right along that line, and a sample that just misses it stands the
-    // lower flight's wall up through the treads above.
-    for (const h of under(x, y, CAP_PAD_M)) if (h > own + 0.5 && h < top + 0.05) cap = Math.min(cap, h - 0.02);
+    for (const h of under(x, y)) if (h > own + 0.5 && h < top + 0.05) cap = Math.min(cap, h - 0.02);
     return cap;
   };
   for (const w of [...walls]) {
@@ -513,22 +378,9 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
     }
   }
 
-  // The ceiling: one flat one over each level, a wall's height over its lowest floor, with its holes
-  // (stairwells) closed over and anything already overhead lower than that (a stair, a floor above,
-  // a stair rising through it) cut out; and over each stair one that follows it, capped as the walls are.
+  // The ceiling: each floor and stair raised a wall's height, except where something else is already
+  // overhead lower than that (a stair or a floor above is the ceiling there), capped as the walls are.
   const ceiling: number[] = [];
-  for (const g of groups) if (g.kind === "level") {
-    const z = Math.min(...g.tris.flatMap((t) => t.map((p) => p[2])));
-    const whole: MultiPolygon = g.outline.map((poly) => [poly[0]]);
-    const mine = new Set(g.tris);
-    const over = [...walkable, ...ramps].filter((t) => {
-      if (mine.has(t)) return false;
-      const zs = t.map((p) => p[2]);
-      return Math.max(...zs) > z + 0.5 && Math.min(...zs) < z + SHELL_WALL_M + 0.05;
-    });
-    const cut = over.length ? polygonClipping.difference(whole, outlineOf(over, 0.02)) : whole;
-    for (const poly of cut) fill(poly, () => z + SHELL_WALL_M, ceiling);
-  }
   const roof = (t: [P3, P3, P3]) => {
     const caps = t.map((p) => capAt(p[0], p[1], p[2]));
     const mids: P3[] = [[0, 1], [1, 2], [0, 2]].map(([i, j]) => [(t[i][0] + t[j][0]) / 2, (t[i][1] + t[j][1]) / 2, (t[i][2] + t[j][2]) / 2]);
@@ -545,9 +397,11 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
     }
     for (let q = 0; q < 3; q++) ceiling.push(t[q][0], t[q][1], capped ? caps[q] : t[q][2] + SHELL_WALL_M);
   };
-  // Every stair gets a ceiling that slopes with it, a wall's height over its treads (owner,
-  // 2026-11-13), kept just under any floor that passes over it.
-  for (const t of stairTris) roof(t);
+  for (const t of walkable) {
+    const cx = (t[0][0] + t[1][0] + t[2][0]) / 3, cy = (t[0][1] + t[1][1] + t[2][1]) / 3, cz = (t[0][2] + t[1][2] + t[2][2]) / 3;
+    if (under(cx, cy).some((h) => h > cz + 0.5 && h < cz + SHELL_WALL_M)) continue;
+    roof(t);
+  }
   return { floors, stairs, uprights, walls, bridges, ceiling };
 }
 
