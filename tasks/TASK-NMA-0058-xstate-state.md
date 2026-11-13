@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - After #146 merges, merge main into this branch, re-arm auto-merge on #148, then check the live site in Chinese and English
 
+### 2026-11-13 07:47:01 UTC — agent:claude-code/619d489e-002c-4303-95a6-7536b98ca798
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/619d489e-002c-4303-95a6-7536b98ca798","blocked":[],"changed":["none"],"completed":["Merged main (offline Fulton St walk, #137) into the language machine branch; the trip's spoken steps keep their offline flag and read the machine's tag"],"decisions":["no new decisions"],"evidence":["Type check and lint clean on the Pro; all 1266 tests under src pass"],"next_action":"Once #148 merges and deploys, ask in Chinese then in English on nyc.design-bakery.com and check the mic and voice follow each question","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-13T07:47:01Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"28e822c2fe6e174e9583e857423db9bef430bf3ba44a38709372e93aef2d9156","request_id":"2df2817ce3f645c396a609dffdb1ec68","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Merged main (offline Fulton St walk, #137) into the language machine branch; the trip's spoken steps keep their offline flag and read the machine's tag
+
+Evidence:
+- Type check and lint clean on the Pro; all 1266 tests under src pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Once #148 merges and deploys, ask in Chinese then in English on nyc.design-bakery.com and check the mic and voice follow each question
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
