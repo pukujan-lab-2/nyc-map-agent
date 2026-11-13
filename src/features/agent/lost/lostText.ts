@@ -20,7 +20,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "No network", weakNet: "Weak network", noGps: "No location", gpsWeak: "Location ±{m} m", gpsOld: "Last fix {n} min ago",
     yesExit: "Good. Follow the Exit signs for {e}.", yesNoExit: "Good. Follow the Exit signs up to the street.", notQuiteReply: "Tell me which station you're in, or type the words on the nearest sign.",
     offline: "No connection here. I'll send this when you're back online.", offlineExit: "Meanwhile, follow the Exit signs for {e}.", offlineNoExit: "Meanwhile, follow the Exit signs up to the street.", sentLater: "Sending now that you're back online.", failed: "That didn't go through. Try again in a moment.",
-    front: "at the front", frontMid: "between the middle and the front", middle: "in the middle", backMid: "between the middle and the back", back: "at the back",
+    front: "at the front", nearFront: "near the front", frontMid: "near the middle front", middle: "in the middle", backMid: "near the middle back", nearBack: "near the back", back: "at the back",
   },
   es: {
     title: "Dónde estás", showOnMap: "Ver en el mapa", notQuite: "No exactamente", close: "Cerrar",
@@ -29,7 +29,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "Sin red", weakNet: "Red débil", noGps: "Sin ubicación", gpsWeak: "Ubicación ±{m} m", gpsOld: "Última ubicación hace {n} min",
     yesExit: "Bien. Sigue los letreros de salida (Exit) hacia {e}.", yesNoExit: "Bien. Sigue los letreros de salida (Exit) hasta la calle.", notQuiteReply: "Dime en qué estación estás, o escribe lo que dice el letrero más cercano.",
     offline: "Aquí no hay conexión. Lo enviaré cuando vuelvas a tener señal.", offlineExit: "Mientras tanto, sigue los letreros de salida (Exit) hacia {e}.", offlineNoExit: "Mientras tanto, sigue los letreros de salida (Exit) hasta la calle.", sentLater: "Enviando, ya tienes conexión.", failed: "No se pudo enviar. Inténtalo de nuevo en un momento.",
-    front: "en la parte delantera", frontMid: "entre el medio y la parte delantera", middle: "en el medio", backMid: "entre el medio y la parte trasera", back: "en la parte trasera",
+    front: "en la parte delantera", nearFront: "cerca de la parte delantera", frontMid: "entre el medio y la parte delantera", middle: "en el medio", backMid: "entre el medio y la parte trasera", nearBack: "cerca de la parte trasera", back: "en la parte trasera",
   },
   zh: {
     title: "你的位置", showOnMap: "在地图上显示", notQuite: "不太对", close: "关闭",
@@ -38,7 +38,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "无网络", weakNet: "网络弱", noGps: "无定位", gpsWeak: "定位 ±{m} 米", gpsOld: "上次定位 {n} 分钟前",
     yesExit: "好的。跟着 Exit（出口）指示牌走向 {e}。", yesNoExit: "好的。跟着 Exit（出口）指示牌上到街面。", notQuiteReply: "告诉我你在哪个车站，或者输入最近指示牌上的字。",
     offline: "这里没有网络。恢复连接后我会发送。", offlineExit: "现在先跟着 Exit（出口）指示牌走向 {e}。", offlineNoExit: "现在先跟着 Exit（出口）指示牌上到街面。", sentLater: "已恢复连接，正在发送。", failed: "没有发送成功，请稍后再试。",
-    front: "前部", frontMid: "中部偏前", middle: "中部", backMid: "中部偏后", back: "后部",
+    front: "前部", nearFront: "靠前", frontMid: "中部偏前", middle: "中部", backMid: "中部偏后", nearBack: "靠后", back: "后部",
   },
   ru: {
     title: "Где вы", showOnMap: "Показать на карте", notQuite: "Не совсем", close: "Закрыть",
@@ -47,7 +47,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "Нет сети", weakNet: "Слабая сеть", noGps: "Нет местоположения", gpsWeak: "Местоположение ±{m} м", gpsOld: "Последнее определение {n} мин назад",
     yesExit: "Хорошо. Идите по табличкам Exit к {e}.", yesNoExit: "Хорошо. Идите по табличкам Exit наверх, на улицу.", notQuiteReply: "Скажите, на какой вы станции, или напишите, что на ближайшей табличке.",
     offline: "Здесь нет связи. Отправлю, когда связь вернётся.", offlineExit: "А пока идите по табличкам Exit к {e}.", offlineNoExit: "А пока идите по табличкам Exit наверх, на улицу.", sentLater: "Связь есть, отправляю.", failed: "Не отправилось. Попробуйте ещё раз чуть позже.",
-    front: "в начале", frontMid: "ближе к началу", middle: "в середине", backMid: "ближе к концу", back: "в конце",
+    front: "в начале", nearFront: "ближе к началу", frontMid: "чуть впереди середины", middle: "в середине", backMid: "чуть позади середины", nearBack: "ближе к концу", back: "в конце",
   },
   bn: {
     title: "আপনি কোথায়", showOnMap: "ম্যাপে দেখান", notQuite: "পুরোপুরি না", close: "বন্ধ করুন",
@@ -56,7 +56,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "নেটওয়ার্ক নেই", weakNet: "দুর্বল নেটওয়ার্ক", noGps: "লোকেশন নেই", gpsWeak: "লোকেশন ±{m} মি", gpsOld: "শেষ লোকেশন {n} মিনিট আগে",
     yesExit: "ভালো। {e}-এর জন্য Exit সাইন দেখে চলুন।", yesNoExit: "ভালো। Exit সাইন দেখে রাস্তায় উঠে যান।", notQuiteReply: "আপনি কোন স্টেশনে বলুন, বা কাছের সাইনে কী লেখা তা লিখুন।",
     offline: "এখানে সংযোগ নেই। সংযোগ ফিরলে পাঠিয়ে দেব।", offlineExit: "এর মধ্যে {e}-এর জন্য Exit সাইন দেখে চলুন।", offlineNoExit: "এর মধ্যে Exit সাইন দেখে রাস্তায় উঠে যান।", sentLater: "সংযোগ ফিরেছে, পাঠাচ্ছি।", failed: "পাঠানো যায়নি। একটু পরে আবার চেষ্টা করুন।",
-    front: "সামনের দিকে", frontMid: "মাঝখান আর সামনের মধ্যে", middle: "মাঝখানে", backMid: "মাঝখান আর পেছনের মধ্যে", back: "পেছনের দিকে",
+    front: "সামনের দিকে", nearFront: "সামনের কাছাকাছি", frontMid: "মাঝখান আর সামনের মধ্যে", middle: "মাঝখানে", backMid: "মাঝখান আর পেছনের মধ্যে", nearBack: "পেছনের কাছাকাছি", back: "পেছনের দিকে",
   },
   ht: {
     title: "Kote ou ye", showOnMap: "Montre sou kat la", notQuite: "Pa egzakteman", close: "Fèmen",
@@ -65,7 +65,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "Pa gen rezo", weakNet: "Rezo fèb", noGps: "Pa gen pozisyon", gpsWeak: "Pozisyon ±{m} m", gpsOld: "Dènye pozisyon {n} min de sa",
     yesExit: "Bon. Swiv pankat Exit yo pou {e}.", yesNoExit: "Bon. Swiv pankat Exit yo pou monte nan lari a.", notQuiteReply: "Di m nan ki estasyon ou ye, oswa ekri sa ki sou pankat ki pi pre a.",
     offline: "Pa gen koneksyon isit la. M ap voye l lè koneksyon an tounen.", offlineExit: "Pandan tan sa a, swiv pankat Exit yo pou {e}.", offlineNoExit: "Pandan tan sa a, swiv pankat Exit yo pou monte nan lari a.", sentLater: "Koneksyon an tounen, m ap voye l.", failed: "Li pa pase. Eseye ankò nan yon ti moman.",
-    front: "devan", frontMid: "ant mitan an ak devan", middle: "nan mitan", backMid: "ant mitan an ak dèyè", back: "dèyè",
+    front: "devan", nearFront: "toupre devan", frontMid: "ant mitan an ak devan", middle: "nan mitan", backMid: "ant mitan an ak dèyè", nearBack: "toupre dèyè", back: "dèyè",
   },
   fr: {
     title: "Où vous êtes", showOnMap: "Voir sur la carte", notQuite: "Pas tout à fait", close: "Fermer",
@@ -74,7 +74,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "Pas de réseau", weakNet: "Réseau faible", noGps: "Pas de position", gpsWeak: "Position ±{m} m", gpsOld: "Dernière position il y a {n} min",
     yesExit: "Bien. Suivez les panneaux Exit vers {e}.", yesNoExit: "Bien. Suivez les panneaux Exit jusqu'à la rue.", notQuiteReply: "Dites-moi dans quelle station vous êtes, ou écrivez ce que dit le panneau le plus proche.",
     offline: "Pas de connexion ici. J'enverrai le message dès qu'elle revient.", offlineExit: "En attendant, suivez les panneaux Exit vers {e}.", offlineNoExit: "En attendant, suivez les panneaux Exit jusqu'à la rue.", sentLater: "La connexion est revenue, j'envoie.", failed: "Ça n'est pas passé. Réessayez dans un instant.",
-    front: "à l'avant", frontMid: "entre le milieu et l'avant", middle: "au milieu", backMid: "entre le milieu et l'arrière", back: "à l'arrière",
+    front: "à l'avant", nearFront: "près de l'avant", frontMid: "entre le milieu et l'avant", middle: "au milieu", backMid: "entre le milieu et l'arrière", nearBack: "près de l'arrière", back: "à l'arrière",
   },
   ko: {
     title: "현재 위치", showOnMap: "지도에서 보기", notQuite: "조금 달라요", close: "닫기",
@@ -83,7 +83,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     noNet: "네트워크 없음", weakNet: "네트워크 약함", noGps: "위치 없음", gpsWeak: "위치 ±{m}m", gpsOld: "마지막 위치 {n}분 전",
     yesExit: "좋아요. {e} 방향 Exit 표지판을 따라가세요.", yesNoExit: "좋아요. Exit 표지판을 따라 지상으로 올라가세요.", notQuiteReply: "어느 역에 계신지 알려 주시거나, 가장 가까운 표지판의 글자를 입력해 주세요.",
     offline: "여기는 연결이 없어요. 다시 연결되면 보낼게요.", offlineExit: "그동안 {e} 방향 Exit 표지판을 따라가세요.", offlineNoExit: "그동안 Exit 표지판을 따라 지상으로 올라가세요.", sentLater: "다시 연결되어 보내는 중이에요.", failed: "전송되지 않았어요. 잠시 후 다시 시도해 주세요.",
-    front: "앞쪽", frontMid: "가운데와 앞쪽 사이", middle: "가운데", backMid: "가운데와 뒤쪽 사이", back: "뒤쪽",
+    front: "앞쪽", nearFront: "앞쪽 가까이", frontMid: "가운데와 앞쪽 사이", middle: "가운데", backMid: "가운데와 뒤쪽 사이", nearBack: "뒤쪽 가까이", back: "뒤쪽",
   },
 };
 

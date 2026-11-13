@@ -11,7 +11,7 @@ describe("what the voice says on the Fulton St walk", () => {
 
   it("first says where on the train the figure got off, and the side the train leaves on", () => {
     expect(lines[0].wait).toBe(true);
-    expect(lines[0].text).toMatch(/^Starting from the (front|middle|back) of the downtown [\w ]+ train, about car \d+ of 10, on the platform\. The train pulls out on your (left|right)\.$/);
+    expect(lines[0].text).toMatch(/^Starting (at|near|in) the (front|middle front|middle|middle back|back) of the [\w ]+ train going downtown to Brooklyn, about car \d+ of 10, on the platform\. The train pulls out on your (left|right)\.$/);
   });
 
   it("gives turns, stairs and the fare line in order, and ends on the street corner", () => {
@@ -32,7 +32,7 @@ describe("what the voice says on the walk in to the uptown A/C (#126)", () => {
   it("starts at the entrance and ends on the uptown platform, as the train comes in", () => {
     expect(lines[0].text).toBe("Starting at the street, at Fulton St & Broadway · SW corner. Going down into Fulton St station to the uptown A and C platform.");
     expect(lines.at(-1)).toMatchObject({ f: 1, wait: true });
-    expect(lines.at(-1)!.text).toMatch(/^This is the uptown A and C platform\./);
+    expect(lines.at(-1)!.text).toMatch(/^This is the platform for the A and C train going uptown\./);
   });
 
   it("goes down stairs and in through the turnstiles, in order", () => {

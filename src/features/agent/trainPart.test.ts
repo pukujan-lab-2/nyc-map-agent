@@ -9,14 +9,15 @@ const ll = (x: number, y: number): [number, number] => [-74.0 + x / kx, 40.71 + 
 const way = (k: WalkWay["k"], pts: Array<[number, number]>, from: number, to = from): WalkWay => ({ k, c: pts.map(([x, y]) => ll(x, y)), from, to });
 
 describe("which part of the train stops by the stairs", () => {
-  it("names five parts from the back to the front", () => {
-    expect([0.05, 0.3, 0.5, 0.7, 0.95].map(trainPart)).toEqual(["at the back", "between the middle and the back", "in the middle", "between the middle and the front", "at the front"]);
+  it("names seven parts from the back to the front", () => {
+    expect([0.05, 0.2, 0.35, 0.5, 0.65, 0.8, 0.95].map(trainPart)).toEqual(["at the back", "near the back", "near the middle back", "in the middle", "near the middle front", "near the front", "at the front"]);
   });
 
   it("says where the stairs are for someone at the middle of the train", () => {
     expect(fromMiddle("in the middle")).toBe("right by you");
     expect(fromMiddle("at the front")).toBe("at the front of the train");
-    expect(fromMiddle("between the middle and the back")).toBe("a little toward the back of the train");
+    expect(fromMiddle("near the middle back")).toBe("a little toward the back of the train");
+    expect(fromMiddle("near the front")).toBe("near the front of the train");
   });
 
   // A platform 160 m long running north, stairs down to it near its north end.
@@ -34,10 +35,11 @@ describe("which part of the train stops by the stairs", () => {
   it("reads the stairs' place along the platform against the way the train runs", () => {
     const north = Math.PI / 2, south = -Math.PI / 2;
     // The stairs land 54 m north of the platform's middle: the front of a northbound train, the back of a southbound one.
-    expect(trainPartAt(m, at(8, 54), north)).toBe("at the front");
-    expect(trainPartAt(m, at(8, 54), south)).toBe("at the back");
+    expect(trainPartAt(m, at(8, 54), north)).toBe("near the front");
+    expect(trainPartAt(m, at(8, 54), south)).toBe("near the back");
+    expect(trainPartAt(m, at(8, 75), north)).toBe("at the front");
     expect(trainPartAt(m, at(8, 0), north)).toBe("in the middle");
-    expect(trainPartAt(m, at(8, -30), north)).toBe("between the middle and the back");
+    expect(trainPartAt(m, at(8, -30), north)).toBe("near the middle back");
   });
 
   it("says nothing where no platform edge runs the train's way", () => {

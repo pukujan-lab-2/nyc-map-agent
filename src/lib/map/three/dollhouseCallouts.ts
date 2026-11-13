@@ -4,6 +4,7 @@
  * are, then short directions as it walks ("Take the first left", "Up the stairs"). English here; the
  * trip translates its lines into the app's language before they are shown and spoken.
  */
+import { goingWords, trainPart } from "@/lib/transit/trainPart";
 import { enterGates, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
 
 type P3 = [number, number, number];
@@ -70,15 +71,16 @@ export function walkCallouts(model: DollhouseModel, path: P3[], exitLine: string
   // The train leaves toward +along: its front is the high end.
   const k = hi > lo ? (along - lo) / (hi - lo) : 0.5;
   const car = Math.min(CARS, Math.max(1, CARS - Math.floor(k * CARS)));
-  const part = k > 0.66 ? "the front" : k < 0.34 ? "the back" : "the middle";
+  const part = trainPart(k);
   // Which side the train is on, facing the way the walk starts.
   const p1 = walkAt(path, Math.min(3 / L, 1));
   const hx = p1.x - start[0], hy = p1.y - start[1];
   const tx = track[0] + ux * along - start[0], ty = track[1] + uy * along - start[1];
   const side = hx * ty - hy * tx < 0 ? "right" : "left";
-  // Where the walk starts, said plainly first (owner, 2026-11-12): which train, which end of it, which level.
+  // Where the walk starts, said plainly first, the way a conductor would (owner, 2026-11-12 and 11-13):
+  // which part of which train going which way, then the car.
   const lines = model.lines.map(([r]) => r).join(" and ");
-  out.push({ f: 0, wait: true, text: `Starting from ${part} of the downtown ${lines} train, about car ${car} of ${CARS}, on the platform. The train pulls out on your ${side}.` });
+  out.push({ f: 0, wait: true, text: `Starting ${part} of the ${lines} train ${goingWords("Downtown", model.lines.map(([r]) => r))}, about car ${car} of ${CARS}, on the platform. The train pulls out on your ${side}.` });
 
   // Directions: turns, stairs and the fare line, each said a few steps before.
   const { signs, gates } = walkPlaces(path);
@@ -156,6 +158,6 @@ export function enterCallouts(model: DollhouseModel, path: P3[], entranceLine: s
     out.push({ f, text });
     lastF = f; lastText = text; lastM = e.m;
   }
-  out.push({ f: 1, wait: true, text: `This is the ${direction.toLowerCase()} ${lines} platform. Stand back from the yellow edge; the train comes in on this track.` });
+  out.push({ f: 1, wait: true, text: `This is the platform for the ${lines} train ${goingWords(direction, model.lines.map(([r]) => r))}. Stand back from the yellow edge; the train comes in on this track.` });
   return out;
 }
