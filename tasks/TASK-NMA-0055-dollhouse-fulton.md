@@ -258,6 +258,29 @@ Blocked/uncertain:
 Next:
 - Let PR 134 merge, check the Fulton St walk (solid walls, floor guide, new start) on the live site, then comment live on #126
 
+### 2026-11-13 03:05:06 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Check thick walls live on the Fulton St walk, then plan the partner's entering walk to the uptown A/C platform","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T03:05:06Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"57a4a00f820662aa810223ddc8e1fe54262585c39ab34ca0a0d2711662c87bd6","request_id":"582ea3803bf44b34b81dfb339083ecf3","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Check thick walls live on the Fulton St walk, then plan the partner's entering walk to the uptown A/C platform
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
