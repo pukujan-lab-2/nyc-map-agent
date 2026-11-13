@@ -243,6 +243,29 @@ Blocked/uncertain:
 Next:
 - After #144 and #149 merge, run Find exit after a Grand Central to Fulton St trip on the live site and answer the questions
 
+### 2026-11-13 07:54:42 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Merged main (with #155's pull sheet layout fix) into the Fulton St placement branch; CURRENT.md keeps both entries"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Let CI pass and auto-merge #144, then check the placement questions at Fulton St on the live site and post the receipt on #143","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T07:54:42Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e2bb82b4733769ad87427b8426065948541b864844a5c286d6dabc34a9e6e0f9","request_id":"ad4de3be461648dba30bb2d29413e5db","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Merged main (with #155's pull sheet layout fix) into the Fulton St placement branch; CURRENT.md keeps both entries
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let CI pass and auto-merge #144, then check the placement questions at Fulton St on the live site and post the receipt on #143
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
