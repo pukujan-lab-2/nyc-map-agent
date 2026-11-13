@@ -62,6 +62,8 @@ function segDist(x: number, y: number, w: ShellWall): number {
 const SAME_PLACE_M = 1.5;
 /** How far back from a walk's street end its street picture stands, clear of the end wall. */
 const STREET_PICTURE_IN_M = 0.4;
+/** The street picture fits inside the stair, under its ceiling (owner, 2026-11-13: the first one was too big). */
+const STREET_PICTURE_W_M = 1.4, STREET_PICTURE_H_M = 1.52;
 
 /** A painted street at dusk with a green MTA-style "Exit to street" board across the top. */
 function streetPicture(where: string, side: string): THREE.CanvasTexture {
@@ -158,9 +160,9 @@ export function walkDressing(model: DollhouseModel, corner: (exit: [number, numb
     for (let i = n - 2; i >= 0; i--) { from = walk.path[i]; if (Math.hypot(end[0] - from[0], end[1] - from[1]) > 3) break; }
     const heading = Math.atan2(end[0] - from[0], end[1] - from[1]);
     const back = STREET_PICTURE_IN_M;
-    const pic = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.6), new THREE.MeshBasicMaterial({ map: streetPicture(name, sideOf(walk, name)) }));
+    const pic = new THREE.Mesh(new THREE.PlaneGeometry(STREET_PICTURE_W_M, STREET_PICTURE_H_M), new THREE.MeshBasicMaterial({ map: streetPicture(name, sideOf(walk, name)) }));
     pic.rotation.x = Math.PI / 2;
-    pic.position.z = 1.3;
+    pic.position.z = 0.3 + STREET_PICTURE_H_M / 2;
     const holder = new THREE.Group();
     holder.add(pic);
     holder.position.set(end[0] - Math.sin(heading) * back, end[1] - Math.cos(heading) * back, end[2]);
