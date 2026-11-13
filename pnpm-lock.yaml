@@ -186,6 +186,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: 21.2.4
         version: 21.2.4
+      '@dimforge/rapier3d-compat':
+        specifier: 0.19.2
+        version: 0.19.2
       '@duckdb/node-api':
         specifier: 1.5.6-r.1
         version: 1.5.6-r.1

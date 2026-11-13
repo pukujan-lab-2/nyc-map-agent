@@ -187,6 +187,7 @@ import { QuickLayers } from "./QuickLayers";
 import { MapChrome } from "./MapChrome";
 import { BackToStreet, BusesOff, MapViewSwitch } from "./MapViewSwitch";
 import { StreetMiniMap } from "./StreetMiniMap";
+import { StationWalkHost } from "@/features/stationWalk/StationWalkHost";
 import { nearestCorner, type CornerSign } from "@/lib/map/corner";
 import { pickAt as pickFurniture } from "@/lib/map/streetPick";
 import { formatStreetPair, formatStreetText } from "@/lib/streetName";
@@ -1900,6 +1901,7 @@ export function MapView({
       {walking && ready && mapRef.current ? (
         <StreetMiniMap main={mapRef.current.getMap()} getEye={getEye} onExit={stopWalk} onMap={() => showView("map")} filters={inset} />
       ) : null}
+      <StationWalkHost />
 
       {hover && !walking && canHover && !sheetOpen && analytics ? (
         <div

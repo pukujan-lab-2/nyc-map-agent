@@ -9,7 +9,7 @@ import { readMap } from "@/lib/map/mapRead";
 import { cornerLine } from "@/lib/map/cornerLine";
 
 let model: Promise<DollhouseModel> | null = null;
-function loadModel(): Promise<DollhouseModel> {
+export function loadModel(): Promise<DollhouseModel> {
   model ??= fetch("/transit/fulton-model.json").then((r) => {
     if (!r.ok) throw new Error(`station model ${r.status}`);
     return r.json() as Promise<DollhouseModel>;

@@ -20,9 +20,11 @@ const OVERLAP_M = SHELL_THICK_M;
 /** Half the width of a ramp laid where a walk crosses a gap in the model. */
 const RAMP_HALF_M = 0.7;
 /** Half the width of a doorway cut where a walk passes through a wall. */
-const DOOR_HALF_M = 0.45;
-/** A doorway is never narrower than this either side of where the walk crosses (a body's width). */
-const DOOR_MIN_HALF_M = 0.3;
+const DOOR_HALF_M = 0.6;
+/** A doorway is never narrower than this either side of where the walk crosses (a body is 0.6 m wide). */
+const DOOR_MIN_HALF_M = 0.45;
+/** Along every walk, nothing the body collides with comes nearer the walk's line than this, at body height. */
+export const WALK_CLEAR_M = 0.35;
 /** A doorway's sill sits this far below the walk (under its floor), its lintel this far above. */
 const DOOR_SILL_M = 0.15;
 const DOOR_HEAD_M = 2.2;
@@ -353,6 +355,26 @@ export function walkPoints(path: P3[], step: number, trim = 0): Array<[number, n
   return out;
 }
 
+/**
+ * The stretch of wall `w` (metres from its start) that stands in the way of a body walking at
+ * (x, y, z): where its face is within WALK_CLEAR_M of that point, if it spans body height there.
+ * Null when none of it does.
+ */
+export function inWalkWay(w: ShellWall, x: number, y: number, z: number): [number, number] | null {
+  const dx = w.b[0] - w.a[0], dy = w.b[1] - w.a[1], L = Math.hypot(dx, dy);
+  if (L < 1e-6) return null;
+  const s = Math.max(0, Math.min(L, ((x - w.a[0]) * dx + (y - w.a[1]) * dy) / L));
+  const px = w.a[0] + (dx * s) / L, py = w.a[1] + (dy * s) / L;
+  const face = Math.hypot(x - px, y - py) - w.thick / 2;
+  if (face >= WALK_CLEAR_M) return null;
+  const k = s / L, foot = w.foot[0] + (w.foot[1] - w.foot[0]) * k, top = w.top[0] + (w.top[1] - w.top[0]) * k;
+  if (top < z + 0.3 || foot > z + 1.8) return null;
+  // Every part of the wall within reach: where its centre line comes within WALK_CLEAR_M + half its thickness.
+  const along = ((x - w.a[0]) * dx + (y - w.a[1]) * dy) / L, off = Math.abs(((x - w.a[0]) * dy - (y - w.a[1]) * dx) / L);
+  const R = WALK_CLEAR_M + w.thick / 2, half = Math.sqrt(Math.max(0, R * R - off * off));
+  return [along - half - 0.05, along + half + 0.05];
+}
+
 /** Whether a walk at (x, y, z) heading (ux, uy) goes through wall `w` at waist height, not just along it. */
 export function crossesWall(w: ShellWall, x: number, y: number, z: number, ux: number, uy: number): boolean {
   if (!inWall(w, x, y, z + 1, -0.02)) return false;
@@ -379,7 +401,7 @@ export function floorBothSides(under: (x: number, y: number, pad?: number) => nu
  * Wall `w` with a doorway in each stretch of `cuts` ([from, to, floor height], distances from its end
  * a). Below the floor and above head height the wall stays, so it still closes any other level it covers.
  */
-function cutWall(w: ShellWall, cuts: Array<[number, number, number]>): ShellWall[] {
+export function cutWall(w: ShellWall, cuts: Array<[number, number, number]>): ShellWall[] {
   const dx = w.b[0] - w.a[0], dy = w.b[1] - w.a[1], L = Math.hypot(dx, dy);
   // Overlapping doorways merge, keeping the lowest floor and the highest head.
   const gaps: Array<[number, number, number, number]> = [];
