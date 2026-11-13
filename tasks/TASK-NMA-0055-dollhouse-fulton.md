@@ -672,6 +672,29 @@ Blocked/uncertain:
 Next:
 - Owner to choose: rebuild walls and ceilings once in Blender on the Pro (extrude walkable 3 m, voxel remesh, flip inward, bake) or keep fixing stationShell; fix the three shell tests either way
 
+### 2026-11-13 16:11:49 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Compare the Blender-baked shell (boolean union, dev ?baked-shell) against stationShell at the owner's reported spots and send screenshots; switch over if it looks right; fix the three stationShell tests","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:11:49Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"914bee79d4c9df45dba4a9142c0c5e3182588407019734fa9a2c1934d7246ca2","request_id":"79c67c5ebd6f4e67a431a59669f80bc8","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Compare the Blender-baked shell (boolean union, dev ?baked-shell) against stationShell at the owner's reported spots and send screenshots; switch over if it looks right; fix the three stationShell tests
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
