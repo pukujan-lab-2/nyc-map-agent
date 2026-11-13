@@ -622,6 +622,8 @@ function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small
 
 /** How far below the platform the track bed lies, and how wide it is drawn. */
 const BED_DROP_M = 1.2, BED_W_M = 4.2;
+/** Distance between the direction arrows on a track bed. */
+const ARROW_GAP_M = 12;
 
 /**
  * The track bed beside a platform edge, as a group whose x runs along the edge and whose y points
@@ -629,7 +631,7 @@ const BED_DROP_M = 1.2, BED_W_M = 4.2;
  * onto). Dark ballast a step below, the edge's drop face and two rails on sleepers, so it reads
  * as track, not floor.
  */
-function trackBed(length: number, clip: THREE.Plane[]): THREE.Group {
+function trackBed(length: number, clip: THREE.Plane[], arrows: { color: number; forward: boolean; mats: THREE.Material[] } | null = null): THREE.Group {
   const g = new THREE.Group();
   const bed = box(length, BED_W_M, 0.1, 0x3a3631, clip); bed.position.set(length / 2, BED_W_M / 2, -BED_DROP_M - 0.05); g.add(bed);
   const face = box(length, 0.1, BED_DROP_M, 0x8a8478, clip); face.position.set(length / 2, 0.05, -BED_DROP_M / 2); g.add(face);
@@ -643,6 +645,22 @@ function trackBed(length: number, clip: THREE.Plane[]): THREE.Group {
   const m = new THREE.Matrix4();
   for (let i = 0; i < n; i++) ties.setMatrixAt(i, m.makeTranslation(0.45 + i * 0.9, mid, -BED_DROP_M + 0.05));
   g.add(ties);
+  // Which way the trains run: a chevron in the line's colour every few car lengths (owner, 2026-11-12).
+  if (arrows) {
+    const shape = new THREE.Shape([new THREE.Vector2(-1.5, -1.3), new THREE.Vector2(1.5, 0), new THREE.Vector2(-1.5, 1.3), new THREE.Vector2(-0.6, 0)]);
+    const geo = new THREE.ShapeGeometry(shape);
+    // In the overview they are drawn over everything, so they show on top of a train standing at the
+    // platform; the layer turns that off once the camera comes down to walk (`mats`).
+    const mat = new THREE.MeshBasicMaterial({ color: arrows.color, side: THREE.DoubleSide, clippingPlanes: clip, depthTest: false, transparent: true, opacity: 0.9 });
+    arrows.mats.push(mat);
+    for (let x = ARROW_GAP_M / 2; x < length; x += ARROW_GAP_M) {
+      const a = new THREE.Mesh(geo, mat);
+      a.position.set(x, mid, -BED_DROP_M + 0.3);
+      a.renderOrder = 2;
+      if (!arrows.forward) a.rotation.z = Math.PI;
+      g.add(a);
+    }
+  }
   return g;
 }
 
@@ -986,6 +1004,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, readS
   station.add(new THREE.Mesh(wallGeo, new THREE.MeshBasicMaterial({ color: WALL_CAP_COLOR, side: THREE.BackSide, clippingPlanes: [wallCut, cut] })));
 
   // The yellow strip along each platform edge, on the platform's side, and the track bed on the other.
+  const arrowMats: THREE.Material[] = [];
   for (const edge of model.edges) {
     const [x1, y1, x2, y2, z] = edge;
     const L = Math.hypot(x2 - x1, y2 - y1);
@@ -997,9 +1016,17 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, readS
     station.add(strip);
     // The bed's y points away from the platform: run it from whichever end puts the platform on its -y.
     const onLeft = -Math.sin(ang) * pnx + Math.cos(ang) * pny > 0;
-    const bed = trackBed(L, [cut]);
+    // The track beside this edge, if one is near its bed: its trains run against its `angle`.
+    const rot = onLeft ? ang + Math.PI : ang;
+    const bx = (x1 + x2) / 2 - pnx * (BED_W_M / 2), by = (y1 + y2) / 2 - pny * (BED_W_M / 2);
+    const runs = [{ t: model.track, color: model.lines[0] ? parseInt(model.lines[0][1].slice(1), 16) : LEX_GREEN }, ...(model.otherTracks ?? []).map((t) => ({ t, color: 0xe8e8e8 }))]
+      .map((r) => ({ ...r, off: Math.abs((r.t.at[0] - bx) * pnx + (r.t.at[1] - by) * pny) }))
+      .filter((r) => r.off < BED_W_M)
+      .sort((a, b) => a.off - b.off)[0];
+    const arrows = runs ? { mats: arrowMats, color: runs.color, forward: -Math.cos(runs.t.angle) * Math.cos(rot) - Math.sin(runs.t.angle) * Math.sin(rot) > 0 } : null;
+    const bed = trackBed(L, [cut], arrows);
     bed.position.set(...(onLeft ? [x2, y2, z] : [x1, y1, z]) as P3);
-    bed.rotation.z = onLeft ? ang + Math.PI : ang;
+    bed.rotation.z = rot;
     station.add(bed);
   }
 
@@ -1209,6 +1236,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, readS
     ring.visible = zoomIn < 1;
     ring.position.set(pose.x, pose.y, pose.z + 0.05);
     ringMat.opacity = 0.9 * (1 - zoomIn);
+    for (const m of arrowMats) m.depthTest = zoomIn >= 1;
     for (const r of rotors) {
       const d = Math.hypot(r.at.x - pose.x, r.at.y - pose.y);
       if (d < 0.8) r.rotor.rotation.y = ((0.8 - d) / 0.8) * (Math.PI / 3);

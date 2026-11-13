@@ -70,13 +70,15 @@ export function walkCallouts(model: DollhouseModel, path: P3[], exitLine: string
   // The train leaves toward +along: its front is the high end.
   const k = hi > lo ? (along - lo) / (hi - lo) : 0.5;
   const car = Math.min(CARS, Math.max(1, CARS - Math.floor(k * CARS)));
-  const part = k > 0.66 ? "near the front" : k < 0.34 ? "near the back" : "in the middle";
+  const part = k > 0.66 ? "the front" : k < 0.34 ? "the back" : "the middle";
   // Which side the train is on, facing the way the walk starts.
   const p1 = walkAt(path, Math.min(3 / L, 1));
   const hx = p1.x - start[0], hy = p1.y - start[1];
   const tx = track[0] + ux * along - start[0], ty = track[1] + uy * along - start[1];
   const side = hx * ty - hy * tx < 0 ? "right" : "left";
-  out.push({ f: 0, wait: true, text: `You got off ${part} of the train, about car ${car} of ${CARS}. The train pulls out on your ${side}.` });
+  // Where the walk starts, said plainly first (owner, 2026-11-12): which train, which end of it, which level.
+  const lines = model.lines.map(([r]) => r).join(" and ");
+  out.push({ f: 0, wait: true, text: `Starting from ${part} of the downtown ${lines} train, about car ${car} of ${CARS}, on the platform. The train pulls out on your ${side}.` });
 
   // Directions: turns, stairs and the fare line, each said a few steps before.
   const { signs, gates } = walkPlaces(path);
@@ -127,7 +129,7 @@ export function enterCallouts(model: DollhouseModel, path: P3[], entranceLine: s
   const walk = [...path].reverse();
   const at = (m: number) => Math.min(Math.max(m / L, 0), 1);
   const lines = model.lines.map(([r]) => r).join(" and ");
-  const out: WalkCallout[] = [{ f: 0, text: `Into Fulton St station${entranceLine ? ` at ${entranceLine}` : ""}, for the ${direction.toLowerCase()} ${lines}.` }];
+  const out: WalkCallout[] = [{ f: 0, text: `Starting at the street${entranceLine ? `, at ${entranceLine}` : ""}. Going down into Fulton St station to the ${direction.toLowerCase()} ${lines} platform.` }];
   const metresTo = (p: P3) => {
     let best = 0, bestD = Infinity, walked = 0;
     for (let i = 1; i < walk.length; i++) {
