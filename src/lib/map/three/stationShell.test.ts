@@ -40,7 +40,9 @@ describe.each(STATIONS)("the %s model's shell for walking inside", (id) => {
 
   it("takes each wall down to the floor below it, never leaving a stair's side open underneath", () => {
     const { walls } = stationShell(model);
-    // A doorway's sill and lintel are the only shorter pieces.
-    for (const w of walls.filter((w) => !w.door)) for (const end of [0, 1] as const) expect(w.top[end] - w.foot[end]).toBeGreaterThan(3.2);
+    // A doorway's sill and lintel, and pieces capped under a floor overhead, are the only shorter ones.
+    for (const w of walls.filter((w) => !w.door && !w.capped)) for (const end of [0, 1] as const) expect(w.top[end] - w.foot[end]).toBeGreaterThan(3.2);
+    // A capped piece still reaches below its own top by more than a step, and never inverts.
+    for (const w of walls.filter((w) => w.capped)) for (const end of [0, 1] as const) expect(w.top[end] - w.foot[end]).toBeGreaterThan(0.09);
   });
 });
