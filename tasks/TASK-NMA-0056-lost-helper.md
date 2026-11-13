@@ -197,6 +197,29 @@ Blocked/uncertain:
 Next:
 - After #149 deploys, ask for the same trip on the live site, close the card, tap Find exit and check it guesses Fulton St
 
+### 2026-11-13 06:50:27 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["Merged main (with the 45-minute e2e limit from #152) into fix/lost-guess-trip-without-subway so its checks run again"],"decisions":["no new decisions"],"evidence":["Merge conflicts in CURRENT.md and the all-JS size limit resolved; the changed unit tests pass"],"next_action":"After #144 and #149 merge, run Find exit after a Grand Central to Fulton St trip on the live site and answer the questions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T06:50:27Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6c78a2eb5d96323d3865bc92c1c3c676ee6caa25cdcfa87d384d8c2a3255849f","request_id":"3bf3377e88a642b18ed1e6c5608082a2","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- Merged main (with the 45-minute e2e limit from #152) into fix/lost-guess-trip-without-subway so its checks run again
+
+Evidence:
+- Merge conflicts in CURRENT.md and the all-JS size limit resolved; the changed unit tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #144 and #149 merge, run Find exit after a Grand Central to Fulton St trip on the live site and answer the questions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
