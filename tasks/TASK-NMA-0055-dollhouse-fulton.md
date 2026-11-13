@@ -626,6 +626,29 @@ Blocked/uncertain:
 Next:
 - Fix the three stationShell tests broken by the padded wall caps, then in the owner's order: one MTA-coloured board per exit, ceilings that slope with each stair, the wall across the passage at (-65.2, 30.2), an exit at the top of each street stair; screenshot each in the pane
 
+### 2026-11-13 15:43:26 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Fix the three stationShell tests broken by the padded wall caps, then in the owner's order: one MTA-coloured board per exit, ceilings that slope with each stair, the wall across the passage at (-65.2, 30.2), walking into a street picture returns to Street view; screenshot each in the pane","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:43:26Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6997f45aa5cc4a69a717c48db01d1523cbeeac4c25687813bca1d4938c49ed1f","request_id":"dd8d601b335e46479a59329f01b863be","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Fix the three stationShell tests broken by the padded wall caps, then in the owner's order: one MTA-coloured board per exit, ceilings that slope with each stair, the wall across the passage at (-65.2, 30.2), walking into a street picture returns to Street view; screenshot each in the pane
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
