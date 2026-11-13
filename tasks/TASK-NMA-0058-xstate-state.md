@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - After #148 deploys, ask in Chinese then speak Chinese on nyc.design-bakery.com and check it is heard as Chinese; then start stage 2 (the ask cycle out of AgentOverlay.tsx)
 
+### 2026-11-13 04:41:24 UTC — agent:claude-code/619d489e-002c-4303-95a6-7536b98ca798
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/619d489e-002c-4303-95a6-7536b98ca798","blocked":[],"changed":["none"],"completed":["Merged fix/126-voice-follows-language into the language machine branch; #146's rules and tests kept"],"decisions":["no new decisions"],"evidence":["Type check and lint clean on the Pro; all 1263 tests under src pass, #146's appLang, kokoro and tts tests among them"],"next_action":"After #146 merges, merge main into this branch, re-arm auto-merge on #148, then check the live site in Chinese and English","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-13T04:41:24Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"30f7c44bf6866ee16527acf3ffcd5e7e87062635921e975e7c44cd70fe67bd3e","request_id":"8aabe85001e84082ad062d04f4781937","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Merged fix/126-voice-follows-language into the language machine branch; #146's rules and tests kept
+
+Evidence:
+- Type check and lint clean on the Pro; all 1263 tests under src pass, #146's appLang, kokoro and tts tests among them
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #146 merges, merge main into this branch, re-arm auto-merge on #148, then check the live site in Chinese and English
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
