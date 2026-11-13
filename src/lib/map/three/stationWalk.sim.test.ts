@@ -33,7 +33,7 @@ beforeAll(async () => {
   const geo = process.env.OLD_SHELL ? walkGeometry(model, shell) : { ...walkGeometry(model, shell), ...bakedShellSurfaces(model, shell, JSON.parse(readFileSync("public/transit/fulton-shell.json", "utf8")) as BakedShell) };
   for (const c of geo.colliders) world.createCollider(RAPIER.ColliderDesc.trimesh(c.vertices, c.indices, flags));
   lowest = geo.lowest;
-}, 60_000);
+}, 180_000); // Building the baked walls into colliders takes over a minute on a CI runner.
 
 /** Walks one walk one way, `off` metres to its left, following its line from point to point. */
 function walk(wi: number, way: "up" | "down", off: number): Run {

@@ -16,7 +16,8 @@ vi.stubGlobal("document", {
     getContext: () => {
       let px = 10;
       return new Proxy({}, {
-        get: (_, k) => (k === "measureText" ? (t: string) => ({ width: t.length * px * 0.65 }) : () => {}),
+        // Gradients (the street picture's sky) take colour stops and draw nothing.
+        get: (_, k) => (k === "measureText" ? (t: string) => ({ width: t.length * px * 0.65 }) : () => ({ addColorStop: () => {} })),
         set: (_, k, v) => { if (k === "font") px = parseFloat(/([\d.]+)px/.exec(String(v))?.[1] ?? "10"); return true; },
       });
     },
