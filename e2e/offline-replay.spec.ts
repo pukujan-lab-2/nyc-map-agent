@@ -12,7 +12,6 @@ import { slow } from "./slow";
 const trip = JSON.parse(readFileSync(new URL("./fixtures/agent-trip-fulton.json", import.meta.url), "utf8")) as Record<string, unknown>;
 const nd = (evs: unknown[]) => evs.map((e) => JSON.stringify(e)).join("\n") + "\n";
 
-test.use({ serviceWorkers: "allow" });
 
 test("the Fulton St walk replays with the network off after the trip has loaded", async ({ page, context }) => {
   test.setTimeout(slow(150_000));
