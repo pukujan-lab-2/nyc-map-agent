@@ -10,7 +10,7 @@
  *
  * The model is a triangle mesh in metres east, north and up of its origin (street level is 0),
  * with one walk per street exit (each starting a step in from the platform's edge), the platform
- * edges, the downtown track, the station's own lines and the lines it transfers to. Fulton St's
+ * edges, the downtown track, the station's own lines and the lines it transfers to. Each station's
  * comes from Project Subway NYC's station model (credited in the map's credits). Its floors, stairs
  * and walls are dressed here: concrete, stair treads with yellow nosings, cream tile walls with a
  * buff base and a terracotta band, and ceiling lights along the walk. The fare gates and the
@@ -23,7 +23,9 @@ import type { CustomLayerInterface, Map as MaplibreMap } from "maplibre-gl";
 import { LEGACY_LIGHT, MercatorCoordinate, sharedRenderer } from "./core";
 
 type P3 = [number, number, number];
-type DollhouseWalk = { exit: [number, number]; path: P3[] };
+type DollhouseTrack = { at: P3; angle: number };
+/** A walk may carry its own track: on a curved platform the stretch beside its start, where the train stands. */
+type DollhouseWalk = { exit: [number, number]; path: P3[]; track?: DollhouseTrack };
 export type DollhouseModel = {
   origin: [number, number];
   /** x, y, z per vertex, metres. */
@@ -35,11 +37,15 @@ export type DollhouseModel = {
   /** Platform edges over a track bed: x1, y1, x2, y2, z. */
   edges: Array<[number, number, number, number, number]>;
   /** The downtown 4/5 track beside where the walks start: rail height, and the way the train leaves (radians from east). */
-  track: { at: P3; angle: number };
+  track: DollhouseTrack;
   /** The routes that stop at the platform the walks start from, with their bullet colours: [route, "#rrggbb"]. */
   lines: Array<[string, string]>;
   /** The other routes this station connects to, for the transfer signs. */
   transfers: Array<[string, string]>;
+  /** The station's name on the platform sign; Fulton St's model, the first, has none and is "Fulton St". */
+  name?: string;
+  /** Where the platform's trains go, under the name: "Downtown & Brooklyn" when unsaid. */
+  toward?: string;
 };
 
 type WalkPose = { x: number; y: number; z: number; /** Radians, 0 = north, clockwise. */ heading: number; /** Metres walked so far. */ walked: number };
@@ -182,7 +188,7 @@ export function planSigns(model: DollhouseModel, walk: DollhouseWalk, corner: st
   out.push({
     at: [hung.x, hung.y, Math.max(hung.z, start[2]) + 2.6],
     heading: toward,
-    lines: [{ bullets: model.lines, text: "Fulton St" }, { text: "Downtown & Brooklyn" }],
+    lines: [{ bullets: model.lines, text: model.name ?? "Fulton St" }, { text: model.toward ?? "Downtown & Brooklyn" }],
   });
   const transfers: SignLine | null = model.transfers.length ? { bullets: model.transfers } : null;
   const street: SignLine | null = corner ? { text: corner } : null;
@@ -651,6 +657,7 @@ export function outlineWalls(model: DollhouseModel): WallRun[] {
  * signs ("Fulton St & Nassau St · NE corner"), or failing that the street's name, or null.
  */
 export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getState: () => DollhouseState, corner: string | null): Dollhouse {
+  const track = walk.track ?? model.track;
   const scene = new THREE.Scene();
   const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const wallCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
@@ -809,8 +816,8 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     car.position.x = -i * CAR_M;
     train.add(car);
   }
-  train.position.set(...model.track.at);
-  train.rotation.z = model.track.angle;
+  train.position.set(...track.at);
+  train.rotation.z = track.angle;
   scene.add(train);
 
   const { group: figure, stride } = buildFigure();
@@ -829,8 +836,8 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   scene.add(sun);
 
   // The train stands with the middle of a car at the door the figure steps out of.
-  const dir: [number, number] = [Math.cos(model.track.angle), Math.sin(model.track.angle)];
-  const along = (p: P3) => (p[0] - model.track.at[0]) * dir[0] + (p[1] - model.track.at[1]) * dir[1];
+  const dir: [number, number] = [Math.cos(track.angle), Math.sin(track.angle)];
+  const along = (p: P3) => (p[0] - track.at[0]) * dir[0] + (p[1] - track.at[1]) * dir[1];
   const doorAlong = along(start);
   const standing = doorAlong + CAR_M * (CARS / 2);
   /**
@@ -839,8 +846,8 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
    */
   const midAlong = standing - (CAR_M * (CARS - 1)) / 2;
   const overview: [number, number] = [
-    (model.track.at[0] + dir[0] * midAlong + start[0] + dir[0] * (midAlong - doorAlong)) / 2,
-    (model.track.at[1] + dir[1] * midAlong + start[1] + dir[1] * (midAlong - doorAlong)) / 2,
+    (track.at[0] + dir[0] * midAlong + start[0] + dir[0] * (midAlong - doorAlong)) / 2,
+    (track.at[1] + dir[1] * midAlong + start[1] + dir[1] * (midAlong - doorAlong)) / 2,
   ];
   /** The track's compass bearing (0 = north, clockwise). */
   const trackBearing = Math.atan2(dir[0], dir[1]);
@@ -918,7 +925,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     train.visible = k < 1;
     if (train.visible) {
       const front = standing + 170 * k * k;
-      train.position.set(model.track.at[0] + dir[0] * front, model.track.at[1] + dir[1] * front, model.track.at[2]);
+      train.position.set(track.at[0] + dir[0] * front, track.at[1] + dir[1] * front, track.at[2]);
     }
     // The ring fades as the camera comes down from the overview.
     const zoomIn = st.wait == null ? 1 : Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END);

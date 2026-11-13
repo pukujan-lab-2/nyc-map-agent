@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { forCells, outlineWalls, pickWalk, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
 
-const model = JSON.parse(readFileSync("public/transit/fulton-model.json", "utf8")) as DollhouseModel;
+const load = (name: string) => JSON.parse(readFileSync(`public/transit/${name}-model.json`, "utf8")) as DollhouseModel;
+const model = load("fulton");
+/** Every station model: Fulton St first, then Brooklyn Bridge–City Hall and Atlantic Av–Barclays Ctr. */
+const MODELS = (["fulton", "cityhall", "barclays"] as const).map((name) => ({ name, model: load(name) }));
 
 /** Height of the model's surface under (x, y) nearest to `z`, or null where there is none. */
-function floorUnder(x: number, y: number, z: number): number | null {
+function floorUnder(x: number, y: number, z: number, m: DollhouseModel = model): number | null {
   let best: number | null = null;
-  const { v, t } = model;
+  const { v, t } = m;
   for (let i = 0; i < t.length; i += 3) {
     const [a, b, c] = [t[i] * 3, t[i + 1] * 3, t[i + 2] * 3];
     const d = (v[b + 1] - v[c + 1]) * (v[a] - v[c]) + (v[c] - v[b]) * (v[a + 1] - v[c + 1]);
@@ -27,11 +30,11 @@ function floorUnder(x: number, y: number, z: number): number | null {
  */
 const NASSAU_EXIT: [number, number] = [-74.0075959, 40.710219];
 
-describe("the dollhouse walks at Fulton St", () => {
+describe.each(MODELS)("the dollhouse walks in the $name model", ({ name, model }) => {
   it("has a walk for each exit it reaches, each from the platform to the street", () => {
-    expect(model.walks.length).toBeGreaterThanOrEqual(5);
+    expect(model.walks.length).toBeGreaterThanOrEqual(2);
     for (const { path } of model.walks) {
-      expect(walkAt(path, 0).z).toBeCloseTo(-4.2, 1);
+      expect(walkAt(path, 0).z).toBeCloseTo(model.edges[0][4], 1);
       expect(walkAt(path, 1).z).toBeGreaterThan(-0.5);
     }
   });
@@ -40,7 +43,7 @@ describe("the dollhouse walks at Fulton St", () => {
     model.walks.forEach(({ path, exit }) => {
       for (let i = 0; i <= 200; i++) {
         const p = walkAt(path, i / 200);
-        const floor = floorUnder(p.x, p.y, p.z);
+        const floor = floorUnder(p.x, p.y, p.z, model);
         expect(floor, `no floor under the figure at ${i / 2}% of the walk to ${exit.join(",")}`).not.toBeNull();
         expect(Math.abs((floor as number) - p.z), `feet off the floor at ${i / 2}% of the walk to ${exit.join(",")}`).toBeLessThan(0.45);
       }
@@ -57,20 +60,6 @@ describe("the dollhouse walks at Fulton St", () => {
         prev = p;
       }
     }
-  });
-
-  it("takes the trip to Fulton St the long way, under Fulton St to the exit at Nassau St", () => {
-    const walk = pickWalk(model, NASSAU_EXIT);
-    expect(walk).not.toBeNull();
-    expect(walkLength(walk!.path)).toBeGreaterThan(150);
-    expect(Math.min(...walk!.path.map((p) => p[2]))).toBeLessThan(-10);
-    const { signs, gates } = walkPlaces(walk!.path);
-    expect(gates).not.toBeNull();
-    expect(signs.some((s) => s.last && s.up)).toBe(true);
-  });
-
-  it("has no walk for an exit it does not reach, so that trip keeps the first-person walk", () => {
-    expect(pickWalk(model, [-74.0066, 40.7095])).toBeNull();
   });
 
   it("raises walls along the floors' edges, and no walk passes through one", () => {
@@ -102,7 +91,7 @@ describe("the dollhouse walks at Fulton St", () => {
       const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
       const k = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (L * L)));
       const cx = x1 + dx * k, cy = y1 + dy * k, nx = -dy / L, ny = dx / L;
-      const room = [1, -1].some((sg) => Math.abs((floorUnder(cx + nx * sg * 1.2, cy + ny * sg * 1.2, ez) ?? 99) - ez) < 0.3);
+      const room = [1, -1].some((sg) => Math.abs((floorUnder(cx + nx * sg * 1.2, cy + ny * sg * 1.2, ez, model) ?? 99) - ez) < 0.3);
       return { d: Math.hypot(x - cx, y - cy), room };
     };
     for (const { path, exit } of model.walks) path.forEach(([x, y, z], i) => {
@@ -129,10 +118,10 @@ describe("the dollhouse walks at Fulton St", () => {
   });
 
   it("never walks the figure into the train standing at the platform", () => {
-    const { at: [tx, ty, tz], angle } = model.track;
-    const nx = -Math.sin(angle), ny = Math.cos(angle);
     // The car body is 2.7 m wide on the track's line; the figure is about 0.6 m across.
-    for (const { path, exit } of model.walks) {
+    for (const { path, exit, track } of model.walks) {
+      const { at: [tx, ty, tz], angle } = track ?? model.track;
+      const nx = -Math.sin(angle), ny = Math.cos(angle);
       const n = Math.ceil(walkLength(path) * 4);
       for (let i = 0; i <= n; i++) {
         const p = walkAt(path, i / n);
@@ -140,6 +129,33 @@ describe("the dollhouse walks at Fulton St", () => {
         expect(Math.abs((p.x - tx) * nx + (p.y - ty) * ny), `the walk to ${exit.join(",")} runs into the train at ${Math.round((i / n) * 100)}%`).toBeGreaterThan(1.35 + 0.3);
       }
     }
+  });
+
+  it("names its platform and the lines it stops and transfers, with their colours", () => {
+    expect(model.lines.length).toBeGreaterThan(0);
+    for (const [, colour] of [...model.lines, ...model.transfers]) expect(colour).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    const signs = planSigns(model, model.walks[0], null);
+    expect(signs[0].lines[0].text).toBe(model.name ?? "Fulton St");
+  });
+
+  it("stays small enough to load on a phone", () => {
+    expect(readFileSync(`public/transit/${name}-model.json`).byteLength).toBeLessThan(2_000_000);
+  });
+});
+
+describe("the dollhouse walks at Fulton St", () => {
+  it("takes the trip to Fulton St the long way, under Fulton St to the exit at Nassau St", () => {
+    const walk = pickWalk(model, NASSAU_EXIT);
+    expect(walk).not.toBeNull();
+    expect(walkLength(walk!.path)).toBeGreaterThan(150);
+    expect(Math.min(...walk!.path.map((p) => p[2]))).toBeLessThan(-10);
+    const { signs, gates } = walkPlaces(walk!.path);
+    expect(gates).not.toBeNull();
+    expect(signs.some((s) => s.last && s.up)).toBe(true);
+  });
+
+  it("has no walk for an exit it does not reach, so that trip keeps the first-person walk", () => {
+    expect(pickWalk(model, [-74.0066, 40.7095])).toBeNull();
   });
 
   it("knows the platform's lines and the lines it transfers to, with their colours", () => {
@@ -165,9 +181,5 @@ describe("the dollhouse walks at Fulton St", () => {
     }
     expect(signs.some(({ lines: [first, second] }) => first.arrow === "up" && words(second) === corner)).toBe(true);
     expect(signs.some(({ small, lines: [first] }) => small && first.text === "Exit")).toBe(true);
-  });
-
-  it("stays small enough to load on a phone", () => {
-    expect(readFileSync("public/transit/fulton-model.json").byteLength).toBeLessThan(2_000_000);
   });
 });
