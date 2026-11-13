@@ -6,7 +6,7 @@ import type { AppLang } from "@/lib/voice/langPref";
 import type { Guess, Part, Signal } from "./lostGuess";
 
 type Key =
-  | "title" | "whereAmI" | "showOnMap" | "notQuite" | "typeHere" | "close"
+  | "title" | "showOnMap" | "notQuite" | "close"
   | "at" | "off" | "onLine" | "riding" | "waiting" | "walking" | "landmark" | "part" | "exit" | "ago" | "none" | "isThatRight"
   | "noNet" | "weakNet" | "noGps" | "gpsWeak" | "gpsOld"
   | "yesExit" | "yesNoExit" | "notQuiteReply" | "offline" | "offlineExit" | "offlineNoExit" | "sentLater" | "failed"
@@ -14,7 +14,7 @@ type Key =
 
 const T: Record<AppLang, Record<Key, string>> = {
   en: {
-    title: "Where you are", whereAmI: "Where am I?", showOnMap: "Show on map", notQuite: "Not quite", typeHere: "Type what you see, like a sign…", close: "Close",
+    title: "Where you are", showOnMap: "Show on map", notQuite: "Not quite", close: "Close",
     at: "You're probably at {s}.", off: "You're probably at {s}, just off the {l} train.", onLine: "You're probably on the {l} train.", riding: "You're probably on the {l} train, heading to {s}.", waiting: "You're probably at {s}, waiting for the {l} train.", walking: "You're on your walk to {s}.", landmark: "Look for {m}.",
     part: "The stairs to your exit are {p} of the train.", exit: "Your exit: {e}.", ago: "That's from {n} min ago.", none: "I can't tell where you are. Which station are you in, or what does the nearest sign say?", isThatRight: "Is that right?",
     noNet: "No network", weakNet: "Weak network", noGps: "No location", gpsWeak: "Location ±{m} m", gpsOld: "Last fix {n} min ago",
@@ -23,7 +23,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     front: "at the front", frontMid: "between the middle and the front", middle: "in the middle", backMid: "between the middle and the back", back: "at the back",
   },
   es: {
-    title: "Dónde estás", whereAmI: "¿Dónde estoy?", showOnMap: "Ver en el mapa", notQuite: "No exactamente", typeHere: "Escribe lo que ves, como un letrero…", close: "Cerrar",
+    title: "Dónde estás", showOnMap: "Ver en el mapa", notQuite: "No exactamente", close: "Cerrar",
     at: "Probablemente estás en {s}.", off: "Probablemente estás en {s}, recién bajado del tren {l}.", onLine: "Probablemente vas en el tren {l}.", riding: "Probablemente vas en el tren {l}, hacia {s}.", waiting: "Probablemente estás en {s}, esperando el tren {l}.", walking: "Vas caminando hacia {s}.", landmark: "Busca {m}.",
     part: "Las escaleras a tu salida están {p} del tren.", exit: "Tu salida: {e}.", ago: "Es de hace {n} min.", none: "No sé dónde estás. ¿En qué estación estás, o qué dice el letrero más cercano?", isThatRight: "¿Es correcto?",
     noNet: "Sin red", weakNet: "Red débil", noGps: "Sin ubicación", gpsWeak: "Ubicación ±{m} m", gpsOld: "Última ubicación hace {n} min",
@@ -32,7 +32,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     front: "en la parte delantera", frontMid: "entre el medio y la parte delantera", middle: "en el medio", backMid: "entre el medio y la parte trasera", back: "en la parte trasera",
   },
   zh: {
-    title: "你的位置", whereAmI: "我在哪？", showOnMap: "在地图上显示", notQuite: "不太对", typeHere: "输入你看到的，比如指示牌…", close: "关闭",
+    title: "你的位置", showOnMap: "在地图上显示", notQuite: "不太对", close: "关闭",
     at: "你可能在 {s}。", off: "你可能在 {s}，刚下 {l} 线列车。", onLine: "你可能在 {l} 线列车上。", riding: "你可能在 {l} 线列车上，开往 {s}。", waiting: "你可能在 {s}，等候 {l} 线列车。", walking: "你正在步行前往 {s}。", landmark: "找一找 {m}。",
     part: "通往你出口的楼梯在列车的{p}。", exit: "你的出口：{e}。", ago: "这是 {n} 分钟前的信息。", none: "我无法判断你在哪里。你在哪个车站？或者最近的指示牌上写着什么？", isThatRight: "对吗？",
     noNet: "无网络", weakNet: "网络弱", noGps: "无定位", gpsWeak: "定位 ±{m} 米", gpsOld: "上次定位 {n} 分钟前",
@@ -41,7 +41,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     front: "前部", frontMid: "中部偏前", middle: "中部", backMid: "中部偏后", back: "后部",
   },
   ru: {
-    title: "Где вы", whereAmI: "Где я?", showOnMap: "Показать на карте", notQuite: "Не совсем", typeHere: "Напишите, что видите, например табличку…", close: "Закрыть",
+    title: "Где вы", showOnMap: "Показать на карте", notQuite: "Не совсем", close: "Закрыть",
     at: "Скорее всего, вы на станции {s}.", off: "Скорее всего, вы на станции {s}, только что вышли из поезда {l}.", onLine: "Скорее всего, вы в поезде {l}.", riding: "Скорее всего, вы в поезде {l}, едете к {s}.", waiting: "Скорее всего, вы на станции {s} и ждёте поезд {l}.", walking: "Вы идёте к {s}.", landmark: "Ищите {m}.",
     part: "Лестница к вашему выходу — {p} поезда.", exit: "Ваш выход: {e}.", ago: "Это данные {n} мин назад.", none: "Не могу понять, где вы. На какой вы станции или что написано на ближайшей табличке?", isThatRight: "Верно?",
     noNet: "Нет сети", weakNet: "Слабая сеть", noGps: "Нет местоположения", gpsWeak: "Местоположение ±{m} м", gpsOld: "Последнее определение {n} мин назад",
@@ -50,7 +50,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     front: "в начале", frontMid: "ближе к началу", middle: "в середине", backMid: "ближе к концу", back: "в конце",
   },
   bn: {
-    title: "আপনি কোথায়", whereAmI: "আমি কোথায়?", showOnMap: "ম্যাপে দেখান", notQuite: "পুরোপুরি না", typeHere: "যা দেখছেন লিখুন, যেমন একটা সাইন…", close: "বন্ধ করুন",
+    title: "আপনি কোথায়", showOnMap: "ম্যাপে দেখান", notQuite: "পুরোপুরি না", close: "বন্ধ করুন",
     at: "আপনি সম্ভবত {s}-এ আছেন।", off: "আপনি সম্ভবত {s}-এ আছেন, এইমাত্র {l} ট্রেন থেকে নেমেছেন।", onLine: "আপনি সম্ভবত {l} ট্রেনে আছেন।", riding: "আপনি সম্ভবত {l} ট্রেনে আছেন, {s}-এর দিকে যাচ্ছেন।", waiting: "আপনি সম্ভবত {s}-এ {l} ট্রেনের অপেক্ষায় আছেন।", walking: "আপনি হেঁটে {s}-এর দিকে যাচ্ছেন।", landmark: "{m} খুঁজুন।",
     part: "আপনার এক্সিটের সিঁড়ি ট্রেনের {p}।", exit: "আপনার এক্সিট: {e}।", ago: "এটা {n} মিনিট আগের তথ্য।", none: "আপনি কোথায় বুঝতে পারছি না। আপনি কোন স্টেশনে, বা কাছের সাইনে কী লেখা?", isThatRight: "ঠিক আছে?",
     noNet: "নেটওয়ার্ক নেই", weakNet: "দুর্বল নেটওয়ার্ক", noGps: "লোকেশন নেই", gpsWeak: "লোকেশন ±{m} মি", gpsOld: "শেষ লোকেশন {n} মিনিট আগে",
@@ -59,7 +59,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     front: "সামনের দিকে", frontMid: "মাঝখান আর সামনের মধ্যে", middle: "মাঝখানে", backMid: "মাঝখান আর পেছনের মধ্যে", back: "পেছনের দিকে",
   },
   ht: {
-    title: "Kote ou ye", whereAmI: "Kote m ye?", showOnMap: "Montre sou kat la", notQuite: "Pa egzakteman", typeHere: "Ekri sa ou wè, tankou yon pankat…", close: "Fèmen",
+    title: "Kote ou ye", showOnMap: "Montre sou kat la", notQuite: "Pa egzakteman", close: "Fèmen",
     at: "Ou pwobableman nan {s}.", off: "Ou pwobableman nan {s}, ou fèk desann tren {l} la.", onLine: "Ou pwobableman nan tren {l} la.", riding: "Ou pwobableman nan tren {l} la, w ap ale {s}.", waiting: "Ou pwobableman nan {s}, w ap tann tren {l} la.", walking: "W ap mache pou ale {s}.", landmark: "Chèche {m}.",
     part: "Eskalye pou sòti ou a {p} tren an.", exit: "Sòti ou: {e}.", ago: "Sa se sa k te la {n} min de sa.", none: "M pa ka di kote ou ye. Nan ki estasyon ou ye, oswa kisa pankat ki pi pre a di?", isThatRight: "Se sa?",
     noNet: "Pa gen rezo", weakNet: "Rezo fèb", noGps: "Pa gen pozisyon", gpsWeak: "Pozisyon ±{m} m", gpsOld: "Dènye pozisyon {n} min de sa",
@@ -68,7 +68,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     front: "devan", frontMid: "ant mitan an ak devan", middle: "nan mitan", backMid: "ant mitan an ak dèyè", back: "dèyè",
   },
   fr: {
-    title: "Où vous êtes", whereAmI: "Où suis-je ?", showOnMap: "Voir sur la carte", notQuite: "Pas tout à fait", typeHere: "Écrivez ce que vous voyez, un panneau…", close: "Fermer",
+    title: "Où vous êtes", showOnMap: "Voir sur la carte", notQuite: "Pas tout à fait", close: "Fermer",
     at: "Vous êtes sans doute à {s}.", off: "Vous êtes sans doute à {s}, tout juste descendu du train {l}.", onLine: "Vous êtes sans doute dans le train {l}.", riding: "Vous êtes sans doute dans le train {l}, en direction de {s}.", waiting: "Vous êtes sans doute à {s}, en attendant le train {l}.", walking: "Vous marchez vers {s}.", landmark: "Cherchez {m}.",
     part: "L'escalier vers votre sortie est {p} du train.", exit: "Votre sortie : {e}.", ago: "Ça date d'il y a {n} min.", none: "Je ne sais pas où vous êtes. Dans quelle station êtes-vous, ou que dit le panneau le plus proche ?", isThatRight: "C'est bien ça ?",
     noNet: "Pas de réseau", weakNet: "Réseau faible", noGps: "Pas de position", gpsWeak: "Position ±{m} m", gpsOld: "Dernière position il y a {n} min",
@@ -77,7 +77,7 @@ const T: Record<AppLang, Record<Key, string>> = {
     front: "à l'avant", frontMid: "entre le milieu et l'avant", middle: "au milieu", backMid: "entre le milieu et l'arrière", back: "à l'arrière",
   },
   ko: {
-    title: "현재 위치", whereAmI: "여기가 어디예요?", showOnMap: "지도에서 보기", notQuite: "조금 달라요", typeHere: "보이는 것을 입력하세요 (표지판 등)…", close: "닫기",
+    title: "현재 위치", showOnMap: "지도에서 보기", notQuite: "조금 달라요", close: "닫기",
     at: "아마 {s}에 계신 것 같아요.", off: "아마 {s}에서 {l} 열차에서 막 내리신 것 같아요.", onLine: "아마 {l} 열차에 계신 것 같아요.", riding: "아마 {s} 방향 {l} 열차에 계신 것 같아요.", waiting: "아마 {s}에서 {l} 열차를 기다리고 계신 것 같아요.", walking: "{s}까지 걸어가는 중이에요.", landmark: "{m}을(를) 찾아보세요.",
     part: "출구로 가는 계단은 열차 {p}에 있어요.", exit: "출구: {e}.", ago: "{n}분 전 정보예요.", none: "어디에 계신지 알 수 없어요. 어느 역에 계세요? 가장 가까운 표지판에 뭐라고 쓰여 있나요?", isThatRight: "맞나요?",
     noNet: "네트워크 없음", weakNet: "네트워크 약함", noGps: "위치 없음", gpsWeak: "위치 ±{m}m", gpsOld: "마지막 위치 {n}분 전",

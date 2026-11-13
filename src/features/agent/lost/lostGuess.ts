@@ -6,7 +6,7 @@
 import type { ActiveTrip } from "@/lib/transit/activeTrip";
 import type { UndergroundNow } from "@/lib/underground/whereNow";
 import type { LostContext, NotedTrain } from "@/lib/underground/lostHelper";
-import { metres, type Pt } from "./exits";
+import { metres, type Pt } from "@/lib/map/mapRead";
 
 /** Worse than this and the position cannot place you in a station (big stations span ~200 m). */
 export const WEAK_FIX_M = 100;

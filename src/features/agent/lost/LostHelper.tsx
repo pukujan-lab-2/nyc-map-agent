@@ -5,7 +5,7 @@ import { LocateOff, MapPin, WifiOff, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
-import { askAgent } from "@/features/agent/stream";
+import { askAgent } from "../stream";
 import { useAppLang } from "@/lib/i18n/appLang";
 import { tr } from "@/lib/i18n/appLang";
 import { useSharedLocation } from "@/lib/geo/sharedLocation";
@@ -16,9 +16,23 @@ import { closeLostHelper, notedTrain, notedTrainPart, setLostSender, type LostCo
 import { useStationHelp } from "@/lib/underground/stationHelp";
 import { useUndergroundNow } from "@/lib/underground/whereNow";
 import { useMediaQuery } from "@/lib/useMediaQuery";
-import { nearestStation, type Pt, type SubwayStatic } from "./exits";
+import { metres, type Pt } from "@/lib/map/mapRead";
 import { bestGuess, readSignal, signalPoor, type Connection, type Fix, type Signal } from "./lostGuess";
 import { guessText, lostT, offlineReply, signalChips, signalForAgent } from "./lostText";
+
+/** The part of subway.json the guess needs: each station's id, name and place. */
+interface Stations { stations: { features: Array<{ geometry: { coordinates: number[] }; properties: { id: string; name: string } }> } }
+
+/** The station nearest a point, within `maxM`. */
+function nearestStation(sys: Stations, at: Pt, maxM: number): { id: string; name: string; at: Pt; d: number } | null {
+  let best: { id: string; name: string; at: Pt; d: number } | null = null;
+  for (const f of sys.stations.features) {
+    const p: Pt = [f.geometry.coordinates[0], f.geometry.coordinates[1]];
+    const d = metres(at, p);
+    if (d <= maxM && (!best || d < best.d)) best = { id: String(f.properties.id), name: f.properties.name, at: p, d };
+  }
+  return best;
+}
 
 type Msg = { id: number; role: "user" | "assistant"; text: string; pending?: boolean };
 
@@ -69,7 +83,7 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
   const now = useNow();
   const { data: sys } = useQuery({
     queryKey: ["transit", "static", "subway"],
-    queryFn: async () => (await (await fetch("/transit/subway.json")).json()) as SubwayStatic,
+    queryFn: async () => (await (await fetch("/transit/subway.json")).json()) as Stations,
     staleTime: Infinity,
   });
 

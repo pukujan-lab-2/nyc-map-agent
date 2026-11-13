@@ -20,9 +20,8 @@ import { useCssHeight } from "@/lib/useCssHeight";
 import { appGeo } from "@/lib/geo/devGeo";
 import { useMapState } from "@/lib/store/MapStateContext";
 import { useActiveTrip } from "@/lib/transit/activeTrip";
-import { useAppLang } from "@/lib/i18n/appLang";
+import { useT } from "@/lib/i18n/appLang";
 import { openLostHelper, useLostHelper } from "@/lib/underground/lostHelper";
-import { lostT } from "@/features/underground/lostText";
 import { bearingTo } from "./heading";
 import { installNavLayers, readNavColors, removeNavLayers, roadNameAt, updateNavLayers } from "./layers";
 import { distanceAlong, fetchGuidedRoute, formatMetres, metresLeft, progressAt, type RouteStep } from "./steps";
@@ -62,7 +61,7 @@ export default function RouteGuide() {
   const { walking, stopWalk, chatOpen } = useMapState();
   // Where am I opens the where-am-I helper with this walk's destination and landmark (#131).
   const walkTo = useActiveTrip()?.destination.label ?? null;
-  const lang = useAppLang();
+  const t = useT();
   const lost = useLostHelper();
   const [landmarks, setLandmarks] = useState<readonly GuideLandmark[]>([]);
   const [confirmed, setConfirmed] = useState<string[]>([]);
@@ -289,16 +288,16 @@ export default function RouteGuide() {
       <div className="grid grid-cols-3 gap-2 text-[13px] min-[380px]:text-sm">
         <button type="button" className="task-action min-h-11 !text-[length:inherit]" onClick={() => { setConfirmed([...confirmed, checkpoint.landmark.id]); setShowPhoto(false); }}>Yes, I see it</button>
         <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" aria-expanded={showPhoto} onClick={() => setShowPhoto(!showPhoto)}>Not yet</button>
-        <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: checkpoint.landmark.name })}>{lostT(lang, "whereAmI")}</button>
+        <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: checkpoint.landmark.name })}>{t("whereAmI")}</button>
       </div>
       <a href={checkpoint.landmark.picture.page} target="_blank" rel="noreferrer" className="block truncate text-xs text-slate-300">Photo: {checkpoint.landmark.picture.artist} · {checkpoint.landmark.picture.license}</a>
     </section> : tripStep ? <section ref={bottomCard} className="task-panel task-bottom flex flex-col gap-2.5 p-3.5" aria-label="Next on this trip">
       <p className="line-clamp-2 text-[15px] font-semibold leading-snug">{tripStep.then}</p>
       <div className="grid grid-cols-2 gap-2 text-[13px] min-[380px]:text-sm">
         <button type="button" className="task-action min-h-11 !text-[length:inherit]" onClick={() => { stopNav(); stopWalk(); tripStep.go(); }}>{tripStep.action}</button>
-        <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: null })}>{lostT(lang, "whereAmI")}</button>
+        <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: null })}>{t("whereAmI")}</button>
       </div>
-    </section> : <div ref={bottomCard} className="task-panel task-bottom"><button type="button" className="task-action task-secondary w-full" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: null })}>{lostT(lang, "whereAmI")}</button></div>}
+    </section> : <div ref={bottomCard} className="task-panel task-bottom"><button type="button" className="task-action task-secondary w-full" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: null })}>{t("whereAmI")}</button></div>}
   </>;
 
   return (

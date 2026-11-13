@@ -65,7 +65,7 @@ import { DailyCard, TaskButtons } from "./HomeTasks";
 
 const SettingsSheet = lazy(() => import("@/components/SettingsSheet"));
 // Only once a trip is previewed: keeps the overlay inside its size budget.
-const LostHelper = lazy(() => import("@/features/underground/LostHelper"));
+const LostHelper = lazy(() => import("./lost/LostHelper"));
 const TripPreview = lazy(() => import("./TripPreview").then((m) => ({ default: m.TripPreview })));
 import { rememberCommute, useHomeWork } from "./commute";
 import { memorySummary } from "./memorySummary";
@@ -77,7 +77,6 @@ import { useFollowed } from "@/lib/transit/follow";
 import { useLinesControl } from "@/lib/transit/linesControl";
 import { useStationHelpVisible } from "@/lib/underground/stationHelp";
 import { openLostHelper, sendToLost, useLostHelper } from "@/lib/underground/lostHelper";
-import { lostT } from "@/features/underground/lostText";
 import { applyStep, statusLine, type AgentStep } from "./agentSteps";
 import { detectLang, speechTag, statusLang } from "./statusLines";
 import { getAppLang, setAskedLang, tr, useAppLang } from "@/lib/i18n/appLang";
@@ -981,7 +980,7 @@ export default function AgentOverlay() {
           input={input}
           setInput={setInput}
           onSend={(t) => { if (sendToLost(t)) setInput(""); else void send(t); }}
-          placeholder={lost ? lostT(appLang, "typeHere") : undefined}
+          placeholder={lost ? tr(appLang, "typeWhatYouSee") : undefined}
           busy={busy}
           interim={speech.interim}
           dictation={{ supported: speech.sttSupported, on: dictating && speech.listening, toggle: toggleDictation }}
