@@ -384,6 +384,29 @@ Blocked/uncertain:
 Next:
 - After the follow camera PR merges, play the Fulton St walk on the live site and check the camera stays behind the figure under the ceiling on every stair
 
+### 2026-11-13 05:08:51 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After PR 150 merges, play the Fulton St walk on the live site: the first line names the part of the 4 and 5 train going downtown to Brooklyn, and the camera stays behind the figure under the ceiling","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T05:08:51Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"0def978755f70ee2dac3e13f594146d186a6291763b8919fff642a81bd1d4936","request_id":"a2f7851d8b224f1e87c2f3be2b35a780","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After PR 150 merges, play the Fulton St walk on the live site: the first line names the part of the 4 and 5 train going downtown to Brooklyn, and the camera stays behind the figure under the ceiling
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
