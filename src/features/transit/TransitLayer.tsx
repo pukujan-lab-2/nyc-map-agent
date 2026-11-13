@@ -1095,7 +1095,8 @@ export default function TransitLayer() {
   }, [followRoute, staticKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const followStop = followed?.stopped?.kind === "at" ? followed.stopped.stop : followed?.nextStop;
   const followNext = followed ? (stopName(data, followed.system, followStop) ?? null) : null;
-  // A trip preview's rider gets the same mini map, on every part of the trip and in every view.
+  // A trip preview's rider gets the same mini map, on every part of the trip and in every view. Only with the
+  // chat-bar home, whose corner it is laid out for: the older home keeps its compass and X-ray buttons there.
   const tripMini = usePreviewMini();
   const tripStart = (tripMini?.line.features[0]?.geometry as GeoJSON.LineString | undefined)?.coordinates[0];
   const following = Boolean(followedKey);
@@ -1371,7 +1372,7 @@ export default function TransitLayer() {
           onStation={() => { const st = choice.choice.station; setChoice(null); if (st) openStation("subway", st.id, st.name); }} />
       ) : null}
       {followed && followMode !== "map" && map ? <FollowMiniMap main={map} vehicle={followed} line={followTrack} nextName={followNext} /> : null}
-      {!followed && tripMini && tripStart && map ? <FollowMiniMap main={map} vehicle={{ key: tripMini.key, lon: tripStart[0], lat: tripStart[1], color: "#2563eb" }} line={tripMini.line} nextName={tripMini.next} what="the trip" /> : null}
+      {home && !followed && tripMini && tripStart && map ? <FollowMiniMap main={map} vehicle={{ key: tripMini.key, lon: tripStart[0], lat: tripStart[1], color: "#2563eb" }} line={tripMini.line} nextName={tripMini.next} what="the trip" /> : null}
       {lineSel && !followedKey ? <Suspense fallback={null}><LinePanel map={map} route={lineSel} onFollow={followLine} trains={trainsNow} /></Suspense> : null}
       <Source id="transit-lines" type="geojson" data={lines}>
         {/* X-ray on stays a solid glow. Off: solid too (owner, 2026-10-25: dashes read as a broken line), nearly as wide as the at-grade stroke, opacity 0.75. */}
