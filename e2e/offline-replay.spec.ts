@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { expectLayout } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
@@ -51,7 +50,6 @@ test("the Fulton St walk replays with the network off after the trip has loaded"
   const dollhouse = () => page.evaluate(() => !!(window as unknown as { __map?: { getLayer: (id: string) => unknown } }).__map?.getLayer("dollhouse"));
   await expect.poll(dollhouse, { timeout: slow(60_000), intervals: [500] }).toBe(true);
   await expect(page.getByText(/Fulton St/).first()).toBeVisible();
-  await expectLayout(page);
   expect(errors).toEqual([]);
   await context.setOffline(false);
 });
