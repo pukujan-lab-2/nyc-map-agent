@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { pickWalk, type DollhouseModel } from "./dollhouse";
-import { walkCallouts } from "./dollhouseCallouts";
+import { enterModel, pickEnter, pickWalk, type DollhouseModel } from "./dollhouse";
+import { enterCallouts, walkCallouts } from "./dollhouseCallouts";
 
 const model = JSON.parse(readFileSync("public/transit/fulton-model.json", "utf8")) as DollhouseModel;
 
@@ -21,5 +21,29 @@ describe("what the voice says on the Fulton St walk", () => {
     expect(texts).toContain("Out through the turnstiles or the exit gate.");
     expect(texts.at(-1)).toBe("You're on the street at Fulton St & Nassau St · NE corner.");
     for (let i = 1; i < lines.length; i++) expect(lines[i].f).toBeGreaterThan(lines[i - 1].f);
+  });
+});
+
+describe("what the voice says on the walk in to the uptown A/C (#126)", () => {
+  const e = pickEnter(model, [-74.00969, 40.71039])!;
+  const { model: em, walk } = enterModel(model, e);
+  const lines = enterCallouts(em, walk.path, "Fulton St & Broadway · SW corner", e.direction);
+
+  it("starts at the entrance and ends on the uptown platform, as the train comes in", () => {
+    expect(lines[0].text).toBe("Into Fulton St station at Fulton St & Broadway · SW corner, for the uptown A and C.");
+    expect(lines.at(-1)).toMatchObject({ f: 1, wait: true });
+    expect(lines.at(-1)!.text).toMatch(/^This is the uptown A and C platform\./);
+  });
+
+  it("goes down stairs and in through the turnstiles, in order", () => {
+    const texts = lines.map((l) => l.text);
+    expect(texts).toContain("Take the stairs down.");
+    expect(texts).toContain("In through the turnstiles.");
+    expect(texts.indexOf("In through the turnstiles.")).toBeGreaterThan(texts.indexOf("Take the stairs down."));
+    for (let i = 1; i < lines.length; i++) expect(lines[i].f).toBeGreaterThan(lines[i - 1].f);
+  });
+
+  it("is only played for an entrance near Fulton St", () => {
+    expect(pickEnter(model, [-74.0118, 40.7076])).toBeNull();
   });
 });

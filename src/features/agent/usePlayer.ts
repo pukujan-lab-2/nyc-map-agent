@@ -16,7 +16,7 @@ import { initialPlayback, isActive, playback, type Playback } from "./playback";
 import type { PlaybackSpeed, Trip } from "./schema";
 import { setMarker, setPreviewDim, setXray } from "./tripLayer";
 import { walkLine, walkPlace } from "./walkPlace";
-import { dollhouseLeg } from "./dollhouseLeg";
+import { dollhouseEnterLeg, dollhouseLeg } from "./dollhouseLeg";
 import type { DollhouseView } from "@/lib/map/dollhousePreview";
 import type { DollhouseState } from "@/lib/map/three/dollhouse";
 import { useFlag } from "@/lib/flags";
@@ -246,12 +246,15 @@ export function usePlayer(onCallout?: (text: string) => void) {
     });
     // Leaving a downtown 4 or 5 at Fulton St, a figure walks the station model seen from above (#129),
     // to the exit the trip chose; with no walk to that exit, the first-person walk plays instead.
-    if (!dollhouseOn.current || !dollhouseLeg(seg, ride)) { firstPerson(); return; }
-    const d: NonNullable<typeof doll.current> = { seg, next: segsRef.current[at + 1], state: { walk: null, wait: null, street: null }, view: null, stop: () => {} };
+    // Going in to an uptown A or C there, the figure walks down from the street to the platform (#126).
+    const enter = dollhouseEnterLeg(seg, ride);
+    if (!dollhouseOn.current || !(enter || dollhouseLeg(seg, ride))) { firstPerson(); return; }
+    // Coming up, the dollhouse carries on along the street walk after; going in, it ends with its leg.
+    const d: NonNullable<typeof doll.current> = { seg, next: enter ? undefined : segsRef.current[at + 1], state: { walk: null, wait: null, street: null }, view: null, stop: () => {} };
     doll.current = d;
-    const exit = seg.coords[seg.coords.length - 1] ?? null;
+    const exit = (enter ? seg.coords[0] : seg.coords[seg.coords.length - 1]) ?? null;
     void import("@/lib/map/dollhousePreview")
-      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null))
+      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null, enter))
       .catch(() => null)
       .then((opened) => {
         if (doll.current !== d) { opened?.stop(); return; }
@@ -262,7 +265,11 @@ export function usePlayer(onCallout?: (text: string) => void) {
         // voice says where on the train the figure got off, then each turn and stair, in the app's language.
         seg.paced = { seconds: DOLL_WAIT_S + opened.lengthM / DOLL_WALK_MPS, waitS: DOLL_WAIT_S };
         const w = DOLL_WAIT_S / seg.paced.seconds;
-        seg.callouts = opened.callouts.map((c) => ({ f: c.wait ? 0 : w + (1 - w) * Math.min(c.f, 0.97), text: c.text }));
+        // Coming up, the wait on the platform comes first; going in, last.
+        seg.callouts = opened.callouts.map((c) => ({
+          f: enter ? (c.wait ? 1 - w : (1 - w) * Math.min(c.f, 0.97)) : c.wait ? 0 : w + (1 - w) * Math.min(c.f, 0.97),
+          text: c.text,
+        }));
         const tripId = pbRef.current.tripId;
         if (tripId) translate(tripId, segsRef.current, true);
       });

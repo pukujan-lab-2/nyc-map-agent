@@ -40,6 +40,26 @@ export type DollhouseModel = {
   lines: Array<[string, string]>;
   /** The other routes this station connects to, for the transfer signs. */
   transfers: Array<[string, string]>;
+  /** Other tracks beside platform edges in `edges`, for which side of an edge the platform is on. */
+  otherTracks?: Array<{ at: P3; angle: number }>;
+  /** Walks into the station from a street entrance down to a platform (#126), each with that platform's own edge, track and lines. */
+  enters?: DollhouseEnter[];
+};
+/**
+ * A walk in from the street (#126: the owner's partner's trip home from Fulton & Broadway to the
+ * uptown A/C). Its path is stored like an exit walk, platform first, and played backwards.
+ */
+export type DollhouseEnter = {
+  /** Where the walk comes down from the street. */
+  entrance: [number, number];
+  path: P3[];
+  edges: Array<[number, number, number, number, number]>;
+  /** The track at the platform; `angle` points opposite to the way the train runs, as it is played backwards. */
+  track: { at: P3; angle: number };
+  lines: Array<[string, string]>;
+  transfers: Array<[string, string]>;
+  /** The way the platform's trains run, for its signs: "Uptown". */
+  direction: string;
 };
 
 type WalkPose = { x: number; y: number; z: number; /** Radians, 0 = north, clockwise. */ heading: number; /** Metres walked so far. */ walked: number };
@@ -60,6 +80,8 @@ const UP_M = 4.4;
 const LOOK_M = 1.2;
 /** An exit this close to where a walk comes up is that walk's exit. */
 const EXIT_MATCH_M = 50;
+/** A trip's entrance this close to where an entering walk comes down plays that walk. */
+const ENTER_MATCH_M = 160;
 /** How long the figure takes to glide from the model's last stair onto the street walk. */
 const GLIDE_MS = 1500;
 /** Lexington Avenue line green, for the train's stripe. */
@@ -118,6 +140,50 @@ export function pickWalk(model: DollhouseModel, exit: [number, number]): Dollhou
     if (d < bestD) { best = w; bestD = d; }
   }
   return best;
+}
+
+/**
+ * Where the fare line goes on a walk in (#126): 3.5 m into the first level stretch at least 6 m long
+ * below the street, facing the way in. `path` runs from the street.
+ */
+export function enterGates(path: P3[]): { at: P3; heading: number } | null {
+  const top = path[0]?.[2] ?? 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    if (path[i][2] > top - 1.5) continue;
+    let level = 0, j = i;
+    while (j < path.length - 1 && Math.abs(path[j + 1][2] - path[i][2]) < 0.2) { level += Math.hypot(path[j + 1][0] - path[j][0], path[j + 1][1] - path[j][1]); j++; }
+    if (level < 6) { i = j; continue; }
+    let left = 3.5;
+    for (let k = i; k < j; k++) {
+      const [a, b] = [path[k], path[k + 1]];
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (len >= left) {
+        const t = left / len;
+        return { at: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2]], heading: Math.atan2(b[0] - a[0], b[1] - a[1]) };
+      }
+      left -= len;
+    }
+  }
+  return null;
+}
+
+/** The walk in from the street nearest the trip's entrance `portal` (any of the station's), or null. */
+export function pickEnter(model: DollhouseModel, portal: [number, number]): DollhouseEnter | null {
+  let best: DollhouseEnter | null = null, bestD = ENTER_MATCH_M;
+  for (const e of model.enters ?? []) {
+    const d = metresBetween(e.entrance, portal);
+    if (d < bestD) { best = e; bestD = d; }
+  }
+  return best;
+}
+
+/** The model as the walk in sees it: that platform's edge, track and lines, the others' edges kept. */
+export function enterModel(model: DollhouseModel, e: DollhouseEnter): { model: DollhouseModel; walk: DollhouseWalk } {
+  const walk = { exit: e.entrance, path: e.path };
+  return {
+    model: { ...model, walks: [...model.walks, walk], edges: [...e.edges, ...model.edges], track: e.track, otherTracks: [model.track], lines: e.lines, transfers: e.transfers },
+    walk,
+  };
 }
 
 /** Where along the walk things go: the stair feet and heads (signs) and the fare line (gates). */
@@ -206,6 +272,38 @@ export function planSigns(model: DollhouseModel, walk: DollhouseWalk, corner: st
     const { at, heading } = places.gates;
     out.push({ at: [at[0] + HIGH_GATE_X * Math.cos(heading), at[1] - HIGH_GATE_X * Math.sin(heading), at[2] + 2.62], heading, lines: [{ text: "Exit" }, null], small: true });
   }
+  return out;
+}
+
+/**
+ * The signs along a walk in (#126), facing whoever walks down from the street: over each stair down,
+ * "↓" with the platform's bullets and its direction; the station's name at the foot of the street
+ * stair; on the platform, its bullets and direction. `path` is the walk from the street.
+ */
+export function planEnterSigns(model: DollhouseModel, path: P3[], direction: string): SignPlan[] {
+  const out: SignPlan[] = [];
+  const L = walkLength(path);
+  const platform: SignLine = { bullets: model.lines, text: direction };
+  const places = walkPlaces(path);
+  let first = true;
+  for (const s of places.signs) {
+    if (s.up) continue;
+    if (first) {
+      // The first stair down is the street stair: the station's name over its foot.
+      first = false;
+      continue;
+    }
+    out.push({ at: [s.at[0] - Math.sin(s.heading) * 1.5, s.at[1] - Math.cos(s.heading) * 1.5, s.at[2] + 2.4], heading: s.heading, lines: [{ arrow: "down", ...platform }, null] });
+  }
+  // The foot of the street stair: the first level stretch well below the street.
+  const foot = path.findIndex((p, i) => i < path.length - 1 && p[2] < path[0][2] - 1.5 && Math.abs(path[i + 1][2] - p[2]) < 0.2);
+  if (foot > 0) {
+    const a = path[foot], b = path[Math.min(foot + 1, path.length - 1)];
+    const heading = Math.atan2(b[0] - a[0], b[1] - a[1]);
+    out.push({ at: [a[0] + Math.sin(heading) * 3, a[1] + Math.cos(heading) * 3, a[2] + 2.6], heading, lines: [{ text: "Fulton St" }, { bullets: [...model.lines, ...model.transfers] }] });
+  }
+  const end = walkAt(path, 1), hung = walkAt(path, Math.max(0, 1 - 8 / Math.max(L, 1)));
+  out.push({ at: [hung.x, hung.y, end.z + 2.6], heading: hung.heading, lines: [{ bullets: model.lines, text: "Fulton St" }, { text: `${direction} this track` }] });
   return out;
 }
 
@@ -620,7 +718,12 @@ export function outlineWalls(model: DollhouseModel): WallRun[] {
  * frame, and point the map's camera with `rig`. `corner` is the exit's street corner for the exit
  * signs ("Fulton St & Nassau St · NE corner"), or failing that the street's name, or null.
  */
-export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getState: () => DollhouseState, corner: string | null): Dollhouse {
+export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, readState: () => DollhouseState, corner: string | null, enter: { direction: string } | null = null): Dollhouse {
+  // A walk in plays the walk backwards (#126): from the street down to the platform, then the train
+  // pulls in while the camera rises to the overview, the exit walk's opening run in reverse.
+  const getState = enter
+    ? (): DollhouseState => { const st = readState(); return { ...st, walk: st.walk == null ? null : 1 - st.walk, wait: st.wait == null ? null : 1 - st.wait }; }
+    : readState;
   const scene = new THREE.Scene();
   const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const wallCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
@@ -703,7 +806,10 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const ang = Math.atan2(y2 - y1, x2 - x1);
     // Toward the platform: away from the track when the track is near, else either side.
     const nx = -Math.sin(ang), ny = Math.cos(ang);
-    const [tx, ty] = model.track.at;
+    const mid: [number, number] = [(x1 + x2) / 2, (y1 + y2) / 2];
+    const [tx, ty] = [model.track, ...(model.otherTracks ?? [])]
+      .map((t) => t.at)
+      .sort((a, b) => Math.hypot(a[0] - mid[0], a[1] - mid[1]) - Math.hypot(b[0] - mid[0], b[1] - mid[1]))[0];
     const side = (tx - x1) * nx + (ty - y1) * ny > 0 ? -1 : 1;
     strip.position.set((x1 + x2) / 2 + nx * 0.3 * side, (y1 + y2) / 2 + ny * 0.3 * side, z + 0.01);
     strip.rotation.z = ang;
@@ -724,18 +830,19 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   }
 
   // The way to follow, painted on the floor: a line along the walk with an arrow every few metres.
-  station.add(guideLine(walk.path, [cut]));
+  const fromStreet = [...walk.path].reverse();
+  station.add(guideLine(enter ? fromStreet : walk.path, [cut]));
 
   // Signs, placed from the walk and the model's lines (see planSigns).
   const start = walk.path[0];
   const away = Math.atan2(walk.path[1][0] - start[0], walk.path[1][1] - start[1]);
-  for (const plan of planSigns(model, walk, corner)) {
+  for (const plan of enter ? planEnterSigns(model, fromStreet, enter.direction) : planSigns(model, walk, corner)) {
     const sign = signMesh(plan.lines, [signCut], plan.small);
     sign.position.set(...plan.at);
     sign.rotation.z = -plan.heading;
     station.add(sign);
   }
-  const places = walkPlaces(walk.path);
+  const places = enter ? { ...walkPlaces(walk.path), gates: enterGates(fromStreet) } : walkPlaces(walk.path);
 
   // The fare line: turnstiles, the high exit gate and the emergency gate, the walk through the middle turnstile.
   const rotors: Array<{ rotor: THREE.Group; at: THREE.Vector3 }> = [];
@@ -774,7 +881,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const shell = box(CAR_M - 0.5, 2.7, 3.2, 0xb8bec6); shell.position.z = 1.9; car.add(shell);
     const roof = box(CAR_M - 0.9, 2.2, 0.12, 0x8e959e); roof.position.z = 3.56; car.add(roof);
     const windows = box(CAR_M - 1.2, 2.72, 0.7, 0x2b3038); windows.position.z = 2.5; car.add(windows);
-    const stripe = box(CAR_M - 0.6, 2.74, 0.18, LEX_GREEN); stripe.position.z = 1.7; car.add(stripe);
+    const stripe = box(CAR_M - 0.6, 2.74, 0.18, enter ? parseInt(model.lines[0][1].slice(1), 16) : LEX_GREEN); stripe.position.z = 1.7; car.add(stripe);
     car.position.x = -i * CAR_M;
     train.add(car);
   }
@@ -801,7 +908,10 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   const dir: [number, number] = [Math.cos(model.track.angle), Math.sin(model.track.angle)];
   const along = (p: P3) => (p[0] - model.track.at[0]) * dir[0] + (p[1] - model.track.at[1]) * dir[1];
   const doorAlong = along(start);
-  const standing = doorAlong + CAR_M * (CARS / 2);
+  // Coming up, the train stands with the middle of a car at the door. Going in, it stops along the
+  // platform with its leading car at the platform's far end (the train runs against `dir`).
+  const platformLo = enter && model.edges[0] ? Math.min(along([model.edges[0][0], model.edges[0][1], 0]), along([model.edges[0][2], model.edges[0][3], 0])) : null;
+  const standing = platformLo != null ? platformLo + 3 + (CARS - 0.5) * CAR_M : doorAlong + CAR_M * (CARS / 2);
   /**
    * The overview's middle: halfway between the track and the figure's side of the platform, level
    * with the middle of the standing train.
@@ -811,6 +921,11 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     (model.track.at[0] + dir[0] * midAlong + start[0] + dir[0] * (midAlong - doorAlong)) / 2,
     (model.track.at[1] + dir[1] * midAlong + start[1] + dir[1] * (midAlong - doorAlong)) / 2,
   ];
+  /** From where the walk meets the platform, straight toward the track. */
+  const faceTrack = (() => {
+    const d = along(start);
+    return Math.atan2(model.track.at[0] + dir[0] * d - start[0], model.track.at[1] + dir[1] * d - start[1]);
+  })();
   /** The track's compass bearing (0 = north, clockwise). */
   const trackBearing = Math.atan2(dir[0], dir[1]);
 
@@ -871,7 +986,8 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const f = st.wait != null ? 0 : st.walk ?? 0;
     const pose = walkAt(walk.path, f);
     feet = [pose.x, pose.y, pose.z];
-    heading = st.wait != null ? away : pose.heading;
+    // Walking in, the figure faces the way it goes; on the platform, the track.
+    heading = !enter ? (st.wait != null ? away : pose.heading) : st.wait != null ? faceTrack : pose.heading + Math.PI;
     figure.position.set(pose.x, pose.y, pose.z);
     figure.rotation.z = -heading;
     stride(pose.walked, st.wait == null);
@@ -881,9 +997,13 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     signCut.constant = pose.z + SIGN_CUT_M;
     // The train stands through the overview, starts to pull out as the camera comes down, and is
     // into the tunnel (about 40 km/h) by the time the figure has walked PULL_OUT_M.
-    const k = st.wait != null
-      ? Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END) / 2
-      : 0.5 + Math.min(pose.walked / PULL_OUT_M, 1) / 2;
+    // Going in, played backwards: out of sight while the figure walks, then in from the tunnel and
+    // slowing to a stop as the camera rises to the overview.
+    const k = enter
+      ? st.wait != null ? Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END) : 1
+      : st.wait != null
+        ? Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END) / 2
+        : 0.5 + Math.min(pose.walked / PULL_OUT_M, 1) / 2;
     train.visible = k < 1;
     if (train.visible) {
       const front = standing + 170 * k * k;
