@@ -47,7 +47,7 @@ function walk(wi: number, way: "up" | "down", off: number): Run {
   kcc.setSlideEnabled(true);
   kcc.setMaxSlopeClimbAngle(1.1);
   kcc.enableAutostep(0.1, 0.05, true);
-  let seg = 1, vy = 0, best = Infinity, still = 0, done = false, fell = false;
+  let seg = 1, vy = 0, floorAt = path[0][1], best = Infinity, still = 0, done = false, fell = false;
   for (let step = 0; step < 60 * 400; step++) {
     const p = body.translation(), feet = p.y - CENTRE_M;
     while (seg < path.length - 1 && Math.hypot(path[seg][0] - p.x, path[seg][2] - p.z) < 0.3) seg++;
@@ -59,13 +59,16 @@ function walk(wi: number, way: "up" | "down", off: number): Run {
       if (Math.abs(path[s][1] - feet) <= 0.35) seg = s;
     }
     const t = path[seg], dx = t[0] - p.x, dz = t[2] - p.z, d = Math.hypot(dx, dz) || 1;
-    if (seg === path.length - 1 && d < 0.7) { done = true; break; }
+    // At the end on the map and on the end's floor, not on a floor above or below it.
+    if (seg === path.length - 1 && d < 0.7 && Math.abs(t[1] - feet) < 0.6) { done = true; break; }
+    // A drop of more than a storey with nothing under the body is a fall through a hole.
+    if (feet < floorAt - 3) { fell = true; break; }
     kcc.computeColliderMovement(col, { x: (dx / d) * SPEED * STEP_S, y: 0, z: (dz / d) * SPEED * STEP_S });
     const m = kcc.computedMovement();
     // Float like ecctrl: a ray down from the centre holds the body 0.25 m over whatever is under it.
     const hit = world.castRay(new RAPIER.Ray({ x: p.x + m.x, y: p.y, z: p.z + m.z }, { x: 0, y: -1, z: 0 }), 1.7, true, undefined, undefined, col);
     let y = p.y;
-    if (hit) { vy = 0; y += (p.y - hit.timeOfImpact + CENTRE_M - p.y) * 0.3; } else { vy = Math.max(vy - 9.81 * STEP_S, -20); y += vy * STEP_S; }
+    if (hit) { floorAt = p.y - hit.timeOfImpact; vy = 0; y += (p.y - hit.timeOfImpact + CENTRE_M - p.y) * 0.3; } else { vy = Math.max(vy - 9.81 * STEP_S, -20); y += vy * STEP_S; }
     body.setNextKinematicTranslation({ x: p.x + m.x, y, z: p.z + m.z });
     world.step();
     if (p.y < lowest - 4) { fell = true; break; }
