@@ -128,6 +128,29 @@ Blocked/uncertain:
 Next:
 - Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish
 
+### 2026-11-13 02:51:14 UTC — agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/397c2044-1060-40b6-b357-708ed173fd84","blocked":[],"changed":["none"],"completed":["The helper's layout test waits two frames for the sheet's new height before checking; rebased on main after #134"],"decisions":["no new decisions"],"evidence":["CI e2e at 390x844 saw Center on my location 24 px over the sheet's Close, the size of the offline reply that had just grown the sheet"],"next_action":"Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0056","timestamp":"2026-11-13T02:51:14Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"c377434356aa9d5c5e7bd1c9bd89cfd5aff1dc3bcb4f57b90cca24a98805d8d1","request_id":"23a3cd95687a45c1bf5cde52de62fd28","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0056"} -->
+
+Completed:
+- The helper's layout test waits two frames for the sheet's new height before checking; rebased on main after #134
+
+Evidence:
+- CI e2e at 390x844 saw Center on my location 24 px over the sheet's Close, the size of the offline reply that had just grown the sheet
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let PR 135 merge, then open Find exit on the live site after a trip to Fulton St, offline and in Spanish
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
