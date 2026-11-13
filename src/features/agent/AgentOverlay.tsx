@@ -268,7 +268,8 @@ export default function AgentOverlay() {
     wasListening.current = speech.listening;
   }, [speech.listening]);
   // The preview's steps are said in the app's language, with that language's voice.
-  const player = usePlayer((text) => { const l = getLanguage(); speech.speak(text, { lang: voiceTag(l.app, l.request) }); });
+  // The trip's steps are kept on the phone once spoken, so a walk replayed underground keeps its voice (#132).
+  const player = usePlayer((text) => { const l = getLanguage(); speech.speak(text, { lang: voiceTag(l.app, l.request), keep: true }); });
   /** Speed the next Play uses: the agent's pick or the person's last tap. */
   const [prefSpeed, setPrefSpeed] = useState<PlaybackSpeed>(10);
   // Ask, the route fit, and the preview all move the camera. Follow and street
