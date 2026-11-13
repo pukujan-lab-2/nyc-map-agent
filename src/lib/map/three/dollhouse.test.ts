@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { outlineWalls, pickWalk, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
+import { forCells, outlineWalls, pickWalk, planSigns, walkAt, walkLength, walkPlaces, type DollhouseModel } from "./dollhouse";
 
 const model = JSON.parse(readFileSync("public/transit/fulton-model.json", "utf8")) as DollhouseModel;
 
@@ -77,11 +77,16 @@ describe("the dollhouse walks at Fulton St", () => {
     const walls = outlineWalls(model);
     expect(walls.length).toBeGreaterThan(100);
     const side = (ax: number, ay: number, bx: number, by: number, px: number, py: number) => Math.sign((bx - ax) * (py - ay) - (by - ay) * (px - ax));
+    // Walls bucketed in a grid by their bounding boxes: each step checks only the walls near it.
+    const grid = new Map<string, typeof walls>();
+    for (const wall of walls) forCells([wall, wall.slice(3)], (k) => { const list = grid.get(k); if (list) list.push(wall); else grid.set(k, [wall]); });
     for (const { path, exit } of model.walks) {
       const n = Math.ceil(walkLength(path) * 4);
       for (let i = 1; i <= n; i++) {
         const a = walkAt(path, (i - 1) / n), b = walkAt(path, i / n);
-        for (const [x1, y1, z1, x2, y2, z2] of walls) {
+        const near = new Set<(typeof walls)[number]>();
+        forCells([[a.x, a.y], [b.x, b.y]], (k) => grid.get(k)?.forEach((w) => near.add(w)));
+        for (const [x1, y1, z1, x2, y2, z2] of near) {
           // A wall stands from its floor up; only one at the walker's level can be walked through.
           if (Math.abs((z1 + z2) / 2 - b.z) > 1) continue;
           const crosses = side(x1, y1, x2, y2, a.x, a.y) * side(x1, y1, x2, y2, b.x, b.y) < 0 && side(a.x, a.y, b.x, b.y, x1, y1) * side(a.x, a.y, b.x, b.y, x2, y2) < 0;
@@ -89,6 +94,63 @@ describe("the dollhouse walks at Fulton St", () => {
         }
       }
     }
+  });
+
+  it("starts every walk a step in from the platform's edge, not on the yellow strip", () => {
+    /** How far (x, y) is from an edge, and whether the platform has floor 1.2 m in from it on either side. */
+    const nearEdge = (x: number, y: number, [x1, y1, x2, y2, ez]: DollhouseModel["edges"][number]) => {
+      const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+      const k = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (L * L)));
+      const cx = x1 + dx * k, cy = y1 + dy * k, nx = -dy / L, ny = dx / L;
+      const room = [1, -1].some((sg) => Math.abs((floorUnder(cx + nx * sg * 1.2, cy + ny * sg * 1.2, ez) ?? 99) - ez) < 0.3);
+      return { d: Math.hypot(x - cx, y - cy), room };
+    };
+    for (const { path, exit } of model.walks) path.forEach(([x, y, z], i) => {
+      for (const edge of model.edges) {
+        if (Math.abs(z - edge[4]) >= 0.5 || nearEdge(x, y, edge).d >= 1) continue;
+        // Only along a stretch where the model's platform is a sliver by the edge (no floor a metre
+        // in) may a walk keep to it: one walk crosses the uptown platform, which the model lacks.
+        const sliver = [path[i - 1], path[i + 1]].some((q) => q && Math.abs(q[2] - edge[4]) < 0.5 && (() => {
+          const m = nearEdge((x + q[0]) / 2, (y + q[1]) / 2, edge);
+          return m.d < 1 && !m.room;
+        })());
+        expect(sliver, `point ${i} of the walk to ${exit.join(",")} is on the platform's edge`).toBe(true);
+      }
+    });
+    // Where the figure steps off the train, in particular.
+    for (const { path } of model.walks) {
+      const [x, y] = path[0];
+      for (const [x1, y1, x2, y2] of model.edges) {
+        const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy);
+        const k = Math.max(0, Math.min(1, ((x - x1) * dx + (y - y1) * dy) / (L * L)));
+        expect(Math.hypot(x - (x1 + dx * k), y - (y1 + dy * k))).toBeGreaterThanOrEqual(1);
+      }
+    }
+  });
+
+  it("knows the platform's lines and the lines it transfers to, with their colours", () => {
+    expect(model.lines.map(([r]) => r)).toEqual(["4", "5"]);
+    expect(model.transfers.map(([r]) => r).sort()).toEqual(["2", "3", "A", "C", "J", "Z"]);
+    for (const [, colour] of [...model.lines, ...model.transfers]) expect(colour).toMatch(/^#[0-9A-Fa-f]{6}$/);
+  });
+
+  it("signs the way as the MTA does: the platform's name, exits up, transfers down, the corner at the last stair", () => {
+    const walk = pickWalk(model, NASSAU_EXIT)!;
+    const corner = "Fulton St & Nassau St · NE corner";
+    const signs = planSigns(model, walk, corner);
+    const words = (l: { text?: string } | null) => l?.text ?? "";
+    expect(words(signs[0].lines[0])).toBe("Fulton St");
+    expect(signs[0].lines[0].bullets?.map(([r]) => r)).toEqual(["4", "5"]);
+    expect(words(signs[0].lines[1])).toBe("Downtown & Brooklyn");
+    for (const { lines: [first, second] } of signs) {
+      if (first.arrow === "down") {
+        expect(first.text).toBe("Exit & transfer");
+        expect(words(second)).not.toMatch(/street|St\b/i);
+      }
+      if (first.arrow === "up") expect(first.text).toBe("Exit");
+    }
+    expect(signs.some(({ lines: [first, second] }) => first.arrow === "up" && words(second) === corner)).toBe(true);
+    expect(signs.some(({ small, lines: [first] }) => small && first.text === "Exit")).toBe(true);
   });
 
   it("stays small enough to load on a phone", () => {

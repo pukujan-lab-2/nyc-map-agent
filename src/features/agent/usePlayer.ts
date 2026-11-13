@@ -116,6 +116,10 @@ function lookPitch(seg: Segment, f: number): number {
 }
 
 /** The street a trip's exit comes up on, from its step ("Use the E exit on Fulton Street at Fulton St"), for the Exit signs on the way. */
+/** The dollhouse walk's pace: seconds on the platform (the overview, the train pulling out, where you got off), then metres a second. */
+const DOLL_WAIT_S = 12;
+const DOLL_WALK_MPS = 1.2;
+
 function exitStreet(seg: Segment): string | undefined {
   if (seg.kind !== "ascend") return undefined;
   return /\bexit (?:on|by) (.+?) at /.exec(seg.label)?.[1];
@@ -254,8 +258,15 @@ export function usePlayer(onCallout?: (text: string) => void) {
         if (!opened) { doll.current = null; if (inside.current === view) firstPerson(); return; }
         d.view = opened;
         d.stop = opened.stop;
+        // Slow and spoken (owner, 2026-11-12): the walk keeps a walking pace whatever the speed, and the
+        // voice says where on the train the figure got off, then each turn and stair, in the app's language.
+        seg.paced = { seconds: DOLL_WAIT_S + opened.lengthM / DOLL_WALK_MPS, waitS: DOLL_WAIT_S };
+        const w = DOLL_WAIT_S / seg.paced.seconds;
+        seg.callouts = opened.callouts.map((c) => ({ f: c.wait ? 0 : w + (1 - w) * Math.min(c.f, 0.97), text: c.text }));
+        const tripId = pbRef.current.tripId;
+        if (tripId) translate(tripId, segsRef.current, true);
       });
-  }, [hideInside]);
+  }, [hideInside, translate]);
 
   const leaveEye = useCallback((map: MapLibreMap) => {
     if (!eye.current) return;

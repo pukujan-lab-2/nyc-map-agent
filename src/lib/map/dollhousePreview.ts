@@ -4,6 +4,8 @@
  */
 import { LngLat, type Map as MaplibreMap } from "maplibre-gl";
 import type { DollhouseModel, DollhouseRig, DollhouseState } from "@/lib/map/three/dollhouse";
+import { readMap } from "@/lib/map/mapRead";
+import { cornerLine } from "@/lib/map/cornerLine";
 
 let model: Promise<DollhouseModel> | null = null;
 function loadModel(): Promise<DollhouseModel> {
@@ -26,6 +28,7 @@ export type DollhouseView = {
 /**
  * Adds the dollhouse layer for the walk that comes up at `exit` and draws whatever `getState`
  * says. Null when the model has no walk to that exit (the trip then keeps the first-person walk).
+ * The exit signs name the exit's street corner as the map reads it, or else `street`.
  */
 export async function openDollhouse(map: MaplibreMap, exit: [number, number] | null, getState: () => DollhouseState, street: string | null): Promise<DollhouseView | null> {
   const [{ dollhouseLayer, pickWalk, walkLength, DOLLHOUSE_LAYER }, m] = await Promise.all([import("@/lib/map/three/dollhouse"), loadModel()]);
@@ -33,7 +36,9 @@ export async function openDollhouse(map: MaplibreMap, exit: [number, number] | n
   const walk = exit ? pickWalk(m, exit) : [...m.walks].sort((a, b) => walkLength(b.path) - walkLength(a.path))[0];
   if (!walk) return null;
   if (map.getLayer(DOLLHOUSE_LAYER)) map.removeLayer(DOLLHOUSE_LAYER);
-  const view = dollhouseLayer(m, walk, getState, street);
+  let corner: string | null = null;
+  try { corner = cornerLine(readMap(map).placeAt(walk.exit)); } catch { corner = null; }
+  const view = dollhouseLayer(m, walk, getState, corner ?? street);
   map.addLayer(view.layer);
   return {
     rig: view.rig,
@@ -49,15 +54,17 @@ function aimAt(map: MaplibreMap, rig: DollhouseRig): void {
 }
 
 /**
- * For checking the view by itself (dev and test builds): the train pulls out, then the figure walks
- * the longest walk in `seconds` with the camera following, and it starts again. `at` (0 to 1) holds
- * the figure at one spot of the walk; `exit` picks the walk to that exit.
+ * For checking the view by itself (dev and test builds): the overview of the platform, the train
+ * pulling out as the camera comes down, then the figure walks the longest walk in `seconds` with
+ * the camera following, and it starts again. `at` (0 to 1) holds the figure at one spot of the
+ * walk; `wait` (0 to 1) holds that moment of the wait; `exit` picks the walk to that exit.
  */
-export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; at?: number; exit?: [number, number]; street?: string } = {}): Promise<() => void> {
-  const seconds = opts.seconds ?? 60, wait = 4, pause = 2;
+export async function showDollhouse(map: MaplibreMap, opts: { seconds?: number; at?: number; wait?: number; exit?: [number, number]; street?: string } = {}): Promise<() => void> {
+  const seconds = opts.seconds ?? 60, wait = 6, pause = 2;
   const began = performance.now();
   const state: DollhouseState = { walk: 0, wait: null, street: null };
   const tick = () => {
+    if (opts.wait != null) { state.walk = 0; state.wait = opts.wait; return; }
     if (opts.at != null) { state.walk = opts.at; state.wait = null; return; }
     const t = ((performance.now() - began) / 1000) % (wait + seconds + pause);
     state.wait = t < wait ? t / wait : null;
