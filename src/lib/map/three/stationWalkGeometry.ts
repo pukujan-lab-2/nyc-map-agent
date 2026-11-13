@@ -136,7 +136,7 @@ export function bakedShellSurfaces(shell: Shell, baked: { walls: number[]; ceili
     const t = shell.uprights.slice(i, i + 9);
     if (!isGatePanel(t)) wallTris.push(...t);
   }
-  wallTris.push(...baked.walls);
+  for (const v of baked.walls) wallTris.push(v);
   return { walls: surface(wallTris, uprightUv), ceiling: surface(baked.ceiling, (x, y) => [x / WALL_TILE_M, y / WALL_TILE_M]) };
 }
 
