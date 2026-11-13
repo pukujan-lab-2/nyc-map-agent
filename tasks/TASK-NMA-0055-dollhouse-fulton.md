@@ -212,6 +212,29 @@ Blocked/uncertain:
 Next:
 - Let PR 130 merge, check the Fulton St walk on the live site with the trip from Grand Central, then comment live on #126
 
+### 2026-11-13 00:55:00 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Let PR 130 merge, check the Fulton St walk and the new trip card on the live site, then comment live on #126","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T00:55:00Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"83ef81591d9b5861eb8cf1886a051dfcf7d1b27f657104d48b859072958356b1","request_id":"98cfc95707364add8561aa003ad54cea","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let PR 130 merge, check the Fulton St walk and the new trip card on the live site, then comment live on #126
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
