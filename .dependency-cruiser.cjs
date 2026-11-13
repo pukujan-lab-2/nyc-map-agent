@@ -25,7 +25,7 @@ module.exports = {
           "^src/main\\.tsx$",
           "^server/(app|node)\\.ts$",
           "^scripts/[^/]+\\.ts$",
-          "^src/lib/geo/[^/]+\\.worker\\.ts$",
+          "^src/lib/(geo|map/three)/[^/]+\\.worker\\.ts$",
           "^src/features/index\\.ts$",
         ],
       },

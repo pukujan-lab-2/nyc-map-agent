@@ -16,8 +16,8 @@ import type { DollhouseModel } from "@/lib/map/three/dollhouse";
 import { buildFigure, concreteTexture, pickWalk, treadTexture, walkAt, walkLength, wallTexture } from "@/lib/map/three/dollhouse";
 import { walkDressing, type WalkDressing } from "@/lib/map/three/stationWalkDressing";
 import { fultonCorner } from "@/lib/map/fultonCorners";
-import { SMOOTH_SEAMS, toYUp, walkGeometry, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
-import { stationShell } from "@/lib/map/three/stationShell";
+import { SMOOTH_SEAMS, toYUp, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
+import { loadWalkShell, type WalkShell } from "@/lib/map/three/walkShell";
 import { loadModel } from "@/lib/map/dollhousePreview";
 
 /** The figure's body: a capsule 1.6 m tall floating 0.25 m over the floor, so it climbs stairs. */
@@ -114,9 +114,9 @@ const HIDE_FIGURE_M = 1.1;
 
 export type Ride = "walking" | "boarding" | "riding";
 
-function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onRide }: {
+function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onRide, onReady }: {
   start: THREE.Vector3; heading: number; lowest: number; walls: React.MutableRefObject<THREE.Object3D[]>;
-  dressing: WalkDressing; ride: Ride; onNearDoor: (near: boolean) => void; onRide: (r: Ride) => void;
+  dressing: WalkDressing; ride: Ride; onNearDoor: (near: boolean) => void; onRide: (r: Ride) => void; onReady?: () => void;
 }) {
   const body = useRef<EcctrlHandle>(null);
   const cam = useRef<React.ElementRef<typeof CameraControls>>(null);
@@ -190,7 +190,7 @@ function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onR
     const b = body.current, c = cam.current;
     if (!b?.body) return;
     // The first frame with the walker in it: what the load is timed to (e2e/walk-load.measure.spec.ts).
-    if (!marked.current) { marked.current = true; performance.mark("walk-ready"); }
+    if (!marked.current) { marked.current = true; performance.mark("walk-ready"); onReady?.(); }
     const p = b.currPos;
     const feet = p.y + FEET_Y;
     // The model's frame (z up) for the dressing: x, -z, y.
@@ -289,14 +289,22 @@ function Dressing({ dressing }: { dressing: WalkDressing }) {
   return <group rotation-x={-Math.PI / 2}><primitive object={dressing.group} /></group>;
 }
 
-export function StationWalk({ exit, onClose }: { exit: [number, number] | null; onClose: () => void }) {
+/** Starts Rapier's WebAssembly ahead of the walk, so the tap does not wait for it (it runs once). */
+export const warmPhysics = (): Promise<void> => import("@dimforge/rapier3d-compat").then((r) => r.init());
+
+/** `onReady` runs on the first frame with the walker in it. */
+export function StationWalk({ exit, onClose, onReady }: { exit: [number, number] | null; onClose: () => void; onReady?: () => void }) {
   const [model, setModel] = useState<DollhouseModel | null>(null);
+  const [built, setBuilt] = useState<WalkShell | null>(null);
   const [failed, setFailed] = useState(false);
   const walls = useRef<THREE.Object3D[]>([]);
   const touch = useMemo(() => typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches, []);
   useEffect(() => {
     let live = true;
-    loadModel().then((m) => { if (live) setModel(m); }, () => { if (live) setFailed(true); });
+    // The shell is built off the page and usually ready already: Street view starts it near Fulton St.
+    loadModel()
+      .then((m) => { if (live) setModel(m); return loadWalkShell(m); })
+      .then((b) => { if (live) setBuilt(b); }, () => { if (live) setFailed(true); });
     return () => { live = false; };
   }, []);
   useEffect(() => {
@@ -304,8 +312,8 @@ export function StationWalk({ exit, onClose }: { exit: [number, number] | null; 
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
-  const shell = useMemo(() => (model ? stationShell(model) : null), [model]);
-  const geo = useMemo(() => (model && shell ? walkGeometry(model, shell) : null), [model, shell]);
+  const shell = built?.shell ?? null;
+  const geo = built?.geo ?? null;
   const [ride, setRide] = useState<Ride>("walking");
   const [nearDoor, setNearDoor] = useState(false);
   // Walk again starts a fresh round: a new scene, the train back at the platform.
@@ -344,7 +352,7 @@ export function StationWalk({ exit, onClose }: { exit: [number, number] | null; 
               <Guide path={start.path} />
               <Dressing dressing={dressing} />
               <Walker start={start.at} heading={start.heading} lowest={geo.lowest} walls={walls} dressing={dressing}
-                ride={ride} onNearDoor={setNearDoor} onRide={setRide} />
+                ride={ride} onNearDoor={setNearDoor} onRide={setRide} onReady={onReady} />
             </Physics>
           </Suspense>
         </Canvas>
