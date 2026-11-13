@@ -5,7 +5,7 @@
  */
 import * as THREE from "three";
 import {
-  CAR_M, CARS, DOORS_ALONG_M, dispose, LIGHT_ASIDE_M, LIGHT_EVERY_M, LIGHT_UP_M, planSigns, signMesh, trainCars, turnstile, walkAt, walkLength,
+  CAR_M, CARS, DOORS_ALONG_M, dispose, planSigns, signMesh, trainCars, turnstile,
   type DollhouseModel, type P3,
 } from "./dollhouse";
 import { gatePanels, type Shell, type ShellWall } from "./stationShell";
@@ -89,8 +89,6 @@ export function walkDressing(model: DollhouseModel, corner: (exit: [number, numb
     hung.push({ kind, at });
     return true;
   };
-  const lampGeo = new THREE.BoxGeometry(0.12, 1.2, 0.04);
-  const lampMat = new THREE.MeshBasicMaterial({ color: 0xfffbea });
   const rotors: Array<{ rotor: THREE.Group; at: THREE.Vector3 }> = [];
   for (const walk of model.walks) {
     for (const plan of planSigns(model, walk, corner(walk.exit))) {
@@ -102,16 +100,6 @@ export function walkDressing(model: DollhouseModel, corner: (exit: [number, numb
       sign.position.set(...at);
       sign.rotation.z = -plan.heading;
       group.add(sign);
-    }
-    const total = walkLength(walk.path);
-    for (let d = 2; d < total; d += LIGHT_EVERY_M) {
-      const p = walkAt(walk.path, d / total);
-      const at: P3 = [p.x - Math.cos(p.heading) * LIGHT_ASIDE_M, p.y + Math.sin(p.heading) * LIGHT_ASIDE_M, p.z + LIGHT_UP_M];
-      if (!fresh("lamp", at)) continue;
-      const lamp = new THREE.Mesh(lampGeo, lampMat);
-      lamp.position.set(...at);
-      lamp.rotation.z = -p.heading;
-      group.add(lamp);
     }
   }
   // A turnstile on each of the model's own fare-gate panels, its cabinet where the panel stands.
