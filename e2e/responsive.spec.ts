@@ -246,6 +246,8 @@ for (const size of SIZES) {
       await page.getByLabel("Ask the assistant").fill("I see a sign for the A and C");
       await page.getByRole("button", { name: "Send", exact: true }).click();
       await expect(page.getByTestId("lost-thread")).toContainText("station name on the wall");
+      // The sheet grows with the thread; its height reaches Center on my location on the next frame.
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       await expectLayout(page);
 
       await context.setOffline(true);
@@ -253,6 +255,8 @@ for (const size of SIZES) {
       await page.getByLabel("Ask the assistant").fill("Which way is out?");
       await page.getByRole("button", { name: "Send", exact: true }).click();
       await expect(page.getByTestId("lost-thread")).toContainText("No connection here");
+      // The sheet grows with the thread; its height reaches Center on my location on the next frame.
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       await expectLayout(page);
       await context.setOffline(false);
     });
