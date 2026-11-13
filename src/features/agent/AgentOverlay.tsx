@@ -158,8 +158,6 @@ export default function AgentOverlay() {
   const lost = useLostHelper();
   const homeInput = useRef<HTMLInputElement>(null);
   // One language machine (src/lib/i18n/language.ts, #145) answers for the buttons, the mic, the voice and the agent.
-  // `lang` is the tag for the agent and the status lines: picked, else the browser's.
-  const lang = useLanguage((v) => v.request) ?? undefined;
   const appLang = useLanguage((v) => v.app);
   const listenTag = useLanguage((v) => v.listen);
   const detectVoice = useLanguage((v) => v.detect);
