@@ -318,11 +318,11 @@ describe("safety text", () => {
 });
 
 describe("offline cache list (public/sw.js)", () => {
-  type Policy = { PRECACHE: string[]; strategyFor: (u: URL, r: { mode?: string; method?: string; origin: string }) => string; staleAsset: (date: string | null, now: number) => boolean };
+  type Policy = { PRECACHE: string[]; strategyFor: (u: URL, r: { mode?: string; method?: string; origin: string; keep?: boolean }) => string; staleAsset: (date: string | null, now: number) => boolean; voiceKey: (body: string, origin: string) => string };
   const src = readFileSync(new URL("../../../public/sw.js", import.meta.url), "utf8");
   const self: { UW?: Policy; addEventListener: () => void; location: { origin: string } } = { addEventListener: () => {}, location: { origin: "https://map.test" } };
   runInNewContext(src, { self });
-  const { PRECACHE, strategyFor, staleAsset } = self.UW!;
+  const { PRECACHE, strategyFor, staleAsset, voiceKey } = self.UW!;
   const how = (path: string, mode = "cors", method = "GET") => strategyFor(new URL(path, "https://map.test"), { mode, method, origin: "https://map.test" });
 
   it("precaches the app shell, stations and entrances, and the equipment list; no station layouts", () => {
@@ -350,6 +350,17 @@ describe("offline cache list (public/sw.js)", () => {
     expect(how("/transit/fulton-model.json")).toBe("network-first");
     expect(how("/transit/xray.json")).toBe("network-first");
     expect(how("/transit/../api/x.json")).toBe("bypass");
+  });
+
+  it("keeps the trip steps' spoken lines, and only those (#132)", () => {
+    const at = (path: string, keep: boolean, method = "POST") => strategyFor(new URL(path, "https://map.test"), { mode: "cors", method, origin: "https://map.test", keep });
+    expect(at("/api/tts", true)).toBe("voice");
+    expect(at("/api/tts", false)).toBe("bypass");
+    expect(at("/api/agent", true)).toBe("bypass");
+    expect(at("https://elsewhere.test/api/tts", true)).toBe("bypass");
+    const a = voiceKey(JSON.stringify({ text: "Up the stairs to Nassau St", lang: "en" }), "https://map.test");
+    expect(a.startsWith("https://map.test/__voice/v1?")).toBe(true);
+    expect(voiceKey(JSON.stringify({ text: "Up the stairs to Nassau St", lang: "es" }), "https://map.test")).not.toBe(a);
   });
 
   it("drops built files from deploys more than 30 days old, and keeps undated ones", () => {

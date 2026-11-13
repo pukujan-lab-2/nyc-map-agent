@@ -6,9 +6,11 @@
  *
  * What it keeps: the app shell (the page and its built JS/CSS) and the static
  * transit files (stations and entrances, the MTA elevator/escalator list, the
- * x-ray station data and the Fulton St station model the trip preview walks).
- * Translated and spoken trip steps are kept by the page itself (POSTs cannot
- * be cached here). What it never keeps:
+ * x-ray station data and the Fulton St station model the trip preview walks),
+ * and the spoken trip steps: Kokoro's sound for a line the page marks with
+ * `x-keep` (POST /api/tts), kept by the line's text and language and played
+ * from here when the same line is asked for again. Translated steps are kept
+ * by the page itself. What it never keeps: the rest of
  * /api/* (the assistant, live arrivals, alerts) and anything on another
  * origin (basemap tiles, live feeds). Live data is never served from here as
  * if it were fresh; the page labels anything it saved itself with its age.
@@ -23,15 +25,20 @@ const PRECACHE = ["/", "/favicon.svg", "/transit/subway.json", "/transit/equipme
 const NAV_TIMEOUT_MS = 3500;
 /** The same for station data, when a saved copy exists; with none, it waits for the network. */
 const DATA_TIMEOUT_MS = 4000;
+/** Spoken trip steps (#132); a new version drops the old. */
+const VOICE_CACHE = "nyc-map-voice-v1";
+/** Lines kept, oldest out first; about 150 KB each, so a few trips' walks. */
+const VOICE_MAX = 80;
 /** Built files older than this are dropped when a new worker starts; one a page still asks for is fetched again. */
 const ASSET_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
 
 /**
  * How one request is answered. "bypass" leaves it to the browser (never cached).
  * @param {URL} url
- * @param {{ mode?: string, method?: string, origin: string }} req
+ * @param {{ mode?: string, method?: string, origin: string, keep?: boolean }} req
  */
 function strategyFor(url, req) {
+  if (req.keep && req.method === "POST" && url.origin === req.origin && url.pathname === "/api/tts") return "voice";
   if ((req.method ?? "GET") !== "GET") return "bypass";
   // Other hosts (basemap tiles, fonts): always the network; only when that fails, a copy
   // the underground helper saved for a station area. This worker never saves them itself.
@@ -57,7 +64,15 @@ function staleAsset(date, now, maxAge = ASSET_MAX_AGE_MS) {
   return Number.isFinite(t) && now - t > maxAge;
 }
 
-self.UW = { VERSION, CACHE, TILE_CACHE, PRECACHE, strategyFor, staleAsset };
+/**
+ * Where a kept line's sound is saved: its request body (the text and the language), in the URL.
+ * @param {string} body
+ */
+function voiceKey(body, origin) {
+  return `${origin}/__voice/v1?${encodeURIComponent(body)}`;
+}
+
+self.UW = { VERSION, CACHE, TILE_CACHE, VOICE_CACHE, PRECACHE, strategyFor, staleAsset, voiceKey };
 
 async function put(req, res) {
   if (!res || !res.ok || res.type === "opaque") return res;
@@ -95,6 +110,25 @@ async function pruneAssets() {
   }
 }
 
+/** A kept line: the saved sound when there is one, else the server's, saved once it has all arrived. */
+async function voice(event) {
+  const key = voiceKey(await event.request.clone().text(), self.location.origin);
+  const cache = await caches.open(VOICE_CACHE);
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  const res = await fetch(event.request);
+  if (res.status === 200) {
+    event.waitUntil(
+      cache
+        .put(key, res.clone())
+        .then(() => cache.keys())
+        .then((keys) => Promise.all(keys.slice(0, Math.max(0, keys.length - VOICE_MAX)).map((k) => cache.delete(k))))
+        .catch(() => undefined), // cut short or full: not kept
+    );
+  }
+  return res;
+}
+
 async function cacheFirst(request) {
   const hit = await caches.match(request);
   if (hit) return hit;
@@ -123,8 +157,9 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   const url = new URL(req.url);
-  const how = strategyFor(url, { mode: req.mode, method: req.method, origin: self.location.origin });
+  const how = strategyFor(url, { mode: req.mode, method: req.method, origin: self.location.origin, keep: req.headers.get("x-keep") === "1" });
   if (how === "bypass") return;
+  if (how === "voice") return event.respondWith(voice(event));
   if (how === "network-then-tiles") {
     event.respondWith(
       fetch(req).catch(async (err) => {

@@ -3,8 +3,8 @@
  * The server streams 16-bit mono PCM; each piece is queued on a Web Audio clock as it arrives, so
  * speech starts at the first sound. Before any sound has played, a failure calls `onFail` and the
  * caller speaks with the browser voice instead; a server that failed is not asked again for a minute.
- * Lines marked `keep` (the trip preview's steps, #132) are saved on the phone once read, and played from
- * there when the server cannot be reached, so a walk replayed underground keeps the same voice.
+ * A `keep` line (the trip preview's steps, #132) is marked for the offline worker (public/sw.js), which
+ * saves its sound and plays it back from the phone when the same line is asked for again.
  */
 
 /** The app's languages Kokoro has a voice for (the server's TTS_LANGS). */
@@ -56,41 +56,10 @@ export function speakKokoro(text: string, lang: string, onEnd: () => void, onFai
     close();
     onFail();
   };
-  /** Queues one piece of sound on the clock; returns its end time. */
-  const play = (f: Float32Array, rate: number, next: number): number => {
-    if (!f.length || !ctx) return next;
-    const buf = ctx.createBuffer(1, f.length, rate);
-    buf.getChannelData(0).set(f);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    const at = Math.max(next, ctx.currentTime + 0.05);
-    src.start(at);
-    sources.push(src);
-    heard = true;
-    return at + buf.duration;
-  };
-  const ended = () => {
-    const last = sources.at(-1);
-    if (!last) return fail();
-    last.onended = finish;
-  };
   void (async () => {
     try {
-      if (keep) {
-        const saved = await import("./voiceKeep").then((m) => m.keptVoice(text, lang), () => null);
-        if (done) return;
-        if (saved) {
-          ctx = new AudioContext();
-          await ctx.resume().catch(() => undefined);
-          play(saved.f, saved.rate, 0);
-          return ended();
-        }
-        // Nothing kept and the server was down a moment ago: the browser voice, without asking again.
-        if (!kokoroUp()) { done = true; onFail(); return; }
-      }
       const base = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
-      const res = await fetch(`${base}/api/tts`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, lang }), signal: ctrl.signal });
+      const res = await fetch(`${base}/api/tts`, { method: "POST", headers: { "content-type": "application/json", ...(keep ? { "x-keep": "1" } : {}) }, body: JSON.stringify({ text, lang }), signal: ctrl.signal });
       // A 415 or 429 says this text can't be read now, not that the server is down: the browser voice takes it.
       if (!res.ok || !res.body) {
         if (res.status === 415 || res.status === 429) { done = true; onFail(); return; }
@@ -102,23 +71,34 @@ export function speakKokoro(text: string, lang: string, onEnd: () => void, onFai
       const reader = res.body.getReader();
       let next = 0;
       let carry: Uint8Array = new Uint8Array(0);
-      const whole: Uint8Array[] = [];
       for (;;) {
         const { done: end, value } = await reader.read();
         if (done) return;
         if (value) {
-          if (keep) whole.push(value);
           const joined = new Uint8Array(carry.length + value.length);
           joined.set(carry);
           joined.set(value, carry.length);
           const even = joined.length - (joined.length % 2);
           carry = joined.slice(even);
-          next = play(pcm16ToFloat(joined.subarray(0, even)), rate, next);
+          const f = pcm16ToFloat(joined.subarray(0, even));
+          if (f.length && ctx) {
+            const buf = ctx.createBuffer(1, f.length, rate);
+            buf.getChannelData(0).set(f);
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            src.connect(ctx.destination);
+            const at = Math.max(next, ctx.currentTime + 0.05);
+            src.start(at);
+            next = at + buf.duration;
+            sources.push(src);
+            heard = true;
+          }
         }
         if (end) break;
       }
-      ended();
-      if (keep && heard) void import("./voiceKeep").then((m) => m.keepVoice(text, lang, whole, rate)).catch(() => undefined);
+      const last = sources.at(-1);
+      if (!last) return fail();
+      last.onended = finish;
     } catch {
       fail();
     }
