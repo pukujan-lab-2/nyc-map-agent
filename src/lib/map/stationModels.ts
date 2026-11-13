@@ -7,7 +7,7 @@
  */
 export type StationModelId = "fulton" | "cityhall" | "barclays";
 
-export type StationModelInfo = {
+type StationModelInfo = {
   id: StationModelId;
   /** Where the model sits in `public/`. */
   url: string;
