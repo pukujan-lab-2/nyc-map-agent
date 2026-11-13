@@ -419,6 +419,29 @@ Blocked/uncertain:
 Next:
 - Wait for the Pro checks and the real-ecctrl drive over all 13 walks, then rewrite #153's description for the walk scene, let it auto-merge, check the deploy and comment live on #126
 
+### 2026-11-13 08:22:34 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"The real ecctrl body still stops on 4 walks and falls through to a lower floor on 3 (the Rapier test does not show it); a headless probe is locating each spot. Fix those, then let #153 merge and comment live on #126","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T08:22:34Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b92c71366aeca467b62bc95e336a9085f203f6933bece961d76903826abfdf57","request_id":"ab607c371a0047199c6aef24181f9a5b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- The real ecctrl body still stops on 4 walks and falls through to a lower floor on 3 (the Rapier test does not show it); a headless probe is locating each spot. Fix those, then let #153 merge and comment live on #126
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
