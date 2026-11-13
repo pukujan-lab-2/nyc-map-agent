@@ -28,7 +28,7 @@ export function WalkDevHud() {
   const [text, setText] = useState("");
   useEffect(() => {
     const id = setInterval(() => {
-      const w = window as unknown as { __walkBody?: { body: { translation(): THREE.Vector3Like } }; __walkCamera?: THREE.Camera; __THREE?: typeof THREE };
+      const w = window as unknown as { __walkBody?: { body: { translation(): THREE.Vector3Like; linvel(): THREE.Vector3Like } }; __walkCamera?: THREE.Camera; __THREE?: typeof THREE };
       if (!w.__walkBody || !w.__walkCamera || !w.__THREE) return;
       const p = w.__walkBody.body.translation();
       const d = new w.__THREE.Vector3();
@@ -37,6 +37,8 @@ export function WalkDevHud() {
       const deg = ((heading * 180) / Math.PI + 360) % 360;
       const pitch = (Math.asin(d.y) * 180) / Math.PI;
       setText(`at ${p.x.toFixed(1)}, ${(-p.z).toFixed(1)}  floor ${(p.y - 1.05).toFixed(1)} m\nlooking ${DIRS[Math.round(deg / 45) % 8]} ${deg.toFixed(0)}°, ${pitch >= 0 ? "up" : "down"} ${Math.abs(pitch).toFixed(0)}°`);
+      // Not while falling: a reload would start the walk in mid-air again.
+      if (w.__walkBody.body.linvel().y < -2) return;
       try { sessionStorage.setItem(KEY, JSON.stringify({ x: p.x, y: p.y, z: p.z, heading } satisfies WalkSpot)); } catch { /* private window */ }
     }, 150);
     return () => clearInterval(id);

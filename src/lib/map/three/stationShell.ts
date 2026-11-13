@@ -43,6 +43,8 @@ const DOOR_END_M = 0.6;
 const CAP_PIECE_M = 0.5;
 /** Each triangle is grown this much before the merge, so slits narrower than twice this close. */
 const GROW_M = 0.06;
+/** How far either side of a wall's line a floor overhead still caps it: half its thickness and the outline's growth. */
+const CAP_PAD_M = SHELL_THICK_M / 2 + GROW_M;
 /** Floors whose heights differ by less than this are one level. */
 const LEVEL_GAP_M = 0.15;
 /** Outline edges are walked in pieces no longer than this, each with its own floor height at its ends. */
@@ -249,7 +251,9 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
     const n = Math.max(2, Math.ceil(L / 0.25));
     const bare = Array.from({ length: n + 1 }, (_, j) => {
       const k = j / n, z = a[2] + (b[2] - a[2]) * k;
-      return !modelUnder(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, 0.02).some((h) => Math.abs(h - z) < 0.15);
+      // Any stair or floor of the model's within 0.6 m of the walk counts: a ramp laid over the
+      // model's own stair at the walk's slightly different slope shows as a second, crossing flight.
+      return !modelUnder(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, 0.02).some((h) => Math.abs(h - z) < 0.6);
     });
     const nx = -(b[1] - a[1]) / L * RAMP_HALF_M, ny = (b[0] - a[0]) / L * RAMP_HALF_M;
     for (let j = 0; j < n; j++) {
@@ -477,7 +481,10 @@ export function stationShell(model: DollhouseModel, onEdge?: (p: P3, q: P3, kind
   const capAt = (x: number, y: number, own: number) => {
     const top = own + SHELL_WALL_M;
     let cap = top;
-    for (const h of under(x, y)) if (h > own + 0.5 && h < top + 0.05) cap = Math.min(cap, h - 0.02);
+    // Across the wall's whole thickness and the outline's growth, not only its centre line: a flight
+    // stacked over another runs right along that line, and a sample that just misses it stands the
+    // lower flight's wall up through the treads above.
+    for (const h of under(x, y, CAP_PAD_M)) if (h > own + 0.5 && h < top + 0.05) cap = Math.min(cap, h - 0.02);
     return cap;
   };
   for (const w of [...walls]) {
