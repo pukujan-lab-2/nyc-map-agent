@@ -331,9 +331,9 @@ function wallTexture(): THREE.Texture {
 }
 
 /** One line of a sign: an arrow, route bullets, then words, left to right. */
-export type SignLine = { arrow?: "up" | "down"; bullets?: Array<[string, string]>; text?: string };
+type SignLine = { arrow?: "up" | "down"; bullets?: Array<[string, string]>; text?: string };
 /** A sign to hang: where (the panel's middle), the way the walker faces when reading it, and its big and small lines. */
-export type SignPlan = { at: P3; heading: number; lines: [SignLine, SignLine | null]; small?: boolean };
+type SignPlan = { at: P3; heading: number; lines: [SignLine, SignLine | null]; small?: boolean };
 
 const SIGN_FONT = (px: number) => `bold ${px}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
 

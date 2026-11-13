@@ -4,6 +4,7 @@
  */
 import { LngLat, type Map as MaplibreMap } from "maplibre-gl";
 import type { DollhouseModel, DollhouseRig, DollhouseState } from "@/lib/map/three/dollhouse";
+import type { WalkCallout } from "@/lib/map/three/dollhouseCallouts";
 import { readMap } from "@/lib/map/mapRead";
 import { cornerLine } from "@/lib/map/cornerLine";
 
@@ -22,6 +23,8 @@ export type DollhouseView = {
   rig: (dt: number) => DollhouseRig | null;
   /** The walk's length in metres. */
   lengthM: number;
+  /** What to say along the walk, by fraction of it. */
+  callouts: WalkCallout[];
   stop: () => void;
 };
 
@@ -31,18 +34,22 @@ export type DollhouseView = {
  * The exit signs name the exit's street corner as the map reads it, or else `street`.
  */
 export async function openDollhouse(map: MaplibreMap, exit: [number, number] | null, getState: () => DollhouseState, street: string | null): Promise<DollhouseView | null> {
-  const [{ dollhouseLayer, pickWalk, walkLength, DOLLHOUSE_LAYER }, m] = await Promise.all([import("@/lib/map/three/dollhouse"), loadModel()]);
+  const [{ dollhouseLayer, pickWalk, walkLength, DOLLHOUSE_LAYER }, { walkCallouts }, m] = await Promise.all([
+    import("@/lib/map/three/dollhouse"), import("@/lib/map/three/dollhouseCallouts"), loadModel(),
+  ]);
   // No exit asked for (the dev hook): the longest walk, through the most of the station.
   const walk = exit ? pickWalk(m, exit) : [...m.walks].sort((a, b) => walkLength(b.path) - walkLength(a.path))[0];
   if (!walk) return null;
   if (map.getLayer(DOLLHOUSE_LAYER)) map.removeLayer(DOLLHOUSE_LAYER);
   let corner: string | null = null;
   try { corner = cornerLine(readMap(map).placeAt(walk.exit)); } catch { corner = null; }
-  const view = dollhouseLayer(m, walk, getState, corner ?? street);
+  const exitLine = corner ?? street;
+  const view = dollhouseLayer(m, walk, getState, exitLine);
   map.addLayer(view.layer);
   return {
     rig: view.rig,
     lengthM: walkLength(walk.path),
+    callouts: walkCallouts(m, walk.path, exitLine),
     stop: () => { if (map.getLayer(DOLLHOUSE_LAYER)) map.removeLayer(DOLLHOUSE_LAYER); },
   };
 }
