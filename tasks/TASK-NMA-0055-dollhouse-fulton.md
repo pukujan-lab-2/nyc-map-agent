@@ -827,6 +827,29 @@ Blocked/uncertain:
 Next:
 - Defect check fixed (faceIndex bug). Manifold shell 149 spots vs old 163: no ceilings from above, in-the-way, low-head or open-up; track side 97 vs 85, holes 52 vs 59. Walk bot still stops on both shells (old 3, Manifold 4 plus 1 wedge on walk 6). On owner OK: move the Manifold script into the repo and switch.
 
+### 2026-11-13 17:11:46 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Owner OK'd the switch: Fulton St's walk now draws walls baked by pnpm build:station-shell (manifold-3d). Waiting on Pro checks (walk bot, defects, lint, tsc, size; size was 8.3 kB over). Then mark #168 ready, arm auto-merge, check the VPS deploy.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T17:11:46Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"95445e246c1eaae3db091bacc6bed4ed060cf3dcf3e4adda23b72fff3d841d63","request_id":"71b4b2dce8d245e282391aa47e6d1b4c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Owner OK'd the switch: Fulton St's walk now draws walls baked by pnpm build:station-shell (manifold-3d). Waiting on Pro checks (walk bot, defects, lint, tsc, size; size was 8.3 kB over). Then mark #168 ready, arm auto-merge, check the VPS deploy.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
