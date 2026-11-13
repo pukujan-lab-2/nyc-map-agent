@@ -396,6 +396,29 @@ Blocked/uncertain:
 Next:
 - After PRs 151, 152 and 153 merge, build the Fulton St walk scene on ecctrl: WASD and joystick, drag to look, wall corners closed, stair side walls, a gap test, and a Walk inside button on the station card
 
+### 2026-11-13 07:46:32 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Wait for the Pro checks and the real-ecctrl drive over all 13 walks, then rewrite #153's description for the walk scene, let it auto-merge, check the deploy and comment live on #126","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T07:46:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4740f23d9d9c51edab904624bd47d4829a3eef2949a0cd2014d60ad78bc8d523","request_id":"edcca2ce258446b18c8d546a07cd6f38","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Wait for the Pro checks and the real-ecctrl drive over all 13 walks, then rewrite #153's description for the walk scene, let it auto-merge, check the deploy and comment live on #126
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
