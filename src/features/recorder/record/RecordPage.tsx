@@ -1,16 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { removeShell } from "@/lib/shellDraft";
-import { MARK_KINDS, type MarkKind, type Recording } from "../format";
+import { MARK_KINDS, type MarkKind } from "../format";
 import { openBackCamera, stopStream } from "./camera";
+import Review, { type Take } from "./Review";
 import { askMotion, keepAwake, motionNeedsAsking, watchSensors } from "./sensors";
 import { clock, createCollector, deviceName, fileStem, motionRow, pickVideoType, videoExt, type Collector } from "./session";
-
-/** What Stop hands on: the recording and its video. */
-interface Take {
-  recording: Recording;
-  video: Blob | null;
-  videoFile: string | null;
-}
 
 interface Live {
   collector: Collector;
@@ -38,7 +32,7 @@ export default function RecordPage() {
   const live = useRef<Live | null>(null);
   const [camError, setCamError] = useState<string | null>(null);
   const [phase, setPhase] = useState<"idle" | "starting" | "recording" | "done">("idle");
-  const [, setTake] = useState<Take | null>(null);
+  const [take, setTake] = useState<Take | null>(null);
   const [motion, setMotion] = useState<MotionState>("unknown");
   const [locationBlocked, setLocationBlocked] = useState(false);
   const [startedAt, setStartedAt] = useState(0);
@@ -139,16 +133,23 @@ export default function RecordPage() {
     const finish = () => {
       const type = l.recorder?.mimeType || l.chunks[0]?.type || "";
       const blob = l.chunks.length ? new Blob(l.chunks, { type }) : null;
-      const videoFile = blob ? `${fileStem(l.collector.recording.startedAt)}.${videoExt(type)}` : null;
+      const stem = fileStem(l.collector.recording.startedAt);
+      const videoFile = blob ? `${stem}.${videoExt(type)}` : null;
       const recording = l.collector.finish(blob && videoFile ? { file: videoFile, startedAt: l.videoStartedAt ?? l.collector.recording.startedAt } : undefined);
       live.current = null;
-      setTake({ recording, video: blob, videoFile });
+      setTake({ recording, video: blob, videoFile, jsonFile: `${stem}.json` });
       setPhase("done");
     };
     if (l.recorder && l.recorder.state !== "inactive") {
       l.recorder.onstop = finish;
       l.recorder.stop();
     } else finish();
+  };
+
+  const discard = () => {
+    setTake(null);
+    setPhase("idle");
+    void startCamera();
   };
 
   return (
@@ -174,7 +175,8 @@ export default function RecordPage() {
           {marks > 0 && <span data-testid="record-marks" className="font-normal text-white/80">{marks} {marks === 1 ? "mark" : "marks"}</span>}
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+      {phase === "done" && take && <Review take={take} onDelete={discard} />}
+      <div hidden={phase === "done"} className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
         {phase === "recording" && (
           <div className="flex w-full max-w-md justify-center gap-2 px-3">
             {MARK_KINDS.map((kind) => (

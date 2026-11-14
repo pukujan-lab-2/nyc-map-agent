@@ -41,7 +41,7 @@ export function motionRow(t: number, e: MotionLike): MotionRow | null {
   if (!a || !r) return null;
   const v = [a.x, a.y, a.z, r.beta, r.gamma, r.alpha];
   if (!v.every(num)) return null;
-  return [t, ...(v as number[]).map((x) => round(x, 3))] as MotionRow;
+  return [t, ...v.map((x) => round(x, 3))] as MotionRow;
 }
 
 /** One heading row: the browser's DeviceOrientation angles as they come, in degrees. */
