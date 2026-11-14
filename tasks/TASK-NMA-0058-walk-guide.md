@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - When 174 merges, point 175 at main and arm auto-merge; after it deploys, try the scan on a phone with ?flags=+walkGuide
 
+### 2026-11-14 02:25:38 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["merge of main into feat/88-sign-scan, four conflicts kept on this branch's side because main's copies were the walk guide's"],"completed":["The walk guide merged as pull request 174; the camera scan branch took main in and pull request 175 is mergeable again with auto-merge armed"],"decisions":["no new decisions"],"evidence":["174 merged with every check green; 175 shows MERGEABLE after the merge commit, its checks are re-running"],"next_action":"After 175 merges and deploys, open the live site with ?flags=+walkGuide on a phone, tap Lost and try the camera on a sign; then refit the Union Sq places to the 2026-11-13 evening recording, which has positions on the mezzanine","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T02:25:38Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"c24966addf42a9e73ae8c923473b06b93665f54b7bdd48f84f61842e6187dd95","request_id":"0f98c4cbc6524313a61c70b947706970","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The walk guide merged as pull request 174; the camera scan branch took main in and pull request 175 is mergeable again with auto-merge armed
+
+Evidence:
+- 174 merged with every check green; 175 shows MERGEABLE after the merge commit, its checks are re-running
+
+Decisions:
+- no new decisions
+
+Changed:
+- merge of main into feat/88-sign-scan, four conflicts kept on this branch's side because main's copies were the walk guide's
+
+Blocked/uncertain:
+- none
+
+Next:
+- After 175 merges and deploys, open the live site with ?flags=+walkGuide on a phone, tap Lost and try the camera on a sign; then refit the Union Sq places to the 2026-11-13 evening recording, which has positions on the mezzanine
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
