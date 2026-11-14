@@ -212,6 +212,29 @@ Blocked/uncertain:
 Next:
 - When 175's checks pass and it merges, run Simulate the trip and the camera scan on the live site at laptop width
 
+### 2026-11-14 06:06:08 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["src/features/walkguide/WalkGuide.tsx, e2e/walk-guide.spec.ts"],"completed":["The walk guide has a Watch the filmed trip button and a Download link (branch feat/88-trip-video); the film file is not in yet"],"decisions":["no new decisions"],"evidence":["Not yet run: the layout case needs public/walks/trip.mp4, which is rendering with faces blurred on the Pro"],"next_action":"Add the blurred 720-wide film as public/walks/trip.mp4, run the checks and the layout case, open the pull request; test the live camera scan once main deploys it","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T06:06:08Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3c2ec61df05f23761d7d4455f26aa468f30f46716bae401928c782bacf4fc491","request_id":"66423b2a829e49b5a4140ce7544f9128","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The walk guide has a Watch the filmed trip button and a Download link (branch feat/88-trip-video); the film file is not in yet
+
+Evidence:
+- Not yet run: the layout case needs public/walks/trip.mp4, which is rendering with faces blurred on the Pro
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/walkguide/WalkGuide.tsx, e2e/walk-guide.spec.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Add the blurred 720-wide film as public/walks/trip.mp4, run the checks and the layout case, open the pull request; test the live camera scan once main deploys it
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
