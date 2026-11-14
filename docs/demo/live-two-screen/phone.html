@@ -20,7 +20,13 @@
   #chip { align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: #1e293b; font-weight: 600; font-size: 14px; }
   #chip.on { background: #14532d; }
   #note { color: #fbbf24; min-height: 1.4em; }
+  #map { height: 42vh; min-height: 260px; border-radius: 14px; overflow: hidden; background: #0f172a; }
+  .dot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .dot .tag { padding: 2px 9px; border-radius: 999px; background: #0f172a; color: #fff; font: 700 13px system-ui, sans-serif; white-space: nowrap; }
+  .dot .pt { width: 20px; height: 20px; border-radius: 50%; background: #2563eb; border: 3px solid #fff; box-shadow: 0 1px 5px rgba(0, 0, 0, .5); }
+  .truth { width: 14px; height: 14px; border-radius: 50%; background: #f59e0b; border: 3px solid #fff; }
 </style>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
 </head>
 <body>
 <main>
@@ -33,6 +39,7 @@
     <button class="quiet" id="up">Up one floor</button>
   </div>
   <button id="start">Start</button>
+  <div id="map"></div>
   <div class="row">
     <div class="card"><div class="label">Steps</div><div class="big" id="steps">0</div></div>
     <div class="card"><div class="label">Walked</div><div class="big" id="metres">0 m</div></div>
@@ -41,7 +48,37 @@
   <button class="quiet" id="check" disabled>Check with location</button>
   <p id="note"></p>
 </main>
+<script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
 <script>
+// The map on the phone itself, so the phone alone shows the dot (and can be mirrored to a bigger screen).
+let map = null, dot = null, dotEl = null, truthMark = null, mapReady = false, framed = false;
+try {
+  map = new maplibregl.Map({ container: "map", style: "https://tiles.openfreemap.org/styles/liberty", center: [-73.99, 40.74], zoom: 11, attributionControl: { compact: true } });
+  dotEl = document.createElement("div");
+  dotEl.className = "dot";
+  dotEl.innerHTML = '<span class="tag">Floor 7</span><span class="pt"></span>';
+  dot = new maplibregl.Marker({ element: dotEl, anchor: "bottom", offset: [0, 10] });
+  const t = document.createElement("div");
+  t.className = "truth";
+  truthMark = new maplibregl.Marker({ element: t });
+  map.on("load", () => {
+    map.addSource("trail", { type: "geojson", data: { type: "Feature", geometry: { type: "LineString", coordinates: [] } } });
+    map.addLayer({ id: "trail", type: "line", source: "trail", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#22c55e", "line-width": 5 } });
+    mapReady = true;
+    drawMap();
+  });
+} catch { /* no map: the numbers still work */ }
+
+function drawMap() {
+  if (!map || !mapReady || state.lon == null) return;
+  dotEl.querySelector(".tag").textContent = "Floor " + state.floor;
+  dot.setLngLat([state.lon, state.lat]).addTo(map);
+  map.getSource("trail").setData({ type: "Feature", geometry: { type: "LineString", coordinates: state.trail } });
+  if (!framed) { map.jumpTo({ center: [state.lon, state.lat], zoom: 19.5 }); framed = true; }
+  else map.easeTo({ center: [state.lon, state.lat], duration: 350 });
+  if (state.truth) truthMark.setLngLat(state.truth).addTo(map); else truthMark.remove();
+}
+
 const STRIDE_M = 0.7;
 const $ = (id) => document.getElementById(id);
 const state = { started: false, lon: null, lat: null, start: null, accuracy: null, heading: null, steps: 0, floor: 7, trail: [], truth: null, offBy: null };
@@ -55,6 +92,7 @@ function show() {
   $("steps").textContent = state.steps;
   $("metres").textContent = Math.round(state.steps * STRIDE_M) + " m";
   $("heading").textContent = state.heading == null ? "–" : Math.round(state.heading) + "° " + letter(state.heading);
+  drawMap();
 }
 
 let sending = false, dirty = false;
@@ -125,6 +163,7 @@ $("start").onclick = async () => {
   Object.assign(state, { started: true, lon: pos.coords.longitude, lat: pos.coords.latitude, accuracy: pos.coords.accuracy, steps: 0, truth: null, offBy: null });
   state.start = [state.lon, state.lat];
   state.trail = [[+state.lon.toFixed(7), +state.lat.toFixed(7)]];
+  framed = false;
   window.addEventListener("devicemotion", onMotion);
   window.addEventListener("deviceorientationabsolute", onHeading);
   window.addEventListener("deviceorientation", onHeading);
