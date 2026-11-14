@@ -4,7 +4,7 @@ import { Marker, type Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { onMapInstance } from "@/lib/map/mapInstance";
-import { framePadding } from "@/lib/map/mapCover";
+import { framePadding, measureCover } from "@/lib/map/mapCover";
 import { useLeftCard } from "@/lib/store/leftColumn";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import { FILM, FILM_S, frameOf, RIDE, tripAt, WALKED, type Part } from "./trip";
@@ -42,6 +42,20 @@ function dotElement(): { el: HTMLElement; label: HTMLElement } {
 }
 
 /**
+ * The bottom padding that keeps the dot above the chat bar on a phone. The bar is not a map cover there,
+ * and the trip starts at the south end of its frame, so a fixed 60 px put the dot under the bar at 375×667.
+ * A strip of at least 60 px always stays between the film's panel and the padding, so the frame still fits.
+ */
+function clearOfChatBar(map: MapLibreMap): number {
+  const box = map.getContainer().getBoundingClientRect();
+  const bar = document.querySelector("[data-testid=agent-bar]")?.getBoundingClientRect();
+  // The bar can mount after the map on a slow machine: allow for its usual height until it does.
+  const want = Math.max(60, (bar && bar.height > 0 ? box.bottom - bar.top : 96) + 28);
+  const room = box.height - measureCover(map).top - 16 - 60;
+  return Math.max(16, Math.min(want, room));
+}
+
+/**
  * Station replay (a demo page, off unless `?flags=+stationReplay`): the film of
  * the step-free trip from Cortlandt St to 14 St-Union Sq, and the map with a
  * dot that moves along the walk as the film plays. The dot carries its level.
@@ -65,9 +79,9 @@ export default function StationReplay() {
     if (!map) return;
     partRef.current = part;
     try {
-      map.fitBounds(frameOf(part), { padding: framePadding(map, { top: 90, bottom: 60, left: 60, right: 90 }), maxZoom: 17.5, duration });
+      map.fitBounds(frameOf(part), { padding: framePadding(map, { top: 90, bottom: desktop ? 60 : clearOfChatBar(map), left: 60, right: 90 }), maxZoom: 17.5, duration });
     } catch { /* the map is not ready yet: the next move frames it */ }
-  }, []);
+  }, [desktop]);
 
   /** Put the dot, its label and the camera where second `at` of the film is. */
   const show = useCallback((at: number) => {
