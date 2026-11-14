@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { removeShell } from "@/lib/shellDraft";
-import type { Recording } from "../format";
+import { MARK_KINDS, type MarkKind, type Recording } from "../format";
 import { openBackCamera, stopStream } from "./camera";
-import { askMotion, motionNeedsAsking, watchSensors } from "./sensors";
-import { createCollector, deviceName, fileStem, motionRow, pickVideoType, videoExt, type Collector } from "./session";
+import { askMotion, keepAwake, motionNeedsAsking, watchSensors } from "./sensors";
+import { clock, createCollector, deviceName, fileStem, motionRow, pickVideoType, videoExt, type Collector } from "./session";
 
 /** What Stop hands on: the recording and its video. */
 interface Take {
@@ -18,7 +18,10 @@ interface Live {
   chunks: Blob[];
   videoStartedAt: number | null;
   stopSensors: () => void;
+  letSleep: () => void;
 }
+
+const MARK_LABEL: Record<MarkKind, string> = { sign: "Sign", stairs: "Stairs", elevator: "Elevator" };
 
 /** How long to wait for a first motion row before saying the device sends none. */
 const MOTION_WAIT_MS = 1500;
@@ -38,6 +41,15 @@ export default function RecordPage() {
   const [, setTake] = useState<Take | null>(null);
   const [motion, setMotion] = useState<MotionState>("unknown");
   const [locationBlocked, setLocationBlocked] = useState(false);
+  const [startedAt, setStartedAt] = useState(0);
+  const [now, setNow] = useState(0);
+  const [marks, setMarks] = useState(0);
+
+  useEffect(() => {
+    if (phase !== "recording") return;
+    const tick = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(tick);
+  }, [phase]);
 
   const startCamera = useCallback(async () => {
     setCamError(null);
@@ -71,6 +83,7 @@ export default function RecordPage() {
       window.clearTimeout(wait);
       document.title = title;
       live.current?.stopSensors();
+      live.current?.letSleep();
       if (live.current?.recorder?.state === "recording") live.current.recorder.stop();
       stopStream(stream.current);
       stream.current = null;
@@ -87,7 +100,7 @@ export default function RecordPage() {
       const cam = await startCamera();
       const startedAt = Date.now();
       const collector = createCollector(startedAt, deviceName(navigator.userAgent));
-      const l: Live = { collector, recorder: null, chunks: [], videoStartedAt: null, stopSensors: () => undefined };
+      const l: Live = { collector, recorder: null, chunks: [], videoStartedAt: null, stopSensors: () => undefined, letSleep: keepAwake() };
       live.current = l;
       l.stopSensors = watchSensors(collector, () => setLocationBlocked(true));
       if (!motionAllowed) setMotion("blocked");
@@ -104,14 +117,25 @@ export default function RecordPage() {
           setCamError("This browser cannot record video here. Marks and sensors still record.");
         }
       }
+      setStartedAt(startedAt);
+      setNow(startedAt);
+      setMarks(0);
       setPhase("recording");
     })();
+  };
+
+  const mark = (kind: MarkKind) => {
+    const l = live.current;
+    if (!l) return;
+    l.collector.mark(Date.now(), kind);
+    setMarks(l.collector.counts().marks);
   };
 
   const stop = () => {
     const l = live.current;
     if (!l) return;
     l.stopSensors();
+    l.letSleep();
     const finish = () => {
       const type = l.recorder?.mimeType || l.chunks[0]?.type || "";
       const blob = l.chunks.length ? new Blob(l.chunks, { type }) : null;
@@ -137,13 +161,29 @@ export default function RecordPage() {
         </div>
       )}
       {(motion === "none" || motion === "blocked" || locationBlocked) && phase !== "done" && (
-        <div data-testid="record-notes" className="absolute inset-x-4 bottom-[calc(max(2rem,env(safe-area-inset-bottom))+6.5rem)] mx-auto max-w-md space-y-1 rounded-xl bg-black/60 px-4 py-2 text-center text-sm backdrop-blur">
+        <div data-testid="record-notes" className={`absolute inset-x-4 ${phase === "recording" ? "bottom-[calc(max(2rem,env(safe-area-inset-bottom))+10.5rem)]" : "bottom-[calc(max(2rem,env(safe-area-inset-bottom))+6.5rem)]"} mx-auto max-w-md space-y-1 rounded-xl bg-black/60 px-4 py-2 text-center text-sm backdrop-blur`}>
           {motion === "none" && <p data-testid="motion-note">No motion sensors here. Video and marks still record; motion needs a phone.</p>}
           {motion === "blocked" && <p data-testid="motion-note">Motion is blocked. Allow motion for this site, then record again.</p>}
           {locationBlocked && <p data-testid="location-note">Location is blocked. The walk records without it.</p>}
         </div>
       )}
-      <div className="absolute inset-x-0 bottom-0 flex justify-center pb-[max(2rem,env(safe-area-inset-bottom))]">
+      {phase === "recording" && (
+        <div data-testid="record-status" className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-sm font-semibold tabular-nums backdrop-blur">
+          <span aria-hidden className="h-3 w-3 animate-pulse rounded-full bg-red-600" />
+          <span data-testid="record-timer" aria-label="Recording time">{clock(now - startedAt)}</span>
+          {marks > 0 && <span data-testid="record-marks" className="font-normal text-white/80">{marks} {marks === 1 ? "mark" : "marks"}</span>}
+        </div>
+      )}
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        {phase === "recording" && (
+          <div className="flex w-full max-w-md justify-center gap-2 px-3">
+            {MARK_KINDS.map((kind) => (
+              <button key={kind} type="button" data-testid={`mark-${kind}`} onClick={() => mark(kind)} className="min-h-12 min-w-0 flex-1 rounded-full bg-black/60 px-2 text-sm font-semibold backdrop-blur active:bg-white active:text-black">
+                {MARK_LABEL[kind]}
+              </button>
+            ))}
+          </div>
+        )}
         {phase === "recording" ? (
           <button type="button" aria-label="Stop" data-testid="stop-button" onClick={stop} className="grid h-20 w-20 place-items-center rounded-full border-4 border-white bg-transparent">
             <span className="h-8 w-8 rounded-md bg-red-600" />
