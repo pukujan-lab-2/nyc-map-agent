@@ -143,6 +143,29 @@ Blocked/uncertain:
 Next:
 - Re-run the check jobs once the CI machine is quieter; when 175 and 176 merge and main deploys, run Simulate the trip and the camera scan on the live site at laptop width
 
+### 2026-11-14 03:54:58 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":[".size-limit.json"],"completed":["The scan branch's size check failed by 110 bytes on the station walk chunk; its budget goes to 708 kB"],"decisions":["no new decisions"],"evidence":["Measured 707.11 kB on the Pro; the check job now passes on 176 and 177"],"next_action":"Let 177 and 176 merge, bring main into 175, then verify simulate and the scan on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T03:54:58Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"bd4f549a0a970225f2e68b146d29ca8071f72bbcc5d1c2e78759b549ad103b66","request_id":"3f9c6697236c4617ae3a7f6d1d44dc58","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The scan branch's size check failed by 110 bytes on the station walk chunk; its budget goes to 708 kB
+
+Evidence:
+- Measured 707.11 kB on the Pro; the check job now passes on 176 and 177
+
+Decisions:
+- no new decisions
+
+Changed:
+- .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let 177 and 176 merge, bring main into 175, then verify simulate and the scan on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
