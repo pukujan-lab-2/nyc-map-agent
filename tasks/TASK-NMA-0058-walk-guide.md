@@ -522,6 +522,29 @@ Blocked/uncertain:
 Next:
 - After pull requests 195 and 197 deploy, check on the live site: the QR popup's link and the page's tags and image, the Record button on a phone, the chat's inside-walk question, and the replay at steps 1, 4, 7, 10 and 17; then report on issue 186
 
+### 2026-11-14 23:13:51 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["On a short screen the what-is-coming page hid its picture below a fixed-height body; it now grows and scrolls (pull request 197)"],"decisions":["no new decisions"],"evidence":["Seen on the live page in a short browser pane after pull request 195 deployed; the fix is not yet seen rendered"],"next_action":"After pull request 197 deploys, open the page on a phone-sized screen and check the picture shows, then check its tags and share image; report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T23:13:51Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d9a8c2885449cc775a6873b6088160b7440262e4628fd673e46e503ae854b391","request_id":"650e721a96604eeb8479bfbaae43ce20","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- On a short screen the what-is-coming page hid its picture below a fixed-height body; it now grows and scrolls (pull request 197)
+
+Evidence:
+- Seen on the live page in a short browser pane after pull request 195 deployed; the fix is not yet seen rendered
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request 197 deploys, open the page on a phone-sized screen and check the picture shows, then check its tags and share image; report on issue 186
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
