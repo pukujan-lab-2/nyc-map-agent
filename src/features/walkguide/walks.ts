@@ -12,7 +12,8 @@
  * second recording that evening, walked the other way with location on: the
  * phone logged a position every 15 s or so across the mezzanine, good to about
  * 20 m, and the gyroscope gave the corners. At Cortlandt St the places are
- * still estimates, fitted to the streets the signs name.
+ * still estimates: the passage is laid along Dey St from Broadway to Church
+ * St, where the live map draws those streets.
  */
 
 type WalkLevel = "street" | "concourse" | "mezzanine" | "platform";
@@ -47,13 +48,13 @@ export interface WrongWay {
 }
 
 export const WALK: Checkpoint[] = [
-  { id: "fulton-entrance", station: "Cortlandt St", level: "street", at: [-74.00955, 40.71068], sign: "Fulton Street Station entrance, Broadway at Dey St", say: "Go in at the glass entrance on Broadway. The elevator is just inside.", steps: 12, photo: "fulton-entrance" },
-  { id: "el728x", station: "Cortlandt St", level: "street", at: [-74.00962, 40.71072], sign: "Elevator to A C J Z R W 2 3 4 5 · PATH/WTC", say: "Take this elevator down. Press Concourse.", steps: 0, by: "elevator", photo: "el728x" },
-  { id: "dey-passage", station: "Cortlandt St", level: "concourse", at: [-74.0097, 40.71075], sign: "↑ R W E 1 · WTC/PATH (long passage, starburst ceiling)", say: "Follow the long passage under the R W E 1 signs. About 175 steps.", steps: 175, photo: "dey-passage" },
-  { id: "to-rwe", station: "Cortlandt St", level: "concourse", at: [-74.0107, 40.71116], sign: "Elevator to R W E ↗", say: "At the Elevator to R W E sign, bear right to the turnstiles. About 40 steps.", steps: 40, photo: "to-rwe" },
-  { id: "cortlandt-turnstiles", station: "Cortlandt St", level: "concourse", at: [-74.01082, 40.7112], sign: "Turnstiles by the mosaic wall", say: "Go through the wide gate. The elevators are past the mosaic wall, about 20 steps.", steps: 20, photo: "cortlandt-turnstiles" },
-  { id: "uptown-queens", station: "Cortlandt St", level: "concourse", at: [-74.01092, 40.71116], sign: "Elevator to Uptown & Queens R W", say: "Take the glass elevator signed Uptown & Queens. It goes up to the platform.", steps: 0, by: "elevator", photo: "uptown-queens" },
-  { id: "cortlandt-platform", station: "Cortlandt St", level: "platform", at: [-74.01098, 40.71105], sign: "Cortlandt Street (uptown platform)", say: "Board an R or W. Ride 5 stops to 14 St-Union Sq.", steps: 0, by: "train", photo: "cortlandt-platform" },
+  { id: "fulton-entrance", station: "Cortlandt St", level: "street", at: [-74.00926, 40.71027], sign: "Fulton Street Station entrance, Broadway at Dey St", say: "Go in at the glass entrance on Broadway. The elevator is just inside.", steps: 12, photo: "fulton-entrance" },
+  { id: "el728x", station: "Cortlandt St", level: "street", at: [-74.00934, 40.71031], sign: "Elevator to A C J Z R W 2 3 4 5 · PATH/WTC", say: "Take this elevator down. Press Concourse.", steps: 0, by: "elevator", photo: "el728x" },
+  { id: "dey-passage", station: "Cortlandt St", level: "concourse", at: [-74.0094, 40.71033], sign: "↑ R W E 1 · WTC/PATH (long passage, starburst ceiling)", say: "Follow the long passage under the R W E 1 signs. About 175 steps.", steps: 175, photo: "dey-passage" },
+  { id: "to-rwe", station: "Cortlandt St", level: "concourse", at: [-74.0106, 40.71094], sign: "Elevator to R W E ↗", say: "At the Elevator to R W E sign, bear right to the turnstiles. About 40 steps.", steps: 40, photo: "to-rwe" },
+  { id: "cortlandt-turnstiles", station: "Cortlandt St", level: "concourse", at: [-74.01078, 40.71103], sign: "Turnstiles by the mosaic wall", say: "Go through the wide gate. The elevators are past the mosaic wall, about 20 steps.", steps: 20, photo: "cortlandt-turnstiles" },
+  { id: "uptown-queens", station: "Cortlandt St", level: "concourse", at: [-74.01082, 40.711], sign: "Elevator to Uptown & Queens R W", say: "Take the glass elevator signed Uptown & Queens. It goes up to the platform.", steps: 0, by: "elevator", photo: "uptown-queens" },
+  { id: "cortlandt-platform", station: "Cortlandt St", level: "platform", at: [-74.01086, 40.71092], sign: "Cortlandt Street (uptown platform)", say: "Board an R or W. Ride 5 stops to 14 St-Union Sq.", steps: 0, by: "train", photo: "cortlandt-platform" },
   { id: "us-platform", station: "14 St-Union Sq", level: "platform", at: [-73.99134, 40.7364], sign: "14 Street, with the wheelchair symbol", say: "Walk along the platform to the elevator. About 220 steps.", steps: 220, photo: "us-platform" },
   { id: "us-to-mezzanine", station: "14 St-Union Sq", level: "platform", at: [-73.9908, 40.7353], sign: "To Mezzanine · L & Downtown N Q R W", say: "Take this elevator up one level, to the mezzanine.", steps: 0, by: "elevator", photo: "us-to-mezzanine" },
   { id: "us-to-l", station: "14 St-Union Sq", level: "mezzanine", at: [-73.99064, 40.73529], sign: "Elevator to L (overhead)", say: "Go under the Elevator to L sign and into the long corridor. About 20 steps.", steps: 22, photo: "us-to-l" },

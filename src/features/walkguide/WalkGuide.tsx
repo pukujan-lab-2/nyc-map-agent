@@ -76,6 +76,8 @@ export default function WalkGuide() {
   const [lost, setLost] = useState(false);
   const [wrong, setWrong] = useState<string | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  // Set once the map exists, so the line is drawn and the camera goes to the walk without waiting for a tap.
+  const [mapReady, setMapReady] = useState(false);
   const steps = useRef(initialSteps());
   const stopSay = useRef<(() => void) | null>(null);
   // A simulated trip: the dot walks the route by itself, for showing it away from the station.
@@ -111,7 +113,7 @@ export default function WalkGuide() {
   }, [speak]);
 
   // The line and the dot, drawn on the one map and taken off when this closes.
-  useEffect(() => onMapInstance((map) => { mapRef.current = map; }), []);
+  useEffect(() => onMapInstance((map) => { mapRef.current = map; setMapReady(!!map); }), []);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !open) return;
@@ -122,12 +124,12 @@ export default function WalkGuide() {
       } catch { /* the style is still loading: the next change draws it */ }
     };
     if (map.isStyleLoaded()) draw(); else void map.once("idle", draw);
-  }, [place, open]);
+  }, [place, open, mapReady]);
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !open) return;
     map.easeTo({ center: WALK[place.i].at, zoom: 17.6, duration: 900 });
-  }, [place.i, open]);
+  }, [place.i, open, mapReady]);
   useEffect(() => () => {
     stopSay.current?.();
     const map = mapRef.current;
