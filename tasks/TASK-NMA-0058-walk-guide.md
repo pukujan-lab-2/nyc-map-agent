@@ -189,6 +189,29 @@ Blocked/uncertain:
 Next:
 - After 176 and 175 merge and deploy, run Simulate the trip and the camera scan on the live site at laptop width
 
+### 2026-11-14 05:05:41 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["merge of main into feat/88-sign-scan"],"completed":["Simulate mode merged as pull request 176 with every check green; main is merged into the camera scan branch"],"decisions":["no new decisions"],"evidence":["176: check, size, lint, api and e2e all passed; 175 now differs from main only by the scan"],"next_action":"When 175's checks pass and it merges, run Simulate the trip and the camera scan on the live site at laptop width","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T05:05:41Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"226a485ffd3464f26fe28705a94c350cfe95a63828f92e274198140a733f2d81","request_id":"eb06da802bd844d0a14ed54c16d83451","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Simulate mode merged as pull request 176 with every check green; main is merged into the camera scan branch
+
+Evidence:
+- 176: check, size, lint, api and e2e all passed; 175 now differs from main only by the scan
+
+Decisions:
+- no new decisions
+
+Changed:
+- merge of main into feat/88-sign-scan
+
+Blocked/uncertain:
+- none
+
+Next:
+- When 175's checks pass and it merges, run Simulate the trip and the camera scan on the live site at laptop width
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
