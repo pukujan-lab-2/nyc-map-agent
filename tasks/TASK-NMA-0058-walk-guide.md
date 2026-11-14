@@ -166,6 +166,29 @@ Blocked/uncertain:
 Next:
 - Let 177 and 176 merge, bring main into 175, then verify simulate and the scan on the live site
 
+### 2026-11-14 04:19:50 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["merge of feat/88-simulate into feat/88-sign-scan; .size-limit.json all-JS budget 1237 kB"],"completed":["The camera scan branch now holds simulate mode too, so pull request 175 fits on top of 176"],"decisions":["no new decisions"],"evidence":["On the Pro, with both together: 29 scan and walk guide tests, type check, lint, four layout cases and the size budgets pass"],"next_action":"After 176 and 175 merge and deploy, run Simulate the trip and the camera scan on the live site at laptop width","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T04:19:50Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"ea7d5a8a1cd0c53deb2592701925eb03f0278b4fb674084f8dcac4d339b0557a","request_id":"3b4d251a7ca040a0a17c0fa780ac7dd6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The camera scan branch now holds simulate mode too, so pull request 175 fits on top of 176
+
+Evidence:
+- On the Pro, with both together: 29 scan and walk guide tests, type check, lint, four layout cases and the size budgets pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- merge of feat/88-simulate into feat/88-sign-scan; .size-limit.json all-JS budget 1237 kB
+
+Blocked/uncertain:
+- none
+
+Next:
+- After 176 and 175 merge and deploy, run Simulate the trip and the camera scan on the live site at laptop width
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
