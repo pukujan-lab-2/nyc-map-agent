@@ -396,6 +396,29 @@ Blocked/uncertain:
 Next:
 - After pull request 193 merges and deploys, open the live site at /station-3d on a phone and a laptop and press Play
 
+### 2026-11-14 20:27:41 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["docs/demo/live-two-screen/"],"completed":["The pitch had nothing on a laptop that moves as a phone is carried around; the two-screen demo (a relay, a phone page that follows by steps and compass after one location fix, and a screen page with the dot and trail) is now in docs/demo/live-two-screen (pull request 194)."],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Walk with the phone page on a real iPhone and note whether steps and compass register, then how far Check with location says it drifted","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T20:27:41Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3d1dd4b3f859a31b2880dd0e3729b91cea557b0056d2bf033fa31de172fd7320","request_id":"a24d214a32524ff4978a4ea797e3b80a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The pitch had nothing on a laptop that moves as a phone is carried around; the two-screen demo (a relay, a phone page that follows by steps and compass after one location fix, and a screen page with the dot and trail) is now in docs/demo/live-two-screen (pull request 194).
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- docs/demo/live-two-screen/
+
+Blocked/uncertain:
+- none
+
+Next:
+- Walk with the phone page on a real iPhone and note whether steps and compass register, then how far Check with location says it drifted
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
