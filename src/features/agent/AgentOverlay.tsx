@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Textarea } from "@/components/ui/textarea";
 import { setAmbient } from "@/lib/ambient";
 import { useFlag } from "@/lib/flags";
+import { asksForStationWalk, STATION_WALK_URL } from "./stationWalkAsk";
 import { getMapInstance } from "@/lib/map/mapInstance";
 import { useDataView } from "@/lib/store/DataViewContext";
 import { followTripRoute } from "@/lib/transit/routeFollow";
@@ -420,6 +421,8 @@ export default function AgentOverlay() {
     heardLangRef.current = null;
     const askLang = heard ?? lang;
     if (!q) return;
+    // The one filmed trip: open its film and map instead of asking the model, which has no tool for it.
+    if (asksForStationWalk(q)) { window.location.assign(STATION_WALK_URL); return; }
     setNotice(null);
     setInput("");
     // A new question replaces the last answer: its trip card, the line it opened, a follow.
