@@ -476,6 +476,29 @@ Blocked/uncertain:
 Next:
 - Read the browser tests on pull request 195; once it merges and deploys, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186
 
+### 2026-11-14 22:30:36 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["The recorder's own Record button was hidden on phones by the rule meant for the home button, because both used one test id (five browser test failures on pull request 195); the home button has its own id now, and the QR popup links to a new what-is-coming page"],"decisions":["no new decisions"],"evidence":["Lint and the type check are clean; the browser tests and the size check run in CI and have not been seen green on this commit"],"next_action":"Read the checks on pull request 195; once it merges and deploys, open the QR popup's link, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T22:30:36Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e9a8e8d24c25629324588ae06c038a6c51ed3b2e6f6598d4d8292670a9837152","request_id":"838c61f47a2b47609808cb96ccc55a53","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The recorder's own Record button was hidden on phones by the rule meant for the home button, because both used one test id (five browser test failures on pull request 195); the home button has its own id now, and the QR popup links to a new what-is-coming page
+
+Evidence:
+- Lint and the type check are clean; the browser tests and the size check run in CI and have not been seen green on this commit
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Read the checks on pull request 195; once it merges and deploys, open the QR popup's link, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
