@@ -212,28 +212,28 @@ Blocked/uncertain:
 Next:
 - When 175's checks pass and it merges, run Simulate the trip and the camera scan on the live site at laptop width
 
-### 2026-11-14 06:06:08 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+### 2026-11-14 05:47:16 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
 
-<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["src/features/walkguide/WalkGuide.tsx, e2e/walk-guide.spec.ts"],"completed":["The walk guide has a Watch the filmed trip button and a Download link (branch feat/88-trip-video); the film file is not in yet"],"decisions":["no new decisions"],"evidence":["Not yet run: the layout case needs public/walks/trip.mp4, which is rendering with faces blurred on the Pro"],"next_action":"Add the blurred 720-wide film as public/walks/trip.mp4, run the checks and the layout case, open the pull request; test the live camera scan once main deploys it","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T06:06:08Z"} -->
-<!-- continuity:checkpoint-operation {"payload_sha256":"3c2ec61df05f23761d7d4455f26aa468f30f46716bae401928c782bacf4fc491","request_id":"66423b2a829e49b5a4140ce7544f9128","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["src/features/walkguide/walks.ts"],"completed":["Simulate mode ran the whole trip on the live site at 1440x900, Cortlandt St to the Union Sq street elevator; the camera scan merged as pull request 175; the Union Sq platform is moved onto the real track (pull request 178)"],"decisions":["no new decisions"],"evidence":["Live: header read Simulation, steps counted down about 6 a second, the dot followed Dey St and ended at 14th St and 4th Av; 175 and 176 merged with every check green"],"next_action":"When main deploys the scan, post held-out frames to the live /api/agent/see-sign and try the webcam scan in a browser; then check 178 on the live map","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T05:47:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1705fd435c398f16431e96f140e02b52c3a9175a1fd3b7c0570946c14ece35de","request_id":"fbf4ae4ab87a4fee8da8e9984b4373c9","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
 
 Completed:
-- The walk guide has a Watch the filmed trip button and a Download link (branch feat/88-trip-video); the film file is not in yet
+- Simulate mode ran the whole trip on the live site at 1440x900, Cortlandt St to the Union Sq street elevator; the camera scan merged as pull request 175; the Union Sq platform is moved onto the real track (pull request 178)
 
 Evidence:
-- Not yet run: the layout case needs public/walks/trip.mp4, which is rendering with faces blurred on the Pro
+- Live: header read Simulation, steps counted down about 6 a second, the dot followed Dey St and ended at 14th St and 4th Av; 175 and 176 merged with every check green
 
 Decisions:
 - no new decisions
 
 Changed:
-- src/features/walkguide/WalkGuide.tsx, e2e/walk-guide.spec.ts
+- src/features/walkguide/walks.ts
 
 Blocked/uncertain:
 - none
 
 Next:
-- Add the blurred 720-wide film as public/walks/trip.mp4, run the checks and the layout case, open the pull request; test the live camera scan once main deploys it
+- When main deploys the scan, post held-out frames to the live /api/agent/see-sign and try the webcam scan in a browser; then check 178 on the live map
 
 ## Handoff
 
