@@ -166,6 +166,29 @@ Blocked/uncertain:
 Next:
 - When 177 merges, bring main into 176 and 175 so their check jobs pass; then run Simulate the trip and the camera scan on the live site
 
+### 2026-11-14 04:15:13 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["tasks/TASK-NMA-0058-walk-guide.md"],"completed":["Pull request 177 merged, so the check job passes; main is merged into the simulate branch"],"decisions":["no new decisions"],"evidence":["177 merged with every check green; 176 had one conflict, in the task record"],"next_action":"After 176 merges, bring main into 175; then verify simulate and the scan on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T04:15:13Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"5f3a91e98698a54d351e29d516e1945edb3d49f83d2360ef07f043d5bcccb550","request_id":"1c86fe6780894a8c834eb421f3a458ae","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Pull request 177 merged, so the check job passes; main is merged into the simulate branch
+
+Evidence:
+- 177 merged with every check green; 176 had one conflict, in the task record
+
+Decisions:
+- no new decisions
+
+Changed:
+- tasks/TASK-NMA-0058-walk-guide.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After 176 merges, bring main into 175; then verify simulate and the scan on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
