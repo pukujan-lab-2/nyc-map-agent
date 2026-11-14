@@ -278,7 +278,9 @@ export default function WalkGuide() {
             </a>
           </div>
           {/* Kept short so the map above the sheet stays in view; the film is upright, like the phone that shot it. */}
-          {film ? <video src={TRIP_FILM} controls playsInline preload="metadata" className="max-h-[38dvh] w-full rounded-xl bg-black object-contain" data-testid="walk-film" /> : null}
+          {film ? <video src={TRIP_FILM} controls playsInline preload="metadata" className="max-h-[38dvh] w-full rounded-xl bg-black object-contain" data-testid="walk-film">
+            <track kind="captions" src="/walks/trip.vtt" srcLang="en" label="English" />
+          </video> : null}
           <div className="flex gap-2">
             <button type="button" aria-label="Previous sign" className="task-action min-h-11 px-3" disabled={place.i === 0} onClick={() => { setWrong(null); go({ i: place.i - 1, walked: 0 }); }}><ArrowLeft size={18} /></button>
             <button type="button" className="task-action min-h-11 flex-1 px-3" disabled={!next} onClick={() => { setWrong(null); setStarted(true); go({ i: place.i + 1, walked: 0 }); }}>
