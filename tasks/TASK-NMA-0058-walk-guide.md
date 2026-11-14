@@ -143,6 +143,29 @@ Blocked/uncertain:
 Next:
 - After 176 deploys, run Simulate the trip on the live site at laptop width; find why the check job failed on pull request 175 and get the camera scan merged; then test the scan with held-out frames from the evening recording
 
+### 2026-11-14 03:46:52 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["src/features/walkguide/walks.ts, WalkGuide.tsx"],"completed":["Seen on the live site at laptop width, the walk guide draws its line on the real map; the Cortlandt passage now lies along Dey St and the camera goes to the walk as soon as the map is up (pull request 176)"],"decisions":["no new decisions"],"evidence":["Live site with ?flags=+walkGuide showed the line about 40 m north of Dey St before this; on the Pro the 16 walk guide tests and four layout cases pass after it"],"next_action":"When 177 merges, bring main into 176 and 175 so their check jobs pass; then run Simulate the trip and the camera scan on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T03:46:52Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"eb03cefd8cda115e4524cff9cf58b6c3a915db0c395d51674d4f351db1233983","request_id":"06c9a1c8bcdc42f5aaffde9d7bf190b6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Seen on the live site at laptop width, the walk guide draws its line on the real map; the Cortlandt passage now lies along Dey St and the camera goes to the walk as soon as the map is up (pull request 176)
+
+Evidence:
+- Live site with ?flags=+walkGuide showed the line about 40 m north of Dey St before this; on the Pro the 16 walk guide tests and four layout cases pass after it
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/walkguide/walks.ts, WalkGuide.tsx
+
+Blocked/uncertain:
+- none
+
+Next:
+- When 177 merges, bring main into 176 and 175 so their check jobs pass; then run Simulate the trip and the camera scan on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
