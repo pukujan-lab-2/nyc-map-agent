@@ -235,6 +235,29 @@ Blocked/uncertain:
 Next:
 - When main deploys the scan, post held-out frames to the live /api/agent/see-sign and try the webcam scan in a browser; then check 178 on the live map
 
+### 2026-11-14 06:20:45 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["server/features/agent/seeSign.ts, seeSign.test.ts"],"completed":["The camera scan is live and was run against the real server; a sign is now taken only when its street numbers were read"],"decisions":["no new decisions"],"evidence":["Live /api/agent/see-sign: 7 of 8 sign frames right, 9 of 10 held-out frames matched nothing and the tenth matched the sign it showed, 2 to 12 s each; the one wrong answer is now a test case"],"next_action":"Add the face-blurred film as public/walks/trip.mp4, run the checks and layout case, open the pull request; then the 3D levels view with a follow camera","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T06:20:45Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b5ec6acdcd874a50cccb19bfe8c117e550bec75d24e6c519f645bb9f016bf540","request_id":"a22645e44df741aa9a5a6f43a3e97b0c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The camera scan is live and was run against the real server; a sign is now taken only when its street numbers were read
+
+Evidence:
+- Live /api/agent/see-sign: 7 of 8 sign frames right, 9 of 10 held-out frames matched nothing and the tenth matched the sign it showed, 2 to 12 s each; the one wrong answer is now a test case
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/agent/seeSign.ts, seeSign.test.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Add the face-blurred film as public/walks/trip.mp4, run the checks and layout case, open the pull request; then the 3D levels view with a follow camera
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
