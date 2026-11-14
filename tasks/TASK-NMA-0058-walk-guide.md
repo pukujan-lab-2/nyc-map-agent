@@ -419,6 +419,29 @@ Blocked/uncertain:
 Next:
 - After pull request 195 merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186
 
+### 2026-11-14 21:27:06 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["On a phone the new Record button landed on the answer card and the locate button when an answer or sheet was open (eight layout failures in CI on pull request 195); it now shows on the plain home screen only at phone widths"],"decisions":["no new decisions"],"evidence":["The fix is one CSS rule in src/index.css; the affected browser tests are re-running on the MacBook Pro and in CI, not yet seen green"],"next_action":"Read the re-run of the browser tests on pull request 195; once it merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T21:27:06Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a3dd33511b14e879ce57c3075b69195ace32e6b5b38523b631d561bc3fffdc5c","request_id":"1fbc8610b2f2474a889ca089562cfcdd","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- On a phone the new Record button landed on the answer card and the locate button when an answer or sheet was open (eight layout failures in CI on pull request 195); it now shows on the plain home screen only at phone widths
+
+Evidence:
+- The fix is one CSS rule in src/index.css; the affected browser tests are re-running on the MacBook Pro and in CI, not yet seen green
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Read the re-run of the browser tests on pull request 195; once it merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
