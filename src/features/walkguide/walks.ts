@@ -12,7 +12,7 @@
  * fitted to the street corners the signs name. Nothing here is to scale.
  */
 
-export type WalkLevel = "street" | "concourse" | "mezzanine" | "platform";
+type WalkLevel = "street" | "concourse" | "mezzanine" | "platform";
 
 export interface Checkpoint {
   id: string;

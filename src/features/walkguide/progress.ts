@@ -72,7 +72,7 @@ export function nearbyFirst<T extends { id: string }>(walk: readonly Checkpoint[
  * is a swing of the magnitude above its own slow average, at most one every
  * 300 ms. Rough by nature; a confirmed sign corrects it.
  */
-export interface StepState { mean: number; above: boolean; lastT: number; steps: number }
+interface StepState { mean: number; above: boolean; lastT: number; steps: number }
 export const initialSteps = (): StepState => ({ mean: 9.81, above: false, lastT: -1, steps: 0 });
 const SWING = 1.3;
 const GAP_S = 0.3;
