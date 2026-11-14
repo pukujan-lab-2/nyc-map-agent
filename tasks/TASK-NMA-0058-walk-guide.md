@@ -396,6 +396,29 @@ Blocked/uncertain:
 Next:
 - After pull request 193 merges and deploys, open the live site at /station-3d on a phone and a laptop and press Play
 
+### 2026-11-14 20:53:00 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["The replay map follows the film (dot waits on the Cortlandt St platform, line starts at the Broadway entrance by Dey St and turns north at Church St), the film plays its sound, the task row is away while the replay is open, and a red Record button on home opens /record; pull request 195 is open with auto-merge armed"],"decisions":["no new decisions"],"evidence":["Replay, recorder and walk guide unit tests pass (67 tests); lint and the type check are clean; the browser layout specs run in CI"],"next_action":"After pull request 195 merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T20:53:00Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b25ed292cbe9f8608b6f7596850b7d6556be5f958d39dc661eebd641f23905ea","request_id":"da9152e5b07a41f2a57ea3a0ffaf78af","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The replay map follows the film (dot waits on the Cortlandt St platform, line starts at the Broadway entrance by Dey St and turns north at Church St), the film plays its sound, the task row is away while the replay is open, and a red Record button on home opens /record; pull request 195 is open with auto-merge armed
+
+Evidence:
+- Replay, recorder and walk guide unit tests pass (67 tests); lint and the type check are clean; the browser layout specs run in CI
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request 195 merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
