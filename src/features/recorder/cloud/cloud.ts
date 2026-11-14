@@ -73,7 +73,7 @@ export function buildCloud(model: StationModel, count: number, seed = 7): Cloud 
   const longest = model.walks.reduce((best, w) => (w.path.length > best.length ? w.path : best), model.walks[0]?.path ?? []);
   const walk = longest.length > 1 ? alongWalk(longest) : [];
 
-  const pts: { p: number[]; seen: number }[] = [];
+  const pts: { p: number[]; seen: number; off: number }[] = [];
   for (let n = 0; n < count && total > 0; n++) {
     // The triangle this point lands on, picked by area so big floors get more points than small steps.
     const want = rand() * total;
@@ -94,9 +94,14 @@ export function buildCloud(model: StationModel, count: number, seed = 7): Cloud 
       const d = (w.at[0] - p[0]) ** 2 + (w.at[1] - p[1]) ** 2 + ((w.at[2] - p[2]) * 2) ** 2;
       if (d < near) { near = d; seen = w.k; }
     }
-    pts.push({ p, seen });
+    pts.push({ p, seen, off: Number.isFinite(near) ? Math.sqrt(near) : 0 });
   }
-  pts.sort((x, y) => x.seen - y.seen);
+  // The part of the walk a point is nearest decides when it appears, and within that the points
+  // beside the walk come before the ones across the hall. Then the order is spread evenly over the
+  // walk, so the station fills in at a steady rate instead of mostly in the first few steps.
+  const farthest = pts.reduce((m, x) => Math.max(m, x.off), 1e-6);
+  pts.sort((x, y) => x.seen + 0.15 * (x.off / farthest) - (y.seen + 0.15 * (y.off / farthest)));
+  pts.forEach((x, i) => { x.seen = pts.length > 1 ? i / (pts.length - 1) : 0; });
 
   const lo = [Infinity, Infinity, Infinity], hi = [-Infinity, -Infinity, -Infinity];
   for (const { p } of pts) for (let j = 0; j < 3; j++) { lo[j] = Math.min(lo[j], p[j]); hi[j] = Math.max(hi[j], p[j]); }
@@ -136,7 +141,7 @@ export function project(x: number, y: number, z: number, v: View): [number, numb
   const cp = Math.cos(v.pitch), sp = Math.sin(v.pitch);
   // Tilt: looking down at the station from in front of it.
   const up = z * cp - ry * sp, depth = ry * cp + z * sp;
-  const far = v.reach * 3.2 + depth;
+  const far = v.reach * 2.3 + depth;
   if (far <= 1) return null;
   const s = (Math.min(v.w, v.h * 1.4) * 1.25) / far;
   return [v.w / 2 + rx * s, v.h / 2 - up * s, s];

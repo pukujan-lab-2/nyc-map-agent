@@ -31,9 +31,9 @@ function draw(g: CanvasRenderingContext2D, cloud: Cloud, v: View, k: number): vo
       if (Math.min(COLOURS.length - 1, Math.floor(cloud.height[i] * COLOURS.length)) !== band) continue;
       const p = project(cloud.xyz[i * 3], cloud.xyz[i * 3 + 1], cloud.xyz[i * 3 + 2], v);
       if (!p) continue;
-      const size = Math.max(1, Math.min(4, p[2] * 0.22));
+      const size = Math.max(1.5, Math.min(5, p[2] * 0.4));
       // The newest points flare as they appear.
-      g.globalAlpha = cloud.seen[i] > k - 0.03 && k < 1 ? 1 : 0.5;
+      g.globalAlpha = cloud.seen[i] > k - 0.03 && k < 1 ? 1 : 0.6;
       g.fillRect(p[0] - size / 2, p[1] - size / 2, size, size);
     }
   }
