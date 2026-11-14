@@ -7,6 +7,7 @@ import type { SheetLevel } from "@/components/sheetSwipe";
 import { onMapInstance } from "@/lib/map/mapInstance";
 import { say } from "@/lib/voice/say";
 import { countStep, dueAtNext, initialSteps, nearbyFirst, nextStop, placeAt, placeForSign, stepsToNextStop, type Place } from "./progress";
+import { SignScan } from "./SignScan";
 import { photoUrl, WALK, WRONG_WAYS, type Checkpoint } from "./walks";
 
 const SRC = "walk-guide";
@@ -167,7 +168,8 @@ export default function WalkGuide() {
       </div>}>
       <section className="pull-sheet-body mt-1 flex flex-col gap-2" aria-label="Walk guide">
         {lost ? <>
-          <p className="text-sm font-bold">Which of these can you see?</p>
+          <SignScan signs={signs} onFound={pick} />
+          <p className="text-sm font-bold">Or tap the one you can see</p>
           <div className="grid shrink-0 auto-rows-max grid-cols-2 gap-2" data-testid="walk-signs">
             {signs.map((s) => (
               <button key={s.id} type="button" className="min-h-28 overflow-hidden rounded-xl bg-slate-900/70 text-left" onClick={() => pick(s.id)}>
