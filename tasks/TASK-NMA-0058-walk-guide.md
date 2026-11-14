@@ -419,6 +419,29 @@ Blocked/uncertain:
 Next:
 - Walk with the phone page on a real iPhone and note whether steps and compass register, then how far Check with location says it drifted
 
+### 2026-11-14 20:32:47 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["docs/demo/live-two-screen/"],"completed":["The laptop at the venue could not connect to the relay, so the phone page of the two-screen demo now shows its own map with the dot and trail (pull request 194)."],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Walk with the phone page on a real iPhone, mirror it to the laptop, and note whether steps and compass register","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T20:32:47Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4a55efb0d38248f539d5bff0c53b67c2d64a24f9fc46e89be8cddff21b93c085","request_id":"bad85cd4676640809cadc410d49a24f1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The laptop at the venue could not connect to the relay, so the phone page of the two-screen demo now shows its own map with the dot and trail (pull request 194).
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- docs/demo/live-two-screen/
+
+Blocked/uncertain:
+- none
+
+Next:
+- Walk with the phone page on a real iPhone, mirror it to the laptop, and note whether steps and compass register
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
