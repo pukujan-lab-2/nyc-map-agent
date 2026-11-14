@@ -47,13 +47,13 @@ for (const size of SIZES) {
 
     test("home shows the red Record button inside the layout bar", async ({ page }) => {
       await open(page);
-      await expect(page.getByTestId("record-button")).toBeVisible();
+      await expect(page.getByTestId("open-recorder")).toBeVisible();
       await expectLayout(page);
     });
 
     test("the Record button opens /record", async ({ page }) => {
       await open(page);
-      await page.getByTestId("record-button").click();
+      await page.getByTestId("open-recorder").click();
       await expect(page).toHaveURL(/\/record$/);
     });
 

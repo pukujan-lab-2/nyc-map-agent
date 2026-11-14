@@ -66,6 +66,9 @@ export function QrButton({ wide }: { wide?: boolean } = {}) {
           <p className="pr-10 text-left text-[15px] font-semibold">Scan to open the app</p>
           <img src="/qr-live.svg" alt={`QR code for ${LIVE_URL}`} width={220} height={220} className="h-[220px] w-[220px] [image-rendering:pixelated]" />
           <p className="text-[13px] font-medium text-[#334155]">nyc.design-bakery.com</p>
+          {/* Where the product is going: a short animated page of the full loop. */}
+          <a href="/coming-soon.html" data-testid="coming-soon-link"
+            className="flex min-h-11 w-full items-center justify-center rounded-full bg-[#0b1220] px-4 text-[14px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">See what is coming →</a>
         </div>
       </div>
     ) : null}
@@ -82,7 +85,7 @@ export function QrButton({ wide }: { wide?: boolean } = {}) {
 function RecordButton() {
   const navigate = useNavigate();
   return (
-    <button type="button" aria-label="Record a station walk" title="Record a station walk" data-testid="record-button"
+    <button type="button" aria-label="Record a station walk" title="Record a station walk" data-testid="open-recorder"
       onClick={() => navigate("/record")}
       className={`${ROUND} border border-red-700 !bg-red-600 text-white hover:!bg-red-500 pointer-events-auto !h-9 !w-9`}>
       <span aria-hidden className="block h-3 w-3 rounded-full bg-white" />
