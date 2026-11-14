@@ -965,6 +965,29 @@ Blocked/uncertain:
 Next:
 - Open the PR, arm auto-merge, then walk the A/C level on the live site
 
+### 2026-11-14 05:24:18 UTC — agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8","blocked":[],"changed":["none"],"completed":["PR #173: merged main (CURRENT.md conflict, both kept), title given a conventional prefix, walk-geometry test limit raised to 3 min; tsc and all 1966 tests pass on the Pro"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #173 merges and deploys, walk the stairs down to the A/C platform on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-14T05:24:18Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"05d4129e539c28378d47caf692a03cf7280844dab3c9568f2422bbd701aac139","request_id":"02ed0fb46cd04b74841c59d1521e06f0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- PR #173: merged main (CURRENT.md conflict, both kept), title given a conventional prefix, walk-geometry test limit raised to 3 min; tsc and all 1966 tests pass on the Pro
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #173 merges and deploys, walk the stairs down to the A/C platform on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
