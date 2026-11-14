@@ -281,6 +281,29 @@ Blocked/uncertain:
 Next:
 - After 179 merges and deploys, play and download the film on the live site; then build the 3D levels view with a follow camera
 
+### 2026-11-14 15:12:11 UTC — agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/1d22e75c-03c4-4c1f-811a-26cfc8b712a5","blocked":[],"changed":["checkpoints/CURRENT.md"],"completed":["Main is merged into the film branch, so pull request 179 can merge again"],"decisions":["no new decisions"],"evidence":["One conflict, in checkpoints/CURRENT.md, resolved by keeping main's paragraph and adding this branch's sentences"],"next_action":"Finish the 1920x1080 big-screen film with the three-level view for the 2026-11-14 demo and send it to the owner; after 179 deploys, play and download the film on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T15:12:11Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"de85b47e0d4d204b7893cc13f41c091aee5816fbd8c3f698c04c295b45fbdf88","request_id":"fbdb30d4a17041aca5373401e3c6a6f9","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Main is merged into the film branch, so pull request 179 can merge again
+
+Evidence:
+- One conflict, in checkpoints/CURRENT.md, resolved by keeping main's paragraph and adding this branch's sentences
+
+Decisions:
+- no new decisions
+
+Changed:
+- checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Finish the 1920x1080 big-screen film with the three-level view for the 2026-11-14 demo and send it to the owner; after 179 deploys, play and download the film on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
