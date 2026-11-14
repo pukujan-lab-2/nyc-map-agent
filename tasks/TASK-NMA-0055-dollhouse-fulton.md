@@ -1011,6 +1011,29 @@ Blocked/uncertain:
 Next:
 - After #173 merges and deploys, walk the stairs down to the A/C platform on the live site
 
+### 2026-11-14 05:34:57 UTC — agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8","blocked":[],"changed":["none"],"completed":["PR #173: shell opening test limit raised to 6 min (187 s on a busy CI runner)"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #173 merges and deploys, walk the stairs down to the A/C platform on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-14T05:34:57Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a9847f0213361031a37156d0eef911385034c0239f09d55668794fccc8459604","request_id":"844e7f6e9b414210a3bd74dc53ff5e7b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- PR #173: shell opening test limit raised to 6 min (187 s on a busy CI runner)
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #173 merges and deploys, walk the stairs down to the A/C platform on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
