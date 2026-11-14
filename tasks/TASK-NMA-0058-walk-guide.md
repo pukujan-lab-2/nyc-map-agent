@@ -453,6 +453,29 @@ Blocked/uncertain:
 Next:
 - Read the re-run of the browser tests on pull request 195; once it merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186
 
+### 2026-11-14 21:52:15 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["Asked for the inside walk between Fulton and Union Square, the chat said it could not map one; it now opens the film and map of that trip (pull request 195, with main merged in)"],"decisions":["no new decisions"],"evidence":["The question matcher has unit tests (2 pass) and the type check is clean; the browser tests run in CI and have not been seen green since the phone fix for the Record button"],"next_action":"Read the browser tests on pull request 195; once it merges and deploys, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T21:52:15Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"cac58ad472cb56913b794e9c086adb12fccb2bd98bc9b8d80a396be5f4606bf7","request_id":"38d417f6400944efa60274b21b208ee6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Asked for the inside walk between Fulton and Union Square, the chat said it could not map one; it now opens the film and map of that trip (pull request 195, with main merged in)
+
+Evidence:
+- The question matcher has unit tests (2 pass) and the type check is clean; the browser tests run in CI and have not been seen green since the phone fix for the Record button
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Read the browser tests on pull request 195; once it merges and deploys, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
