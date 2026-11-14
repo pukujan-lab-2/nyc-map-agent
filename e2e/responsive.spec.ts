@@ -45,6 +45,18 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
+    test("home shows the red Record button inside the layout bar", async ({ page }) => {
+      await open(page);
+      await expect(page.getByTestId("record-button")).toBeVisible();
+      await expectLayout(page);
+    });
+
+    test("the Record button opens /record", async ({ page }) => {
+      await open(page);
+      await page.getByTestId("record-button").click();
+      await expect(page).toHaveURL(/\/record$/);
+    });
+
     test("home with the live trains moving", async ({ page }) => {
       await open(page);
       await expect(page.getByTestId("agent-bar")).toBeVisible();

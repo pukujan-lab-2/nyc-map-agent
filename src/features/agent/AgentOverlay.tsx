@@ -172,6 +172,8 @@ export default function AgentOverlay() {
   }, [chatOpen, closeAll]);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const driveOn = useFlag("agentDrive");
+  // The station replay fills the left column or the top of a phone: the task row has no room beside it.
+  const replayOn = useFlag("stationReplay");
   const [messages, setMessages] = useState<Msg[]>([]);
   // Who gets the screen is decided in one place (src/lib/screen/screenSpace.ts); this reports what is open.
   const openMenu = useOpenMenu();
@@ -958,7 +960,7 @@ export default function AgentOverlay() {
     };
     const panelUp = panelContent !== null && !panelMinimized;
     const answerOpen = hasAnswer && answerView === "open";
-    const showIdle = !lost && !selectedLine && !stationHelpVisible && !followingRoute && !player.state.active && !walking && !streetViewOpen && !answerOpen && !busy && !handsFree && !drawerOpen && !panelUp && followed === null;
+    const showIdle = !lost && !selectedLine && !stationHelpVisible && !followingRoute && !player.state.active && !walking && !streetViewOpen && !answerOpen && !busy && !handsFree && !drawerOpen && !panelUp && followed === null && !replayOn;
     const chip = hasAnswer && answerView === "chip" ? (
       <button type="button" aria-label={tr(appLang, "showAnswer")} data-testid="answer-chip" onClick={() => sendScreen({ type: "SHOW_ANSWER" })}
         className="pointer-events-auto flex h-11 max-w-full items-center gap-2 self-start rounded-full border border-[#263449] bg-[#0b1220]/85 px-4 text-sm font-semibold text-slate-100 shadow-lg backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">

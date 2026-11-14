@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useFlag } from "@/lib/flags";
 import { sharedCoords, startSharing, useSharedLocation } from "@/lib/geo/sharedLocation";
@@ -77,6 +78,18 @@ export function QrButton({ wide }: { wide?: boolean } = {}) {
  * #124: the choice in Settings was too hard to find). Settings keeps its own Language choice.
  * A native select sits over the chip, so a phone opens its own picker.
  */
+/** Round red Record button: opens the station-walk recorder. Same size and shape as the QR button. */
+function RecordButton() {
+  const navigate = useNavigate();
+  return (
+    <button type="button" aria-label="Record a station walk" title="Record a station walk" data-testid="record-button"
+      onClick={() => navigate("/record")}
+      className={`${ROUND} border border-red-700 !bg-red-600 text-white hover:!bg-red-500 pointer-events-auto !h-9 !w-9`}>
+      <span aria-hidden className="block h-3 w-3 rounded-full bg-white" />
+    </button>
+  );
+}
+
 function LangChip() {
   const lang = useLangPref();
   const t = useMenuT();
@@ -402,6 +415,8 @@ export function MapChrome() {
       <LangChip />
       {/* The QR code: wider screens here, a phone in Settings. */}
       <div className="hidden sm:flex"><QrButton /></div>
+      {/* Record a station walk, under the QR button, at every width. */}
+      <RecordButton />
     </div>
     <LocateButton map={map} className="sheet-locate corner-locate absolute z-40" />
     </>
