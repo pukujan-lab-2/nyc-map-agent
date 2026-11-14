@@ -3,7 +3,7 @@ import { formatStationName } from "@/lib/streetName";
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { nextLevel, swipeOf, type SheetLevel } from "@/components/sheetSwipe";
-import { setLeftAnswer, setLeftChips, setLeftSheet, setLeftSlot, useLeftColumn } from "@/lib/store/leftColumn";
+import { setLeftAnswer, setLeftChips, setLeftSheet, setLeftSlot } from "@/lib/store/leftColumn";
 import { useMediaQuery } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/appLang";
@@ -244,8 +244,9 @@ export function AgentHome(p: AgentHomeProps) {
   const sheet = orb.show || answerOpen;
   const wide = useMediaQuery("(min-width: 1024px)");
   const tablet = useMediaQuery("(min-width: 640px)");
-  const card = useLeftColumn((s) => s.cards.length > 0);
-  const column = !hidden && wide && (sheet || card);
+  // On a wide screen the left column is always there (owner, 2026-11-14: "everything bottom left on
+  // desktop"): the ask box at its foot, the task buttons or an answer above it, a card at its top.
+  const column = !hidden && wide;
   useLayoutEffect(() => {
     setLeftAnswer(!hidden && wide && sheet);
     setLeftSheet(!hidden && tablet && sheet);

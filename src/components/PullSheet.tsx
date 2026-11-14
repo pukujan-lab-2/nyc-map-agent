@@ -1,7 +1,10 @@
 import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ArrowLeft } from "lucide-react";
 import "@/components/task-screens.css";
+import { useLeftCard } from "@/lib/store/leftColumn";
 import { pullSheetMounted, useSheetPlace } from "@/lib/store/pullSheet";
+import { useMediaQuery } from "@/lib/useMediaQuery";
 import { nextLevel, swipeOf, type SheetLevel } from "./sheetSwipe";
 
 export interface PullSheetProps {
@@ -34,6 +37,9 @@ let heightOwner: object | null = null;
  *
  * A phone has one sheet. A sheet opened over another becomes its top view: the
  * one under it draws nothing until Back takes the new one off (src/lib/store/pullSheet.ts).
+ *
+ * On a wide screen there is no sheet to pull: the view docks in the left column, above the ask box,
+ * open in full (owner, 2026-11-14: everything in one place on the left, like Google Maps).
  */
 export function PullSheet({ level, onLevel, onSide, header, children, testId, label, onClose, ownBack }: PullSheetProps) {
   const ref = useRef<HTMLElement>(null);
@@ -51,6 +57,8 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
     return release;
   }, []);
   const { top, below } = useSheetPlace(id);
+  const wide = useMediaQuery("(min-width: 1024px)");
+  const docked = useLeftCard(`sheet-${testId}`, wide && top);
   // On a phone the sheet spans the width: publish its height so Center on my location rides above it.
   useLayoutEffect(() => {
     const el = ref.current;
@@ -131,6 +139,21 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
 
   // Under another view: stay mounted (its place, level and scroll come back with Back) but draw nothing.
   if (!top) return null;
+  if (wide && docked.slot) {
+    if (!docked.top) return null;
+    return createPortal(
+      <section data-testid={testId} data-level={2} data-docked aria-label={label} className="task-panel flex min-h-0 flex-col gap-2 overflow-y-auto">
+        {below && onClose && !ownBack ? (
+          <div className="flex items-center gap-1.5">
+            <button type="button" data-testid="sheet-back" aria-label="Back" onClick={onClose} className="task-action task-close shrink-0"><ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden /></button>
+            <div className="min-w-0 flex-1">{header}</div>
+          </div>
+        ) : header}
+        {children}
+      </section>,
+      docked.slot,
+    );
+  }
   return (
     <section ref={ref} data-testid={testId} data-level={level} data-map-cover aria-label={label}
       className="task-panel pull-sheet" onPointerDown={down} onClickCapture={eatClick}>

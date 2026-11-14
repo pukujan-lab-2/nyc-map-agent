@@ -48,6 +48,8 @@
       #shell-mic { width: 44px; height: 44px; flex: none; display: grid; place-items: center; color: #475569; }
       #shell-orb { width: 52px; height: 52px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #2563eb; color: #fff; }
       @media (min-width: 640px) { #shell-bar { left: 50%; right: auto; width: 468px; transform: translateX(-50%); bottom: 1rem; } }
+      /* Wide: the chat bar sits at the foot of the left column, where the app puts it. */
+      @media (min-width: 1024px) { #shell-bar { left: 16px; width: min(400px, 44vw); transform: none; } }
     </style>
   </head>
   <body>

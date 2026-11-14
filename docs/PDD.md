@@ -198,7 +198,7 @@ Do these in order, one commit each, with tests where logic is involved. After ea
     - Fold the answer to its question chip when a task starts or a menu dropdown opens.
     - Fold the line panel to its pill under an answer on a phone.
     - Close menu dropdowns when a question is sent.
-    - Dock the line panel right from 640 px.
+    - Dock the line panel in the left column with every other card (owner, 2026-11-14; `docs/DESIGN_RULES.md`, "Everything lives in one place").
     - Add the Playwright check for the focus and the clear strip at the six sizes.
     - *Done when:* that check passes at every size.
 

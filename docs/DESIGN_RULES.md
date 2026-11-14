@@ -4,14 +4,19 @@
 
 ## The map is always there
 - The map stays visible on every screen. No full screens of text, and no full-screen lists.
-- Everything else opens from a button, as a dropdown or a drawer. Only one is open at a time, it is the single focus while open, and closing it returns to the map.
+- Everything else opens from a button, into the left column or the bottom sheet (menus open as a dropdown). Only one is open at a time, it is the single focus while open, and closing it returns to the map.
 - A trigger button is an icon plus a short label plus a small arrow. The dropdown it opens is a small dashboard: sections with an icon and a label, all folded except one.
 - **Top left is one swipeable menu row** of at most 6 or 7 menus, in this order: My day, Layers, Filters, Data (what we remember, lock icon), City data (311 and crash analytics), Settings. It loops round. Rarer things go inside Settings. The open one is always leftmost, with its icon and label in a pill; the rest follow to its right as icons on small dark discs with no outline (so they read on light and dark maps), each smaller and fainter, and the row fades out at its right edge so you can tell it scrolls. Swipe sideways for more, so every menu opens from there and the screen stays clean.
 - The one exception is the technical user's analytics (311 complaints, crashes, research data). That can open as a focused dashboard, and only when they ask for it.
 - **A phone has one bottom sheet** (owner, 2026-11-07, "how does google map handle this?"). Something opened from a sheet, such as a line from a station's chips, becomes the sheet's next view with a Back arrow; Close empties the sheet. Two sheets never stack (`src/lib/store/pullSheet.ts`).
-- Panels float, translucent with a blur, so the map shows through.
+- **Everything lives in one place, like Google Maps** (owner, 2026-11-14, after asking more than once). Nothing pops up on its own over the map.
+  - **Desktop (1024 px and wider):** one column down the left side. The chat bar sits at its foot, the task buttons or the answer above it, and the open card (a line, a station, the walk guide, a train you follow) at its top. Opening another card stacks it, and Back returns to the one under it. The rest of the screen is map.
+  - **Phone:** the one bottom sheet that slides up from the chat bar (below).
+  - **Building a panel:** put it in the column or the sheet. `PullSheet` does both by itself (it docks in the column on a wide screen); any other card joins the column with `useLeftCard`. Never add a card positioned on its own.
+  - **Not moved yet**, to fold in next: the trip playback bar, the arrival bubble, the underground trip cards, the street route guide cards, and the 640 to 1023 px tablet band, where panels still float. The first-person station walk is a full-screen view (depth 3) and keeps its own controls.
+- The column and the sheet are translucent with a blur, so the map shows through.
 - **Least first, deeper on each tap.** A casual user getting around never has to see sources, agent steps, data or options.
-- **The focus stays on screen.** You, the followed train or the answer's place is never hidden under a panel, unless the person has gone three levels deep. On tablet and desktop, panels dock to the sides so the middle stays clear. The full rules, by screen size, are in `docs/PDD.md` under "Screen space".
+- **The focus stays on screen.** You, the followed train or the answer's place is never hidden under a panel, unless the person has gone three levels deep. On desktop, panels dock in the left column so the middle stays clear. The full rules, by screen size, are in `docs/PDD.md` under "Screen space".
 
 ## Few words
 - Minimal text and no tooltips. If a button needs a tooltip, change the icon or the label.
