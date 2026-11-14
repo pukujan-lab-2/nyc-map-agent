@@ -1034,6 +1034,29 @@ Blocked/uncertain:
 Next:
 - After #173 merges and deploys, walk the stairs down to the A/C platform on the live site
 
+### 2026-11-14 06:37:16 UTC — agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/fe6c3404-6590-4426-a188-6d58634a70a8","blocked":[],"changed":["none"],"completed":["PR #173: all CI checks passed; merged main again (#175, #178; CURRENT.md conflict, both kept)"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #173 merges and deploys, walk the stairs down to the A/C platform on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-14T06:37:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"ef3ca8fcad41837c5bb1706990b012960e38e9652a5a815e179f35aedfe8f0f9","request_id":"35553d820d7b458dbead8b92e7f0413a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- PR #173: all CI checks passed; merged main again (#175, #178; CURRENT.md conflict, both kept)
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #173 merges and deploys, walk the stairs down to the A/C platform on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
