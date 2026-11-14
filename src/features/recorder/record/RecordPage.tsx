@@ -176,7 +176,7 @@ export default function RecordPage() {
         </div>
       )}
       {phase === "done" && take && <Review take={take} onDelete={discard} />}
-      <div hidden={phase === "done"} className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+      {phase !== "done" && <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
         {phase === "recording" && (
           <div className="flex w-full max-w-md justify-center gap-2 px-3">
             {MARK_KINDS.map((kind) => (
@@ -195,7 +195,7 @@ export default function RecordPage() {
             <span className="h-14 w-14 rounded-full bg-red-600" />
           </button>
         )}
-      </div>
+      </div>}
     </main>
   );
 }
