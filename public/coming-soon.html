@@ -28,13 +28,14 @@
 /* Layout: one stage, five scenes that play in a loop; the picture carries each scene, words are labels. */
 :root{--bg:#14161A;--panel:#1D2026;--line:#2C313A;--fg:#F6F4EF;--mute:#B9BEC7;--green:#3FBF6F;--orange:#FF8A3D;--red:#D9261C;--blue:#4C8DF6;--purple:#9B8CFF;
 --display:"Space Grotesk",system-ui,sans-serif;--body:Inter,system-ui,sans-serif;color-scheme:dark}
-html,body{height:100%}
+html{height:100%}
+body{min-height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px}
 .steps{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .steps button{font:600 15px var(--body);color:var(--mute);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:8px 16px;cursor:pointer}
 .steps button[aria-current="true"]{background:var(--green);border-color:var(--green);color:#0c1a11}
 .steps button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
-.stage{flex:1;min-height:420px;display:grid;place-items:center;position:relative}
+.stage{flex:1 0 auto;min-height:420px;display:grid;place-items:center;position:relative}
 .scene{display:none;width:100%;max-width:1500px;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(16px,4vw,64px);align-items:center}
 .scene.on{display:grid}
 h1{font:700 clamp(34px,6vw,84px)/1 var(--display);margin:0 0 18px;text-wrap:balance}
