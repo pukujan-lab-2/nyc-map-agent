@@ -1,28 +1,59 @@
 import { MockLanguageModelV4 } from "ai/test";
 import { describe, expect, it } from "vitest";
-import { jpegBase64, parseChoice, seePrompt, seeSign } from "./seeSign";
+import { jpegBase64, matchRead, READ_PROMPT, seeSign, signTokens } from "./seeSign";
 
 const JPEG = `/9j/${"A".repeat(400)}`;
-const SIGNS = [{ id: "us-to-l", sign: "Elevator to L (overhead)" }, { id: "us-yellow", sign: "Exit · 14 St & 4 Av (yellow columns)" }];
+const SIGNS = [{ id: "us-to-l", sign: "Elevator to L" }, { id: "us-yellow", sign: "Exit 14 St & 4 Av" }];
 const req = (body: unknown) => new Request("http://x/api/agent/see-sign", { method: "POST", body: JSON.stringify(body) });
 const model = (reply: string) => () => new MockLanguageModelV4({
   doGenerate: () => Promise.resolve({ content: [{ type: "text", text: reply }], finishReason: { unified: "stop", raw: "stop" }, usage: { inputTokens: { total: 1 }, outputTokens: { total: 1 } }, warnings: [] } as never),
 });
 
 describe("which sign a photo shows (#88)", () => {
-  it("numbers the signs and asks for one number, 0 for none", () => {
-    const p = seePrompt(SIGNS);
-    expect(p).toContain("1: Elevator to L (overhead)");
-    expect(p).toContain("2: Exit · 14 St & 4 Av (yellow columns)");
-    expect(p).toMatch(/Answer 0 if/);
+  it("asks only for the words on the signs, and NONE when there are none", () => {
+    expect(READ_PROMPT).toMatch(/only the words/);
+    expect(READ_PROMPT).toMatch(/reply NONE/);
   });
 
-  it("takes the first number in the reply, and only one on the list", () => {
-    expect(parseChoice("2", 2)).toBe(1);
-    expect(parseChoice("Option 1, the 14 Street sign.", 2)).toBe(0);
-    expect(parseChoice("0", 2)).toBeNull();
-    expect(parseChoice("7", 2)).toBeNull();
-    expect(parseChoice("I cannot tell.", 2)).toBeNull();
+  it("treats Street and St, Avenue and Av as the same word", () => {
+    expect(signTokens("Exit 14 Street & 4 Avenue")).toEqual(signTokens("exit 14 St 4 Av"));
+  });
+
+  // What the model read off our own frames on 2026-11-13, against the signs of 14 St-Union Sq in walk order.
+  const UNION = [
+    { id: "us-platform", sign: "14 Street" },
+    { id: "us-to-mezzanine", sign: "To Mezzanine L & Downtown N Q R W" },
+    { id: "us-to-l", sign: "Elevator to L" },
+    { id: "us-yellow", sign: "Exit 14 St & 4 Av" },
+    { id: "us-sw-turnstiles", sign: "Exit 14 St & 4 Av SW corner" },
+    { id: "us-downtown-sign", sign: "Exit 14 Street Downtown" },
+    { id: "us-exit-arrow", sign: "Exit 14 Street & 4 Avenue" },
+    { id: "us-mural-elevator", sign: "Exit 14 Street & 4 Avenue Union Square East NE corner" },
+    { id: "us-street", sign: "14 St - Union Square Subway Station" },
+    { id: "us-downtown-elevator", sign: "Downtown & Brooklyn N Q R W" },
+  ];
+  const pick = (read: string, signs = UNION) => { const i = matchRead(read, signs); return i === null ? null : signs[i].id; };
+
+  it("matches the words read to the sign that says them", () => {
+    expect(pick("To Mezzanine L & Downtown N Q R W")).toBe("us-to-mezzanine");
+    expect(pick("Elevator to L")).toBe("us-to-l");
+    expect(pick("Downtown & Brooklyn N Q R W")).toBe("us-downtown-elevator");
+    expect(pick("Exit 14 Street & 4 Avenue Union Square East ME corner")).toBe("us-mural-elevator");
+    expect(pick("14 STREET- UNION SQ 4 5 L N Q R W")).toBe("us-street");
+  });
+
+  it("takes the fuller sign when a word is cut off, and the nearer one when two say the same", () => {
+    expect(pick("Exit 14 St & 4 Av SW Co")).toBe("us-sw-turnstiles");
+    // "Exit 14 St & 4 Av" is on two signs: the first in the list is the nearer.
+    expect(pick("Exit 14 St & 4 Av")).toBe("us-yellow");
+    expect(pick("Exit 14 St & 4 Av", [UNION[6], UNION[3]])).toBe("us-exit-arrow");
+  });
+
+  it("matches nothing when no sign was read or the words are not on the list", () => {
+    expect(pick("NONE")).toBeNull();
+    expect(pick("")).toBeNull();
+    expect(pick("USE NO ELEVATOR COMMUNICATION FAILURE OFF LMA RES CALL IS BEING PLACED CALL ANSWERED")).toBeNull();
+    expect(pick("RETAIL SPACE AVAILABLE for lease")).toBeNull();
   });
 
   it("takes a JPEG as a data URL or bare, and nothing else", () => {
@@ -34,18 +65,18 @@ describe("which sign a photo shows (#88)", () => {
   });
 
   it("answers the id of the sign the model picks", async () => {
-    const res = await seeSign(req({ image: JPEG, signs: SIGNS }), model("2"));
+    const res = await seeSign(req({ image: JPEG, signs: SIGNS }), model("Exit 14 St & 4 Av"));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ id: "us-yellow" });
+    expect(await res.json()).toEqual({ id: "us-yellow", read: "Exit 14 St & 4 Av" });
   });
 
   it("answers null when the photo shows none of them", async () => {
-    expect(await (await seeSign(req({ image: JPEG, signs: SIGNS }), model("0"))).json()).toEqual({ id: null });
+    expect(await (await seeSign(req({ image: JPEG, signs: SIGNS }), model("NONE"))).json()).toEqual({ id: null, read: "NONE" });
   });
 
   it("refuses a missing photo, no signs, and an id that is not a plain name", async () => {
     for (const body of [{ signs: SIGNS }, { image: JPEG, signs: [] }, { image: JPEG, signs: [{ id: "a b", sign: "x" }] }, { image: "hello", signs: SIGNS }]) {
-      expect((await seeSign(req(body), model("1"))).status).toBe(400);
+      expect((await seeSign(req(body), model("Elevator to L"))).status).toBe(400);
     }
   });
 

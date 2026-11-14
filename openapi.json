@@ -5374,7 +5374,7 @@
     },
     "/api/v1/agent/see-sign": {
       "post": {
-        "summary": "Which one of a short list of station signs and landmarks a photo shows; the photo is passed to a vision model and not kept",
+        "summary": "Which one of a short list of station signs a photo shows, by the words read off it; the photo is passed to a vision model and not kept",
         "requestBody": {
           "required": true,
           "content": {
@@ -5419,7 +5419,7 @@
         },
         "responses": {
           "200": {
-            "description": "The id of the sign the photo shows, or null when it shows none of them",
+            "description": "The id of the sign whose words were read in the photo, or null, and the words read",
             "content": {
               "application/json": {
                 "schema": {
@@ -5430,10 +5430,14 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "read": {
+                      "type": "string"
                     }
                   },
                   "required": [
-                    "id"
+                    "id",
+                    "read"
                   ]
                 }
               }
@@ -5484,7 +5488,7 @@
     },
     "/api/agent/see-sign": {
       "post": {
-        "summary": "Which one of a short list of station signs and landmarks a photo shows; the photo is passed to a vision model and not kept (alias of /api/v1/agent/see-sign)",
+        "summary": "Which one of a short list of station signs a photo shows, by the words read off it; the photo is passed to a vision model and not kept (alias of /api/v1/agent/see-sign)",
         "deprecated": true,
         "requestBody": {
           "required": true,
@@ -5530,7 +5534,7 @@
         },
         "responses": {
           "200": {
-            "description": "The id of the sign the photo shows, or null when it shows none of them",
+            "description": "The id of the sign whose words were read in the photo, or null, and the words read",
             "content": {
               "application/json": {
                 "schema": {
@@ -5541,10 +5545,14 @@
                         "string",
                         "null"
                       ]
+                    },
+                    "read": {
+                      "type": "string"
                     }
                   },
                   "required": [
-                    "id"
+                    "id",
+                    "read"
                   ]
                 }
               }

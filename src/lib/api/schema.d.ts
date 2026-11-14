@@ -130,7 +130,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Which one of a short list of station signs and landmarks a photo shows; the photo is passed to a vision model and not kept (alias of /api/v1/agent/see-sign)
+         * Which one of a short list of station signs a photo shows, by the words read off it; the photo is passed to a vision model and not kept (alias of /api/v1/agent/see-sign)
          * @deprecated
          */
         post: {
@@ -152,7 +152,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description The id of the sign the photo shows, or null when it shows none of them */
+                /** @description The id of the sign whose words were read in the photo, or null, and the words read */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -160,6 +160,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string | null;
+                            read: string;
                         };
                     };
                 };
@@ -2258,7 +2259,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Which one of a short list of station signs and landmarks a photo shows; the photo is passed to a vision model and not kept */
+        /** Which one of a short list of station signs a photo shows, by the words read off it; the photo is passed to a vision model and not kept */
         post: {
             parameters: {
                 query?: never;
@@ -2278,7 +2279,7 @@ export interface paths {
                 };
             };
             responses: {
-                /** @description The id of the sign the photo shows, or null when it shows none of them */
+                /** @description The id of the sign whose words were read in the photo, or null, and the words read */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -2286,6 +2287,7 @@ export interface paths {
                     content: {
                         "application/json": {
                             id: string | null;
+                            read: string;
                         };
                     };
                 };

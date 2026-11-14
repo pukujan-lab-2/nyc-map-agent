@@ -81,7 +81,7 @@ export function SignScan({ signs, onFound }: { signs: ReadonlyArray<{ id: string
           <span className="inline-flex items-center gap-1.5"><Camera size={16} aria-hidden />{cam === "starting" ? "Starting…" : "Point the camera at a sign"}</span>
         </button>}
       {cam === "blocked" ? <p className="text-xs text-amber-200" role="status">The camera is off for this site. Tap the sign below.</p> : null}
-      {ask === "none" ? <p className="text-xs text-amber-200" role="status" data-testid="walk-scan-note">That is not a sign on this walk. Try another, or tap one below.</p> : null}
+      {ask === "none" ? <p className="text-xs text-amber-200" role="status" data-testid="walk-scan-note">Could not read a sign on this walk there. Fill the view with the sign, or tap one below.</p> : null}
       {ask === "failed" ? <p className="text-xs text-amber-200" role="status" data-testid="walk-scan-note">Could not check the photo. Tap the sign below.</p> : null}
       <p className="text-xs text-slate-300">The photo goes to our server to name the sign. It is not kept.</p>
     </div>

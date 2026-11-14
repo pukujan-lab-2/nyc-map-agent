@@ -1,8 +1,11 @@
 /**
  * POST /api/agent/see-sign {image, signs}: which of a short list of station
- * signs and landmarks a rider's photo shows. The walk guide sends one camera
- * frame and the signs of the walk it is on; the answer is one of their ids, or
- * null when the photo shows none of them. The on-phone text reader could not
+ * signs a rider's photo shows. The walk guide sends one camera frame and the
+ * words on the signs of the station it is in, nearest first. A model that can
+ * see reads the words in the photo, and the words are matched here to the
+ * list; the answer is a sign's id and what was read, or a null id. Asking the
+ * model to pick from the list instead gave a wrong sign on 3 of 10 frames that
+ * showed none of them; reading gave none wrong on the same frames. The on-phone text reader could not
  * read our own sign frames (#88), so this asks a hosted model that can see.
  *
  * The photo leaves the phone for this, which nothing else in the app does: it
@@ -26,22 +29,37 @@ const json = (body: unknown, status: number) => Response.json(body, { status, he
 
 interface SignChoice { id: string; sign: string }
 
-/** The question put to the model. Pure, for tests. */
-export function seePrompt(signs: readonly SignChoice[]): string {
-  return [
-    "A rider in a New York subway station took this photo to find out where they are.",
-    "Which ONE of these does it show? Read any sign in the photo first; the words on it decide.",
-    ...signs.map((s, i) => `${i + 1}: ${s.sign}`),
-    "Answer with the number only. Answer 0 if the photo shows none of them or you cannot tell.",
-  ].join("\n");
+/** The request put to the model: read the signs, nothing else. Pure, for tests. */
+export const READ_PROMPT =
+  "Read the words on the subway station signs in this photo. Reply with only the words you can read on the signs, on one line. If no sign's words are readable, reply NONE. Do not describe the photo.";
+
+const SAME: Record<string, string> = { street: "st", avenue: "av", ave: "av", square: "sq" };
+/** A sign's words as plain lower-case tokens: "Street" and "St" are one word, and "&" is dropped. */
+export function signTokens(text: string): string[] {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").split(" ").filter(Boolean).map((w) => SAME[w] ?? w);
 }
 
-/** The model's reply as an index into the list, or null for none. The first whole number counts: the answer is asked for alone, and a sign's own numbers ("14 Street") come after it when the model adds words. Pure, for tests. */
-export function parseChoice(reply: string, n: number): number | null {
-  const m = /\d+/.exec(reply);
-  if (!m) return null;
-  const k = Number(m[0]);
-  return k >= 1 && k <= n ? k - 1 : null;
+/**
+ * Which listed sign the words read off a photo belong to, or null. A sign is a
+ * candidate when at least two of its words were read and at least 60% of them;
+ * a cut-off word counts ("Co" for "Corner"). The one with most words read
+ * wins, so "Exit 14 St & 4 Av SW Co" is the SW corner sign and not the plainer
+ * exit sign beside it. Equal candidates go to the earliest in the list, which
+ * the caller orders nearest the rider's last place first. Pure, for tests.
+ */
+export function matchRead(read: string, signs: readonly SignChoice[]): number | null {
+  if (/^\s*none\b/i.test(read)) return null;
+  const got = signTokens(read);
+  const has = (w: string) => got.some((g) => g === w || (g.length >= 2 && w.length > g.length && w.startsWith(g)));
+  let best: { i: number; hit: number; share: number } | null = null;
+  signs.forEach((s, i) => {
+    const want = [...new Set(signTokens(s.sign))];
+    const hit = want.filter(has).length;
+    const share = want.length ? hit / want.length : 0;
+    if (hit < Math.min(2, want.length) || share < 0.6) return;
+    if (!best || hit > best.hit || (hit === best.hit && share > best.share + 0.05)) best = { i, hit, share };
+  });
+  return best ? (best as { i: number }).i : null;
 }
 
 /** The JPEG's base64, from a data URL or bare; null when it is not one or is too big. */
@@ -57,7 +75,7 @@ function visionModel(): LanguageModel | null {
   if (!p) return null;
   const route = routeFor(p, "/chat/completions");
   const relay: typeof fetch = (_url, init) => fetch(route.url, { ...init, headers: { ...(init?.headers as Record<string, string> | undefined), ...route.headers } });
-  return createOpenAICompatible({ name: "see-sign", baseURL: p.target, apiKey: "relay", fetch: relay })(p.model);
+  return createOpenAICompatible({ name: "seesign", baseURL: p.target, apiKey: "relay", fetch: relay })(p.model);
 }
 
 export async function seeSign(req: Request, model?: () => LanguageModel | null): Promise<Response> {
@@ -75,13 +93,15 @@ export async function seeSign(req: Request, model?: () => LanguageModel | null):
   try {
     const { text } = await generateText({
       model: m,
-      messages: [{ role: "user", content: [{ type: "text", text: seePrompt(signs) }, { type: "file", data: image, mediaType: "image/jpeg" }] }],
-      // The free model thinks aloud before it answers; too small a budget ends in no answer (measured: 1200 was short twice in nine).
-      maxOutputTokens: 2500,
+      messages: [{ role: "user", content: [{ type: "text", text: READ_PROMPT }, { type: "file", data: image, mediaType: "image/jpeg" }] }],
+      // The free model thinks before it answers. On a frame with nothing to read it can think until this runs out, which comes back as no words: the safe answer.
+      maxOutputTokens: 1500,
+      providerOptions: { seesign: { reasoning: { effort: "low" } } },
       abortSignal: req.signal,
     });
-    const i = parseChoice(text, signs.length);
-    return json({ id: i === null ? null : signs[i].id }, 200);
+    const read = text.replace(/\s+/g, " ").trim().slice(0, 200);
+    const i = matchRead(read, signs);
+    return json({ id: i === null ? null : signs[i].id, read }, 200);
   } catch (e) {
     console.warn(`see-sign: ${(e as Error).message}`);
     return json({ error: "the model could not look at the photo" }, 502);
