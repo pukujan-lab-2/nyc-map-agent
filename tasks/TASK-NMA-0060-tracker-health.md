@@ -212,6 +212,52 @@ Blocked/uncertain:
 Next:
 - When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
 
+### 2026-11-15 06:35:29 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The accuracy answer keeps its existing groups; condition splits are a new list"],"decisions":["no new decisions"],"evidence":["68 unit tests pass; the API check failed only on the added group names, which are no longer added"],"next_action":"When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T06:35:29Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"dc899fe75222cfeb4ba650c540c945efb61f36da023217deaa7c34ff6da60c26","request_id":"b814c69497ba4033bc33032da0d86b19","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The accuracy answer keeps its existing groups; condition splits are a new list
+
+Evidence:
+- 68 unit tests pass; the API check failed only on the added group names, which are no longer added
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
+
+### 2026-11-15 06:35:38 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The accuracy answer keeps its existing groups; condition splits are a new list"],"decisions":["no new decisions"],"evidence":["68 unit tests pass; the API check failed only on the added group names, which are no longer added"],"next_action":"When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T06:35:38Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"dc899fe75222cfeb4ba650c540c945efb61f36da023217deaa7c34ff6da60c26","request_id":"6baa4366d2d64baaa57adc15e64f4e39","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The accuracy answer keeps its existing groups; condition splits are a new list
+
+Evidence:
+- 68 unit tests pass; the API check failed only on the added group names, which are no longer added
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
