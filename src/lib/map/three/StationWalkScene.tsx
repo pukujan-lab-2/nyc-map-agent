@@ -4,7 +4,7 @@
  * figure collides with the same floors and walls, cleared along every walk so nothing catches a body
  * there (stationWalkGeometry.ts). Loaded only when opened: the physics engine is large.
  */
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { CameraControls } from "@react-three/drei";
@@ -16,9 +16,10 @@ import type { DollhouseModel } from "@/lib/map/three/dollhouse";
 import { buildFigure, concreteTexture, pickWalk, treadTexture, walkAt, walkLength, wallTexture } from "@/lib/map/three/dollhouse";
 import { walkDressing, type WalkDressing } from "@/lib/map/three/stationWalkDressing";
 import { fultonCorner } from "@/lib/map/fultonCorners";
-import { SMOOTH_SEAMS, toYUp, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
+import { bakedShellSurfaces, SMOOTH_SEAMS, type BakedShell, toYUp, type Surface, type WalkGeometry } from "@/lib/map/three/stationWalkGeometry";
 import { loadWalkShell, type WalkShell } from "@/lib/map/three/walkShell";
 import { loadModel } from "@/lib/map/dollhousePreview";
+import { forgetWalkSpot, savedWalkSpot, WalkDevHud } from "@/lib/map/three/WalkDevHud";
 
 /** The figure's body: a capsule 1.6 m tall floating 0.25 m over the floor, so it climbs stairs. */
 const BODY = { halfHeight: 0.5, radius: 0.3, float: 0.25 };
@@ -69,7 +70,7 @@ function Station({ geo, walls }: { geo: WalkGeometry; walls: React.MutableRefObj
     const floor = new THREE.Mesh(geometryOf(geo.floors), new THREE.MeshLambertMaterial({ map: concreteTexture(), color: 0xc9c6bf, side: THREE.DoubleSide }));
     const stairs = new THREE.Mesh(geometryOf(geo.stairs), new THREE.MeshLambertMaterial({ map: treadTexture(), color: 0xbdb9b1, side: THREE.DoubleSide }));
     const wall = new THREE.Mesh(geometryOf(geo.walls), new THREE.MeshLambertMaterial({ map: wallTexture(), side: THREE.DoubleSide }));
-    const ceiling = new THREE.Mesh(geometryOf(geo.ceiling), new THREE.MeshLambertMaterial({ color: 0x8f8c86, side: THREE.DoubleSide }));
+    const ceiling = new THREE.Mesh(geometryOf(geo.ceiling), new THREE.MeshLambertMaterial({ color: 0x8f8c86, side: THREE.FrontSide }));
     return [floor, stairs, wall, ceiling];
   }, [geo]);
   useEffect(() => {
@@ -293,7 +294,8 @@ function Dressing({ dressing }: { dressing: WalkDressing }) {
 export const warmPhysics = (): Promise<void> => import("@dimforge/rapier3d-compat").then((r) => r.init());
 
 /** `onReady` runs on the first frame with the walker in it. */
-export function StationWalk({ exit, onClose, onReady }: { exit: [number, number] | null; onClose: () => void; onReady?: () => void }) {
+export function StationWalk({ exit, onClose: close, onReady }: { exit: [number, number] | null; onClose: () => void; onReady?: () => void }) {
+  const onClose = useCallback(() => { if (import.meta.env.DEV) forgetWalkSpot(); close(); }, [close]);
   const [model, setModel] = useState<DollhouseModel | null>(null);
   const [built, setBuilt] = useState<WalkShell | null>(null);
   const [failed, setFailed] = useState(false);
@@ -313,7 +315,19 @@ export function StationWalk({ exit, onClose, onReady }: { exit: [number, number]
     return () => window.removeEventListener("keydown", esc);
   }, [onClose]);
   const shell = built?.shell ?? null;
-  const geo = built?.geo ?? null;
+  // Walls and ceilings baked from the model (pnpm build:station-shell). Until they load nothing is
+  // drawn; if they fail, the walls built in the worker stand in.
+  const [baked, setBaked] = useState<BakedShell | null | undefined>(undefined);
+  useEffect(() => {
+    let live = true;
+    fetch("/transit/fulton-shell.json").then((r) => (r.ok ? (r.json() as Promise<BakedShell>) : null)).then(
+      (b) => { if (live) setBaked(b); }, () => { if (live) setBaked(null); });
+    return () => { live = false; };
+  }, []);
+  const geo = useMemo(() => {
+    if (!model || !built || baked === undefined) return null;
+    return baked ? { ...built.geo, ...bakedShellSurfaces(model, built.shell, baked) } : built.geo;
+  }, [model, built, baked]);
   const [ride, setRide] = useState<Ride>("walking");
   const [nearDoor, setNearDoor] = useState(false);
   // Walk again starts a fresh round: a new scene, the train back at the platform.
@@ -334,6 +348,9 @@ export function StationWalk({ exit, onClose, onReady }: { exit: [number, number]
     const len = walkLength(walk.path);
     const p = walkAt(walk.path, 1 - START_IN_M / len);
     const [x, y, z] = toYUp(p.x, p.y, p.z + 1.2);
+    // Dev: a reload puts the walker back where it stood, facing the same way.
+    const saved = import.meta.env.DEV ? savedWalkSpot() : null;
+    if (saved) return { at: new THREE.Vector3(saved.x, saved.y, saved.z), heading: saved.heading, path: walk.path };
     // Face down the walk, into the station.
     return { at: new THREE.Vector3(x, y, z), heading: p.heading + Math.PI, path: walk.path };
   }, [model, exit]);
@@ -381,6 +398,7 @@ export function StationWalk({ exit, onClose, onReady }: { exit: [number, number]
           </div>
         </div>
       ) : null}
+      {import.meta.env.DEV ? <WalkDevHud /> : null}
       {touch && ride === "walking" ? (
         <Joystick joystickWrapperStyle={{ left: 24, bottom: "calc(env(safe-area-inset-bottom) + 24px)", position: "absolute" }} />
       ) : ride !== "walking" ? null : (
