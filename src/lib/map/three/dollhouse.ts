@@ -10,7 +10,7 @@
  *
  * The model is a triangle mesh in metres east, north and up of its origin (street level is 0),
  * with one walk per street exit (each starting a step in from the platform's edge), the platform
- * edges, the downtown track, the station's own lines and the lines it transfers to. Fulton St's
+ * edges, the downtown track, the station's own lines and the lines it transfers to. Each station's
  * comes from Project Subway NYC's station model (credited in the map's credits). Its floors, stairs
  * and walls are dressed here: concrete, stair treads with yellow nosings, cream tile walls with a
  * buff base and a terracotta band, and ceiling lights along the walk. The fare gates and the
@@ -22,8 +22,15 @@ import * as THREE from "three";
 import type { CustomLayerInterface, Map as MaplibreMap } from "maplibre-gl";
 import { LEGACY_LIGHT, MercatorCoordinate, sharedRenderer } from "./core";
 
-type P3 = [number, number, number];
-type DollhouseWalk = { exit: [number, number]; path: P3[] };
+export type P3 = [number, number, number];
+/**
+ * Where the train stands: rail height beside the walk's start, and the way it leaves (radians from
+ * east). On a curved platform `line` is the track's centre line, in the direction trains leave, and
+ * the cars follow it.
+ */
+type DollhouseTrack = { at: P3; angle: number; line?: Array<[number, number]> };
+/** A walk may carry its own track: on a curved platform the stretch beside its start, where the train stands. */
+type DollhouseWalk = { exit: [number, number]; path: P3[]; track?: DollhouseTrack };
 export type DollhouseModel = {
   origin: [number, number];
   /** x, y, z per vertex, metres. */
@@ -35,11 +42,15 @@ export type DollhouseModel = {
   /** Platform edges over a track bed: x1, y1, x2, y2, z. */
   edges: Array<[number, number, number, number, number]>;
   /** The downtown 4/5 track beside where the walks start: rail height, and the way the train leaves (radians from east). */
-  track: { at: P3; angle: number };
+  track: DollhouseTrack;
   /** The routes that stop at the platform the walks start from, with their bullet colours: [route, "#rrggbb"]. */
   lines: Array<[string, string]>;
   /** The other routes this station connects to, for the transfer signs. */
   transfers: Array<[string, string]>;
+  /** The station's name on the platform sign; Fulton St's model, the first, has none and is "Fulton St". */
+  name?: string;
+  /** Where the platform's trains go, under the name: "Downtown & Brooklyn" when unsaid. */
+  toward?: string;
 };
 
 type WalkPose = { x: number; y: number; z: number; /** Radians, 0 = north, clockwise. */ heading: number; /** Metres walked so far. */ walked: number };
@@ -64,7 +75,7 @@ const EXIT_MATCH_M = 50;
 const GLIDE_MS = 1500;
 /** Lexington Avenue line green, for the train's stripe. */
 const LEX_GREEN = 0x00933c;
-const CAR_M = 15.5, CARS = 10;
+export const CAR_M = 15.5, CARS = 10;
 /** The train pulls out over this many metres of the figure's walk, then it is gone. */
 const PULL_OUT_M = 25;
 /** The share of the wait spent on the overview of the platform before the camera eases in. */
@@ -74,7 +85,7 @@ const OVERVIEW_TILT = (15 * Math.PI) / 180;
 /** The map's vertical field of view (MapLibre's default), to fit the train in the overview. */
 const MAP_FOV = (36.87 * Math.PI) / 180;
 /** Ceiling lights: a strip this far above the walk, every few metres, cut away above this height over the feet. */
-const LIGHT_UP_M = 2.9, LIGHT_EVERY_M = 5, LIGHT_CUT_M = 3.2, LIGHT_ASIDE_M = 1.3;
+export const LIGHT_UP_M = 2.9, LIGHT_EVERY_M = 5, LIGHT_CUT_M = 3.2, LIGHT_ASIDE_M = 1.3;
 /** Signs on the levels above are cut away over this height above the feet. */
 const SIGN_CUT_M = 4;
 /** One step's rise, for the stair treads' stripes. */
@@ -82,7 +93,45 @@ const STEP_RISE_M = 0.178;
 /** The raised walls' tile pattern covers this height from the wall's foot. */
 const WALL_PATTERN_M = 3;
 
+/** How far along a polyline the point nearest (x, y) lies, in metres from its first point. */
+export function lineArc(line: Array<[number, number]>, x: number, y: number): number {
+  let best = Infinity, arc = 0, done = 0;
+  for (let i = 1; i < line.length; i++) {
+    const [ax, ay] = line[i - 1], [bx, by] = line[i], L = Math.hypot(bx - ax, by - ay) || 1e-9;
+    const k = Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / (L * L)));
+    const d = Math.hypot(x - ax - (bx - ax) * k, y - ay - (by - ay) * k);
+    if (d < best) { best = d; arc = done + L * k; }
+    done += L;
+  }
+  return arc;
+}
+
+/** The point `s` metres along a polyline, carried on straight past either end, and its heading (radians from east). */
+export function alongLine(line: Array<[number, number]>, s: number): { x: number; y: number; angle: number } {
+  let done = 0;
+  for (let i = 1; i < line.length; i++) {
+    const [ax, ay] = line[i - 1], [bx, by] = line[i], L = Math.hypot(bx - ax, by - ay) || 1e-9;
+    if (s <= done + L || i === line.length - 1) {
+      const k = i === 1 && s < 0 ? s / L : (s - done) / L;
+      return { x: ax + (bx - ax) * k, y: ay + (by - ay) * k, angle: Math.atan2(by - ay, bx - ax) };
+    }
+    done += L;
+  }
+  const [x, y] = line[0] ?? [0, 0];
+  return { x, y, angle: 0 };
+}
+
 /** Length of a walk in metres, stairs measured along their slope. */
+/**
+ * Where car `i` (0 is the front) stands, with the front car's middle `front` metres along the track
+ * from the point beside `track.at`: on a curve each car follows the centre line, else the straight run.
+ */
+export function carPose(track: DollhouseTrack, front: number, i: number): { x: number; y: number; angle: number } {
+  const along = front - i * CAR_M;
+  if (track.line) return alongLine(track.line, lineArc(track.line, track.at[0], track.at[1]) + along);
+  return { x: track.at[0] + Math.cos(track.angle) * along, y: track.at[1] + Math.sin(track.angle) * along, angle: track.angle };
+}
+
 export function walkLength(walk: P3[]): number {
   let total = 0;
   for (let i = 1; i < walk.length; i++) total += Math.hypot(walk[i][0] - walk[i - 1][0], walk[i][1] - walk[i - 1][1], walk[i][2] - walk[i - 1][2]);
@@ -182,7 +231,7 @@ export function planSigns(model: DollhouseModel, walk: DollhouseWalk, corner: st
   out.push({
     at: [hung.x, hung.y, Math.max(hung.z, start[2]) + 2.6],
     heading: toward,
-    lines: [{ bullets: model.lines, text: "Fulton St" }, { text: "Downtown & Brooklyn" }],
+    lines: [{ bullets: model.lines, text: model.name ?? "Fulton St" }, { text: model.toward ?? "Downtown & Brooklyn" }],
   });
   const transfers: SignLine | null = model.transfers.length ? { bullets: model.transfers } : null;
   const street: SignLine | null = corner ? { text: corner } : null;
@@ -214,7 +263,7 @@ function box(w: number, d: number, h: number, color: number, clip: THREE.Plane[]
 }
 
 /** A simple blocky figure, feet at the group's origin, facing +y. Its limbs swing as it walks. */
-function buildFigure(): { group: THREE.Group; stride: (walkedM: number, moving: boolean) => void } {
+export function buildFigure(): { group: THREE.Group; stride: (walkedM: number, moving: boolean) => void } {
   const group = new THREE.Group();
   const leg = 0.78, torso = 0.62, head = 0.32;
   const limb = (x: number, top: number, len: number, w: number, color: number) => {
@@ -257,7 +306,7 @@ function seeded(seed: number): () => number {
 }
 
 /** Concrete: near white with a faint speckle, multiplied by the floors' greys. */
-function concreteTexture(): THREE.Texture {
+export function concreteTexture(): THREE.Texture {
   const [c, g] = canvas2d(128, 128);
   g.fillStyle = "#ecebe7"; g.fillRect(0, 0, 128, 128);
   const rnd = seeded(7);
@@ -276,7 +325,7 @@ function concreteTexture(): THREE.Texture {
  * One stair step, bottom to top (v = 0 is the foot of the step): a dark riser, the yellow safety
  * nosing on the tread's front edge, then the grey tread.
  */
-function treadTexture(): THREE.Texture {
+export function treadTexture(): THREE.Texture {
   const [c, g] = canvas2d(16, 64);
   // The canvas is drawn top down; v runs bottom up.
   g.fillStyle = "#c4c2bd"; g.fillRect(0, 0, 16, 64);
@@ -294,7 +343,7 @@ function treadTexture(): THREE.Texture {
  * course at the foot, cream glazed 0.15 m tiles with grey grout above it, and a terracotta mosaic
  * band at about 2.3 to 2.5 m.
  */
-function wallTexture(): THREE.Texture {
+export function wallTexture(): THREE.Texture {
   const W = 128, perM = W / 0.6, H = Math.round(WALL_PATTERN_M * perM);
   const [c, g] = canvas2d(W, H);
   const y = (m: number) => H - m * perM; // metres up from the foot to canvas rows
@@ -333,7 +382,7 @@ function wallTexture(): THREE.Texture {
 /** One line of a sign: an arrow, route bullets, then words, left to right. */
 type SignLine = { arrow?: "up" | "down"; bullets?: Array<[string, string]>; text?: string };
 /** A sign to hang: where (the panel's middle), the way the walker faces when reading it, and its big and small lines. */
-type SignPlan = { at: P3; heading: number; lines: [SignLine, SignLine | null]; small?: boolean };
+export type SignPlan = { at: P3; heading: number; lines: [SignLine, SignLine | null]; small?: boolean };
 
 const SIGN_FONT = (px: number) => `bold ${px}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
 
@@ -389,10 +438,10 @@ function signLine(g: CanvasRenderingContext2D, line: SignLine, x: number, mid: n
  * A sign as the MTA hangs them: a black panel with a thin white rule along its top, white
  * Helvetica Bold, route bullets in their colours, a big first line and an optional smaller second
  * line. The panel widens to fit its words (up to 4 m; past that the lettering shrinks) and hangs
- * from two thin rods. The group's origin is the panel's middle; it faces -y (turn it with
- * rotation.z = -heading to face someone walking that way).
+ * from two thin rods (none when `rods` is false: a sign fixed flat on a wall). The group's origin is
+ * the panel's middle; it faces -y (turn it with rotation.z = -heading to face someone walking that way).
  */
-function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small = false): THREE.Group {
+export function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small = false, rods = true): THREE.Group {
   const PX = 256, pad = 0.12, maxW = 4;
   let big = (small ? 0.15 : 0.24) * PX, little = 0.15 * PX;
   const [, probe] = canvas2d(4, 4);
@@ -406,7 +455,9 @@ function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small
   const row1 = big * 1.45, row2 = lines[1] ? little * 1.5 : 0;
   const w = Math.max(inner / PX + 2 * pad, small ? 0.7 : 1.4), h = (top + row1 + row2) / PX + 0.06;
   const [c, g] = canvas2d(Math.round(w * PX), Math.round(h * PX));
-  g.fillStyle = "#111214"; g.fillRect(0, 0, c.width, c.height);
+  // Exit boards in MTA green, the rest MTA black (owner, 2026-11-13: "exit sign doesnt have mta colors").
+  const bg = lines[0].text?.startsWith("Exit") ? 0x00933c : 0x111214;
+  g.fillStyle = `#${bg.toString(16).padStart(6, "0")}`; g.fillRect(0, 0, c.width, c.height);
   g.fillStyle = "#f4f4f2"; g.fillRect(0, ruleAt, c.width, Math.max(2, 0.012 * PX));
   signLine(g, lines[0], pad * PX, top + row1 / 2, big, true);
   if (lines[1]) signLine(g, lines[1], pad * PX, top + row1 + row2 / 2 - little * 0.05, little, true);
@@ -416,12 +467,12 @@ function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small
   const group = new THREE.Group();
   const front = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, clippingPlanes: clip }));
   front.rotation.x = Math.PI / 2;
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: 0x111214, clippingPlanes: clip }));
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: bg, clippingPlanes: clip }));
   back.rotation.x = -Math.PI / 2;
   back.position.y = 0.01;
   group.add(front, back);
   const rodX = w / 2 - Math.min(0.3, w / 4);
-  for (const x of [-rodX, rodX]) {
+  for (const x of rods ? [-rodX, rodX] : []) {
     const rod = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.025, 0.6), new THREE.MeshBasicMaterial({ color: 0x2a2c30, clippingPlanes: clip }));
     rod.position.set(x, 0.005, h / 2 + 0.3);
     group.add(rod);
@@ -430,7 +481,7 @@ function signMesh(lines: [SignLine, SignLine | null], clip: THREE.Plane[], small
 }
 
 /** A waist-high turnstile, walked through along +y: its body to the right of the lane, its three arms across it. */
-function turnstile(): { group: THREE.Group; rotor: THREE.Group } {
+export function turnstile(): { group: THREE.Group; rotor: THREE.Group } {
   const group = new THREE.Group();
   const steel = 0xc7ccd3;
   const body = box(0.3, 0.9, 0.95, steel);
@@ -470,7 +521,77 @@ function emergencyGate(): THREE.Group {
   return group;
 }
 
-function dispose(root: THREE.Object3D) {
+/**
+ * The fare line at `gates`: turnstiles, the high exit gate and the emergency gate, the walk going
+ * through the middle turnstile. Each rotor comes with where it turns, in the same frame as the group.
+ */
+function fareLine(gates: { at: P3; heading: number }): { group: THREE.Group; rotors: Array<{ rotor: THREE.Group; at: THREE.Vector3 }> } {
+  const rotors: Array<{ rotor: THREE.Group; at: THREE.Vector3 }> = [];
+  const line = new THREE.Group();
+  line.position.set(...gates.at);
+  line.rotation.z = -gates.heading;
+  // The lane the walk takes runs between the turnstile at 0.155 and the one before it.
+  const pieces: Array<[number, "turnstile" | "high" | "emergency" | "rail"]> = [[-4.1, "rail"], [HIGH_GATE_X, "high"], [-1.75, "turnstile"], [-0.8, "turnstile"], [0.155, "turnstile"], [1.1, "turnstile"], [2.35, "emergency"], [3.6, "rail"]];
+  for (const [x, kind] of pieces) {
+    if (kind === "turnstile") {
+      const t = turnstile();
+      t.group.position.x = x;
+      line.add(t.group);
+      rotors.push({ rotor: t.rotor, at: new THREE.Vector3(x + 0.17, 0, 0) });
+    } else if (kind === "high") {
+      const h = highExitGate(); h.position.x = x; line.add(h);
+    } else if (kind === "emergency") {
+      const e = emergencyGate(); e.position.x = x; line.add(e);
+    } else {
+      const rail = box(1.2, 0.06, 0.06, 0x5b616b); rail.position.set(x, 0, 1.0); line.add(rail);
+      const post = box(0.08, 0.08, 1.0, 0x5b616b); post.position.set(x + Math.sign(x) * 0.6, 0, 0.5); line.add(post);
+    }
+  }
+  line.updateMatrixWorld(true);
+  rotors.forEach((r) => r.at.applyMatrix4(line.matrixWorld));
+  return { group: line, rotors };
+}
+
+/** Where each car's doors are along it, from its middle (metres): four pairs a side, as on an R142. */
+export const DOORS_ALONG_M = [-5.4, -1.8, 1.8, 5.4];
+/** A door leaf's width; a pair opens to twice this. */
+const DOOR_LEAF_M = 0.64;
+
+/**
+ * The 4/5 train: CARS cars of CAR_M along -x from the origin, rails at z 0. With `doors`, each car
+ * gets door pairs on both sides whose leaves slide apart as `open` goes from 0 to 1.
+ */
+export function trainCars(doors: boolean): THREE.Group & { open?: (f: number) => void } {
+  const train: THREE.Group & { open?: (f: number) => void } = new THREE.Group();
+  const leaves: Array<{ leaf: THREE.Object3D; from: number; dir: number }> = [];
+  for (let i = 0; i < CARS; i++) {
+    const car = new THREE.Group();
+    // Not cut: the train's roof sits below the platform's ceiling, and a cut-open car reads as a hole.
+    const shell = box(CAR_M - 0.5, 2.7, 3.2, 0xb8bec6); shell.position.z = 1.9; car.add(shell);
+    const roof = box(CAR_M - 0.9, 2.2, 0.12, 0x8e959e); roof.position.z = 3.56; car.add(roof);
+    const windows = box(CAR_M - 1.2, 2.72, 0.7, 0x2b3038); windows.position.z = 2.5; car.add(windows);
+    const stripe = box(CAR_M - 0.6, 2.74, 0.18, LEX_GREEN); stripe.position.z = 1.7; car.add(stripe);
+    if (doors) {
+      for (const along of DOORS_ALONG_M) for (const side of [-1, 1]) {
+        // A dark doorway, and two steel leaves over it that slide apart.
+        const way = box(DOOR_LEAF_M * 2, 0.02, 1.95, 0x1b1d21); way.position.set(along, side * 1.36, 1.3); car.add(way);
+        for (const half of [-1, 1]) {
+          const leaf = box(DOOR_LEAF_M, 0.04, 1.95, 0x9ea5ae);
+          const from = along + half * DOOR_LEAF_M / 2;
+          leaf.position.set(from, side * 1.38, 1.3);
+          car.add(leaf);
+          leaves.push({ leaf, from, dir: half });
+        }
+      }
+    }
+    car.position.x = -i * CAR_M;
+    train.add(car);
+  }
+  if (doors) train.open = (f: number) => { for (const l of leaves) l.leaf.position.x = l.from + l.dir * DOOR_LEAF_M * 0.95 * Math.min(Math.max(f, 0), 1); };
+  return train;
+}
+
+export function dispose(root: THREE.Object3D) {
   root.traverse((o) => {
     const mesh = o as THREE.Mesh;
     mesh.geometry?.dispose();
@@ -651,6 +772,19 @@ export function outlineWalls(model: DollhouseModel): WallRun[] {
  * signs ("Fulton St & Nassau St · NE corner"), or failing that the street's name, or null.
  */
 export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getState: () => DollhouseState, corner: string | null): Dollhouse {
+  // A walk's own track keeps the shared one's centre line, so its cars still follow the curve.
+  const own = walk.track ?? model.track;
+  const track: DollhouseTrack = { ...own, line: own.line ?? model.track.line };
+  /** The track (shared or a walk's own) nearest a point: on a curved platform the shared one can be far off. */
+  const tracks = [model.track, ...model.walks.flatMap((w) => (w.track ? [w.track] : []))];
+  const nearestTrack = ([x, y]: [number, number]) =>
+    tracks.reduce((a, b) => (Math.hypot(b.at[0] - x, b.at[1] - y) < Math.hypot(a.at[0] - x, a.at[1] - y) ? b : a));
+  /** The point of a track beside (x, y): on its centre line, or square to its straight run. */
+  const trackBeside = (t: DollhouseTrack, x: number, y: number): [number, number] => {
+    if (t.line) { const p = alongLine(t.line, lineArc(t.line, x, y)); return [p.x, p.y]; }
+    const c = Math.cos(t.angle), sn = Math.sin(t.angle), k = (x - t.at[0]) * c + (y - t.at[1]) * sn;
+    return [t.at[0] + c * k, t.at[1] + sn * k];
+  };
   const scene = new THREE.Scene();
   const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
   const wallCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
@@ -734,8 +868,9 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     const ang = Math.atan2(y2 - y1, x2 - x1);
     // Toward the platform: away from the track when the track is near, else either side.
     const nx = -Math.sin(ang), ny = Math.cos(ang);
-    const [tx, ty] = model.track.at;
-    const side = (tx - x1) * nx + (ty - y1) * ny > 0 ? -1 : 1;
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const [tx, ty] = trackBeside(nearestTrack([mx, my]), mx, my);
+    const side = (tx - mx) * nx + (ty - my) * ny > 0 ? -1 : 1;
     strip.position.set((x1 + x2) / 2 + nx * 0.3 * side, (y1 + y2) / 2 + ny * 0.3 * side, z + 0.01);
     strip.rotation.z = ang;
     station.add(strip);
@@ -771,46 +906,21 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   // The fare line: turnstiles, the high exit gate and the emergency gate, the walk through the middle turnstile.
   const rotors: Array<{ rotor: THREE.Group; at: THREE.Vector3 }> = [];
   if (places.gates) {
-    const g = places.gates;
-    const line = new THREE.Group();
-    line.position.set(...g.at);
-    line.rotation.z = -g.heading;
-    // The lane the walk takes runs between the turnstile at 0.155 and the one before it.
-    const pieces: Array<[number, "turnstile" | "high" | "emergency" | "rail"]> = [[-4.1, "rail"], [HIGH_GATE_X, "high"], [-1.75, "turnstile"], [-0.8, "turnstile"], [0.155, "turnstile"], [1.1, "turnstile"], [2.35, "emergency"], [3.6, "rail"]];
-    for (const [x, kind] of pieces) {
-      if (kind === "turnstile") {
-        const t = turnstile();
-        t.group.position.x = x;
-        line.add(t.group);
-        rotors.push({ rotor: t.rotor, at: new THREE.Vector3(x + 0.17, 0, 0) });
-      } else if (kind === "high") {
-        const h = highExitGate(); h.position.x = x; line.add(h);
-      } else if (kind === "emergency") {
-        const e = emergencyGate(); e.position.x = x; line.add(e);
-      } else {
-        const rail = box(1.2, 0.06, 0.06, 0x5b616b); rail.position.set(x, 0, 1.0); line.add(rail);
-        const post = box(0.08, 0.08, 1.0, 0x5b616b); post.position.set(x + Math.sign(x) * 0.6, 0, 0.5); line.add(post);
-      }
-    }
-    station.add(line);
-    line.updateMatrixWorld(true);
-    rotors.forEach((r) => r.at.applyMatrix4(line.matrixWorld));
+    const fare = fareLine(places.gates);
+    station.add(fare.group);
+    rotors.push(...fare.rotors);
   }
 
   // The 4/5 train on the downtown track, pulling out while the figure steps off.
-  const train = new THREE.Group();
-  for (let i = 0; i < CARS; i++) {
-    const car = new THREE.Group();
-    // Not cut: the train's roof sits below the platform's ceiling, and a cut-open car reads as a hole.
-    const shell = box(CAR_M - 0.5, 2.7, 3.2, 0xb8bec6); shell.position.z = 1.9; car.add(shell);
-    const roof = box(CAR_M - 0.9, 2.2, 0.12, 0x8e959e); roof.position.z = 3.56; car.add(roof);
-    const windows = box(CAR_M - 1.2, 2.72, 0.7, 0x2b3038); windows.position.z = 2.5; car.add(windows);
-    const stripe = box(CAR_M - 0.6, 2.74, 0.18, LEX_GREEN); stripe.position.z = 1.7; car.add(stripe);
-    car.position.x = -i * CAR_M;
-    train.add(car);
-  }
-  train.position.set(...model.track.at);
-  train.rotation.z = model.track.angle;
+  const train = trainCars(false);
+  const cars = train.children;
+  /** Stands the train with its front car's middle `front` metres along the track. */
+  const placeTrain = (front: number) => cars.forEach((car, i) => {
+    const p = carPose(track, front, i);
+    car.position.set(p.x, p.y, 0);
+    car.rotation.z = p.angle;
+  });
+  train.position.set(0, 0, track.at[2]);
   scene.add(train);
 
   const { group: figure, stride } = buildFigure();
@@ -829,18 +939,19 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
   scene.add(sun);
 
   // The train stands with the middle of a car at the door the figure steps out of.
-  const dir: [number, number] = [Math.cos(model.track.angle), Math.sin(model.track.angle)];
-  const along = (p: P3) => (p[0] - model.track.at[0]) * dir[0] + (p[1] - model.track.at[1]) * dir[1];
-  const doorAlong = along(start);
+  const dir: [number, number] = [Math.cos(track.angle), Math.sin(track.angle)];
+  const along = (p: P3) => (p[0] - track.at[0]) * dir[0] + (p[1] - track.at[1]) * dir[1];
+  const doorAlong = track.line ? lineArc(track.line, start[0], start[1]) - lineArc(track.line, track.at[0], track.at[1]) : along(start);
   const standing = doorAlong + CAR_M * (CARS / 2);
+  placeTrain(standing);
   /**
    * The overview's middle: halfway between the track and the figure's side of the platform, level
    * with the middle of the standing train.
    */
   const midAlong = standing - (CAR_M * (CARS - 1)) / 2;
   const overview: [number, number] = [
-    (model.track.at[0] + dir[0] * midAlong + start[0] + dir[0] * (midAlong - doorAlong)) / 2,
-    (model.track.at[1] + dir[1] * midAlong + start[1] + dir[1] * (midAlong - doorAlong)) / 2,
+    (track.at[0] + dir[0] * midAlong + start[0] + dir[0] * (midAlong - doorAlong)) / 2,
+    (track.at[1] + dir[1] * midAlong + start[1] + dir[1] * (midAlong - doorAlong)) / 2,
   ];
   /** The track's compass bearing (0 = north, clockwise). */
   const trackBearing = Math.atan2(dir[0], dir[1]);
@@ -918,7 +1029,7 @@ export function dollhouseLayer(model: DollhouseModel, walk: DollhouseWalk, getSt
     train.visible = k < 1;
     if (train.visible) {
       const front = standing + 170 * k * k;
-      train.position.set(model.track.at[0] + dir[0] * front, model.track.at[1] + dir[1] * front, model.track.at[2]);
+      placeTrain(front);
     }
     // The ring fades as the camera comes down from the overview.
     const zoomIn = st.wait == null ? 1 : Math.max(0, st.wait - OVERVIEW_END) / (1 - OVERVIEW_END);

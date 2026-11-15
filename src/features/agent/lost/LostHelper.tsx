@@ -19,6 +19,15 @@ import { useMediaQuery } from "@/lib/useMediaQuery";
 import { metres, type Pt } from "@/lib/map/mapRead";
 import { bestGuess, readSignal, signalPoor, type Connection, type Fix, type Signal } from "./lostGuess";
 import { guessText, lostT, offlineReply, signalChips, signalForAgent } from "./lostText";
+import { Placer } from "./placeFlow";
+import { answerLabel, placeT, questionText, spotText } from "./placeText";
+import { answersFor, walkLen, type Answer, type Question } from "@/lib/map/stationPlace";
+import type { StationPlaceKit } from "@/lib/map/dollhousePreview";
+import { translateLines } from "@/lib/i18n/translateLines";
+
+/** Fulton St, the station with a detailed model (#143): its four platforms' stations are within this of its centre. */
+const FULTON_AT: Pt = [-74.0085, 40.7102];
+const FULTON_M = 400;
 
 /** The part of subway.json the guess needs: each station's id, name and place. */
 interface Stations { stations: { features: Array<{ geometry: { coordinates: number[] }; properties: { id: string; name: string } }> } }
@@ -111,6 +120,8 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
   const waiting = useRef<string[]>([]);
   const nextId = useRef(1);
   const abort = useRef<AbortController | null>(null);
+  /** Where the questions placed them, in English, for the agent. */
+  const placedRef = useRef<string | null>(null);
   useEffect(() => () => abort.current?.abort(), []);
 
   const add = (m: Omit<Msg, "id">) => {
@@ -131,7 +142,7 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
     try {
       for await (const ev of askAgent({
         messages, location: fix && signal.gps === "ok" ? { lon: fix.at[0], lat: fix.at[1] } : null, mode: "transit", now: new Date().toISOString(), lang,
-        underground: { stage: "lost", station: guess.station ?? "", exit: guess.exit, guess: guessText(guess, "en"), ...(signalForAgent(signal) ? { signal: signalForAgent(signal) } : {}) },
+        underground: { stage: "lost", station: guess.station ?? "", exit: guess.exit, guess: guessText(guess, "en"), ...(signalForAgent(signal) ? { signal: signalForAgent(signal) } : {}), ...(placedRef.current ? { place: placedRef.current } : {}) },
       }, ctl.signal)) {
         if (ctl.signal.aborted) return;
         if (ev.type === "text") {
@@ -154,6 +165,11 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
     if (!text) return;
     setAnswered(true);
     add({ role: "user", text });
+    // While placing, words that fit a sign in the station narrow the place, with no network needed.
+    if (placer.current && (question || placedAt)) {
+      if (placer.current.typed(text)) { hideSpot(); setPlacedAt(null); askNext(); return; }
+      if (question === "sign" && !navigator.onLine) { add({ role: "assistant", text: placeT(lang, "noSign") }); askNext(); return; }
+    }
     if (!navigator.onLine) {
       waiting.current.push(text);
       add({ role: "assistant", text: offlineReply(guess.exit, lang) });
@@ -181,12 +197,19 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
   const yes = () => {
     setAnswered(true);
     add({ role: "user", text: tr(lang, "yes") });
-    add({ role: "assistant", text: guess.exit ? lostT(lang, "yesExit", { e: guess.exit }) : lostT(lang, "yesNoExit") });
+    const fallback = guess.exit ? lostT(lang, "yesExit", { e: guess.exit }) : lostT(lang, "yesNoExit");
+    if (startPlacing(false, fallback)) return;
+    add({ role: "assistant", text: fallback });
   };
+  // Not quite at Fulton St: the trip's guess was wrong, so the questions start with no favourite spot,
+  // rather than handing the rest to the agent, which knows the station only by name (#143).
   const notQuite = () => {
     setAnswered(true);
     add({ role: "user", text: lostT(lang, "notQuite") });
-    add({ role: "assistant", text: lostT(lang, "notQuiteReply") });
+    const fallback = lostT(lang, "notQuiteReply");
+    if (!canPlace()) { add({ role: "assistant", text: fallback }); return; }
+    add({ role: "assistant", text: lostT(lang, "notQuitePlace", { s: guess.station ?? "" }) });
+    startPlacing(true, fallback);
   };
   const station = guess.stationId && sys ? sys.stations.features.find((f) => String(f.properties.id) === guess.stationId) : null;
   const showOnMap = () => {
@@ -199,11 +222,99 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
     if (at) getMapInstance()?.flyTo({ center: [at[0], at[1]], zoom: 17 });
   };
   const canShow = !!guess.stationId && (!!stationHelp || !!station);
-
   const wide = useMediaQuery("(min-width: 640px)");
   const desktop = useMediaQuery("(min-width: 1024px)");
   const { slot, top } = useLeftCard("lost-helper", desktop);
   const [level, setLevel] = useState<SheetLevel>(1);
+
+  // Inside Fulton St the helper pins down where in the station someone is (#143): a few tap questions
+  // and the nearest sign's words against the station model, then the way out from that spot.
+  const atModel = guess.station === "Fulton St" && (!station || metres([station.geometry.coordinates[0], station.geometry.coordinates[1]], FULTON_AT) < FULTON_M);
+  const [kit, setKit] = useState<StationPlaceKit | null>(null);
+  const [kitFailed, setKitFailed] = useState(false);
+  useEffect(() => {
+    if (!atModel) return;
+    let live = true;
+    import("@/lib/map/dollhousePreview").then((m) => m.loadStationPlace(getMapInstance())).then((k) => { if (live) setKit(k); }).catch(() => { if (live) setKitFailed(true); });
+    return () => { live = false; };
+  }, [atModel]);
+  const tripExit = useMemo((): [number, number] | null => {
+    const i = trip ? trip.legs.map((l) => l.kind).lastIndexOf("ride") : -1;
+    const leg = i >= 0 ? trip!.legs.slice(i + 1).find((l) => l.station) : undefined;
+    return guess.exit && leg?.portal ? [leg.portal.lon, leg.portal.lat] : null;
+  }, [trip, guess.exit]);
+  const placer = useRef<Placer | null>(null);
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [placedAt, setPlacedAt] = useState<string | null>(null);
+  useEffect(() => { placedRef.current = placedAt; }, [placedAt]);
+  const shown = useRef<(() => void) | null>(null);
+  const hideSpot = () => { shown.current?.(); shown.current = null; };
+  useEffect(() => hideSpot, []);
+
+  const askNext = () => {
+    const p = placer.current!;
+    const q = p.next();
+    setQuestion(q);
+    if (q) { add({ role: "assistant", text: questionText(q, lang) }); return; }
+    const at = p.placed();
+    const where = (l: typeof lang) => spotText(at.spot, at.signWords, p.kit.lines, l);
+    const way = p.way();
+    const head = placeT(lang, at.sure ? "likely" : "bestGuess", { p: where(lang) });
+    const back = way.backM > 3 ? placeT(lang, "back", { n: way.backM }) : "";
+    const say = (steps: string[]) => [head, back, steps.length ? `${placeT(lang, "then")} ${steps.join(" ")}` : ""].filter(Boolean).join(" ");
+    const id = add({ role: "assistant", text: say(way.steps) });
+    setPlacedAt(`${where("en")}${way.backM > 3 ? `; first back about ${way.backM} m` : ""}; then: ${way.steps.join(" ")}`);
+    // The steps come from the model in English; online, they follow the app's language.
+    if (lang !== "en" && navigator.onLine && way.steps.length)
+      void translateLines(way.steps, lang).then((t) => { if (t.size) patch(id, { text: say(way.steps.map((x) => t.get(x) ?? x)) }); });
+  };
+  /** Placing can start (or will, once the station model has loaded). */
+  const canPlace = () => !!kit || (atModel && !kitFailed);
+  // A tap that comes before the station model has loaded waits for it; if it never loads, the plain reply goes instead.
+  const pending = useRef<{ doubt: boolean; fallback: string } | null>(null);
+  const begin = (k: StationPlaceKit, doubt: boolean) => {
+    placer.current = new Placer(k, k.walkTo(tripExit), doubt);
+    setPlacedAt(null);
+    askNext();
+  };
+  const startPlacing = (doubt: boolean, fallback: string) => {
+    if (kit) { begin(kit, doubt); return true; }
+    if (!canPlace()) return false;
+    pending.current = { doubt, fallback };
+    return true;
+  };
+  useEffect(() => {
+    const p = pending.current;
+    if (!p || (!kit && !kitFailed)) return;
+    pending.current = null;
+    if (kit) begin(kit, p.doubt);
+    else add({ role: "assistant", text: p.fallback });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kit, kitFailed]);
+  const tap = (a: Exclude<Answer, { q: "sign" }>) => {
+    add({ role: "user", text: answerLabel(a, lang) });
+    placer.current?.tap(a);
+    askNext();
+  };
+  const showSpot = () => {
+    const p = placer.current, map = getMapInstance();
+    if (!p || !map) return;
+    const { spot } = p.placed();
+    const on = spot.on[0], walk = p.kit.walks[on.walk];
+    hideSpot();
+    if (!wide) setLevel(0);
+    void import("@/lib/map/dollhousePreview")
+      .then((m) => m.showDollhouse(map, { exit: walk.exit, at: on.walked / walkLen(walk.path), street: p.kit.corners[on.walk] ?? "Fulton Street" }))
+      .then((stop) => { shown.current = stop; });
+  };
+  const notThere = () => {
+    add({ role: "user", text: placeT(lang, "notThere") });
+    hideSpot();
+    setPlacedAt(null);
+    placer.current?.notThere();
+    askNext();
+  };
+
   const chips = signalPoor(signal) ? signalChips(signal, lang) : [];
   const listRef = useRef<HTMLOListElement>(null);
   useEffect(() => {
@@ -232,10 +343,25 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
         <button type="button" className="task-action min-h-10 flex-1 px-3" onClick={yes}>{tr(lang, "yes")}</button>
         <button type="button" className="task-action task-secondary min-h-10 flex-1 px-3" onClick={notQuite}>{lostT(lang, "notQuite")}</button>
       </> : null}
-      {canShow ? <button type="button" className="task-action task-secondary min-h-10 flex-1 px-3" onClick={showOnMap}>{lostT(lang, "showOnMap")}</button> : null}
+      {placedAt && !question ? <>
+        <button type="button" className="task-action min-h-10 flex-1 px-3" onClick={showSpot}>{placeT(lang, "showMe")}</button>
+        <button type="button" className="task-action task-secondary min-h-10 flex-1 px-3" onClick={notThere}>{placeT(lang, "notThere")}</button>
+      </> : null}
+      {canShow && !placedAt ? <button type="button" className="task-action task-secondary min-h-10 flex-1 px-3" onClick={showOnMap}>{lostT(lang, "showOnMap")}</button> : null}
     </div>
   );
-  const body = <>{signalRow}{thread}{actions}</>;
+  const taps = question && question !== "sign" && placer.current ? (
+    <div className="flex flex-wrap gap-2 text-sm" role="group" aria-label={questionText(question, lang)} data-testid="lost-answers">
+      {answersFor(question, placer.current.kit.spots, placer.current.w).map((a) => (
+        <button key={String(a.a)} type="button" className="task-action task-secondary min-h-10 px-3" onClick={() => tap(a)}>{answerLabel(a, lang)}</button>
+      ))}
+    </div>
+  ) : question === "sign" ? (
+    <div className="flex flex-wrap gap-2 text-sm" data-testid="lost-answers">
+      <button type="button" className="task-action task-secondary min-h-10 px-3" onClick={() => { add({ role: "user", text: placeT(lang, "noSignNear") }); askNext(); }}>{placeT(lang, "noSignNear")}</button>
+    </div>
+  ) : null;
+  const body = <>{signalRow}{thread}{taps}{actions}</>;
   const name = guess.station ?? lostT(lang, "title");
 
   if (!wide) return (
