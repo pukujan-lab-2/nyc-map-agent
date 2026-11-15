@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-15 01:58:22 UTC — agent:claude-code/abf81021-c394-4e17-a76d-dd9aafb3f1e3
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/abf81021-c394-4e17-a76d-dd9aafb3f1e3","blocked":[],"changed":["src/features/transit/alertDiagram.ts, NoticeDiagram.tsx, LinePanel.tsx, e2e/line-notices.spec.ts"],"completed":["A subway notice with nothing to draw used to open as only the cause and the dates; its card and voice now say the train and stations first, then why and when"],"decisions":["no new decisions"],"evidence":["The summary builder's unit tests pass (22, 7 new), the type check passes, and the line notice browser tests pass on the MacBook Pro (20 cases, 4 new at the four layout sizes)"],"next_action":"After the pull request for #198 deploys, open the 1 line on the live site and tap the notice about arrival times","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T01:58:22Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1ab6750940a845e454d8c225c01538f16bb0aa2ed16ab6f1fc6f23bd240c223f","request_id":"792c29d24e744922aec804dd6de5f7e4","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- A subway notice with nothing to draw used to open as only the cause and the dates; its card and voice now say the train and stations first, then why and when
+
+Evidence:
+- The summary builder's unit tests pass (22, 7 new), the type check passes, and the line notice browser tests pass on the MacBook Pro (20 cases, 4 new at the four layout sizes)
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/transit/alertDiagram.ts, NoticeDiagram.tsx, LinePanel.tsx, e2e/line-notices.spec.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- After the pull request for #198 deploys, open the 1 line on the live site and tap the notice about arrival times
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
