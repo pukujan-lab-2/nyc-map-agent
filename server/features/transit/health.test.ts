@@ -38,6 +38,7 @@ describe("/api/transit-health/accuracy", () => {
     octoQuery.mockImplementation((sql) => Promise.resolve({
       rows: sql.includes("transit_prediction_summary")
         ? [{ system: "subway", dim: "lead", key: "3-6", n: 40, mae_model: 22, mae_base: 25, w60_model: 0.9, w60_base: 0.85, l_n: 30, l_mae_model: 21, l_mae_base: 26, l_w60_model: 0.9, l_w60_base: 0.8 },
+           { system: "subway", dim: "weather", key: "rain", n: 12, mae_model: 40, mae_base: 44, w60_model: 0.6, w60_base: 0.5, l_n: 10, l_mae_model: 41, l_mae_base: 45, l_w60_model: 0.6, l_w60_base: 0.5 },
            { system: "bus", dim: "all", key: "", n: 3, mae_model: 50, mae_base: 50, w60_model: 0.6, w60_base: 0.6, l_n: 0, l_mae_model: null, l_mae_base: null, l_w60_model: null, l_w60_base: null }]
         : sql.includes("transit_prediction_thin")
           ? [{ system: "subway", route: "A", dir: 0, from_stop: "A02N", to_stop: "A03N", n: 4, learned_n: 3, mae_model: 40, mae_base: 20 }]
@@ -51,17 +52,20 @@ describe("/api/transit-health/accuracy", () => {
     expect(body.rows[1].learned).toMatchObject({ n: 0, maeModel: null });
     expect(body.thin).toEqual([{ system: "subway", route: "A", dir: 0, from: "A02N", to: "A03N", n: 4, learnedN: 3, maeModel: 40, maeBase: 20 }]);
     expect(body.runs[0]).toMatchObject({ runs: 2, opened: 100, unresolved: 10 });
+    // The condition splits are a list of their own; `rows` keeps to its five groups.
+    expect(body.rows.map((r) => r.dim)).toEqual(["lead", "all"]);
+    expect(body.conditions).toMatchObject([{ system: "subway", dim: "weather", key: "rain", n: 12, maeModel: 40, learned: { n: 10 } }]);
     expect(body.stops).toEqual([{ system: "subway", route: "Q", stop: "D25N", n: 9, maeModel: 80, maeBase: 70, w60Model: 0.4 }]);
   });
 
   it("answers without stops while only the first migration has run", async () => {
     octoQuery.mockImplementation((sql) => (sql.includes("transit_prediction_stops") ? Promise.reject(new Error('relation "marts.transit_prediction_stops" does not exist')) : Promise.resolve({ rows: [] })));
-    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: true, rows: [], thin: [], runs: [], stops: [] });
+    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: true, rows: [], thin: [], runs: [], stops: [], conditions: [] });
   });
 
   it("says it is not ready before the migration has run", async () => {
     octoQuery.mockRejectedValue(new Error('relation "marts.transit_prediction_summary" does not exist'));
-    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: false, rows: [], thin: [], runs: [], stops: [] });
+    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: false, rows: [], thin: [], runs: [], stops: [], conditions: [] });
   });
 });
 
