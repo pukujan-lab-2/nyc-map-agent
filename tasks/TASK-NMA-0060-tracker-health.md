@@ -189,6 +189,29 @@ Blocked/uncertain:
 Next:
 - Per-hour sample counts on the week grid; then conditions stored with each score, the pooling comparison and the MTA bus speeds comparison
 
+### 2026-11-15 05:35:57 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The page shows per-hour counts, error by conditions, the worst stops and the MTA comparison, on a pushed branch"],"decisions":["no new decisions"],"evidence":["12 browser cases pass at four sizes; 16 unit tests pass; the page chunk is 9.1 kB"],"next_action":"Open this pull request after the station view merges and the bus speeds one after the conditions one; run nyc-job.sh update on the VPS after each server change; then test the MTA figure as a starting value for thin bus stretches","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T05:35:57Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"21f7ac377f1058ed237747177487f1afd49a77a60c568bbb3155ed153b5a2228","request_id":"63cd45298a2e44bdbe8453e05a788d28","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The page shows per-hour counts, error by conditions, the worst stops and the MTA comparison, on a pushed branch
+
+Evidence:
+- 12 browser cases pass at four sizes; 16 unit tests pass; the page chunk is 9.1 kB
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open this pull request after the station view merges and the bus speeds one after the conditions one; run nyc-job.sh update on the VPS after each server change; then test the MTA figure as a starting value for thin bus stretches
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
