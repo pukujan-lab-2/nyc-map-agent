@@ -189,6 +189,29 @@ Blocked/uncertain:
 Next:
 - After it merges, run nyc-job.sh update on the VPS between runs and read the first rows with conditions; then show the splits, stops and hours on the page
 
+### 2026-11-15 05:39:32 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The conditions migration now reverses cleanly, which the migrations check failed on"],"decisions":["no new decisions"],"evidence":["Up, down, up ran on the VPS database in a rolled-back transaction"],"next_action":"When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T05:39:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"2940e306f423241efaa5d8477241fa2999bf0a382d7870e464334a32d95b1674","request_id":"3c8b806d78104eb98fea7969a8539847","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The conditions migration now reverses cleanly, which the migrations check failed on
+
+Evidence:
+- Up, down, up ran on the VPS database in a rolled-back transaction
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
