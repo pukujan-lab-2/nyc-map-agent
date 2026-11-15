@@ -327,6 +327,29 @@ Blocked/uncertain:
 Next:
 - After #139 merges, check the thick walls live; then build the partner's entering walk once the owner picks dollhouse or Street view
 
+### 2026-11-13 04:35:59 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After the place-name fix deploys, ask in Spanish for a trip from Pratt Institute to 55 Fulton Market on the live site and check it lands on Fulton St in Manhattan","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T04:35:59Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"5024a1e53f24a011e56ac123bb0d6c01d446be8cfb84c314094b12837e14ad79","request_id":"aee07cb2c6c74f7a95a989233e8e329e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After the place-name fix deploys, ask in Spanish for a trip from Pratt Institute to 55 Fulton Market on the live site and check it lands on Fulton St in Manhattan
+
 ### 2026-11-13 05:34:18 UTC — claude-code
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After PR 151 merges, use the live site on React 19 (map, 3D, Street, a trip), then build walking inside Fulton St on Rapier and ecctrl once the owner picks it","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T05:34:18Z"} -->
@@ -849,6 +872,29 @@ Blocked/uncertain:
 
 Next:
 - Defect check fixed (faceIndex bug). Manifold shell 149 spots vs old 163: no ceilings from above, in-the-way, low-head or open-up; track side 97 vs 85, holes 52 vs 59. Walk bot still stops on both shells (old 3, Manifold 4 plus 1 wedge on walk 6). On owner OK: move the Manifold script into the repo and switch.
+
+### 2026-11-13 16:56:10 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Parent merges feat/126-walk-signs-gates into feat/126-level-shell again; owner walks the Fulton St dead end at (46.8, 13.9) and the forks to check the new boards","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T16:56:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6d4b8f9442c058e5bca9efef5d5d1c3631fabd07562553fa0860ce77479321a8","request_id":"97f6f32040524c53aa1d3a2cb5da0641","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Parent merges feat/126-walk-signs-gates into feat/126-level-shell again; owner walks the Fulton St dead end at (46.8, 13.9) and the forks to check the new boards
 
 ### 2026-11-13 17:11:46 UTC — claude-code
 
