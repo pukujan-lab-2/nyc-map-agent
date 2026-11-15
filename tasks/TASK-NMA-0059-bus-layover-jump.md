@@ -218,6 +218,29 @@ Blocked/uncertain:
 Next:
 - After pull request #219 deploys, rerun the live feed check from its commit and follow an M22 at Vesey Street in daytime
 
+### 2026-11-15 09:18:38 UTC — agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896","blocked":[],"changed":["checkpoints/CURRENT.md"],"completed":["Main, with the browser test fixes from #221, is merged into the pull-out fix after its browser job was cancelled at 45 minutes on overloaded runners"],"decisions":["no new decisions"],"evidence":["On the MacBook Pro: lint clean, the type check passes, 193 transit unit tests pass, size limits pass"],"next_action":"After pull request #219 deploys, rerun the live feed check from its commit and follow an M22 at Vesey Street in daytime","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T09:18:38Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"09c31a8b089e1f60dcf36a7452fc3b80feea0cca33f98ada6969bf9a8dc10c18","request_id":"c60a6258b93c467c8ec836e4c732739c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- Main, with the browser test fixes from #221, is merged into the pull-out fix after its browser job was cancelled at 45 minutes on overloaded runners
+
+Evidence:
+- On the MacBook Pro: lint clean, the type check passes, 193 transit unit tests pass, size limits pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request #219 deploys, rerun the live feed check from its commit and follow an M22 at Vesey Street in daytime
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
