@@ -212,6 +212,29 @@ Blocked/uncertain:
 Next:
 - Open this pull request after the station view merges and the bus speeds one after the conditions one; run nyc-job.sh update on the VPS after each server change; then test the MTA figure as a starting value for thin bus stretches
 
+### 2026-11-15 06:38:02 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The page reads condition splits from the accuracy answer's new list"],"decisions":["no new decisions"],"evidence":["12 browser cases pass at four sizes"],"next_action":"When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T06:38:02Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"91b63d23a184f16b13b6e2f761ffa92de0dca89dc40510e786d597fe2af29da3","request_id":"d8dded4b61514887aac4dbed2f7dec47","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The page reads condition splits from the accuracy answer's new list
+
+Evidence:
+- 12 browser cases pass at four sizes
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
