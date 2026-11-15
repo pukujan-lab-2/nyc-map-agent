@@ -22,13 +22,15 @@ async function getJson<T>(url: string): Promise<T> {
 
 type Coverage = { ready: boolean; refreshedAt: string | null; bands: Array<[number, number]>; rows: CoverageRow[] };
 type Stats = { n: number; maeModel: number | null; maeBase: number | null; w60Model: number | null; w60Base: number | null };
-type AccuracyRow = Stats & { system: System; dim: "all" | "route" | "band" | "lead" | "samples" | "rush" | "notice" | "weather" | "traffic"; key: string; learned: Stats };
+type AccuracyRow = Stats & { system: System; dim: string; key: string; learned: Stats };
 type Accuracy = {
   ready: boolean;
   rows: AccuracyRow[];
   thin: Array<{ system: System; route: string; dir: number; from: string; to: string; n: number; learnedN: number; maeModel: number; maeBase: number }>;
   runs: Array<{ system: System; runs: number; opened: number; resolved: number; unresolved: number; stored: number; first: string | null; last: string | null }>;
   stops?: Array<{ system: System; route: string; stop: string; n: number; maeModel: number; maeBase: number; w60Model: number }>;
+  /** Error split by rush hour, notice, weather and traffic: a list of its own in the answer. */
+  conditions?: AccuracyRow[];
 };
 type Hours = { ready: boolean; cells: HourCell[] };
 type BusSpeeds = { ready: boolean; since: string | null; segments: Array<{ direction: string; order: number; from: string; to: string; seconds: number; metres: number; trips: number }> };
@@ -90,7 +92,7 @@ function Pair({ label, row, max }: { label: ReactNode; row: Stats; max: number }
 function AccuracyPanel({ system, stopName }: { system: System; stopName: (stop: string) => string }) {
   const url = `${API}/api/transit-health/accuracy`;
   const q = useQuery({ queryKey: ["tracker-health", "accuracy"], queryFn: () => getJson<Accuracy>(url), staleTime: 60_000, retry: 1 });
-  const rows = (q.data?.rows ?? []).filter((r) => r.system === system);
+  const rows = [...(q.data?.rows ?? []), ...(q.data?.conditions ?? [])].filter((r) => r.system === system);
   const run = q.data?.runs.find((r) => r.system === system);
   const all = rows.find((r) => r.dim === "all");
   const of = (dim: AccuracyRow["dim"], order?: string[]) => {

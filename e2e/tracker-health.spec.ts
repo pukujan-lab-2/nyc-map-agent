@@ -35,10 +35,13 @@ const accuracy = {
     ...["0", "5", "7", "10", "16", "20"].map((k, i) => acc("subway", "band", k, 700, 20 + i, 24 + i)),
     ...["2-4", "5-9", "10+", "none"].map((k, i) => acc("subway", "samples", k, 1000, 40 - i * 6, 30)),
     ...Array.from({ length: 20 }, (_, i) => acc("subway", "route", i < 2 ? ["A", "G"][i] : `R${i}`, 200, 20 + i, 22 + i)),
+    acc("bus", "all", "", 900, 66, 52),
+  ],
+  conditions: [
     acc("subway", "rush", "rush", 900, 31, 35), acc("subway", "rush", "off-peak", 3300, 22, 25),
     acc("subway", "notice", "yes", 1500, 34, 37), acc("subway", "notice", "no", 2700, 20, 22),
     acc("subway", "weather", "dry", 3800, 23, 26), acc("subway", "weather", "rain", 400, 36, 41),
-    acc("bus", "all", "", 900, 66, 52), acc("bus", "traffic", "free", 60, 40, 44), acc("bus", "traffic", "jam", 25, 120, 110),
+    acc("bus", "traffic", "free", 60, 40, 44), acc("bus", "traffic", "jam", 25, 120, 110),
   ],
   stops: [
     { system: "subway", route: "A", stop: "A07N", n: 14, maeModel: 88, maeBase: 91, w60Model: 0.36 },
