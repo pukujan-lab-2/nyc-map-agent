@@ -9,7 +9,8 @@
  *
  * The same run scores the tracker (#11, server/features/transit/score.ts): it predicts arrivals
  * with the learned times the live site serves, compares them with what the feeds then show, and
- * stores a capped sample in raw.transit_prediction_scores (21 days). It ends by refreshing the
+ * stores a capped sample in raw.transit_prediction_scores (21 days), each with the conditions at the
+ * time (notice active, rain or snow, traffic by the bus stop; conditions.ts). It ends by refreshing the
  * views the tracker health page reads. Scoring never stops the learning: its errors are logged.
  *
  *   pnpm transit:observe [minutes=13] [intervalSeconds=30]
@@ -20,6 +21,7 @@ import { BusObserver, runMedians, type BusObs } from "../server/features/transit
 import { nyHourOfWeek } from "../server/features/transit/segments";
 import { SegmentObserver, type SegmentObs } from "../server/features/transit/observe";
 import { BusScorer, sample, SubwayScorer, type BusSegRow, type Score, type Tally } from "../server/features/transit/score";
+import { noticeRoutes, trafficNear, wetness, type SpeedLink } from "../server/features/transit/conditions";
 import type { SegmentRow } from "../src/features/transit/history";
 import type { RouteGeom } from "../src/features/transit/busEstimate";
 import { loadEnv } from "./env";
@@ -102,17 +104,43 @@ async function busScorer(routes: string[], runEnd: number, slot: number): Promis
   return scorer;
 }
 
-async function writeScores(runAt: Date, scores: Score[], tallies: Array<[Score["system"], Tally]>) {
+/**
+ * What the day was like, read once at the start of the run from the live site: the notices in
+ * effect, the weather (one reading, Midtown) and the DOT speed links. Each is optional: a failed
+ * read leaves that condition unknown for the run's scores.
+ */
+type Context = { notices?: Set<string>; weather: ReturnType<typeof wetness>; links?: SpeedLink[] };
+async function readContext(at: number): Promise<Context> {
+  const [alerts, weather, traffic] = await Promise.all([
+    site<{ alerts: Array<{ routes?: string[]; start?: number; end?: number }> }>("/api/transit/alerts").catch(logged("score: notices unknown this run")),
+    site<{ kind?: string }>("/api/weather?lat=40.75&lon=-73.98").catch(logged("score: weather unknown this run")),
+    site<{ features: Array<{ properties: { level: string }; geometry: { coordinates: Array<[number, number]> } }> }>("/api/traffic").catch(logged("score: traffic unknown this run")),
+  ]);
+  return {
+    notices: alerts ? noticeRoutes(alerts.alerts ?? [], at) : undefined,
+    weather: wetness(weather?.kind),
+    links: traffic?.features?.filter((f) => Array.isArray(f.geometry?.coordinates)).map((f) => ({ level: f.properties.level, coords: f.geometry.coordinates })),
+  };
+}
+
+async function writeScores(runAt: Date, scores: Score[], tallies: Array<[Score["system"], Tally]>, ctx: Context, busScore?: BusScorer) {
   const rows = (["subway", "bus"] as const).flatMap((system) => sample(scores.filter((s) => s.system === system), SCORE_CAP));
+  for (const r of rows) {
+    r.notice = ctx.notices ? ctx.notices.has(r.route) : null;
+    r.weather = ctx.weather;
+    const p = r.system === "bus" && ctx.links ? busScore?.stopPoint(r.route, r.to) : undefined;
+    r.traffic = p && ctx.links ? trafficNear(ctx.links, p[0], p[1]) : null;
+  }
+  const COLS = 16;
   for (let i = 0; i < rows.length; i += 400) {
     const params: unknown[] = [];
     const values = rows.slice(i, i + 400).map((r) => {
-      params.push(new Date(r.at * 1000).toISOString(), r.system, r.route, r.dir, r.from, r.to, r.legs, r.lead, r.actual, r.errModel, r.errBase, r.learnedN, r.truth);
-      const b = params.length - 13;
-      return `(${Array.from({ length: 13 }, (_, k) => `$${b + k + 1}`).join(",")})`;
+      params.push(new Date(r.at * 1000).toISOString(), r.system, r.route, r.dir, r.from, r.to, r.legs, r.lead, r.actual, r.errModel, r.errBase, r.learnedN, r.truth, r.notice ?? null, r.weather ?? null, r.traffic ?? null);
+      const b = params.length - COLS;
+      return `(${Array.from({ length: COLS }, (_, k) => `$${b + k + 1}`).join(",")})`;
     });
     await octoQuery(
-      `INSERT INTO raw.transit_prediction_scores (scored_at, system, route, dir, from_stop, to_stop, legs, lead_s, actual_s, err_model_s, err_base_s, learned_n, truth) VALUES ${values.join(",")}`,
+      `INSERT INTO raw.transit_prediction_scores (scored_at, system, route, dir, from_stop, to_stop, legs, lead_s, actual_s, err_model_s, err_base_s, learned_n, truth, notice, weather, traffic) VALUES ${values.join(",")}`,
       params,
     );
   }
@@ -151,6 +179,7 @@ async function main() {
   let subScore: SubwayScorer | undefined, busScore: BusScorer | undefined;
   let subTried = process.env.SCORE_OFF === "1", busTried = subTried;
   const scores: Score[] = [];
+  const ctx: Context = subTried ? { weather: null } : await readContext(started.getTime() / 1000);
   let total = 0;
   while (Date.now() < end) {
     try {
@@ -192,10 +221,10 @@ async function main() {
     if (subScore) tallies.push(["subway", subScore.finish()]);
     if (busScore) tallies.push(["bus", busScore.finish()]);
     if (tallies.length) {
-      const stored = await writeScores(started, scores, tallies);
+      const stored = await writeScores(started, scores, tallies, ctx, busScore);
       console.log(`score: ${tallies.map(([s, t]) => `${s} ${t.resolved} of ${t.opened} predictions resolved, ${t.unresolved} unresolved`).join("; ")}; stored ${stored}`);
     }
-    for (const view of ["marts.transit_prediction_summary", "marts.transit_prediction_thin", "marts.transit_coverage"]) await refresh(view);
+    for (const view of ["marts.transit_prediction_summary", "marts.transit_prediction_thin", "marts.transit_prediction_stops", "marts.transit_coverage", "marts.transit_coverage_hourly"]) await refresh(view);
   } catch (err) {
     logged("score: not stored")(err);
   }

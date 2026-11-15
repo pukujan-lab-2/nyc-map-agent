@@ -4044,7 +4044,11 @@
                               "route",
                               "band",
                               "lead",
-                              "samples"
+                              "samples",
+                              "rush",
+                              "notice",
+                              "weather",
+                              "traffic"
                             ]
                           },
                           "key": {
@@ -4231,13 +4235,56 @@
                           "last"
                         ]
                       }
+                    },
+                    "stops": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "subway",
+                              "bus"
+                            ]
+                          },
+                          "route": {
+                            "type": "string"
+                          },
+                          "stop": {
+                            "type": "string"
+                          },
+                          "n": {
+                            "type": "integer"
+                          },
+                          "maeModel": {
+                            "type": "number"
+                          },
+                          "maeBase": {
+                            "type": "number"
+                          },
+                          "w60Model": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "route",
+                          "stop",
+                          "n",
+                          "maeModel",
+                          "maeBase",
+                          "w60Model"
+                        ]
+                      }
                     }
                   },
                   "required": [
                     "ready",
                     "rows",
                     "thin",
-                    "runs"
+                    "runs",
+                    "stops"
                   ]
                 }
               }
@@ -4300,7 +4347,11 @@
                               "route",
                               "band",
                               "lead",
-                              "samples"
+                              "samples",
+                              "rush",
+                              "notice",
+                              "weather",
+                              "traffic"
                             ]
                           },
                           "key": {
@@ -4487,13 +4538,293 @@
                           "last"
                         ]
                       }
+                    },
+                    "stops": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "subway",
+                              "bus"
+                            ]
+                          },
+                          "route": {
+                            "type": "string"
+                          },
+                          "stop": {
+                            "type": "string"
+                          },
+                          "n": {
+                            "type": "integer"
+                          },
+                          "maeModel": {
+                            "type": "number"
+                          },
+                          "maeBase": {
+                            "type": "number"
+                          },
+                          "w60Model": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "route",
+                          "stop",
+                          "n",
+                          "maeModel",
+                          "maeBase",
+                          "w60Model"
+                        ]
+                      }
                     }
                   },
                   "required": [
                     "ready",
                     "rows",
                     "thin",
-                    "runs"
+                    "runs",
+                    "stops"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream (Octo / R2) error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transit-health/hours": {
+      "get": {
+        "summary": "Learned-time samples per single hour of each schedule, for one line or bus route or summed over the system",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "subway",
+                "bus"
+              ]
+            },
+            "required": true,
+            "name": "system",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9+]{1,6}$"
+            },
+            "required": false,
+            "name": "route",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK (ready: false until the observer has built the view)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ready": {
+                      "type": "boolean"
+                    },
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "subway",
+                        "bus"
+                      ]
+                    },
+                    "route": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "cells": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sched": {
+                            "type": "integer"
+                          },
+                          "hour": {
+                            "type": "integer"
+                          },
+                          "segments": {
+                            "type": "integer"
+                          },
+                          "solid": {
+                            "type": "integer"
+                          },
+                          "enough": {
+                            "type": "integer"
+                          },
+                          "samples": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "sched",
+                          "hour",
+                          "segments",
+                          "solid",
+                          "enough",
+                          "samples"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "ready",
+                    "system",
+                    "route",
+                    "cells"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream (Octo / R2) error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/transit-health/hours": {
+      "get": {
+        "summary": "Learned-time samples per single hour of each schedule, for one line or bus route or summed over the system (alias of /api/v1/transit-health/hours)",
+        "deprecated": true,
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "subway",
+                "bus"
+              ]
+            },
+            "required": true,
+            "name": "system",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9+]{1,6}$"
+            },
+            "required": false,
+            "name": "route",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK (ready: false until the observer has built the view)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ready": {
+                      "type": "boolean"
+                    },
+                    "system": {
+                      "type": "string",
+                      "enum": [
+                        "subway",
+                        "bus"
+                      ]
+                    },
+                    "route": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "cells": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "sched": {
+                            "type": "integer"
+                          },
+                          "hour": {
+                            "type": "integer"
+                          },
+                          "segments": {
+                            "type": "integer"
+                          },
+                          "solid": {
+                            "type": "integer"
+                          },
+                          "enough": {
+                            "type": "integer"
+                          },
+                          "samples": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "sched",
+                          "hour",
+                          "segments",
+                          "solid",
+                          "enough",
+                          "samples"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "ready",
+                    "system",
+                    "route",
+                    "cells"
                   ]
                 }
               }

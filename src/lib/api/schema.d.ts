@@ -1944,7 +1944,7 @@ export interface paths {
                             ready: boolean;
                             rows: {
                                 /** @enum {string} */
-                                dim: "all" | "route" | "band" | "lead" | "samples";
+                                dim: "all" | "route" | "band" | "lead" | "samples" | "rush" | "notice" | "weather" | "traffic";
                                 key: string;
                                 learned: {
                                     maeBase: number | null;
@@ -1971,6 +1971,16 @@ export interface paths {
                                 /** @enum {string} */
                                 system: "subway" | "bus";
                                 unresolved: number;
+                            }[];
+                            stops: {
+                                maeBase: number;
+                                maeModel: number;
+                                n: number;
+                                route: string;
+                                stop: string;
+                                /** @enum {string} */
+                                system: "subway" | "bus";
+                                w60Model: number;
                             }[];
                             thin: {
                                 dir: number;
@@ -2059,6 +2069,79 @@ export interface paths {
                                 system: "subway" | "bus";
                                 used: number;
                             }[];
+                        };
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transit-health/hours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Learned-time samples per single hour of each schedule, for one line or bus route or summed over the system (alias of /api/v1/transit-health/hours)
+         * @deprecated
+         */
+        get: {
+            parameters: {
+                query: {
+                    route?: string;
+                    system: "subway" | "bus";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK (ready: false until the observer has built the view) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cells: {
+                                enough: number;
+                                hour: number;
+                                samples: number;
+                                sched: number;
+                                segments: number;
+                                solid: number;
+                            }[];
+                            ready: boolean;
+                            route: string | null;
+                            /** @enum {string} */
+                            system: "subway" | "bus";
                         };
                     };
                 };
@@ -4309,7 +4392,7 @@ export interface paths {
                             ready: boolean;
                             rows: {
                                 /** @enum {string} */
-                                dim: "all" | "route" | "band" | "lead" | "samples";
+                                dim: "all" | "route" | "band" | "lead" | "samples" | "rush" | "notice" | "weather" | "traffic";
                                 key: string;
                                 learned: {
                                     maeBase: number | null;
@@ -4336,6 +4419,16 @@ export interface paths {
                                 /** @enum {string} */
                                 system: "subway" | "bus";
                                 unresolved: number;
+                            }[];
+                            stops: {
+                                maeBase: number;
+                                maeModel: number;
+                                n: number;
+                                route: string;
+                                stop: string;
+                                /** @enum {string} */
+                                system: "subway" | "bus";
+                                w60Model: number;
                             }[];
                             thin: {
                                 dir: number;
@@ -4421,6 +4514,76 @@ export interface paths {
                                 system: "subway" | "bus";
                                 used: number;
                             }[];
+                        };
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transit-health/hours": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Learned-time samples per single hour of each schedule, for one line or bus route or summed over the system */
+        get: {
+            parameters: {
+                query: {
+                    route?: string;
+                    system: "subway" | "bus";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK (ready: false until the observer has built the view) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cells: {
+                                enough: number;
+                                hour: number;
+                                samples: number;
+                                sched: number;
+                                segments: number;
+                                solid: number;
+                            }[];
+                            ready: boolean;
+                            route: string | null;
+                            /** @enum {string} */
+                            system: "subway" | "bus";
                         };
                     };
                 };
