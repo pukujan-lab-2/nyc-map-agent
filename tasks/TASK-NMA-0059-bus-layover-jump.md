@@ -126,6 +126,29 @@ Blocked/uncertain:
 Next:
 - After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
 
+### 2026-11-15 04:28:28 UTC — agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896","blocked":[],"changed":["checkpoints/CURRENT.md"],"completed":["Main is merged in again after CI failed on the station replay's 1920x1080 layout case, which this change does not touch; that spec and the follow spec pass on the MacBook Pro (13 tests)"],"decisions":["no new decisions"],"evidence":["pnpm exec playwright test e2e/station-replay.spec.ts e2e/panel-slot.spec.ts: 13 passed; no size limit exceeded"],"next_action":"After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T04:28:28Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1229eda32c57d48b156874e03cdfaa629727fa3218fcf0cff78802792f37481c","request_id":"ef68c43389a949b68b3f300652c7b0d9","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- Main is merged in again after CI failed on the station replay's 1920x1080 layout case, which this change does not touch; that spec and the follow spec pass on the MacBook Pro (13 tests)
+
+Evidence:
+- pnpm exec playwright test e2e/station-replay.spec.ts e2e/panel-slot.spec.ts: 13 passed; no size limit exceeded
+
+Decisions:
+- no new decisions
+
+Changed:
+- checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
