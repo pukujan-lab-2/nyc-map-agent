@@ -325,6 +325,8 @@ function troubleFeed(): string {
   body.alerts.alerts.push(
     { ...base, id: "e2e-info", kind: "notice", type: "Information Outage", routes: ["2"], stops: ["127", "128"], text: "Downtown [2] trains are stopping at Times Sq-42 St and 34 St-Penn Station, but real-time arrival information may be unavailable", description: "What's happening?\nTechnical issue" },
     { ...base, id: "e2e-delay", kind: "delay", type: "Delays", routes: ["2", "3"], text: "[2][3] trains are running with delays in both directions." },
+    // Many lines slowed at once: the summary's bullets have to wrap on a narrow phone.
+    { ...base, id: "e2e-slow", kind: "delay", type: "Delays", routes: ["4", "5", "6", "7", "E", "F", "G", "J", "L", "N", "Q"], text: "Trains are running with delays systemwide because of a power problem." },
     shuttleAlert(),
     { ...base, id: "e2e-skip", kind: "planned", type: "Planned - Stops Skipped", reroute: true, routes: ["A"], text: "In Manhattan, uptown [A] skips 72 St and 86 St", skipNames: ["72 St", "86 St"] },
     { ...base, id: "e2e-via", kind: "planned", type: "Planned - Reroute", reroute: true, routes: ["D"], text: "In Brooklyn, Manhattan-bound [D] runs via the [N] from Coney Island-Stillwell Av to 36 St" },
@@ -347,7 +349,12 @@ for (const size of SIZES) {
     await expect(summary.locator("li")).toHaveCount(3, { timeout: slow(15_000) });
     await expect(summary.locator('li[data-rank="1"] button')).toHaveText(["2"]);
     await expect(summary.locator('li[data-rank="2"] button')).toHaveText(["A", "D"]);
-    await expect(summary.locator('li[data-rank="3"] button')).toHaveText(["3"]);
+    await expect(summary.locator('li[data-rank="3"] button')).toHaveText(["3", "4", "5", "6", "7", "E", "F", "G", "J", "L", "N", "Q"]);
+    // Twelve bullets do not fit one row of a phone: they wrap inside the summary instead of running off its side.
+    const box = (await summary.boundingBox())!;
+    const bullets = await summary.locator('li[data-rank="3"] button').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, right: r.right, y: Math.round(r.y) }; }));
+    expect(bullets.every((b) => b.x >= box.x && b.right <= box.x + box.width)).toBe(true);
+    if (size.width <= 390) expect(new Set(bullets.map((b) => b.y)).size).toBeGreaterThan(1);
     // Each row says the line's worst status, in words with a symbol: the 2 has a delay too, and reads "No trains".
     const chip = (line: string) => list.locator(`[data-line="${line}"] [data-status]`);
     await expect(chip("2")).toHaveText("No trains");
