@@ -235,6 +235,29 @@ Blocked/uncertain:
 Next:
 - When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
 
+### 2026-11-15 09:19:07 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The server side merged in pull request 217; the page branch is up to date with main"],"decisions":["no new decisions"],"evidence":["16 unit tests, type check and lint pass; size budgets pass on the MacBook Pro"],"next_action":"When pull request 216 merges and deploys, check the live page: stations, hour strip, error by conditions, worst stops and the MTA comparison; read the first rows with conditions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T09:19:07Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"229f6a406afb9417ae89a60b9f4f7783e6661385cda82bf9deddf2861d227423","request_id":"5fbbd9086d574896a7dc85b12c8d188c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The server side merged in pull request 217; the page branch is up to date with main
+
+Evidence:
+- 16 unit tests, type check and lint pass; size budgets pass on the MacBook Pro
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull request 216 merges and deploys, check the live page: stations, hour strip, error by conditions, worst stops and the MTA comparison; read the first rows with conditions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
