@@ -1241,6 +1241,29 @@ Blocked/uncertain:
 Next:
 - After pull request 142 merges and deploys, translate a trip step on the live site and read the translate span back from Phoenix; then bring pull request 148 up to date
 
+### 2026-11-15 12:13:19 UTC — agent:claude-code/2d3f5334-9b7a-4d93-ad48-043e8f0d960b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/2d3f5334-9b7a-4d93-ad48-043e8f0d960b","blocked":[],"changed":["none beyond the merge"],"completed":["Pull request 142 has main merged in again, which brings the 710 kB walk chunk limit; every other check had passed"],"decisions":["No limit raised in this pull request; main's limit is used"],"evidence":["CI on the previous commit: check, lint, api, deps, e2e and gitleaks passed; size failed by 40 bytes on the station walk chunk"],"next_action":"After pull request 142 merges and deploys, translate a trip step on the live site and read the translate span back from Phoenix; then bring pull request 148 up to date","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-15T12:13:19Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4736825b30cc6b5cae1c642a6f7fbe220f93f3e5d6517b07c14077be083669ba","request_id":"f2d1222a16804dac90c9455e8aac43a7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- Pull request 142 has main merged in again, which brings the 710 kB walk chunk limit; every other check had passed
+
+Evidence:
+- CI on the previous commit: check, lint, api, deps, e2e and gitleaks passed; size failed by 40 bytes on the station walk chunk
+
+Decisions:
+- No limit raised in this pull request; main's limit is used
+
+Changed:
+- none beyond the merge
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request 142 merges and deploys, translate a trip step on the live site and read the translate span back from Phoenix; then bring pull request 148 up to date
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
