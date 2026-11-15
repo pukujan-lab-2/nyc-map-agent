@@ -12,6 +12,7 @@
  * stores a capped sample in raw.transit_prediction_scores (21 days), each with the conditions at the
  * time (notice active, rain or snow, traffic by the bus stop; conditions.ts). It ends by refreshing the
  * views the tracker health page reads. Scoring never stops the learning: its errors are logged.
+ * Last, it imports the MTA's published bus speeds for a few routes (busSpeeds.ts), 8 a run.
  *
  *   pnpm transit:observe [minutes=13] [intervalSeconds=30]
  */
@@ -24,6 +25,7 @@ import { BusScorer, sample, SubwayScorer, type BusSegRow, type Score, type Tally
 import { noticeRoutes, trafficNear, wetness, type SpeedLink } from "../server/features/transit/conditions";
 import type { SegmentRow } from "../src/features/transit/history";
 import type { RouteGeom } from "../src/features/transit/busEstimate";
+import { foldSpeeds, speedsUrl, type SocrataRow } from "../server/features/transit/busSpeeds";
 import { loadEnv } from "./env";
 
 const RETENTION_DAYS = 60;
@@ -164,6 +166,48 @@ const logged = (what: string) => (err: unknown) => {
   return undefined;
 };
 
+/** MTA bus speeds (busSpeeds.ts): routes imported per run, and how long an import stays fresh. */
+const SPEED_ROUTES_PER_RUN = 8, SPEED_FRESH_DAYS = 30;
+
+/**
+ * Imports the MTA's published timepoint speeds for a few bus routes that have none yet or whose
+ * import is over 30 days old: the last three published months, about 430 rows a route. With 8
+ * routes a run, every route in the feed is in within a day, and each is then left for a month.
+ */
+async function importBusSpeeds(routes: string[]): Promise<number> {
+  const all = [...new Set(routes)].filter((r) => /^[A-Za-z]{1,3}\d{1,3}[A-Za-z+]{0,2}$/.test(r)).sort();
+  const fresh = new Set((await octoQuery<{ route: string }>(`SELECT route FROM raw.mta_bus_speed_imports WHERE imported_at > now() - interval '${SPEED_FRESH_DAYS} days'`)).rows.map((r) => r.route));
+  const picked = all.filter((r) => !fresh.has(r)).slice(0, SPEED_ROUTES_PER_RUN);
+  // The dataset is published by month, about six weeks behind: four months back holds the last three.
+  const from = new Date();
+  from.setUTCMonth(from.getUTCMonth() - 4, 1);
+  const since = from.toISOString().slice(0, 10);
+  for (const route of picked) {
+    const res = await fetch(speedsUrl(route, since), { signal: AbortSignal.timeout(30_000) });
+    if (!res.ok) throw new Error(`bus speeds ${route}: ${res.status}`);
+    const rows = foldSpeeds((await res.json()) as SocrataRow[]);
+    await octoQuery("DELETE FROM raw.mta_bus_segment_speeds WHERE route = $1", [route]);
+    for (let i = 0; i < rows.length; i += 400) {
+      const params: unknown[] = [];
+      const values = rows.slice(i, i + 400).map((r) => {
+        params.push(route, r.direction, r.from, r.to, r.order, r.sched, r.hour, r.seconds, r.metres, r.trips);
+        const b = params.length - 10;
+        return `(${Array.from({ length: 10 }, (_, k) => `$${b + k + 1}`).join(",")})`;
+      });
+      await octoQuery(
+        `INSERT INTO raw.mta_bus_segment_speeds (route, direction, from_stop, to_stop, stop_order, sched, hour, avg_s, distance_m, trips) VALUES ${values.join(",")} ON CONFLICT DO NOTHING`,
+        params,
+      );
+    }
+    // A route the dataset does not have is recorded with no rows, so it is not asked for again every run.
+    await octoQuery(
+      "INSERT INTO raw.mta_bus_speed_imports (route, imported_at, since, rows) VALUES ($1, now(), $2, $3) ON CONFLICT (route) DO UPDATE SET imported_at = now(), since = excluded.since, rows = excluded.rows",
+      [route, since, rows.length],
+    );
+  }
+  return picked.length;
+}
+
 async function main() {
   loadEnv();
   const minutes = Number(process.argv[2] ?? 13), every = Number(process.argv[3] ?? 30);
@@ -179,6 +223,7 @@ async function main() {
   let subScore: SubwayScorer | undefined, busScore: BusScorer | undefined;
   let subTried = process.env.SCORE_OFF === "1", busTried = subTried;
   const scores: Score[] = [];
+  let feedRoutes: string[] = [];
   const ctx: Context = subTried ? { weather: null } : await readContext(started.getTime() / 1000);
   let total = 0;
   while (Date.now() < end) {
@@ -201,6 +246,7 @@ async function main() {
         busRows.push(...busObs.ingest(buses));
         if (!busTried) {
           busTried = true;
+          feedRoutes = buses.map((b) => b.route);
           busScore = await busScorer(buses.map((b) => b.route), end / 1000, Math.floor(started.getTime() / 900_000)).catch(logged("score: buses off this run"));
         }
         if (busScore) scores.push(...busScore.ingest(buses));
@@ -227,6 +273,9 @@ async function main() {
     for (const view of ["marts.transit_prediction_summary", "marts.transit_prediction_thin", "marts.transit_prediction_stops", "marts.transit_coverage", "marts.transit_coverage_hourly"]) await refresh(view);
   } catch (err) {
     logged("score: not stored")(err);
+  }
+  if (feedRoutes.length && process.env.SPEEDS_OFF !== "1") {
+    await importBusSpeeds(feedRoutes).then((n) => { if (n) console.log(`bus speeds: imported ${n} routes from data.ny.gov`); }, logged("bus speeds: not imported"));
   }
 }
 

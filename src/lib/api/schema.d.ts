@@ -2025,6 +2025,83 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/transit-health/bus-speeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The MTA's published average bus travel times between timepoints (data.ny.gov kufs-yh3x) for a route at a schedule and hour, from a bounded import (alias of /api/v1/transit-health/bus-speeds)
+         * @deprecated
+         */
+        get: {
+            parameters: {
+                query: {
+                    dow?: number;
+                    hour?: number | null;
+                    route: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK (ready: false until the route has been imported) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dow: number;
+                            hour: number;
+                            importedAt: string | null;
+                            ready: boolean;
+                            route: string;
+                            segments: {
+                                direction: string;
+                                from: string;
+                                metres: number;
+                                order: number;
+                                seconds: number;
+                                to: string;
+                                trips: number;
+                            }[];
+                            since: string | null;
+                        };
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/transit-health/coverage": {
         parameters: {
             query?: never;
@@ -4442,6 +4519,80 @@ export interface paths {
                                 system: "subway" | "bus";
                                 to: string;
                             }[];
+                        };
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transit-health/bus-speeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The MTA's published average bus travel times between timepoints (data.ny.gov kufs-yh3x) for a route at a schedule and hour, from a bounded import */
+        get: {
+            parameters: {
+                query: {
+                    dow?: number;
+                    hour?: number | null;
+                    route: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK (ready: false until the route has been imported) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            dow: number;
+                            hour: number;
+                            importedAt: string | null;
+                            ready: boolean;
+                            route: string;
+                            segments: {
+                                direction: string;
+                                from: string;
+                                metres: number;
+                                order: number;
+                                seconds: number;
+                                to: string;
+                                trips: number;
+                            }[];
+                            since: string | null;
                         };
                     };
                 };
