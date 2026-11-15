@@ -29,6 +29,8 @@ export interface LineNotice {
   start?: number;
   /** The MTA alert behind it, so the map can draw the affected stretch (alert focus). */
   alert?: TransitAlert;
+  /** The elevators and escalators behind it, so the card can walk through them. */
+  outages?: Outage[];
 }
 
 /** Dot, ring and glow colours per tone (from the agreed design). */
@@ -137,6 +139,7 @@ function outageNotice(list: Outage[], sys: StaticSystem): LineNotice | null {
       meta: `${where}${until}`,
       body: [o.reason ? `${o.equipment} out of service: ${o.reason.toLowerCase()}.` : `${o.equipment} out of service.`, o.alternative].filter(Boolean).join(" "),
       stations,
+      outages: list,
     };
   }
   // Soonest first, so a range reads "until Oct 31 to Dec 31".
@@ -152,6 +155,7 @@ function outageNotice(list: Outage[], sys: StaticSystem): LineNotice | null {
     meta: days.length === 1 ? `until ${days[0]}` : days.length ? `until ${days[0]} to ${days.at(-1)}` : "",
     body: [...outageRows(list, days.length > 1), reasons.length === 1 ? `Out of service: ${reasons[0].toLowerCase()}.` : "", ...alternatives].filter(Boolean).join("\n"),
     stations,
+    outages: list,
   };
 }
 
