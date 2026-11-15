@@ -76,6 +76,8 @@ export type AlertGeometry = {
   suspended: boolean;
   /** The two ends of a suspension, where a replacement shuttle picks people up. */
   ends: Array<{ name: string; coord: Pos }>;
+  /** Trains still stop at `skipped`: the notice is only about those stations (arrival times, a boarding change), so no skip mark is drawn. */
+  stopping: boolean;
 };
 
 /** "No [M] between Myrtle Av (Broadway) and Delancey St-Essex St" -> the two end names. */
@@ -202,7 +204,10 @@ export function namedStations(text: string, sys: StaticSystem, route: string): s
 }
 
 export function alertGeometry(a: TransitAlert, sys: StaticSystem): AlertGeometry {
-  const g: AlertGeometry = { affected: [], skipped: [], reroute: [], bounds: null, suspended: false, ends: [] };
+  // Nothing in the notice takes a train away from a station: no parsed skip or suspension, and no such word in its headline or type.
+  const stopping = !(a.changes ?? []).some((c) => c.kind === "skip" || c.kind === "suspended") && !(a.skipNames?.length) && !a.reroute
+    && !/\bskips?\b|\bno\b|suspend|\bexpress\b|\bvia\b/i.test(a.text) && !/skip|suspend|reroute|substitute/i.test(a.type);
+  const g: AlertGeometry = { affected: [], skipped: [], reroute: [], bounds: null, suspended: false, ends: [], stopping };
   const byId = new Map(sys.stations.features.map((f) => [f.properties.id, f]));
   const seen = new Set<string>();
   const between = suspendedBetween(a.text);
@@ -273,15 +278,4 @@ function suspension(g: AlertGeometry, sys: StaticSystem, route: string, [from, t
 /** The words at a suspension's end station: where to change from train to the replacement bus. Pure, for tests. */
 export function endLabel(station: string, buses: string[], route: string): string {
   return buses.length ? `Transfer to the ${buses.join(" or ")} bus at ${station}` : `No ${route} past ${station}`;
-}
-
-/** Line status for the Lines drawer badge. */
-export type LineStatus = "Good service" | "Delays" | "Detour" | "Planned work";
-export function lineStatus(alerts: TransitAlert[], route: string): LineStatus {
-  const mine = alerts.filter((a) => a.routes.includes(route));
-  if (mine.some((a) => a.kind === "delay" && !/maintenance|track work/i.test(a.text))) return "Delays";
-  if (mine.some((a) => a.reroute)) return "Detour";
-  if (mine.some((a) => a.kind === "planned")) return "Planned work";
-  if (mine.some((a) => a.kind === "delay")) return "Delays";
-  return "Good service";
 }

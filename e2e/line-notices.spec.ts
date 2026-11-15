@@ -66,7 +66,9 @@ test("escalators out at one station are one card, and the Lines list counts what
   await page.goto("/");
   await page.getByRole("button", { name: "My train" }).click({ timeout: slow(15_000) });
   const row = page.locator('[data-line="2"] button');
-  await expect(row).toContainText("2 notices", { timeout: slow(15_000) });
+  // Only elevators and escalators: the line is in good service, and the count says what the two notices are.
+  await expect(row).toContainText("Good service", { timeout: slow(15_000) });
+  await expect(row).toContainText("2 outages");
   await row.click();
   const sheet = page.getByTestId("line-panel");
   await expect(sheet.locator("[data-notice]")).toHaveCount(2);
@@ -132,10 +134,11 @@ for (const size of SIZES) {
   });
 }
 
-// Owner, 2026-11-14: a notice with nothing to draw said only "What's happening? Technical issue" and the dates,
-// "it doesn't say the other part, what train is it, what's affected". The card and the voice say all of it (#198).
+// Owner, 2026-11-14: a notice about arrival times said only "What's happening? Technical issue" and the dates,
+// "it doesn't say the other part, what train is it, what's affected". The card and the voice say all of it (#198),
+// and since it names its stations it is drawn and walked like a skip or a shuttle notice.
 for (const size of SIZES) {
-  test(`a notice with nothing to draw says which train and stations, then why and when, at ${size.width}×${size.height}`, async ({ page }) => {
+  test(`a notice that names its stations draws them and says which train, then why and when, at ${size.width}×${size.height}`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
     // A voice that finishes each line at once, so the whole summary is spoken.
     await page.addInitScript(() => {
@@ -174,7 +177,15 @@ for (const size of SIZES) {
       "When: November 14 to 16, Saturday 12:01 AM to Monday 5:00 AM.",
     ];
     await expect(walk.getByTestId("notice-step")).toHaveText(summary);
-    await expect(walk.getByTestId("notice-diagram")).toHaveCount(0);
+    // Its stations on their stretch of line, downtown from the top, each tagged with what the notice is about.
+    const diagram = walk.getByTestId("notice-diagram");
+    await expect(diagram).toContainText("Downtown 2");
+    await expect(diagram.locator('[data-state="noted"]')).toHaveText([/Times Square-42 Street.*No live times/, /34 Street-Penn Station.*No live times/]);
+    // Trains still stop there: the map marks no station as skipped.
+    await expect.poll(() => page.evaluate(async () => {
+      const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: unknown[] }> } | undefined } }).__map?.getSource("transit-alert-skipped");
+      return src ? ((await src.getData()).features ?? []).length : -1;
+    })).toBe(0);
     // "Read it to me" is the same summary, start to end (the browser voice takes it in pieces, cut at each colon).
     const packed = (t: string[]) => t.join("").replace(/\s+/g, "");
     await expect.poll(async () => packed(await page.evaluate(() => (window as unknown as { __said: string[] }).__said)), { timeout: slow(10_000) }).toBe(packed(summary));
@@ -305,6 +316,67 @@ test("a notice is guided in the rider's language", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => (window as unknown as { __said: Array<{ text: string; lang: string }> }).__said[0] ?? null)).toMatchObject({ text: expect.stringMatching(/^ES No 2/), lang: expect.stringMatching(/^es/) });
   await expectLayout(page);
 });
+
+// Owner, 2026-11-14: "skips, trains not available and things like that should be prioritized more and sorted",
+// and in the Lines list "symbols up there … to show what trains are having emergencies right now, or skipping stops".
+function troubleFeed(): string {
+  const body = JSON.parse(liveNow()) as { alerts: { alerts: unknown[] } };
+  const base = { agency: "MTASBWY", stops: [], changes: [], skipNames: [], reroute: false };
+  body.alerts.alerts.push(
+    { ...base, id: "e2e-info", kind: "notice", type: "Information Outage", routes: ["2"], stops: ["127", "128"], text: "Downtown [2] trains are stopping at Times Sq-42 St and 34 St-Penn Station, but real-time arrival information may be unavailable", description: "What's happening?\nTechnical issue" },
+    { ...base, id: "e2e-delay", kind: "delay", type: "Delays", routes: ["2", "3"], text: "[2][3] trains are running with delays in both directions." },
+    // Many lines slowed at once: the summary's bullets have to wrap on a narrow phone.
+    { ...base, id: "e2e-slow", kind: "delay", type: "Delays", routes: ["4", "5", "6", "7", "E", "F", "G", "J", "L", "N", "Q"], text: "Trains are running with delays systemwide because of a power problem." },
+    shuttleAlert(),
+    { ...base, id: "e2e-skip", kind: "planned", type: "Planned - Stops Skipped", reroute: true, routes: ["A"], text: "In Manhattan, uptown [A] skips 72 St and 86 St", skipNames: ["72 St", "86 St"] },
+    { ...base, id: "e2e-via", kind: "planned", type: "Planned - Reroute", reroute: true, routes: ["D"], text: "In Brooklyn, Manhattan-bound [D] runs via the [N] from Coney Island-Stillwell Av to 36 St" },
+    { ...base, id: "e2e-board", kind: "notice", type: "Boarding Change", routes: ["M"], text: "In Queens, all [M] trains at Fresh Pond Rd board from the Metropolitan Av-bound platform" },
+  );
+  return JSON.stringify(body);
+}
+
+for (const size of SIZES) {
+  test(`the Lines list shows which lines are in trouble and each line's worst status at ${size.width}×${size.height}`, async ({ page }) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    await mockNetwork(page);
+    await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: troubleFeed() }));
+    await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+    await page.goto("/");
+    await page.getByRole("button", { name: "My train" }).click({ timeout: slow(15_000) });
+    const list = page.getByTestId("lines-drawer");
+    // The summary: one row a severity, a symbol and the bullets of the lines in it. No trains first, then skips and reroutes, then delays.
+    const summary = list.getByTestId("lines-trouble");
+    await expect(summary.locator("li")).toHaveCount(3, { timeout: slow(15_000) });
+    await expect(summary.locator('li[data-rank="1"] button')).toHaveText(["2"]);
+    await expect(summary.locator('li[data-rank="2"] button')).toHaveText(["A", "D"]);
+    await expect(summary.locator('li[data-rank="3"] button')).toHaveText(["3", "4", "5", "6", "7", "E", "F", "G", "J", "L", "N", "Q"]);
+    // Twelve bullets do not fit one row of a phone: they wrap inside the summary instead of running off its side.
+    const box = (await summary.boundingBox())!;
+    const bullets = await summary.locator('li[data-rank="3"] button').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, right: r.right, y: Math.round(r.y) }; }));
+    expect(bullets.every((b) => b.x >= box.x && b.right <= box.x + box.width)).toBe(true);
+    if (size.width <= 390) expect(new Set(bullets.map((b) => b.y)).size).toBeGreaterThan(1);
+    // Each row says the line's worst status, in words with a symbol: the 2 has a delay too, and reads "No trains".
+    const chip = (line: string) => list.locator(`[data-line="${line}"] [data-status]`);
+    await expect(chip("2")).toHaveText("No trains");
+    await expect(chip("2").locator("svg")).toHaveCount(1);
+    await expect(chip("A")).toHaveText("Skips stops");
+    await expect(chip("D")).toHaveText("Rerouted");
+    await expect(chip("3")).toHaveText("Delays");
+    await expect(chip("M")).toHaveText("Notice");
+    await expect(chip("B")).toHaveText("Good service");
+    // The lines keep their usual order.
+    await expect(list.locator("[data-line]").first()).toHaveAttribute("data-line", "1");
+    await expectLayout(page);
+    // A bullet in the summary opens that line on its worst notice.
+    await summary.locator('li[data-rank="1"] button').click();
+    const panel = page.getByTestId("line-panel");
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('[data-notice][aria-expanded="true"]')).toContainText("No 2 between");
+    // The line's notices, most disruptive first: no trains, the delay, the arrival-times notice, the elevator.
+    await expect(panel.locator("[data-notice]")).toHaveText([/No 2 between/, /running with delays/, /real-time arrival/, /Elevator out/]);
+    await expectLayout(page);
+  });
+}
 
 // Owner, 2026-10-27: on a weekday the 7's weekend work was nowhere on the map. "This weekend" shows it.
 for (const [width, height] of [[375, 667], [1280, 800]]) {
