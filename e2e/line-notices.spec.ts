@@ -75,8 +75,60 @@ test("escalators out at one station are one card, and the Lines list counts what
   const card = sheet.locator("[data-notice]", { hasText: "2 escalators out at 34 St-Penn Station" });
   await card.scrollIntoViewIfNeeded();
   await card.click();
-  await expect(card).toContainText("mezzanine to 7 Av & 34 St (NE corner), both ways");
+  // The pair is said once, as the first step of the card that opens under the row.
+  await expect(sheet.getByTestId("notice-step").first()).toHaveText("Escalators out both ways at 34 Street-Penn Station: mezzanine to 7 Avenue & 34 Street (NE corner).");
 });
+
+// Owner, 2026-11-14: "wish it did same for escalator and elevator". An elevator notice opens as short steps read
+// aloud one at a time: what is out, why, until when, then the detour by where the rider is.
+for (const size of SIZES) {
+  test(`an elevator notice walks through what is out and the detour at ${size.width}×${size.height}`, async ({ page }) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    // A voice that finishes each piece at once, so every step is spoken.
+    await page.addInitScript(() => {
+      const said: string[] = [];
+      Object.assign(window, { __said: said });
+      Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+        speaking: false, paused: false, pending: false, getVoices: () => [], addEventListener: () => undefined, removeEventListener: () => undefined,
+        speak: (u: SpeechSynthesisUtterance) => { said.push(u.text); setTimeout(() => { u.onend?.(new Event("end") as SpeechSynthesisEvent); u.dispatchEvent(new Event("end")); }, 20); },
+        cancel: () => undefined, pause: () => undefined, resume: () => undefined,
+      } });
+    });
+    await mockNetwork(page);
+    const body = JSON.parse(liveNow()) as { alerts: { outages: unknown[] } };
+    // 14 St's elevator, with the MTA's detour as the feed writes it: one paragraph, a slip in it ("trMP").
+    body.alerts.outages.push({ id: "EL-E2E", station: "14 St", routes: ["1", "2", "3"], stops: ["132"], equipment: "Elevator", serving: "mezzanine to downtown platform", reason: "Repair", since: "", back: "11/15/2099 01:00:00 AM", ada: "yes",
+      alternative: "If you are on the downtown platform: To transfer, exit through the faregates and take the elevator to street level. Then re-enter through the faregates to complete your trMP. If you are on the street: Take a downtown M20 bus to Chambers St." });
+    await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(body) }));
+    await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+    await page.goto("/");
+    await page.getByRole("button", { name: "My train" }).click({ timeout: slow(15_000) });
+    await page.getByRole("button", { name: /^7 Avenue Express/ }).first().click({ timeout: slow(15_000) });
+    const panel = page.getByTestId("line-panel");
+    const notice = panel.locator("[data-notice]", { hasText: "Elevator out at 14 St" });
+    await notice.scrollIntoViewIfNeeded();
+    await notice.click();
+
+    const walk = panel.getByTestId("notice-walk");
+    const steps = [
+      "Elevator out at 14 Street: mezzanine to downtown platform.",
+      "Why: Repair.",
+      "When: until November 15.",
+      "On the downtown platform: To transfer, exit through the faregates and take the elevator to street level.",
+      "Then re-enter through the faregates to complete your trip.",
+      "On the street: Take a downtown M20 bus to Chambers Street.",
+    ];
+    await expect(walk.getByTestId("notice-step")).toHaveText(steps);
+    // Read aloud start to end, with the feed's slip put right.
+    const packed = (t: string[]) => t.join("").replace(/\s+/g, "");
+    await expect.poll(async () => packed(await page.evaluate(() => (window as unknown as { __said: string[] }).__said)), { timeout: slow(15_000) }).toBe(packed(steps));
+    // The station is marked on the map, and the MTA's own words are one tap away.
+    await expect(page.locator(".maplibregl-marker", { hasText: "No elevator" })).toBeVisible();
+    await walk.getByRole("button", { name: "Full notice" }).click();
+    await expect(walk.getByTestId("notice-full")).toContainText("complete your trMP");
+    await expectLayout(page);
+  });
+}
 
 // Owner, 2026-11-07: notices read as paragraphs, and "Other ways" was no use. A tapped notice is its stretch
 // of line, read aloud a step at a time, with Stop and the MTA's words one tap away.

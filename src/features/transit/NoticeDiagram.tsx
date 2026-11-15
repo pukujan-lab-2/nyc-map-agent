@@ -7,7 +7,8 @@ import { say } from "@/lib/voice/say";
 import { alertDiagram, cleanAlertText, hasMore, isGap, plainSteps, type AlertDiagram, type Corner, type DiagramStep, type StopState } from "./alertDiagram";
 import { setShuttleFocus, setWalkFocus } from "./alertFocus";
 import { useNoticeLines } from "./noticeLang";
-import type { TransitAlert } from "./hooks";
+import type { Outage, TransitAlert } from "./hooks";
+import { outageSteps } from "./outageWalk";
 import type { StaticSystem } from "./model";
 
 /** Notices read aloud on tap, unless muted here; the choice stays on this phone. */
@@ -158,16 +159,18 @@ function Tag({ label, bg, fg, shuttle }: { label: string; bg: string; fg: string
  * aloud with each step lit, and the MTA's own words folded below. A notice with no stations to
  * draw says its headline first: which train, where and what changes.
  */
-export default function NoticeDiagram({ alert, sys, route, color, auto }: { alert: TransitAlert; sys: StaticSystem | undefined; route: string; color: string; auto: boolean }) {
+export default function NoticeDiagram({ alert, outages, at = "", sys, route, color, auto }: { alert?: TransitAlert; /** An elevator or escalator notice's units, and its station's id. */ outages?: Outage[]; at?: string; sys: StaticSystem | undefined; route: string; color: string; auto: boolean }) {
   // Start from the rider's nearest station when they share where they are; about 100 m is close enough.
   const here = useSharedLocation();
   const nearKey = here.status === "on" && here.coords ? `${here.coords.lon.toFixed(3)},${here.coords.lat.toFixed(3)}` : "";
   const near = useMemo(() => (nearKey ? { lon: Number(nearKey.split(",")[0]), lat: Number(nearKey.split(",")[1]) } : null), [nearKey]);
-  const diagram = useMemo(() => alertDiagram(alert, sys, route, near), [alert, sys, route, near]);
-  const full = useMemo(() => cleanAlertText([alert.text, alert.description].filter(Boolean).join("\n\n")).replace(/\n{3,}/g, "\n\n").trim(), [alert]);
+  const diagram = useMemo(() => (alert ? alertDiagram(alert, sys, route, near) : null), [alert, sys, route, near]);
+  // An elevator or escalator notice walks too: what is out, why, until when, then the detour a step at a time.
+  const lift = useMemo(() => (outages ? outageSteps(outages, at ? [at] : []) : null), [outages, at]);
+  const full = useMemo(() => (alert ? cleanAlertText([alert.text, alert.description].filter(Boolean).join("\n\n")).replace(/\n{3,}/g, "\n\n").trim() : lift?.full ?? ""), [alert, lift]);
   // Nothing to draw: the card still says which train, where and what changes before why and when (#198).
-  const english = useMemo(() => diagram?.steps ?? plainSteps(alert, sys, route), [diagram, alert, sys, route]);
-  const more = useMemo(() => hasMore(alert, Boolean(diagram)), [alert, diagram]);
+  const english = useMemo(() => diagram?.steps ?? (alert ? plainSteps(alert, sys, route) : lift?.steps ?? []), [diagram, alert, lift, sys, route]);
+  const more = useMemo(() => (alert ? hasMore(alert, Boolean(diagram)) : Boolean(lift?.more)), [alert, diagram, lift]);
   // One call translates the steps, the tags and the heading together (owner, 2026-11-08: "in user preffered language").
   const lang = useAppLang();
   const words = useMemo(() => [...english.map((s) => s.text), ...TAG_KEYS.map((k) => TAG[k]!.label), "Change here", diagram?.heading ?? "", diagram?.tag ?? ""], [english, diagram]);
