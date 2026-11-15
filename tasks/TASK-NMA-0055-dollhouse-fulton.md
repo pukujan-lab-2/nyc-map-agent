@@ -1218,6 +1218,29 @@ Blocked/uncertain:
 Next:
 - After pull request 146 merges and deploys, ask in Chinese then in English on the live site and check the voice and the mic follow each question; then bring pull request 142 up to date
 
+### 2026-11-15 10:32:39 UTC — agent:claude-code/2d3f5334-9b7a-4d93-ad48-043e8f0d960b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/2d3f5334-9b7a-4d93-ad48-043e8f0d960b","blocked":[],"changed":["src/lib/i18n/translateLines.ts, checkpoints/CURRENT.md, tasks/TASK-NMA-0055-dollhouse-fulton.md"],"completed":["Pull request 142 (one trace per translation) has main merged in; the translate call keeps the offline worker's x-keep header and gains the session id"],"decisions":["Size limits are main's; the branch's own 1 kB bump was not needed"],"evidence":["On the earlier merge of this branch the check, size and api jobs passed in CI; lint was killed for memory on the runner (exit 137) and passes on the MacBook Pro"],"next_action":"After pull request 142 merges and deploys, translate a trip step on the live site and read the translate span back from Phoenix; then bring pull request 148 up to date","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-15T10:32:39Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"00b0d3ffb978ca206e45f5da69b2ff264267ed34168d3304f4c224871ab221fc","request_id":"c18778e6d3794114ae4bd6b6784bbe60","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- Pull request 142 (one trace per translation) has main merged in; the translate call keeps the offline worker's x-keep header and gains the session id
+
+Evidence:
+- On the earlier merge of this branch the check, size and api jobs passed in CI; lint was killed for memory on the runner (exit 137) and passes on the MacBook Pro
+
+Decisions:
+- Size limits are main's; the branch's own 1 kB bump was not needed
+
+Changed:
+- src/lib/i18n/translateLines.ts, checkpoints/CURRENT.md, tasks/TASK-NMA-0055-dollhouse-fulton.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request 142 merges and deploys, translate a trip step on the live site and read the translate span back from Phoenix; then bring pull request 148 up to date
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
