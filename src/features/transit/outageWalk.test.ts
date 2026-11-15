@@ -46,6 +46,21 @@ describe("outageSteps", () => {
     ]);
     expect(w.more).toBe(false);
   });
+
+  it("puts each detour after its own unit when two units have different ones", () => {
+    const w = outageSteps([
+      unit({ id: "a", station: "Flushing Av", serving: "mezzanine to Manhattan-bound platform", alternative: "If you are on the street: Take a B46 bus to Marcy Av." }),
+      unit({ id: "b", station: "Flushing Av", serving: "street to mezzanine", alternative: "If you are on the street: Take a B46 bus to Myrtle Av." }),
+    ], []);
+    expect(w.steps.map((s) => s.text)).toEqual([
+      "Elevator out at Flushing Avenue: mezzanine to Manhattan-bound platform.",
+      "On the street: Take a B46 bus to Marcy Avenue.",
+      "Elevator out: street to mezzanine.",
+      "On the street: Take a B46 bus to Myrtle Avenue.",
+      "Why: Repair.",
+      "When: until November 15.",
+    ]);
+  });
 });
 
 describe("detourSteps", () => {

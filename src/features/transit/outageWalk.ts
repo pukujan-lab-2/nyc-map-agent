@@ -57,16 +57,20 @@ export function outageSteps(list: Outage[], ids: string[]): { steps: DiagramStep
   const station = formatStationName(list[0].station);
   const rows = units(list);
   const days = [...new Set(list.map((o) => o.back).filter(Boolean).map(day))];
-  const steps: DiagramStep[] = rows.map(({ o, both }, i) => {
+  const alternatives = [...new Set(list.map((o) => o.alternative).filter(Boolean))];
+  // Units with different detours: each detour follows its own unit, so "On the street" is about the right elevator.
+  const own = alternatives.length > 1;
+  const steps: DiagramStep[] = [];
+  rows.forEach(({ o, both }, i) => {
     const what = both ? `${o.equipment}s out both ways` : `${o.equipment} out`;
     const where = formatStationName(tidy(o.serving));
     const until = days.length > 1 && o.back ? `, until ${day(o.back)}` : "";
-    return { text: sentence(`${what}${i === 0 ? ` at ${station}` : ""}${where ? `: ${where}` : ""}${until}`), ids };
+    steps.push({ text: sentence(`${what}${i === 0 ? ` at ${station}` : ""}${where ? `: ${where}` : ""}${until}`), ids });
+    if (own && o.alternative) steps.push(...detourSteps(o.alternative).map((text) => ({ text, ids })));
   });
   const reasons = [...new Set(list.map((o) => o.reason).filter(Boolean))];
   if (reasons.length === 1) steps.push({ text: `Why: ${reasons[0].charAt(0).toUpperCase()}${reasons[0].slice(1).toLowerCase()}.`, ids: [] });
   if (days.length === 1) steps.push({ text: `When: until ${days[0]}.`, ids: [] });
-  const alternatives = [...new Set(list.map((o) => o.alternative).filter(Boolean))];
-  for (const alt of alternatives) steps.push(...detourSteps(alt).map((text) => ({ text, ids })));
+  if (!own) for (const alt of alternatives) steps.push(...detourSteps(alt).map((text) => ({ text, ids })));
   return { steps, full: alternatives.join("\n\n"), more: alternatives.length > 0 };
 }

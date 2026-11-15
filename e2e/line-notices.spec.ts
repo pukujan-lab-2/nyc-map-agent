@@ -369,6 +369,39 @@ test("a notice is guided in the rider's language", async ({ page }) => {
   await expectLayout(page);
 });
 
+test("a long elevator detour is guided in the rider's language", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.addInitScript(() => localStorage.setItem("nma.lang", "es"));
+  await mockNetwork(page);
+  const body = JSON.parse(liveNow()) as { alerts: { outages: unknown[] } };
+  // Twenty instructions: with the card's labels that is more lines than one translate call takes.
+  const detour = Array.from({ length: 20 }, (_, i) => `Take bus number ${i + 1} to the next stop.`).join(" ");
+  body.alerts.outages.push({ id: "EL-LONG", station: "14 St", routes: ["1", "2", "3"], stops: ["132"], equipment: "Elevator", serving: "mezzanine to downtown platform", reason: "Repair", since: "", back: "11/15/2099 01:00:00 AM", ada: "yes", alternative: `If you are on the street: ${detour}` });
+  await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify(body) }));
+  await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+  // The server's own limit, stood in for: more than 24 lines in one call is refused.
+  const calls: number[] = [];
+  await page.route("**/api/agent/translate", async (r) => {
+    const { lines } = r.request().postDataJSON() as { lines: string[] };
+    calls.push(lines.length);
+    if (lines.length > 24) { await r.fulfill({ status: 400, contentType: "application/json", body: "{}" }); return; }
+    await r.fulfill({ contentType: "application/json", body: JSON.stringify({ lines: lines.map((l) => (l ? `ES ${l}` : l)) }) });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: /Mi tren|My train/ }).click({ timeout: slow(15_000) });
+  await page.getByRole("button", { name: /^7 Avenue Express/ }).first().click({ timeout: slow(15_000) });
+  const panel = page.getByTestId("line-panel");
+  const notice = panel.locator("[data-notice]", { hasText: "14 St" });
+  await notice.scrollIntoViewIfNeeded();
+  await notice.click();
+  const steps = panel.getByTestId("notice-walk").getByTestId("notice-step");
+  await expect(steps).toHaveCount(23);
+  await expect(steps.first()).toHaveText("ES Elevator out at 14 Street: mezzanine to downtown platform.");
+  await expect(steps.last()).toHaveText("ES Take bus number 20 to the next stop.");
+  expect(calls.every((n) => n <= 24)).toBe(true);
+  await expectLayout(page);
+});
+
 // Owner, 2026-11-14: "skips, trains not available and things like that should be prioritized more and sorted",
 // and in the Lines list "symbols up there … to show what trains are having emergencies right now, or skipping stops".
 function troubleFeed(): string {
