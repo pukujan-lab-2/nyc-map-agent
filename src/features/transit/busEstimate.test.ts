@@ -253,6 +253,17 @@ describe("a route that comes back down the street it went up", () => {
     expect(along[along.length - 1]).toBeGreaterThan(1100); // on the way back, not at 40 m on the way out
   });
 
+  it("project() with a last position still returns the nearest point on a street passed once", () => {
+    // Vertices 10 m apart: the neighbouring segments are within the tie distance and must not win.
+    const fine: LonLat[] = Array.from({ length: 101 }, (_, i) => [LON0, LAT0 + i * 10 * M]);
+    const sh = buildShape(fine);
+    for (const [y, was] of [[503, 470], [503, 540], [207, 0], [888, 900]]) {
+      const { lon, lat } = at(y);
+      expect(project(sh, lon, lat, was).s).toBeCloseTo(project(sh, lon, lat).s, 6);
+      expect(project(sh, lon, lat, was).s).toBeCloseTo(y, 0);
+    }
+  });
+
   it("project() prefers the pass nearest to where the bus was", () => {
     const sh = buildShape(loop);
     const { lon, lat } = fix(0, 300);

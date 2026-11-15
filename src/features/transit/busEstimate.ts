@@ -131,11 +131,18 @@ export function project(sh: Shape, lon: number, lat: number, near?: number): { s
     if (near !== undefined) all.push(c);
   }
   if (near !== undefined) {
+    // A pass is a run of segments about as close to the fix as the closest one; each pass offers its
+    // own nearest point. Only between passes does `near` decide: within one, the nearest point stands.
+    const passes: Array<typeof best> = [];
+    let run: typeof best | undefined;
+    for (const c of all) {
+      if (c.d > best.d + LOOP_TIE_M) { if (run) passes.push(run); run = undefined; }
+      else if (!run || c.d < run.d) run = c;
+    }
+    if (run) passes.push(run);
     // Going back counts double: a bus is far more likely a little ahead of where it was than behind it.
     const far = (c: { s: number }) => (c.s >= near ? c.s - near : 2 * (near - c.s));
-    let pick = best;
-    for (const c of all) if (c.d <= best.d + LOOP_TIE_M && far(c) < far(pick)) pick = c;
-    best = pick;
+    for (const c of passes) if (far(c) < far(best)) best = c;
   }
   return { ...best, bearing: (best.bearing + 360) % 360 };
 }
