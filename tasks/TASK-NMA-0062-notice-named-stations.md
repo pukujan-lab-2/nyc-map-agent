@@ -51,6 +51,52 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-15 04:27:58 UTC — agent:claude-code/abf81021-c394-4e17-a76d-dd9aafb3f1e3
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/abf81021-c394-4e17-a76d-dd9aafb3f1e3","blocked":[],"changed":["src/features/transit/alertDiagram.ts, alertFocus.ts, NoticeDiagram.tsx, TransitLayer.tsx, e2e/line-notices.spec.ts, .size-limit.json"],"completed":["A notice that names its stations but takes no train away had no diagram or walk; it now draws its stations, tags them, lights them on the first spoken step, and the map marks no skip there"],"decisions":["no new decisions"],"evidence":["On the MacBook Pro the transit unit tests pass (176), the type check, lint and size budgets pass, and the line notice browser tests pass (20 cases); 14 of the 23 undrawn live notices of 2026-11-14 now draw"],"next_action":"After the pull request for #206 deploys, open the 1 line's arrival-times notice on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0062","timestamp":"2026-11-15T04:27:58Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4eabb21586a18a7343f0ac6e309cdbe9bebf2ee6955f80619688e952d1e36f2c","request_id":"a0a656706e9e4f09883d95759d6d1610","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0062"} -->
+
+Completed:
+- A notice that names its stations but takes no train away had no diagram or walk; it now draws its stations, tags them, lights them on the first spoken step, and the map marks no skip there
+
+Evidence:
+- On the MacBook Pro the transit unit tests pass (176), the type check, lint and size budgets pass, and the line notice browser tests pass (20 cases); 14 of the 23 undrawn live notices of 2026-11-14 now draw
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/transit/alertDiagram.ts, alertFocus.ts, NoticeDiagram.tsx, TransitLayer.tsx, e2e/line-notices.spec.ts, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- After the pull request for #206 deploys, open the 1 line's arrival-times notice on the live site
+
+### 2026-11-15 04:28:16 UTC — agent:claude-code/abf81021-c394-4e17-a76d-dd9aafb3f1e3
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/abf81021-c394-4e17-a76d-dd9aafb3f1e3","blocked":[],"changed":["src/features/transit/alertDiagram.ts, alertFocus.ts, NoticeDiagram.tsx, TransitLayer.tsx, e2e/line-notices.spec.ts, .size-limit.json"],"completed":["A notice that names its stations but takes no train away had no diagram or walk; it now draws its stations, tags them, lights them on the first spoken step, and the map marks no skip there"],"decisions":["no new decisions"],"evidence":["On the MacBook Pro the transit unit tests pass (176), the type check, lint and size budgets pass, and the line notice browser tests pass (20 cases); 14 of the 23 undrawn live notices of 2026-11-14 now draw"],"next_action":"After the pull request for #206 deploys, open the 1 line's arrival-times notice on the live site","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0062","timestamp":"2026-11-15T04:28:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4eabb21586a18a7343f0ac6e309cdbe9bebf2ee6955f80619688e952d1e36f2c","request_id":"b99cd650dd9e44a9a4ba96d5fd98d739","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0062"} -->
+
+Completed:
+- A notice that names its stations but takes no train away had no diagram or walk; it now draws its stations, tags them, lights them on the first spoken step, and the map marks no skip there
+
+Evidence:
+- On the MacBook Pro the transit unit tests pass (176), the type check, lint and size budgets pass, and the line notice browser tests pass (20 cases); 14 of the 23 undrawn live notices of 2026-11-14 now draw
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/transit/alertDiagram.ts, alertFocus.ts, NoticeDiagram.tsx, TransitLayer.tsx, e2e/line-notices.spec.ts, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- After the pull request for #206 deploys, open the 1 line's arrival-times notice on the live site
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
