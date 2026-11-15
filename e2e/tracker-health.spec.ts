@@ -114,6 +114,13 @@ for (const size of SIZES) {
       const link = panel.getByTestId("open-tracker-health");
       await expect(link).toBeVisible({ timeout: slow(20_000) });
       await expectLayout(page);
+      // A phone's sheet opens half way and the link is at its foot, so pull it up as a person would.
+      // The layout is not measured again here: with the sheet fully up, the home screen's Record
+      // button overlaps the sheet's Close button, which is older than this page (see the pull request).
+      if (phone) {
+        await panel.getByTestId("sheet-grip").click();
+        await expect(panel).toHaveAttribute("data-level", "2");
+      }
       await link.click();
       await expect(page).toHaveURL(/\/tracker-health$/);
       await expect(page.getByTestId("tracker-health")).toBeVisible({ timeout: slow(15_000) });
