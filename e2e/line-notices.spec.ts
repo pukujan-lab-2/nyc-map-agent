@@ -179,6 +179,11 @@ for (const size of SIZES) {
     const diagram = walk.getByTestId("notice-diagram");
     await expect(diagram).toContainText("Downtown 2");
     await expect(diagram.locator('[data-state="noted"]')).toHaveText([/Times Square-42 Street.*No live times/, /34 Street-Penn Station.*No live times/]);
+    // Trains still stop there: the map marks no station as skipped.
+    await expect.poll(() => page.evaluate(async () => {
+      const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: unknown[] }> } | undefined } }).__map?.getSource("transit-alert-skipped");
+      return src ? ((await src.getData()).features ?? []).length : -1;
+    })).toBe(0);
     // "Read it to me" is the same summary, start to end (the browser voice takes it in pieces, cut at each colon).
     const packed = (t: string[]) => t.join("").replace(/\s+/g, "");
     await expect.poll(async () => packed(await page.evaluate(() => (window as unknown as { __said: string[] }).__said)), { timeout: slow(10_000) }).toBe(packed(summary));
