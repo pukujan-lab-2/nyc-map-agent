@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bandLabel, byPlatform, clock, directions, dowOf, grid, percent, routeTotals, schedOf, short, stationLines, stationTotals, complexes, stretches, type CoverageRow, type Segment, type StationInfo } from "./summary";
+import { bandLabel, byPlatform, clock, directions, dowOf, grid, percent, routeTotals, schedOf, short, stationLines, stationTotals, complexes, spanLearned, hoursOf, stretches, type CoverageRow, type Segment, type StationInfo } from "./summary";
 
 const row = (system: "subway" | "bus", route: string, sched: number, band: number, segments: number, solid: number, samples: number): CoverageRow => ({ system, route, sched, band, segments, used: segments, solid, samples });
 const ROWS = [
@@ -104,5 +104,23 @@ describe("stations", () => {
     const stations = ["126", "127", "128", "129"].map((id) => ({ key: id, name: `St ${id}`, routes: ["1"] }));
     const out = stationTotals(rows, stations, (s) => s.replace(/[NS]$/, ""));
     expect(out.map((s) => [s.key, s.lines, s.thin, s.samples])).toEqual([["129", 0, 0, 0], ["128", 2, 2, 5], ["126", 1, 0, 40], ["127", 2, 2, 45]]);
+  });
+});
+
+describe("spanLearned", () => {
+  const t = (dir: number, from: string, to: string, n: number, median: number): Segment => ({ dir, from, to, kind: "travel", n, median });
+  it("adds our stretches from one timepoint to the next, and reports the thinnest", () => {
+    const segs = [t(0, "1", "2", 9, 60), t(0, "2", "3", 3, 70), t(0, "3", "4", 8, 80), t(0, "2", "4", 1, 500), t(1, "4", "3", 9, 75)];
+    expect(spanLearned(segs, "1", "4")).toEqual({ seconds: 210, stretches: 3, least: 3 });
+    expect(spanLearned(segs, "4", "3")).toEqual({ seconds: 75, stretches: 1, least: 9 });
+  });
+  it("is undefined when the chain breaks or loops before the target", () => {
+    expect(spanLearned([t(0, "1", "2", 9, 60), t(0, "3", "4", 9, 60)], "1", "4")).toBeUndefined();
+    expect(spanLearned([t(0, "1", "2", 9, 60), t(0, "2", "1", 9, 60)], "1", "4")).toBeUndefined();
+  });
+  it("fills a schedule's 24 hours", () => {
+    const h = hoursOf([{ sched: 1, hour: 8, segments: 60, solid: 50, enough: 44, samples: 900 }], 1);
+    expect(h).toHaveLength(24);
+    expect([h[8].samples, h[9].samples]).toEqual([900, 0]);
   });
 });

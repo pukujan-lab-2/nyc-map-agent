@@ -35,6 +35,14 @@ const accuracy = {
     ...["0", "5", "7", "10", "16", "20"].map((k, i) => acc("subway", "band", k, 700, 20 + i, 24 + i)),
     ...["2-4", "5-9", "10+", "none"].map((k, i) => acc("subway", "samples", k, 1000, 40 - i * 6, 30)),
     ...Array.from({ length: 20 }, (_, i) => acc("subway", "route", i < 2 ? ["A", "G"][i] : `R${i}`, 200, 20 + i, 22 + i)),
+    acc("subway", "rush", "rush", 900, 31, 35), acc("subway", "rush", "off-peak", 3300, 22, 25),
+    acc("subway", "notice", "yes", 1500, 34, 37), acc("subway", "notice", "no", 2700, 20, 22),
+    acc("subway", "weather", "dry", 3800, 23, 26), acc("subway", "weather", "rain", 400, 36, 41),
+    acc("bus", "all", "", 900, 66, 52), acc("bus", "traffic", "free", 60, 40, 44), acc("bus", "traffic", "jam", 25, 120, 110),
+  ],
+  stops: [
+    { system: "subway", route: "A", stop: "A07N", n: 14, maeModel: 88, maeBase: 91, w60Model: 0.36 },
+    { system: "bus", route: "M40", stop: "403", n: 9, maeModel: 140, maeBase: 120, w60Model: 0.2 },
   ],
   thin: [{ system: "subway", route: "A", dir: 0, from: "A03N", to: "A05N", n: 4, learnedN: 3, maeModel: 61, maeBase: 30 }],
   runs: [{ system: "subway", runs: 12, opened: 9000, resolved: 8100, unresolved: 900, stored: 4200, first: "2026-11-15T02:00:00.000Z", last: "2026-11-15T05:00:00.000Z" }],
@@ -48,6 +56,11 @@ async function mock(page: Page, withAccuracy: boolean) {
   await page.route("**/api/transit-segments?*", json(subwaySegments));
   await page.route("**/api/transit-segments/all?*", json({ dow: 3, hour: 7, routes: { A: [...subwaySegments.segments, { dir: 0, from: "A03N", to: "A03N", kind: "dwell", n: 20, median: 31, p80: 40 }], G: [] } }));
   await page.route("**/api/transit-bus-segments?*", json(busSegments));
+  await page.route("**/api/transit-health/hours?*", json({ ready: true, system: "subway", route: null, cells: [1, 6, 7].flatMap((sched) => Array.from({ length: 24 }, (_, hour) => ({ sched, hour, segments: 100, solid: 60 + hour, enough: hour < 5 ? 10 : 40 + hour * 2, samples: hour < 5 ? 300 : 20000 + hour * 950 }))) }));
+  await page.route("**/api/transit-health/bus-speeds?*", json({ ready: true, route: "M40", dow: 3, hour: 7, since: "2026-08-01", importedAt: "2026-11-15T06:00:00.000Z", segments: [
+    { direction: "E", order: 1, from: "401", to: "404", seconds: 372, metres: 1500, trips: 240 },
+    { direction: "E", order: 4, from: "404", to: "409", seconds: 505, metres: 2100, trips: 238 },
+  ] }));
   await page.route("**/api/transit/bus-route?*", json(busRoute));
 }
 
@@ -74,6 +87,15 @@ for (const size of SIZES) {
       await expect(page.getByTestId("station-row")).toHaveCount(20);
       await expect(page.getByTestId("accuracy-data")).toBeVisible();
       await expect(page.getByTestId("accuracy-waiting")).toHaveCount(0);
+      // Error split by the conditions at the time, and the worst-predicted stop by name.
+      await expect(page.getByTestId("accuracy-rush")).toContainText("off-peak");
+      await expect(page.getByTestId("accuracy-notice")).toContainText("active");
+      await expect(page.getByTestId("accuracy-weather")).toContainText("rain");
+      await expect(page.getByTestId("accuracy-traffic")).toHaveCount(0);
+      await expect(page.getByTestId("accuracy-stops")).toContainText("A 175 St");
+      // Per-hour counts: 24 cells for each of the three schedules.
+      await expect(page.getByTestId("hour-cell")).toHaveCount(72);
+      await expect(page.getByTestId("mta-compare")).toHaveCount(0);
       await expect(page.getByTestId("source").first()).toContainText("GET /api/transit-health/coverage · loaded");
       await expectLayout(page);
 
@@ -103,6 +125,11 @@ for (const size of SIZES) {
       await expect(page.getByTestId("coverage-row")).toHaveCount(40);
       await expect(page.getByTestId("stretch").first()).toContainText("STOP NUMBER 1");
       await expect(page.getByTestId("station-total")).toContainText(/5 stops on M\d+ · 0 with no data/);
+      // The MTA's published time between timepoints beside ours: 401 to 404 is three of our stretches, 404 to 409 has no full chain.
+      await expect(page.getByTestId("mta-row")).toHaveCount(2);
+      await expect(page.getByTestId("mta-row").first()).toContainText("6:12 · 240 trips / 4:00 · 3 stretches · least n 2");
+      await expect(page.getByTestId("mta-row").nth(1)).toContainText("no full chain");
+      await expect(page.getByTestId("accuracy-traffic")).toContainText("jam");
       await expect(page).toHaveURL(/system=bus/);
       await expectLayout(page);
       expect(errors, errors.join("\n")).toEqual([]);

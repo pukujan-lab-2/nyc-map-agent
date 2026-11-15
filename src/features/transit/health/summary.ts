@@ -191,3 +191,43 @@ export function stationTotals(byRoute: Record<string, Segment[]>, stations: Arra
   }
   return [...totals.values()].sort((a, b) => a.samples - b.samples || b.thin - a.thin || a.name.localeCompare(b.name));
 }
+
+export type Span = { seconds: number; stretches: number; least: number };
+/**
+ * Our learned time from one stop to a later one, by following the best-sampled stretch out of
+ * each stop until the target (at most 80 hops). Undefined when the chain does not reach it. Used
+ * to set our stop-to-stop times beside the MTA's timepoint-to-timepoint average, which spans
+ * several stops. Both count the time spent at the stops in between.
+ */
+export function spanLearned(segments: Segment[], from: string, to: string): Span | undefined {
+  const out = new Map<string, Segment>();
+  for (const s of segments) {
+    if (s.kind !== "travel") continue;
+    const cur = out.get(`${s.dir}|${s.from}`);
+    if (!cur || s.n > cur.n) out.set(`${s.dir}|${s.from}`, s);
+  }
+  let best: Span | undefined;
+  for (const dir of directions(segments)) {
+    let at = from, seconds = 0, least = Infinity;
+    const seen = new Set<string>();
+    for (let hops = 1; hops <= 80; hops++) {
+      const s = out.get(`${dir}|${at}`);
+      if (!s || seen.has(at)) break;
+      seen.add(at);
+      seconds += s.median;
+      least = Math.min(least, s.n);
+      if (s.to === to) {
+        if (!best || hops < best.stretches) best = { seconds, stretches: hops, least };
+        break;
+      }
+      at = s.to;
+    }
+  }
+  return best;
+}
+
+export type HourCell = { sched: number; hour: number; segments: number; solid: number; enough: number; samples: number };
+/** Every hour of a schedule, with zeros where the endpoint had no row. */
+export function hoursOf(cells: HourCell[], sched: number): HourCell[] {
+  return Array.from({ length: 24 }, (_, hour) => cells.find((c) => c.sched === sched && c.hour === hour) ?? { sched, hour, segments: 0, solid: 0, enough: 0, samples: 0 });
+}

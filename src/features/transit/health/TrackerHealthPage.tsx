@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { bandLabel, byPlatform, clock, directions, dowOf, grid, percent, routeTotals, SCHEDULES, schedOf, short, stationLines, stationTotals, complexes, stretches, type Cell, type CoverageRow, type Segment, type StationInfo, type System } from "./summary";
+import { bandLabel, byPlatform, clock, directions, dowOf, grid, percent, routeTotals, SCHEDULES, schedOf, short, stationLines, stationTotals, complexes, spanLearned, hoursOf, stretches, type HourCell, type Cell, type CoverageRow, type Segment, type StationInfo, type System } from "./summary";
 import { nyHourOfWeek } from "../history";
 import { removeShell } from "@/lib/shellDraft";
 
@@ -22,13 +22,16 @@ async function getJson<T>(url: string): Promise<T> {
 
 type Coverage = { ready: boolean; refreshedAt: string | null; bands: Array<[number, number]>; rows: CoverageRow[] };
 type Stats = { n: number; maeModel: number | null; maeBase: number | null; w60Model: number | null; w60Base: number | null };
-type AccuracyRow = Stats & { system: System; dim: "all" | "route" | "band" | "lead" | "samples"; key: string; learned: Stats };
+type AccuracyRow = Stats & { system: System; dim: "all" | "route" | "band" | "lead" | "samples" | "rush" | "notice" | "weather" | "traffic"; key: string; learned: Stats };
 type Accuracy = {
   ready: boolean;
   rows: AccuracyRow[];
   thin: Array<{ system: System; route: string; dir: number; from: string; to: string; n: number; learnedN: number; maeModel: number; maeBase: number }>;
   runs: Array<{ system: System; runs: number; opened: number; resolved: number; unresolved: number; stored: number; first: string | null; last: string | null }>;
+  stops?: Array<{ system: System; route: string; stop: string; n: number; maeModel: number; maeBase: number; w60Model: number }>;
 };
+type Hours = { ready: boolean; cells: HourCell[] };
+type BusSpeeds = { ready: boolean; since: string | null; segments: Array<{ direction: string; order: number; from: string; to: string; seconds: number; metres: number; trips: number }> };
 type SubwayStatic = { routes: Record<string, { color: string; text: string }>; stations: { features: Array<{ properties: { id: string; name: string; routes: string }; geometry: { coordinates: [number, number] } }> }; stopM: Record<string, Record<string, number>> };
 type BusRoute = { stops: Array<{ id: string; name: string; lon: number; lat: number }> };
 
@@ -71,7 +74,7 @@ function Bullet({ route, colors }: { route: string; colors?: SubwayStatic["route
 function Pair({ label, row, max }: { label: ReactNode; row: Stats; max: number }) {
   const w = (v: number | null) => `${v == null || !max ? 0 : Math.max(2, (v / max) * 100)}%`;
   return (
-    <div className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-2 py-1 text-[12px]">
+    <div className="grid grid-cols-[minmax(4.5rem,28%)_1fr_auto] items-center gap-2 py-1 text-[12px]">
       <span className="truncate">{label}</span>
       <span className="flex flex-col gap-0.5">
         <span className="block h-2 rounded bg-sky-400" style={{ width: w(row.maeModel) }} />
@@ -84,7 +87,7 @@ function Pair({ label, row, max }: { label: ReactNode; row: Stats; max: number }
   );
 }
 
-function AccuracyPanel({ system }: { system: System }) {
+function AccuracyPanel({ system, stopName }: { system: System; stopName: (stop: string) => string }) {
   const url = `${API}/api/transit-health/accuracy`;
   const q = useQuery({ queryKey: ["tracker-health", "accuracy"], queryFn: () => getJson<Accuracy>(url), staleTime: 60_000, retry: 1 });
   const rows = (q.data?.rows ?? []).filter((r) => r.system === system);
@@ -99,6 +102,16 @@ function AccuracyPanel({ system }: { system: System }) {
   const max = Math.max(1, ...rows.flatMap((r) => [r.maeModel ?? 0, r.maeBase ?? 0]));
   const enough = (all?.n ?? 0) >= 200;
   const thin = (q.data?.thin ?? []).filter((t) => t.system === system);
+  const stops = (q.data?.stops ?? []).filter((t) => t.system === system).slice(0, 10);
+  const group = (title: string, dim: AccuracyRow["dim"], order: string[], label: (key: string) => string = (k) => k) => {
+    const list = of(dim, order);
+    return list.length ? (
+      <div data-testid={`accuracy-${dim}`}>
+        <h3 className="mt-2 text-[12px] font-semibold text-white/70">{title}</h3>
+        {list.map((r) => <Pair key={r.key} label={label(r.key)} row={r} max={max} />)}
+      </div>
+    ) : null;
+  };
   return (
     <Section title="Accuracy" id="accuracy">
       {q.isError ? <p role="alert" className="text-[13px] text-amber-300">Could not load.</p> : null}
@@ -120,11 +133,21 @@ function AccuracyPanel({ system }: { system: System }) {
           {of("lead", ["1-3", "3-6", "6-10"]).map((r) => <Pair key={r.key} label={r.key} row={r} max={max} />)}
           <h3 className="mt-2 text-[12px] font-semibold text-white/70">Hour band</h3>
           {of("band", ["0", "5", "7", "10", "16", "20"]).map((r) => <Pair key={r.key} label={`from ${r.key.padStart(2, "0")}`} row={r} max={max} />)}
+          {group("Rush hour (Mon–Fri 7–10, 16–20)", "rush", ["rush", "off-peak"])}
+          {group("Notice on the line", "notice", ["yes", "no"], (k) => (k === "yes" ? "active" : "none"))}
+          {group("Weather", "weather", ["dry", "rain", "snow"])}
+          {group("Traffic by the stop", "traffic", ["free", "slow", "jam"])}
           <h3 className="mt-2 text-[12px] font-semibold text-white/70">Samples behind the learned time</h3>
           {of("samples", ["2-4", "5-9", "10+", "none"]).map((r) => <Pair key={r.key} label={r.key} row={r} max={max} />)}
           <h3 className="mt-2 text-[12px] font-semibold text-white/70">{system === "subway" ? "Line" : "Route"}, worst first</h3>
           {(allRoutes ? routes : routes.slice(0, 12)).map((r) => <Pair key={r.key} label={r.key} row={r} max={max} />)}
           {routes.length > 12 ? <button type="button" className={`${chip(false)} mt-1`} onClick={() => setAllRoutes(!allRoutes)}>{allRoutes ? "Fewer" : `All ${routes.length}`}</button> : null}
+          {stops.length ? (
+            <div data-testid="accuracy-stops">
+              <h3 className="mt-2 text-[12px] font-semibold text-white/70">Stops, worst first</h3>
+              {stops.map((t) => <Pair key={`${t.route}|${t.stop}`} label={<span title={t.stop}>{t.route} {stopName(t.stop)}</span>} row={{ n: t.n, maeModel: t.maeModel, maeBase: t.maeBase, w60Model: t.w60Model, w60Base: null }} max={max} />)}
+            </div>
+          ) : null}
           {thin.length ? (
             <>
               <h3 className="mt-2 text-[12px] font-semibold text-amber-300">Learned from under 5 samples and worse than default</h3>
@@ -194,6 +217,85 @@ function LineDetail({ system, route, cell, colors, statics, onStation }: { syste
         ))}
       </ol>
       <Source url={path} at={q.dataUpdatedAt || undefined} note={`${cell ? "" : "now · "}${system === "subway" ? "n = observations" : "n = run medians"}`} />
+    </Section>
+  );
+}
+
+const HOUR_COLS = "grid grid-cols-12 gap-0.5 sm:[grid-template-columns:repeat(24,minmax(0,1fr))]";
+/** Samples per single hour: where an hour alone has enough data (8 or more per stretch), and where only the band pool does. */
+function HoursStrip({ system, route, bands }: { system: System; route?: string; bands: Array<[number, number]> }) {
+  const path = `/api/transit-health/hours?${new URLSearchParams({ system, ...(route ? { route } : {}) })}`;
+  const q = useQuery({ queryKey: ["tracker-health", "hours", path], queryFn: () => getJson<Hours>(API + path), staleTime: 5 * 60_000, retry: 1 });
+  const cells = q.data?.cells ?? NO_HOURS;
+  return (
+    <div data-testid="hours">
+      <h3 className="mb-1 text-[12px] font-semibold text-white/70">By single hour · {route ?? (system === "subway" ? "all subway lines" : "all bus routes")} · share of stretches with 8+ in that hour</h3>
+      {q.data && !q.data.ready ? <p data-testid="hours-waiting" className="text-[12px] text-amber-200">Not built yet.</p> : null}
+      {q.isError ? <p role="alert" className="text-[12px] text-amber-300">Could not load.</p> : null}
+      {cells.length ? SCHEDULES.map(([sched, label]) => (
+        <div key={sched} className="mb-1 grid grid-cols-[2.9rem_minmax(0,1fr)] items-start gap-1">
+          <span className="pt-1 text-[11px] text-white/70">{label}</span>
+          <div className={HOUR_COLS}>
+            {hoursOf(cells, sched).map((c) => {
+              const share = c.segments ? c.enough / c.segments : 0;
+              return (
+                <span key={c.hour} data-testid="hour-cell" aria-label={`${label} ${c.hour}:00, ${percent(share)} of ${c.segments} stretches with 8 or more samples, ${c.samples} samples`}
+                  className={`flex min-h-8 flex-col items-center justify-center rounded-sm text-[9px] leading-tight tabular-nums ${bands.some(([a]) => a === c.hour) ? "border-l-2 border-white/70" : ""}`}
+                  style={{ background: c.segments ? `rgba(56,189,248,${0.12 + 0.78 * share})` : "rgba(255,255,255,0.05)", color: share > 0.55 ? "#04121f" : "#fff" }}>
+                  <span className="font-bold">{c.hour}</span>
+                  <span className="opacity-80">{c.samples ? short(c.samples) : "–"}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )) : null}
+      <Source url={path} at={q.dataUpdatedAt || undefined} note="hour and samples in each cell · a white edge starts a band" />
+    </div>
+  );
+}
+const NO_HOURS: HourCell[] = [];
+
+/** A bus route's MTA-published average between timepoints beside our learned times over the same stops. */
+function MtaCompare({ route, cell }: { route: string; cell: Cell }) {
+  const now = nyHourOfWeek(new Date());
+  const dow = cell ? dowOf(cell.sched) : now.dow, hour = cell ? cell.band : now.hour;
+  const params = new URLSearchParams({ route, dow: String(dow), hour: String(hour) });
+  const path = `/api/transit-health/bus-speeds?${params}`;
+  const mta = useQuery({ queryKey: ["tracker-health", "bus-speeds", path], queryFn: () => getJson<BusSpeeds>(API + path), staleTime: 30 * 60_000, retry: 1 });
+  const oursPath = `/api/transit-bus-segments?${params}`;
+  const ours = useQuery({ queryKey: ["tracker-health", "line", oursPath], queryFn: () => getJson<{ segments: Segment[] }>(API + oursPath), staleTime: 5 * 60_000, retry: 1 });
+  const stops = useQuery({ queryKey: ["transit", "bus-route", route], queryFn: () => getJson<BusRoute>(`${API}/api/transit/bus-route?${new URLSearchParams({ route })}`), staleTime: Infinity, retry: 0 });
+  const names = useMemo(() => new Map((stops.data?.stops ?? []).map((s) => [s.id.replace(/^MTA_/, ""), s.name])), [stops.data]);
+  const name = (id: string) => names.get(id) ?? id;
+  const segments = ours.data?.segments ?? NO_SEGMENTS;
+  const rows = (mta.data?.segments ?? []).map((m) => ({ m, span: spanLearned(segments, m.from, m.to) }));
+  const max = Math.max(1, ...rows.flatMap((r) => [r.m.seconds, r.span?.seconds ?? 0]));
+  return (
+    <Section title="MTA published times" id="mta-compare" aside={<Bullet route={route} />}>
+      {mta.data && !mta.data.ready ? <p data-testid="mta-waiting" className="text-[13px] text-amber-200">Not imported for this route yet.</p> : null}
+      {mta.data?.ready && !rows.length ? <p className="text-[13px] text-white/70">No published figure for this hour.</p> : null}
+      {rows.length ? (
+        <p className="mb-1 flex flex-wrap gap-x-3 text-[11px] text-white/70">
+          <span><span className="mr-1 inline-block h-2 w-3 rounded bg-white/35" />MTA average</span>
+          <span><span className="mr-1 inline-block h-2 w-3 rounded bg-sky-400" />ours, summed over the stops between</span>
+        </p>
+      ) : null}
+      <ul>
+        {rows.map(({ m, span }) => (
+          <li key={`${m.direction}|${m.from}|${m.to}`} data-testid="mta-row" className="border-t border-white/5 py-1 text-[12px]">
+            <p>{m.direction} · {name(m.from)} → {name(m.to)}</p>
+            <span className="my-0.5 flex flex-col gap-0.5">
+              <span className="block h-2 rounded bg-white/35" style={{ width: `${(m.seconds / max) * 100}%` }} />
+              <span className={`block h-2 rounded ${span && span.least < 5 ? "bg-amber-400" : "bg-sky-400"}`} style={{ width: `${Math.max(1, ((span?.seconds ?? 0) / max) * 100)}%` }} />
+            </span>
+            <p className="tabular-nums text-white/85">
+              {clock(m.seconds)} · {short(m.trips)} trips / {span ? `${clock(span.seconds)} · ${span.stretches} stretches · least n ${span.least}` : "no full chain"}
+            </p>
+          </li>
+        ))}
+      </ul>
+      <Source url={path} at={mta.dataUpdatedAt || undefined} note={`data.ny.gov kufs-yh3x${mta.data?.since ? `, months from ${mta.data.since}` : ""} · ours: ${oursPath}`} />
     </Section>
   );
 }
@@ -315,6 +417,8 @@ export default function TrackerHealthPage() {
   const maxSeg = Math.max(1, ...totals.map((t) => t.segments)), maxSamples = Math.max(1, ...totals.map((t) => t.samples));
   const sum = totals.reduce((a, t) => ({ segments: a.segments + t.segments, solid: a.solid + t.solid, samples: a.samples + t.samples }), { segments: 0, solid: 0, samples: 0 });
   const shown = all ? totals : totals.slice(0, 30);
+  const stationNames = useMemo(() => new Map((statics?.stations.features ?? []).map((f) => [f.properties.id, f.properties.name])), [statics]);
+  const stopName = (stop: string) => (system === "subway" ? stationNames.get(stationOf(system, stop)) ?? stop : `stop ${stop}`);
   const now = nyHourOfWeek(new Date());
   const unit = system === "subway" ? "observations" : "run medians";
   const cellName = cell ? `${SCHEDULES.find(([s]) => s === cell.sched)?.[1]} ${bandLabel(bands.find(([b]) => b === cell.band) ?? [cell.band, cell.band])}` : "All week";
@@ -405,13 +509,15 @@ export default function TrackerHealthPage() {
                 {route ? gridView(routeCells, "grid-route", route) : null}
               </div>
               <Source url={url} at={cov.dataUpdatedAt || undefined} note="bands as the server pools them" />
+              <div className="mt-3"><HoursStrip system={system} route={route} bands={bands} /></div>
             </Section>
             {route ? <LineDetail key={`${system}-${route}`} system={system} route={route} cell={cell} colors={statics?.routes} statics={statics} onStation={setStation} /> : null}
             <StationPanel key={`st-${system}-${system === "bus" ? route : ""}`} system={system} route={route} cell={cell} statics={statics} colors={statics?.routes} picked={station} onPick={setStation} />
           </div>
         </div>
 
-        <AccuracyPanel system={system} />
+        {system === "bus" && route ? <MtaCompare key={`mta-${route}`} route={route} cell={cell} /> : null}
+        <AccuracyPanel system={system} stopName={stopName} />
       </div>
     </main>
   );
