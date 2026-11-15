@@ -80,6 +80,29 @@ Blocked/uncertain:
 Next:
 - Merge the pull request for #200, then follow a bus on layover at a terminal on the live site for a few minutes
 
+### 2026-11-15 02:20:48 UTC — agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896","blocked":[],"changed":["e2e/panel-slot.spec.ts"],"completed":["The mini map browser case follows the bus on the chat-bar home and passes the layout bar at 390 and 1280 wide on the MacBook Pro"],"decisions":["no new decisions"],"evidence":["pnpm exec playwright test e2e/panel-slot.spec.ts -g 'mini map': 1 passed"],"next_action":"After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T02:20:48Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3f2061519f7e564632cb293be0ec89356bc3094523ad5bdf166a69a86f1584ed","request_id":"1f53968626c84a46a02d8a34a1868f35","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- The mini map browser case follows the bus on the chat-bar home and passes the layout bar at 390 and 1280 wide on the MacBook Pro
+
+Evidence:
+- pnpm exec playwright test e2e/panel-slot.spec.ts -g 'mini map': 1 passed
+
+Decisions:
+- no new decisions
+
+Changed:
+- e2e/panel-slot.spec.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
