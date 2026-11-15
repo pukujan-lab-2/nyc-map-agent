@@ -149,6 +149,29 @@ Blocked/uncertain:
 Next:
 - After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
 
+### 2026-11-15 05:13:23 UTC — agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896","blocked":[],"changed":[".size-limit.json, checkpoints/CURRENT.md"],"completed":["Main (#199, #202, #203, #205, #210) is merged in; the lint check's failure was the runner killing eslint for memory (exit 137), and lint passes on the MacBook Pro"],"decisions":["no new decisions"],"evidence":["On the MacBook Pro: pnpm lint clean, type check passes, 190 transit unit tests pass, size limits pass (transit layers 29.71 of 29.9 kB; all JS limit 1255 to 1257 kB)"],"next_action":"After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T05:13:23Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"294d12c1d4f7010e7dcf3116167af68b5a7940d79d91fb857ffe46b2171c4b51","request_id":"86fea15e8e634a47a90ea96d8098c7ed","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- Main (#199, #202, #203, #205, #210) is merged in; the lint check's failure was the runner killing eslint for memory (exit 137), and lint passes on the MacBook Pro
+
+Evidence:
+- On the MacBook Pro: pnpm lint clean, type check passes, 190 transit unit tests pass, size limits pass (transit layers 29.71 of 29.9 kB; all JS limit 1255 to 1257 kB)
+
+Decisions:
+- no new decisions
+
+Changed:
+- .size-limit.json, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
