@@ -45,6 +45,18 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
+    test("home shows the red Record button inside the layout bar", async ({ page }) => {
+      await open(page);
+      await expect(page.getByTestId("open-recorder")).toBeVisible();
+      await expectLayout(page);
+    });
+
+    test("the Record button opens /record", async ({ page }) => {
+      await open(page);
+      await page.getByTestId("open-recorder").click();
+      await expect(page).toHaveURL(/\/record$/);
+    });
+
     test("home with the live trains moving", async ({ page }) => {
       await open(page);
       await expect(page.getByTestId("agent-bar")).toBeVisible();
@@ -151,11 +163,24 @@ for (const size of SIZES) {
         // The bar and the chat under it leave most of the screen to the map.
         expect(box.height).toBeLessThan(size.height * 0.3);
       }
+      // A small north-up map of the trip stays in the corner the whole way, as it does for a followed train (2026-11-13).
+      const mini = page.getByRole("button", { name: /^Map of the trip/ });
+      await expect(mini).toBeVisible();
       await page.waitForTimeout(900);
       await expectLayout(page);
       // Change view names the preview's own view for what it is: a walk through your eyes, not a flat map.
       await page.getByRole("button", { name: "Change view", exact: true }).first().click();
       await expect(page.getByRole("menuitemradio", { name: /Walkthrough/ })).toHaveAttribute("aria-checked", "true");
+      await expectLayout(page);
+      // The mini map steps aside while Change view is open, and is back once a view is picked.
+      await expect(mini).toBeHidden();
+      await page.getByRole("menuitemradio", { name: /Chase/ }).click();
+      await expect(mini).toBeVisible();
+      await expectLayout(page);
+      // Tapping it goes to the flat map, as it does when following a train; it stays in the corner.
+      await mini.click();
+      await expect(page.getByRole("button", { name: "Change view", exact: true }).first()).toBeVisible();
+      await expect(mini).toBeVisible();
       await expectLayout(page);
     });
 
@@ -211,25 +236,51 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
-    // The dollhouse view of the Fulton St walk (#129) draws in the map and leaves every control usable.
+    // The dollhouse view of each station model's walk (#129: Fulton St, then Brooklyn Bridge–City Hall
+    // and Atlantic Av–Barclays Ctr) draws in the map and leaves every control usable.
     test("the dollhouse view of a station walk", async ({ page }) => {
       await open(page);
       await page.waitForFunction(() => "__dollhouse" in window, undefined, { timeout: 20_000 });
-      for (const at of [0, 0.6, 1]) {
-        await page.evaluate(async (f) => {
-          const w = window as unknown as { __dollhouse: (o: { at: number }) => Promise<() => void>; __stopDollhouse?: () => void };
+      const views: Array<[string, number]> = [["fulton", 0], ["fulton", 0.6], ["fulton", 1], ["cityhall", 0.5], ["barclays", 0.5]];
+      for (const [station, at] of views) {
+        await page.evaluate(async ([s, f]) => {
+          const w = window as unknown as { __dollhouse: (o: { at: number; station: string }) => Promise<() => void>; __stopDollhouse?: () => void };
           w.__stopDollhouse?.();
-          w.__stopDollhouse = await w.__dollhouse({ at: f });
-        }, at);
+          w.__stopDollhouse = await w.__dollhouse({ at: f, station: s });
+        }, [station, at] as const);
         expect(await page.evaluate(() => Boolean((window as unknown as { __map: { getLayer: (id: string) => unknown } }).__map.getLayer("dollhouse")))).toBe(true);
         await expectLayout(page);
       }
     });
 
+    // Fulton St's card offers Walk inside (#126); the walk fills the screen with its back button and,
+    // on a screen without touch, the keys hint; Back to the map closes it. The walls and ceilings it
+    // draws are the ones baked from the model (pnpm build:station-shell).
+    test("walking inside Fulton St", async ({ page }) => {
+      await open(page);
+      // Open the card the way a map tap does, so it carries the station's details.
+      await page.waitForFunction(() => "__openStation" in window, undefined, { timeout: 20_000 });
+      await page.evaluate(() => (window as unknown as { __openStation: (system: string, id: string, name: string) => void }).__openStation("subway", "418", "Fulton St"));
+      // On a phone the card opens as a short pull sheet; pull it up to reach its buttons.
+      if (size.width < 640) await page.getByTestId("details-sheet").getByTestId("sheet-grip").click();
+      const walkInside = page.getByTestId("walk-inside");
+      await expect(walkInside).toBeVisible({ timeout: 15_000 });
+      await expectLayout(page);
+      const shell = page.waitForResponse((r) => r.url().endsWith("/transit/fulton-shell.json"));
+      await walkInside.click();
+      expect((await shell).ok()).toBe(true);
+      const walk = page.getByTestId("station-walk");
+      await expect(walk).toBeVisible();
+      await expect(walk.locator("canvas")).toBeVisible({ timeout: 30_000 });
+      await expectLayout(page);
+      await page.getByTestId("station-walk-close").click();
+      await expect(walk).toHaveCount(0);
+    });
+
     // The station model's source is credited in the map's credits at every size.
     test("the map credits the station model's source", async ({ page }) => {
       await open(page);
-      await expect(page.locator(".maplibregl-ctrl-attrib")).toContainText("Project Subway NYC", { timeout: 15_000 });
+      await expect(page.locator(".maplibregl-ctrl-attrib")).toContainText("Project Subway NYC (projectsubwaynyc.com)", { timeout: 15_000 });
       await expectLayout(page);
     });
 
@@ -259,6 +310,61 @@ for (const size of SIZES) {
       await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
       await expectLayout(page);
       await context.setOffline(false);
+    });
+
+    // At Fulton St the helper pins down where in the station someone is (#143): tap questions, then the place and the way out.
+    test("the where-am-I questions inside Fulton St", async ({ page }) => {
+      const legs = (trip.legs as Array<Record<string, unknown>>).map((l) => (l.kind === "exit"
+        ? { ...l, station: { id: "229", name: "Fulton St", lon: -74.00657, lat: 40.70942 }, portal: { lon: -74.00797, lat: 40.71009, type: "Stair", elevatorOnly: false, outage: null, label: "Fulton St & Broadway" }, label: "Use the exit at Fulton St & Broadway" }
+        : l));
+      const fulton = { ...trip, legs };
+      await open(page, [
+        { type: "command", command: { type: "showRoute", trip: fulton } },
+        { type: "command", command: { type: "openPanel", trip: fulton } },
+        { type: "text", text: "Take this route." },
+      ]);
+      await ask(page, "Plan a trip to Fulton St");
+      await page.getByRole("button", { name: "Close trip" }).first().click();
+      await page.getByRole("button", { name: "Find exit", exact: true }).click();
+      await expect(page.getByTestId("lost-thread")).toContainText("Fulton St");
+      await page.getByRole("button", { name: "Yes", exact: true }).click();
+      const answers = page.getByTestId("lost-answers");
+      await expect(answers).toBeVisible({ timeout: 15_000 });
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await expectLayout(page);
+
+      // Answer each question with its first choice until the helper says where it thinks you are.
+      const showMe = page.getByRole("button", { name: "Show me", exact: true });
+      for (let i = 0; i < 6 && !(await showMe.isVisible()); i++) {
+        if (await page.getByRole("button", { name: "No sign nearby" }).isVisible()) await page.getByRole("button", { name: "No sign nearby" }).click();
+        else await answers.getByRole("button").first().click();
+      }
+      await expect(showMe).toBeVisible();
+      await expect(page.getByTestId("lost-thread")).toContainText(/You're most likely|my best guess/);
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await expectLayout(page);
+    });
+
+    // Not quite at Fulton St asks the same questions, rather than handing a lost rider to the agent (#143).
+    test("Not quite inside Fulton St asks where you are", async ({ page }) => {
+      const legs = (trip.legs as Array<Record<string, unknown>>).map((l) => (l.kind === "exit"
+        ? { ...l, station: { id: "229", name: "Fulton St", lon: -74.00657, lat: 40.70942 }, portal: { lon: -74.00797, lat: 40.71009, type: "Stair", elevatorOnly: false, outage: null, label: "Fulton St & Broadway" }, label: "Use the exit at Fulton St & Broadway" }
+        : l));
+      const fulton = { ...trip, legs };
+      await open(page, [
+        { type: "command", command: { type: "showRoute", trip: fulton } },
+        { type: "command", command: { type: "openPanel", trip: fulton } },
+        { type: "text", text: "Take this route." },
+      ]);
+      await ask(page, "Plan a trip to Fulton St");
+      await page.getByRole("button", { name: "Close trip" }).first().click();
+      await page.getByRole("button", { name: "Find exit", exact: true }).click();
+      await expect(page.getByTestId("lost-thread")).toContainText("Fulton St");
+      await page.getByRole("button", { name: "Not quite", exact: true }).click();
+      await expect(page.getByTestId("lost-thread")).toContainText("find where you are in Fulton St");
+      await expect(page.getByTestId("lost-answers")).toBeVisible({ timeout: 15_000 });
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await expectLayout(page);
     });
 
     test("home with the transit layers drawn", async ({ page }) => {

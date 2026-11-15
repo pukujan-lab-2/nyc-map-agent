@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { LngLat, type Map as MapLibreMap } from "maplibre-gl";
 import { getMapInstance } from "@/lib/map/mapInstance";
 import { keepInView } from "@/lib/map/keepInView";
 import { framePadding } from "@/lib/map/mapCover";
-import { ZoomKeeper, bindPreviewRelease, followMode, followRig, setFollowMode, setPreviewEye, setPreviewing, stableHeading, type FollowMode } from "@/lib/transit/follow";
+import { ZoomKeeper, bindPreviewRelease, followMode, followRig, publishFollowPos, setFollowMode, setPreviewEye, setPreviewMini, setPreviewing, stableHeading, type FollowMode } from "@/lib/transit/follow";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
 import { readMap } from "@/lib/map/mapRead";
 import { getAppLang } from "@/lib/i18n/appLang";
@@ -14,9 +14,11 @@ import { along, buildTimeline, calloutInfoAt, cumulative, depthAt, moveAt, poseA
 import { blendCam, EYE_BLEND_S, eyeRig, usesEye, type Cam } from "./tripCamera";
 import { initialPlayback, isActive, playback, type Playback } from "./playback";
 import type { PlaybackSpeed, Trip } from "./schema";
-import { setMarker, setPreviewDim, setXray } from "./tripLayer";
+import { setMarker, setPreviewDim, setTripBus, setXray } from "./tripLayer";
+import { boardingAt } from "./busBoarding";
 import { walkLine, walkPlace } from "./walkPlace";
 import { dollhouseLeg } from "./dollhouseLeg";
+import { nextStopAt, tripMiniLine } from "./tripMini";
 import type { DollhouseView } from "@/lib/map/dollhousePreview";
 import type { DollhouseState } from "@/lib/map/three/dollhouse";
 import { useFlag } from "@/lib/flags";
@@ -115,6 +117,11 @@ function lookPitch(seg: Segment, f: number): number {
   return Math.max(62, Math.min(96, 80 + (Math.atan2(dz, 0.01 * len) * 180) / Math.PI));
 }
 
+/** What is said or shown as a trip's steps: each scene's label and its spoken callouts. Stop names stay as the signs read. */
+function stepLines(t: Segment[]): string[] {
+  return t.flatMap((seg) => [seg.label, ...seg.callouts.filter((c) => !c.quiet).map((c) => c.text)]);
+}
+
 /** The street a trip's exit comes up on, from its step ("Use the E exit on Fulton Street at Fulton St"), for the Exit signs on the way. */
 /** The dollhouse walk's pace: seconds on the platform (the overview, the train pulling out, where you got off), then metres a second. */
 const DOLL_WAIT_S = 12;
@@ -124,6 +131,9 @@ function exitStreet(seg: Segment): string | undefined {
   if (seg.kind !== "ascend") return undefined;
   return /\bexit (?:on|by) (.+?) at /.exec(seg.label)?.[1];
 }
+
+/** An MTA bus's blue, for a bus whose line colour the planner did not give. */
+const BUS_BLUE = "#0039A6";
 
 type StationEye = { lon: number; lat: number; bearing: number; pitch: number; z: number; fov?: number };
 
@@ -143,6 +153,9 @@ export function usePlayer(onCallout?: (text: string) => void) {
   const dest = useRef("");
   const segsRef = useRef(segs);
   segsRef.current = segs;
+  /** The trip's parts for the mini map, drawn again only when the legs change. */
+  const miniLine = useRef<GeoJSON.FeatureCollection | null>(null);
+  miniLine.current = useMemo(() => tripMiniLine(segs), [segs]);
   /** Seconds into the current leg, and the speed they were counted at. */
   const elapsed = useRef(0);
   const playedSpeed = useRef<Speed>(pb.speed);
@@ -165,8 +178,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
     // `more`: the same trip with steps added (the walk through the station), so what is translated already stays.
     if (!more) words.current = new Map();
     if (lang === "en") return;
-    // What is said or shown as a step: each scene's label and its spoken callouts. Stop names stay as the signs read.
-    const lines = t.flatMap((seg) => [seg.label, ...seg.callouts.filter((c) => !c.quiet).map((c) => c.text)]);
+    const lines = stepLines(t);
     // Loaded only for another language, so English previews carry none of it.
     void import("@/lib/i18n/translateLines").then(({ translateLines }) => translateLines(lines, lang)).then((got) => {
       if (pbRef.current.tripId !== tripId || !got.size) return;
@@ -181,7 +193,9 @@ export function usePlayer(onCallout?: (text: string) => void) {
   /** The follow camera last drawn, and the steadied heading and zoom it rides with. */
   const camMode = useRef<FollowMode>("map");
   /** Whether the last frame was drawn through the rider's eyes, so the next leg frames the map once. */
-  const camKind = useRef<"eye" | "other">("other");
+  const camKind = useRef<"eye" | "board" | "other">("other");
+  /** Whether the trip's bus is on the map, so other legs take it away once and not every frame. */
+  const busShown = useRef(false);
   const heading = useRef<{ bearing: number; streak: number } | null>(null);
   const zoomKeep = useRef(new ZoomKeeper());
   /**
@@ -194,7 +208,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
   /** A station walked at eye level: the leg, the eye and train it draws each frame, its canvas below the street, and how to take it down. */
   const inside = useRef<{ seg: Segment; eye: StationEye | null; train: number | null; canvas: HTMLCanvasElement | null; stop: () => void } | null>(null);
   /**
-   * Leaving a downtown 4 or 5 at Fulton St (#129): the station model in the map with a figure walking
+   * Leaving a train at a station with a model (#129; Fulton St, Brooklyn Bridge, Atlantic Av): the model in the map with a figure walking
    * it, seen from behind and above, through that leg and on along the street walk after it.
    */
   const doll = useRef<{ seg: Segment; next: Segment | undefined; state: DollhouseState; view: DollhouseView | null; stop: () => void } | null>(null);
@@ -244,14 +258,15 @@ export function usePlayer(onCallout?: (text: string) => void) {
       view.canvas = canvas;
       view.stop = () => { unmount(); canvas.remove(); };
     });
-    // Leaving a downtown 4 or 5 at Fulton St, a figure walks the station model seen from above (#129),
+    // Leaving a train at a station with a model (see stationModels), a figure walks the model seen from above (#129),
     // to the exit the trip chose; with no walk to that exit, the first-person walk plays instead.
-    if (!dollhouseOn.current || !dollhouseLeg(seg, ride)) { firstPerson(); return; }
+    const station = dollhouseOn.current ? dollhouseLeg(seg, ride) : null;
+    if (!station) { firstPerson(); return; }
     const d: NonNullable<typeof doll.current> = { seg, next: segsRef.current[at + 1], state: { walk: null, wait: null, street: null }, view: null, stop: () => {} };
     doll.current = d;
     const exit = seg.coords[seg.coords.length - 1] ?? null;
     void import("@/lib/map/dollhousePreview")
-      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null))
+      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null, station))
       .catch(() => null)
       .then((opened) => {
         if (doll.current !== d) { opened?.stop(); return; }
@@ -287,6 +302,16 @@ export function usePlayer(onCallout?: (text: string) => void) {
     setStationXray(station);
     setStreetXray(true);
   }, []);
+  /**
+   * Fetch now what playing this trip's station walks will need (#132): the walk's code and the station
+   * model. Below the street the signal drops, and Play is often pressed there.
+   */
+  const warmReplay = useCallback((t: Segment[]) => {
+    if (!t.some((seg) => seg.station)) return;
+    void import("@/lib/map/three/stationScene").catch(() => undefined);
+    const stations = new Set(t.flatMap((seg, i) => (seg.kind === "ascend" ? t.slice(Math.max(0, i - 2), i).map((ride) => dollhouseLeg(seg, ride)) : [])).filter((s) => s != null));
+    if (dollhouseOn.current) for (const s of stations) void import("@/lib/map/dollhousePreview").then(({ warmDollhouse }) => warmDollhouse(s)).catch(() => undefined);
+  }, []);
   /** Once the stations are in, send the trip's stairs through the real station (same legs, new paths). */
   const addStairs = useCallback((tripId: string, t: Segment[]) => {
     if (!t.some((seg) => seg.station)) return;
@@ -306,6 +331,10 @@ export function usePlayer(onCallout?: (text: string) => void) {
     setXray(map, false);
     setPreviewDim(map, false);
     setMarker(map, null);
+    setTripBus(map, null);
+    busShown.current = false;
+    publishFollowPos(null);
+    setPreviewMini(null);
     leaveEye(map);
     showStairs(null);
     hideInside();
@@ -327,7 +356,22 @@ export function usePlayer(onCallout?: (text: string) => void) {
     segsRef.current = t;
     addStairs(trip.id, t);
     translate(trip.id, t);
-  }, [addStairs, translate]);
+    warmReplay(t);
+  }, [addStairs, translate, warmReplay]);
+  /**
+   * Fetch what a trip's replay needs as soon as its card shows, before anyone presses Play (#132):
+   * the rider may already be below the street with no signal by then. Loads nothing into the player.
+   */
+  const warm = useCallback((trip: Trip) => {
+    const t = buildTimeline(trip);
+    if (!t.some((seg) => seg.station)) return;
+    warmReplay(t);
+    // The steps in the rider's language too: translateLines remembers them for the page, so Play finds them offline.
+    const lang = getAppLang();
+    const say = (steps: Segment[]) => lang === "en" ? undefined : import("@/lib/i18n/translateLines").then(({ translateLines }) => translateLines(stepLines(steps), lang));
+    void say(t)?.catch(() => undefined);
+    void import("./stationWalks").then(({ withStationWalks }) => withStationWalks(t)).then((next) => say(next)).catch(() => undefined);
+  }, [warmReplay]);
   /** Load and play at once, for the Play button. */
   const start = useCallback((trip: Trip, speed?: Speed) => {
     if (pbRef.current.tripId !== trip.id || !isActive(pbRef.current)) load(trip, speed);
@@ -348,7 +392,8 @@ export function usePlayer(onCallout?: (text: string) => void) {
     segsRef.current = t;
     addStairs(trip.id, t);
     translate(trip.id, t);
-  }, [clearLayers, addStairs, translate]);
+    warmReplay(t);
+  }, [clearLayers, addStairs, translate, warmReplay]);
   /** Drop the preview camera without easing the map home. Follow and Ask use this. */
   const release = useCallback(() => {
     cancelAnimationFrame(rafId.current);
@@ -445,7 +490,10 @@ export function usePlayer(onCallout?: (text: string) => void) {
       const wait = waitAt(seg, f);
       const depth = depthAt(seg, fm);
       const pose = poseAt(seg, fm);
-      const mark = seg.kind === "ride" ? along(seg.coords, f) : pose.center;
+      // A bus ride starts at the stop: the bus pulls in, the rider steps on, then it drives off (owner, 2026-11-13).
+      const bus = seg.kind === "ride" && seg.mode === "bus";
+      const board = bus && wait !== null ? boardingAt(seg, wait) : null;
+      const mark = board ? board.rider : seg.kind === "ride" ? along(seg.coords, fm) : pose.center;
       const mode = followMode();
       const newLeg = styledSeg.current !== s.seg;
       if (newLeg) {
@@ -489,8 +537,11 @@ export function usePlayer(onCallout?: (text: string) => void) {
         // A view picked from Change view: the camera rides the marker, leg after leg, until you pick Map.
         if (camMode.current !== mode) { heading.current = null; zoomKeep.current.reset(); }
         heading.current = stableHeading(heading.current?.bearing ?? null, pose.bearing, heading.current?.streak ?? 0);
-        rideAlong(map, mode, mark, heading.current.bearing, seg.underground && seg.kind !== "walk" ? UNDERGROUND_M : 0, zoomKeep.current);
-      } else if (newLeg || camMode.current !== "map" || camKind.current === "eye") {
+        rideAlong(map, mode, board ? seg.coords[0] : mark, board ? board.heading : heading.current.bearing, seg.underground && seg.kind !== "walk" ? UNDERGROUND_M : 0, zoomKeep.current);
+      } else if (board) {
+        // Hold on the stop, looking up the road the bus comes along, until it has left with the rider.
+        if (camKind.current !== "board") map.easeTo({ center: seg.coords[0], zoom: 18.2, pitch: 58, bearing: board.heading, duration: reduced ? 0 : 900 });
+      } else if (newLeg || camMode.current !== "map" || camKind.current !== "other") {
         // Each leg is framed once, top-down and north up, clear of the open panels.
         frameLeg(map, seg.coords, reduced);
       } else {
@@ -506,7 +557,11 @@ export function usePlayer(onCallout?: (text: string) => void) {
         if (view.canvas) view.canvas.style.display = eyeLeg && depth < INSIDE_M ? "" : "none";
       }
       camMode.current = mode;
-      camKind.current = eyeLeg ? "eye" : "other";
+      camKind.current = eyeLeg ? "eye" : board && mode === "map" ? "board" : "other";
+      // The bus: coming up to the stop, then carrying the rider along the route.
+      if (bus) setTripBus(map, { at: board ? board.bus : mark, heading: board ? board.heading : pose.bearing, color: seg.color ?? BUS_BLUE });
+      else if (busShown.current) setTripBus(map, null);
+      busShown.current = bus;
       setMarker(map, mark, seg.route);
       if (seg.kind === "walk" && !seg.underground && now - place.current.at >= PLACE_MS) {
         place.current.at = now;
@@ -530,6 +585,10 @@ export function usePlayer(onCallout?: (text: string) => void) {
         const all = segsRef.current.map((x) => (reduced ? 3 : wallSeconds(x, s.speed)));
         const sum = all.reduce((a, b) => a + b, 0) || 1;
         setProgress((all.slice(0, s.seg).reduce((a, b) => a + b, 0) + f * total) / sum);
+        // The mini map follows the rider, as it follows a train, at the same calm pace as the bar.
+        publishFollowPos({ lon: mark[0], lat: mark[1], bearing: pose.bearing });
+        const next = nextStopAt(segsRef.current, s.seg, f, dest.current || null);
+        if (s.tripId && miniLine.current) setPreviewMini({ key: s.tripId, line: miniLine.current, next: next && inLang(next) });
       }
       if (settling) {
         if (now < settleUntil) rafId.current = requestAnimationFrame(tick);
@@ -568,5 +627,5 @@ export function usePlayer(onCallout?: (text: string) => void) {
   }, [pb.status, leaveEye, reduced, hideDoll]);
 
   const state: PlayerState = { ...pb, active: isActive(pb), playing: pb.status === "playing", segs, callout, where, progress: pb.status === "ended" ? 1 : progress };
-  return { state, load, start, select, stop, release, toggle, setSpeed, skip, back, seek };
+  return { state, load, warm, start, select, stop, release, toggle, setSpeed, skip, back, seek };
 }

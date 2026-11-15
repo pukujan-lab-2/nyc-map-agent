@@ -7,7 +7,7 @@
   {
     "name": "app (boot chunk, loaded after the first paint)",
     "path": ".size-build/assets/boot-*.js",
-    "limit": "281 kB"
+    "limit": "294.5 kB"
   },
   {
     "name": "map library (maplibre-gl, its own chunk so it stays cached across deploys)",
@@ -22,7 +22,7 @@
   {
     "name": "feature: agent (lazy overlay)",
     "path": ".size-build/assets/AgentOverlay-*.js",
-    "limit": "31.5 kB"
+    "limit": "32.8 kB"
   },
   {
     "name": "lib: screen space (xstate, lazy)",
@@ -100,8 +100,31 @@
     "limit": "6.5 kB"
   },
   {
-    "name": "all JS",
-    "path": ".size-build/assets/*.js",
-    "limit": "1171 kB"
+    "name": "feature: station walk (lazy, opens with Walk inside; Rapier physics inlines its WebAssembly)",
+    "path": ".size-build/assets/StationWalkScene-*.js",
+    "limit": "708 kB"
+  },
+  {
+    "name": "feature: recorder page (lazy, loaded only at /record)",
+    "path": ".size-build/assets/RecordPage-*.js",
+    "limit": "6.5 kB"
+  },
+  {
+    "name": "feature: station 3D preview page (lazy, loaded only at /station-3d)",
+    "path": ".size-build/assets/StationCloudPage-*.js",
+    "limit": "3.2 kB"
+  },
+  {
+    "name": "feature: tracker health page (lazy, loaded only at /tracker-health)",
+    "path": ".size-build/assets/TrackerHealthPage-*.js",
+    "limit": "6.2 kB"
+  },
+  {
+    "name": "all JS except the station walk",
+    "path": [
+      ".size-build/assets/*.js",
+      "!.size-build/assets/StationWalkScene-*.js"
+    ],
+    "limit": "1255 kB"
   }
 ]
