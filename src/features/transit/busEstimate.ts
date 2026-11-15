@@ -71,8 +71,8 @@ const UNSURE_LEAD_M = 60;
 const STILL_MPS = 1;
 /** A bus must have moved this far (m) since its shape was chosen before the choice is reopened. */
 const MOVED_M = 40;
-/** Falling this far (m) back along its shape, while heading against it, means the bus is on the wrong shape. */
-const BACK_M = 20;
+/** Falling this far (m) back along its shape, while heading against it, means the bus is on the wrong shape. A stopped bus's fix wobbles 40 m. */
+const BACK_M = 60;
 /** Two passes of one shape this close (m) to a fix are told apart by where the bus was, not by which is nearer. */
 const LOOP_TIE_M = 20;
 /** A bus changing to another piece of its route carries on without a fade when that piece is this close (m) to where it is drawn. */
@@ -270,8 +270,8 @@ export class BusEstimator {
     // Driving back down its shape: it is on the wrong shape, most often the right piece the wrong way round.
     const fellBack = Boolean(same && onPrev && heading !== null && moved && onPrev.s < same.as - BACK_M && turn(onPrev.bearing, heading) > 60);
     if (same && onPrev && (moved
-      // Moving along its piece of the route: it stays on it until the piece ends or the bus leaves it.
-      ? onPrev.d <= STAY_M && !fellBack && heading !== null && turn(onPrev.bearing, heading) < 30
+      // On its piece of the route: it stays on it until the piece ends, the bus leaves it, or the bus drives back down it.
+      ? onPrev.d <= STAY_M && !fellBack
       // Parked, or creeping: it stays on its shape, facing the way it was. Its compass bearing is noise.
       : onPrev.d <= SNAP_MAX_M)) {
       best = same.shape; bestP = onPrev;
@@ -299,8 +299,12 @@ export class BusEstimator {
     // Until a report shows the bus moving, it may only be drawn a little past where it was seen.
     let v = def, moving = true, dwellLeft = 0, still = 0, lead = UNSURE_LEAD_M;
     if (same && dt >= 5 && dt <= 180) {
-      const over = hop / dt, along = kept ? (bestP.s - kept.s) / dt : over;
-      if (over < STILL_MPS || along < 0.4) {
+      // Only progress along the piece it was already on shows a bus moving. On a piece it has just
+      // come to (a terminal loop, a turn off the route) its speed is not known yet.
+      const over = hop / dt, along = kept ? (bestP.s - kept.s) / dt : undefined;
+      if (along === undefined) {
+        // first report on this piece: the short lead, the default speed
+      } else if (over < STILL_MPS || along < 0.4) {
         moving = false; still = same.still + 1;
         // Twice in a row is a layover or a jam, not a pause: hold it exactly there.
         if (still >= 2) lead = 0;
@@ -313,7 +317,10 @@ export class BusEstimator {
     }
     const atStop = sh.stops.find((st) => Math.abs(st.s - bestP.s) < 20);
     if (atStop && !moving) dwellLeft = dwellAt(this.hist, b.route, atStop.id, DWELL_S) / 2;
-    const anchor = kept && !moved ? { alon: kept.alon, alat: kept.alat, as: kept.as } : { alon: b.lon, alat: b.lat, as: bestP.s };
+    // The fix the next heading is measured from. It stays put while the bus has not moved, and while it
+    // is heading back down its piece, so a slow drive the wrong way adds up instead of starting over.
+    const against = heading !== null && turn(bestP.bearing, heading) > 60;
+    const anchor = kept && (!moved || against) ? { alon: kept.alon, alat: kept.alat, as: kept.as } : { alon: b.lon, alat: b.lat, as: bestP.s };
     const fresh: State = { route: b.route, shape: best, s: bestP.s, t: b.t, v, moving, dwellLeft, disp: bestP.s, at: nowS, alpha: 1, fade: "none", lon: b.lon, lat: b.lat, ...anchor, still, lead };
     if (kept) {
       fresh.disp = kept.disp; fresh.at = kept.at; fresh.alpha = kept.alpha; fresh.fade = kept.fade; fresh.hdg = kept.hdg;
