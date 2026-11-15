@@ -224,8 +224,11 @@ export function alertDiagram(a: TransitAlert, sys: StaticSystem | undefined, rou
   const all = `${a.text}\n${a.description ?? ""}`;
   const d = suspension(a, sys, route, all, near) ?? skipStops(a, sys, route, all) ?? local(a, sys, route, all);
   if (!d) return null;
+  const head = headlineSteps(a, sys, route);
   // A delay's diagram comes from a reminder in its description: the delay itself is said first.
-  if (a.kind === "delay") d.steps.unshift(...headlineSteps(a, sys, route));
+  if (a.kind === "delay") d.steps.unshift(...head);
+  // A headline's further lines ("All trains at Woodside-61 St board from the Manhattan-bound platform") follow the opening step.
+  else d.steps.splice(1, 0, ...head.slice(1).map((s) => ({ ...s, ids: namedOnLine(sys, route, s.text) })));
   d.steps.push(...laterSteps(a, sys, route));
   return d;
 }

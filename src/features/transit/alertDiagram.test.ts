@@ -252,6 +252,18 @@ describe("plainSteps", () => {
     ]);
   });
 
+  it("keeps a drawn notice's second headline line, after its opening step", () => {
+    const a = notice({
+      kind: "planned", type: "Planned - Stops Skipped", reroute: true, routes: ["7"], stops: [],
+      text: "In Queens, Flushing-bound [7] skips 52 St and 69 St\nAll trains at Woodside-61 St board from the Manhattan-bound platform",
+      changes: [{ alertId: "t", route: "7", kind: "skip", names: ["52 St", "69 St"], toward: "Flushing", notice: "Skipped Flushing-bound" }], skipNames: ["52 St", "69 St"],
+    });
+    expect(alertDiagram(a, sys, "7")!.steps.map((s) => s.text)).toEqual([
+      "Flushing-bound 7 trains skip 52 Street and 69 Street.",
+      "All trains at Woodside-61 Street board from the Manhattan-bound platform.",
+    ]);
+  });
+
   it("adds the reason to a drawn notice, before when", () => {
     const steps = laterSteps(notice({ kind: "planned", description: "For service to this station, take the [1] to 116 St.\n\nWhat's happening?\nWe're making station improvements\n\n[accessibility icon] This service change affects one or more ADA accessible stations.", period: "Through December 2026" }), sys, "1");
     expect(steps.map((s) => s.text)).toEqual(["Why: We're making station improvements.", "When: Through December 2026."]);
