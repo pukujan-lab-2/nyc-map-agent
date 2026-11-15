@@ -83,4 +83,34 @@ CREATE UNIQUE INDEX IF NOT EXISTS transit_coverage_hourly_key ON marts.transit_c
 -- migrate:down
 DROP MATERIALIZED VIEW IF EXISTS marts.transit_coverage_hourly;
 DROP MATERIALIZED VIEW IF EXISTS marts.transit_prediction_stops;
+-- The summary reads the three columns, so it goes first; then the summary of the first step comes back.
+DROP MATERIALIZED VIEW IF EXISTS marts.transit_prediction_summary;
 ALTER TABLE raw.transit_prediction_scores DROP COLUMN IF EXISTS notice, DROP COLUMN IF EXISTS weather, DROP COLUMN IF EXISTS traffic;
+CREATE MATERIALIZED VIEW IF NOT EXISTS marts.transit_prediction_summary AS
+WITH s AS (
+  SELECT system, route,
+    CASE WHEN h <= 4 THEN 0 WHEN h <= 6 THEN 5 WHEN h <= 9 THEN 7 WHEN h <= 15 THEN 10 WHEN h <= 19 THEN 16 ELSE 20 END::text AS band,
+    CASE WHEN lead_s < 180 THEN '1-3' WHEN lead_s < 360 THEN '3-6' ELSE '6-10' END AS lead,
+    CASE WHEN learned_n IS NULL THEN 'none' WHEN learned_n < 5 THEN '2-4' WHEN learned_n < 10 THEN '5-9' ELSE '10+' END AS samples,
+    abs(err_model_s) AS am, abs(err_base_s) AS ab, learned_n IS NOT NULL AS l
+  FROM (SELECT *, extract(hour FROM scored_at AT TIME ZONE 'America/New_York') AS h FROM raw.transit_prediction_scores) x
+), d AS (
+  SELECT system, 'all' AS dim, '' AS key, am, ab, l FROM s
+  UNION ALL SELECT system, 'route', route, am, ab, l FROM s
+  UNION ALL SELECT system, 'band', band, am, ab, l FROM s
+  UNION ALL SELECT system, 'lead', lead, am, ab, l FROM s
+  UNION ALL SELECT system, 'samples', samples, am, ab, l FROM s
+)
+SELECT system, dim, key,
+  count(*)::int AS n,
+  percentile_cont(0.5) WITHIN GROUP (ORDER BY am)::real AS mae_model,
+  percentile_cont(0.5) WITHIN GROUP (ORDER BY ab)::real AS mae_base,
+  (avg((am <= 60)::int))::real AS w60_model,
+  (avg((ab <= 60)::int))::real AS w60_base,
+  (count(*) FILTER (WHERE l))::int AS l_n,
+  (percentile_cont(0.5) WITHIN GROUP (ORDER BY am) FILTER (WHERE l))::real AS l_mae_model,
+  (percentile_cont(0.5) WITHIN GROUP (ORDER BY ab) FILTER (WHERE l))::real AS l_mae_base,
+  (avg((am <= 60)::int) FILTER (WHERE l))::real AS l_w60_model,
+  (avg((ab <= 60)::int) FILTER (WHERE l))::real AS l_w60_base
+FROM d GROUP BY system, dim, key;
+CREATE UNIQUE INDEX IF NOT EXISTS transit_prediction_summary_key ON marts.transit_prediction_summary (system, dim, key);
