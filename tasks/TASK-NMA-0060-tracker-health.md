@@ -281,6 +281,29 @@ Blocked/uncertain:
 Next:
 - When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
 
+### 2026-11-15 07:13:14 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The server branch (conditions, per-hour counts, MTA bus speeds) is up to date with main and first in line"],"decisions":["no new decisions"],"evidence":["72 unit tests pass after merging the bus session's estimator change; the API spec is current"],"next_action":"When pull request 217 merges, run nyc-job.sh update on the VPS between runs, then bring pull request 216 up to date with main","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T07:13:14Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"09ee4cdb4865c9d6e699256f577d67a678da4c6224d6b8f099ff6e9f3ef0e60b","request_id":"a2d994a949094771b014912c1894cce6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The server branch (conditions, per-hour counts, MTA bus speeds) is up to date with main and first in line
+
+Evidence:
+- 72 unit tests pass after merging the bus session's estimator change; the API spec is current
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull request 217 merges, run nyc-job.sh update on the VPS between runs, then bring pull request 216 up to date with main
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
