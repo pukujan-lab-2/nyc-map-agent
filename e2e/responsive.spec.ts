@@ -255,6 +255,9 @@ for (const size of SIZES) {
       const phone = size.width < 640;
       await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
       const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
+      // On a phone Settings opens as a short pull sheet. At 320×568 no row is clear of its header until
+      // the sheet is pulled up, so the test pulls it up as a rider would.
+      if (phone) await panel.getByTestId("sheet-grip").click();
       const sw = panel.getByRole("switch", { name: "Elevators only" });
       await expect(sw).toBeVisible();
       await expect(sw).toHaveAttribute("aria-checked", "false");
