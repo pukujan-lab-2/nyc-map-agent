@@ -166,6 +166,29 @@ Blocked/uncertain:
 Next:
 - After the direction fix deploys, pick the 1 on the live page; then the station view with per-hour counts, stored conditions, the pooling comparison and the MTA bus speeds comparison
 
+### 2026-11-15 05:25:18 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["Scores store notice, weather and traffic; the accuracy answer splits by them and lists stops; an endpoint gives samples per hour"],"decisions":["no new decisions"],"evidence":["68 unit tests in the transit server folder pass; the migration ran on the VPS database in a rolled-back transaction; a subway backtest found band and hour pooling equal"],"next_action":"After it merges, run nyc-job.sh update on the VPS between runs and read the first rows with conditions; then show the splits, stops and hours on the page","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T05:25:18Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"53f41c6bc6a9760581831a2ddccf5e625596d601ebc9974ad695ad8aaab6761b","request_id":"f6634b0c494849069b354eb604b2dbe0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- Scores store notice, weather and traffic; the accuracy answer splits by them and lists stops; an endpoint gives samples per hour
+
+Evidence:
+- 68 unit tests in the transit server folder pass; the migration ran on the VPS database in a rolled-back transaction; a subway backtest found band and hour pooling equal
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After it merges, run nyc-job.sh update on the VPS between runs and read the first rows with conditions; then show the splits, stops and hours on the page
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
