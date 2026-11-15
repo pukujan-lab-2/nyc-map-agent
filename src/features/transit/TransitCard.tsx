@@ -2,11 +2,13 @@ import "@/components/task-screens.css";
 import { NoticeIcon, noticeKind } from "./noticeKind";
 import { useFlag } from "@/lib/flags";
 import { useMapState } from "@/lib/store/MapStateContext";
-import { useStationHelp } from "@/lib/underground/stationHelp";
+import { noteTrain, openLostHelper } from "@/lib/underground/lostHelper";
+import { useT } from "@/lib/i18n/appLang";
 import { formatStreetText } from "@/lib/streetName";
 import { liveProgress } from "./monotonic";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Accessibility, ChevronDown, Crosshair, ScanEye, Star } from "lucide-react";
+import { Accessibility, ChevronDown, Crosshair, Footprints, ScanEye, Star } from "lucide-react";
+import { hasWalkInside, openStationWalk } from "./stationWalk/store";
 import { Button } from "@/components/ui/button";
 import { arrivalsAt, directionLabel, estimateTrain, minutesUntil, stationOf, SYSTEM_LABELS, type LiveSystem, type StaticSystem, type SystemId, type Vehicle } from "./model";
 import { useAlerts, useBusRoute, useBusTrip, useNow, useStarred, useTransitData, type Outage, type TransitAlert } from "./hooks";
@@ -88,7 +90,11 @@ export function StationDetails({ system, id }: { system: SystemId; id: string })
   // Leaving the station panel turns x-ray off.
   useEffect(() => () => { if (getXray() === id) setXray(null); }, [id]);
   const st = data[system]?.stat;
-  const routes = [...new Set(String(st?.stations.features.find((f) => f.properties.id === id)?.properties.routes ?? "").split(/[\s,]+/).filter(Boolean))];
+  const feature = st?.stations.features.find((f) => f.properties.id === id);
+  const routes = [...new Set(String(feature?.properties.routes ?? "").split(/[\s,]+/).filter(Boolean))];
+  // Fulton St has a model of its insides to walk through (#126).
+  const at = feature?.geometry.type === "Point" ? (feature.geometry.coordinates as [number, number]) : null;
+  const walkInside = system === "subway" && at != null && hasWalkInside(at[0], at[1]);
   // A line picked here (or on the map) narrows the panel to it; no pick shows every line at the station.
   const picked = useSelectedLine();
   const only = system === "subway" && picked && routes.includes(lineOf(picked.route)) ? lineOf(picked.route) : null;
@@ -196,6 +202,12 @@ export function StationDetails({ system, id }: { system: SystemId; id: string })
           <Button size="sm" variant="outline" aria-pressed={xray === id} onClick={() => setXray(xray === id ? null : id)}>
             <ScanEye className="mr-1.5 h-4 w-4" />
             X-ray
+          </Button>
+        ) : null}
+        {walkInside ? (
+          <Button size="sm" variant="outline" data-testid="walk-inside" onClick={() => openStationWalk(null)}>
+            <Footprints className="mr-1.5 h-4 w-4" />
+            Walk inside
           </Button>
         ) : null}
       </div>
@@ -355,7 +367,7 @@ const FOLLOW_CARD_GAP = 8;
 export function FollowCard({ vehicle }: { vehicle: Vehicle }) {
   const home = useFlag("agentHome");
   const { seedChat, setChatOpen, chatOpen, startWalk } = useMapState();
-  const stationHelp = useStationHelp();
+  const appT = useT();
   const onFoot = useBoardedOnFoot();
   // Off the bus or train where it is now, facing the way it was going, back in street view.
   const getOff = () => {
@@ -382,6 +394,10 @@ export function FollowCard({ vehicle }: { vehicle: Vehicle }) {
   // The same stop's time as the list below it: the trip's own, when it lists the next stop first.
   const listed = stops[0] && headId && vehicle.system !== "bus" && stationOf(vehicle.system, stops[0].id) === stationOf(vehicle.system, headId) ? stops[0] : undefined;
   const headEta = head ? head.eta : (listed?.eta ?? vehicle.eta ?? null);
+  // The where-am-I helper's guess knows which train you followed, if you lose signal later (#131).
+  useEffect(() => {
+    if (vehicle.system !== "bus") noteTrain({ line: vehicle.route, nextStop: headName !== "—" ? headName : null, at: Date.now() });
+  }, [vehicle.system, vehicle.route, headName]);
   const busCalls = busTrip.data?.calls ?? [];
   const busLast = busCalls[busCalls.length - 1];
   const busDestName = busTrip.data?.destination || busLast?.name;
@@ -456,7 +472,7 @@ export function FollowCard({ vehicle }: { vehicle: Vehicle }) {
       noticeCount={notices.length}
       // No "Other ways": trips are asked in the chat (owner, 2026-11-07).
       actions={<div className="grid grid-cols-1 gap-2">
-        {vehicle.system === "bus" ? <button type="button" className="task-action bg-sky-500" onClick={() => ask(`Where should I get off the ${vehicle.route} bus for my trip?`)}>Where to get off</button> : <button type="button" className="task-action" onClick={() => { if (stationHelp) { setFollowed(null); stationHelp(headId ? stationOf(vehicle.system === "bus" ? "subway" : vehicle.system, headId) : undefined); } else ask(`Which exit should I take at ${headName}?`); }}>Exit help</button>}
+        {vehicle.system === "bus" ? <button type="button" className="task-action bg-sky-500" onClick={() => ask(`Where should I get off the ${vehicle.route} bus for my trip?`)}>Where to get off</button> : <button type="button" className="task-action" onClick={() => { setFollowed(null); openLostHelper({ from: "train", line: vehicle.route, nextStop: headName !== "—" ? headName : null, ...(headId ? { stationId: stationOf(vehicle.system === "bus" ? "subway" : vehicle.system, headId) } : {}) }); }}>{appT("findExit")}</button>}
         {onFoot ? <button type="button" data-testid="get-off" className="task-action bg-[#c6f702] text-[#121212]" onClick={getOff}>Get off and walk</button> : null}
       </div>}
     />;
