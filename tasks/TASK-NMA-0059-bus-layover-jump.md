@@ -172,6 +172,29 @@ Blocked/uncertain:
 Next:
 - After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
 
+### 2026-11-15 07:06:06 UTC — agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896","blocked":[],"changed":["src/features/transit/busEstimate.ts, busEstimate.test.ts, busPullOut.fixture.json, checkpoints/CURRENT.md"],"completed":["Pull request #201 is merged and live (build ecfd2d1); a live recording after it showed waiting buses held on their fix, and a remaining throw-back just after a bus pulls out, fixed on branch fix/200-bus-pull-out"],"decisions":["no new decisions"],"evidence":["busPullOut.fixture.json replayed in busEstimate.test.ts: 2 tests fail on main (a 286 m jump) and pass here; on the MacBook Pro lint, the type check, 192 transit unit tests and the size limits pass"],"next_action":"After the pull-out fix deploys, follow an M22 at Vesey Street on the live site in daytime, when it runs","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T07:06:06Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9d91e97e364595ab603f03043a870c8bce25e0093eadcc1b9de9106eaa6437aa","request_id":"8b50de39f7534e96ac525701cdd52f9d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- Pull request #201 is merged and live (build ecfd2d1); a live recording after it showed waiting buses held on their fix, and a remaining throw-back just after a bus pulls out, fixed on branch fix/200-bus-pull-out
+
+Evidence:
+- busPullOut.fixture.json replayed in busEstimate.test.ts: 2 tests fail on main (a 286 m jump) and pass here; on the MacBook Pro lint, the type check, 192 transit unit tests and the size limits pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/transit/busEstimate.ts, busEstimate.test.ts, busPullOut.fixture.json, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After the pull-out fix deploys, follow an M22 at Vesey Street on the live site in daytime, when it runs
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
