@@ -212,6 +212,29 @@ Blocked/uncertain:
 Next:
 - When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
 
+### 2026-11-15 05:39:40 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The bus speeds branch carries the reversible conditions migration and current main"],"decisions":["no new decisions"],"evidence":["The merge has no conflicts outside the task record"],"next_action":"When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T05:39:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a2410cded4554ec4daff4532594819c5f203dcba8a8394426f07c9fb45e583b7","request_id":"aaaeb2fb8b0c45aea12acf9833cf7cd2","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The bus speeds branch carries the reversible conditions migration and current main
+
+Evidence:
+- The merge has no conflicts outside the task record
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
