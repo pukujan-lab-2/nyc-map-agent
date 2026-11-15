@@ -258,6 +258,29 @@ Blocked/uncertain:
 Next:
 - When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
 
+### 2026-11-15 06:36:20 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The bus speeds branch carries the API fix and current main"],"decisions":["no new decisions"],"evidence":["72 unit tests pass and the API spec is regenerated"],"next_action":"When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T06:36:20Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"c7f24326c71a420ca7c4d01f4894892ff1f1e5e4a2104d225d6474302b4dbcdf","request_id":"30c2fb635a6e42d3b7871e9647afd2d3","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The bus speeds branch carries the API fix and current main
+
+Evidence:
+- 72 unit tests pass and the API spec is regenerated
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- When pull requests 214 and 215 merge, merge main into 216 and 217, run nyc-job.sh update on the VPS between runs, and read the first rows with conditions
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
