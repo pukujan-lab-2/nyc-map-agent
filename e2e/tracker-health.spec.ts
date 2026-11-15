@@ -46,6 +46,7 @@ async function mock(page: Page, withAccuracy: boolean) {
   await page.route("**/api/transit-health/coverage", json(coverage()));
   await page.route("**/api/transit-health/accuracy", json(withAccuracy ? accuracy : { ready: true, rows: [acc("subway", "all", "", 37, 20, 22)], thin: [], runs: [{ ...accuracy.runs[0], runs: 1, stored: 37 }] }));
   await page.route("**/api/transit-segments?*", json(subwaySegments));
+  await page.route("**/api/transit-segments/all?*", json({ dow: 3, hour: 7, routes: { A: [...subwaySegments.segments, { dir: 0, from: "A03N", to: "A03N", kind: "dwell", n: 20, median: 31, p80: 40 }], G: [] } }));
   await page.route("**/api/transit-bus-segments?*", json(busSegments));
   await page.route("**/api/transit/bus-route?*", json(busRoute));
 }
@@ -68,10 +69,24 @@ for (const size of SIZES) {
       await expect(page.getByTestId("line-count")).toHaveText("4 stretches · 1 under 5 samples");
       await expect(page.getByTestId("line-direction").locator("option")).toHaveCount(2);
       await expect(page.getByTestId("stretch").first()).toContainText("Inwood-207 St → Dyckman St", { timeout: slow(15_000) });
+      // Stations: 447 places (496 station ids, same name within 400 m grouped), least-learned first; five have mocked rows.
+      await expect(page.getByTestId("station-total")).toContainText("447 stations · 442 with no data · 2 with a line under 5 samples", { timeout: slow(15_000) });
+      await expect(page.getByTestId("station-row")).toHaveCount(20);
       await expect(page.getByTestId("accuracy-data")).toBeVisible();
       await expect(page.getByTestId("accuracy-waiting")).toHaveCount(0);
       await expect(page.getByTestId("source").first()).toContainText("GET /api/transit-health/coverage · loaded");
       await expectLayout(page);
+
+      // Tapping a stretch opens its first station: each line and direction with the time in, the dwell and the time out.
+      await page.getByTestId("stretch-station").nth(1).click();
+      const detail = page.getByTestId("station-detail");
+      await expect(detail).toContainText("Dyckman St");
+      await expect(detail.getByTestId("station-line")).toHaveCount(2);
+      await expect(detail.getByTestId("station-line").first()).toContainText("to 190 St");
+      await expect(detail.getByTestId("station-line").first()).toContainText("in 1:35 n 24dwell 31 s n 20out 2:05 n 3");
+      await expectLayout(page);
+      await page.getByTestId("station-clear").click();
+      await expect(page.getByTestId("station-row").first()).toBeVisible();
 
       // Coverage order, then one schedule and band from the grid.
       await page.getByTestId("sort-coverage").click();
@@ -87,6 +102,7 @@ for (const size of SIZES) {
       await page.getByTestId("coverage-all").click();
       await expect(page.getByTestId("coverage-row")).toHaveCount(40);
       await expect(page.getByTestId("stretch").first()).toContainText("STOP NUMBER 1");
+      await expect(page.getByTestId("station-total")).toContainText(/5 stops on M\d+ · 0 with no data/);
       await expect(page).toHaveURL(/system=bus/);
       await expectLayout(page);
       expect(errors, errors.join("\n")).toEqual([]);

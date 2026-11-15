@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { bandLabel, byPlatform, clock, directions, dowOf, grid, percent, routeTotals, SCHEDULES, schedOf, short, stretches, type Cell, type CoverageRow, type Segment, type System } from "./summary";
+import { bandLabel, byPlatform, clock, directions, dowOf, grid, percent, routeTotals, SCHEDULES, schedOf, short, stationLines, stationTotals, complexes, stretches, type Cell, type CoverageRow, type Segment, type StationInfo, type System } from "./summary";
 import { nyHourOfWeek } from "../history";
 import { removeShell } from "@/lib/shellDraft";
 
@@ -29,8 +29,8 @@ type Accuracy = {
   thin: Array<{ system: System; route: string; dir: number; from: string; to: string; n: number; learnedN: number; maeModel: number; maeBase: number }>;
   runs: Array<{ system: System; runs: number; opened: number; resolved: number; unresolved: number; stored: number; first: string | null; last: string | null }>;
 };
-type SubwayStatic = { routes: Record<string, { color: string; text: string }>; stations: { features: Array<{ properties: { id: string; name: string } }> }; stopM: Record<string, Record<string, number>> };
-type BusRoute = { stops: Array<{ id: string; name: string }> };
+type SubwayStatic = { routes: Record<string, { color: string; text: string }>; stations: { features: Array<{ properties: { id: string; name: string; routes: string }; geometry: { coordinates: [number, number] } }> }; stopM: Record<string, Record<string, number>> };
+type BusRoute = { stops: Array<{ id: string; name: string; lon: number; lat: number }> };
 
 const time = (ms: number) => new Date(ms).toLocaleTimeString("en-US", { hour12: false });
 const NO_ROWS: CoverageRow[] = [], NO_BANDS: Array<[number, number]> = [], NO_SEGMENTS: Segment[] = [];
@@ -140,7 +140,7 @@ function AccuracyPanel({ system }: { system: System }) {
   );
 }
 
-function LineDetail({ system, route, cell, colors, statics }: { system: System; route: string; cell: Cell; colors?: SubwayStatic["routes"]; statics?: SubwayStatic }) {
+function LineDetail({ system, route, cell, colors, statics, onStation }: { system: System; route: string; cell: Cell; colors?: SubwayStatic["routes"]; statics?: SubwayStatic; onStation: (stop: string) => void }) {
   const now = nyHourOfWeek(new Date());
   const dow = cell ? dowOf(cell.sched) : now.dow, hour = cell ? cell.band : now.hour;
   const path = `/api/${system === "subway" ? "transit-segments" : "transit-bus-segments"}?${new URLSearchParams({ route, dow: String(dow), hour: String(hour) })}`;
@@ -182,8 +182,9 @@ function LineDetail({ system, route, cell, colors, statics }: { system: System; 
       {q.data && !list.length ? <p className="text-[13px] text-white/70">No learned times here.</p> : null}
       <ol className="max-h-[26rem] overflow-y-auto pr-1">
         {list.map((s) => (
-          <li key={`${s.from}|${s.to}`} data-testid="stretch" className="grid grid-cols-[minmax(0,1fr)_minmax(3rem,30%)_auto] items-center gap-2 border-t border-white/5 py-1 text-[12px]">
-            <span className="truncate">{name(s.from)} → {name(s.to)}</span>
+          <li key={`${s.from}|${s.to}`} data-testid="stretch" className="grid grid-cols-[minmax(0,1fr)_minmax(3rem,30%)_auto] items-center gap-2 border-t border-white/5 text-[12px]">
+            <button type="button" data-testid="stretch-station" aria-label={`Station ${name(s.from)}`} onClick={() => onStation(s.from)}
+              className="min-h-7 truncate rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">{name(s.from)} → {name(s.to)}</button>
             <span className="relative block h-2.5 rounded bg-white/10">
               {s.p80 !== undefined ? <span className="absolute inset-y-0 left-0 rounded bg-sky-900" style={{ width: `${(s.p80 / max) * 100}%` }} /> : null}
               <span className={`absolute inset-y-0 left-0 rounded ${s.thin ? "bg-amber-400" : "bg-sky-400"}`} style={{ width: `${(s.median / max) * 100}%` }} />
@@ -197,6 +198,101 @@ function LineDetail({ system, route, cell, colors, statics }: { system: System; 
   );
 }
 
+const NO_BY_ROUTE: Record<string, Segment[]> = {};
+/**
+ * Stations: how much is learned at each, least first, and one station up close: per line and
+ * direction, the dwell there and the stretch in from the previous stop and out to the next.
+ * Subway reads every line in one request and groups a complex's station ids; a bus stop is
+ * shown for the chosen route.
+ */
+function StationPanel({ system, route, cell, statics, colors, picked, onPick }: { system: System; route?: string; cell: Cell; statics?: SubwayStatic; colors?: SubwayStatic["routes"]; picked: string | null; onPick: (stop: string | null) => void }) {
+  const now = nyHourOfWeek(new Date());
+  const dow = cell ? dowOf(cell.sched) : now.dow, hour = cell ? cell.band : now.hour;
+  const lines = useMemo(() => Object.keys(statics?.routes ?? {}).filter((r) => /^[A-Za-z0-9]{1,4}$/.test(r)).sort().slice(0, 50), [statics]);
+  const path = system === "subway"
+    ? `/api/transit-segments/all?${new URLSearchParams({ routes: lines.join(","), dow: String(dow), hour: String(hour) })}`
+    : `/api/transit-bus-segments?${new URLSearchParams({ route: route ?? "", dow: String(dow), hour: String(hour) })}`;
+  const q = useQuery({
+    queryKey: ["tracker-health", system === "subway" ? "stations" : "line", path],
+    queryFn: () => getJson<{ routes?: Record<string, Segment[]>; segments?: Segment[] }>(API + path),
+    staleTime: 5 * 60_000, retry: 1, enabled: system === "subway" ? lines.length > 0 : !!route,
+  });
+  const stops = useQuery({ queryKey: ["transit", "bus-route", route], queryFn: () => getJson<BusRoute>(`${API}/api/transit/bus-route?${new URLSearchParams({ route: route ?? "" })}`), staleTime: Infinity, retry: 0, enabled: system === "bus" && !!route });
+  const [all, setAll] = useState(false);
+  const data = q.data;
+  const byRoute = useMemo(() => {
+    if (!data) return NO_BY_ROUTE;
+    if (system === "bus") return { [route ?? ""]: data.segments ?? NO_SEGMENTS };
+    return Object.fromEntries(Object.entries(data.routes ?? {}).map(([r, rows]) => [r, byPlatform(rows)]));
+  }, [data, system, route]);
+  const info = useMemo((): StationInfo[] => (system === "subway"
+    ? (statics?.stations.features ?? []).map((f) => ({ id: f.properties.id, name: f.properties.name, lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], routes: f.properties.routes.split(" ").filter(Boolean) }))
+    : (stops.data?.stops ?? []).map((s) => ({ id: s.id.replace(/^MTA_/, ""), name: s.name, lon: s.lon, lat: s.lat, routes: route ? [route] : [] }))), [system, statics, stops.data, route]);
+  const groups = useMemo(() => (system === "subway" ? complexes(info) : new Map(info.map((s) => [s.id, s.id]))), [system, info]);
+  const keyOf = (stop: string) => groups.get(stationOf(system, stop));
+  const names = useMemo(() => new Map(info.map((s) => [s.id, s.name])), [info]);
+  const totals = useMemo(() => {
+    const merged = new Map<string, { key: string; name: string; routes: string[] }>();
+    for (const s of info) {
+      const key = groups.get(s.id) ?? s.id;
+      const m = merged.get(key) ?? { key, name: s.name, routes: [] };
+      m.routes = [...new Set([...m.routes, ...s.routes])];
+      merged.set(key, m);
+    }
+    return stationTotals(byRoute, [...merged.values()], (stop) => groups.get(stationOf(system, stop)));
+  }, [byRoute, info, groups, system]);
+  const key = picked ? keyOf(picked) : undefined;
+  const station = totals.find((t) => t.key === key);
+  const here = useMemo(() => stationLines(byRoute, (stop) => key !== undefined && groups.get(stationOf(system, stop)) === key), [byRoute, key, groups, system]);
+  const name = (stop: string) => names.get(stationOf(system, stop)) ?? stop;
+  const timed = (t?: { stop: string; median: number; n: number }) => (t ? <><span className={t.n < 5 ? "text-amber-300" : ""}>{clock(t.median)}</span> <span className="text-white/60">n {t.n}</span></> : <span className="text-white/40">–</span>);
+  const none = totals.filter((t) => t.samples === 0).length, thin = totals.filter((t) => t.samples > 0 && t.thin > 0).length;
+  const shown = all ? totals : totals.slice(0, 20);
+  return (
+    <Section title="Stations" id="stations" aside={station ? <button type="button" data-testid="station-clear" className={chip(false)} onClick={() => onPick(null)}>All stations</button> : undefined}>
+      {q.isError ? <p role="alert" className="text-[13px] text-amber-300">Could not load.</p> : null}
+      {station ? (
+        <div data-testid="station-detail">
+          <p className="mb-1 text-[14px] font-semibold">{station.name}</p>
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[12px] tabular-nums">
+            {here.map((l) => (
+              <div key={`${l.route}|${l.dir}`} data-testid="station-line" className="col-span-2 grid grid-cols-subgrid items-start border-t border-white/5 pt-1">
+                <Bullet route={l.route} colors={system === "subway" ? colors : undefined} />
+                <div className="min-w-0">
+                  <p className="truncate text-white/75">{l.next ? `to ${name(l.next.stop)}` : l.prev ? `from ${name(l.prev.stop)}, last stop` : "dwell only"}</p>
+                  <p className="flex flex-wrap gap-x-3">
+                    <span>in {timed(l.prev)}</span>
+                    <span>dwell {timed(l.dwell ? { stop: l.stop, ...l.dwell } : undefined)}</span>
+                    <span>out {timed(l.next)}</span>
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {data && !here.length ? <p className="text-[13px] text-white/70">No learned times here.</p> : null}
+        </div>
+      ) : (
+        <>
+          <p data-testid="station-total" className="mb-1 text-[12px] tabular-nums text-white/80">{totals.length} {system === "subway" ? "stations" : `stops on ${route ?? ""}`} · {none} with no data · {thin} with a line under 5 samples · least first</p>
+          <ul className="max-h-[22rem] overflow-y-auto pr-1">
+            {shown.map((t) => (
+              <li key={t.key}>
+                <button type="button" data-testid="station-row" onClick={() => onPick(t.key)}
+                  className="grid min-h-8 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border-t border-white/5 px-1 text-left text-[12px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">
+                  <span className="truncate">{t.name}{system === "subway" ? <span className="ml-1 text-white/55">{t.routes.join(" ")}</span> : null}</span>
+                  <span className={`whitespace-nowrap tabular-nums ${t.samples === 0 ? "text-rose-300" : t.thin ? "text-amber-300" : "text-white/85"}`}>{t.samples === 0 ? "no data" : `${t.lines} lines · ${t.thin} thin · ${short(t.samples)}`}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {totals.length > 20 ? <button type="button" data-testid="station-all" className={`${chip(false)} mt-1`} onClick={() => setAll(!all)}>{all ? "Fewest 20" : `All ${totals.length}`}</button> : null}
+        </>
+      )}
+      <Source url={path} at={q.dataUpdatedAt || undefined} note={`${cell ? "" : "now · "}in = from the previous stop · out = to the next${system === "subway" ? " · same name within 400 m is one station" : ""}`} />
+    </Section>
+  );
+}
+
 export default function TrackerHealthPage() {
   // The static chat bar from index.html belongs to the map screen.
   useEffect(() => { removeShell(); }, []);
@@ -205,6 +301,7 @@ export default function TrackerHealthPage() {
   const [sort, setSort] = useState<"samples" | "coverage">("samples");
   const [cell, setCell] = useState<Cell>(null);
   const [all, setAll] = useState(false);
+  const [station, setStation] = useState<string | null>(null);
   const url = "/api/transit-health/coverage";
   const cov = useQuery({ queryKey: ["tracker-health", "coverage"], queryFn: () => getJson<Coverage>(API + url), staleTime: 5 * 60_000, retry: 1 });
   const statics = useQuery({ queryKey: ["transit", "static", "subway"], queryFn: () => getJson<SubwayStatic>("/transit/subway.json"), staleTime: Infinity, retry: 0 }).data;
@@ -257,7 +354,7 @@ export default function TrackerHealthPage() {
           <Link to="/" data-testid="tracker-health-back" aria-label="Back to the map" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"><ArrowLeft size={18} aria-hidden /></Link>
           <h1 className="mr-auto text-lg font-bold">Tracker health</h1>
           <div role="tablist" aria-label="System" className="flex gap-1">
-            {SYSTEMS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={system === id} data-testid={`system-${id}`} className={chip(system === id)} onClick={() => { setAll(false); setParams({ system: id }, { replace: true }); }}>{label}</button>)}
+            {SYSTEMS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={system === id} data-testid={`system-${id}`} className={chip(system === id)} onClick={() => { setAll(false); setStation(null); setParams({ system: id }, { replace: true }); }}>{label}</button>)}
           </div>
         </header>
 
@@ -309,7 +406,8 @@ export default function TrackerHealthPage() {
               </div>
               <Source url={url} at={cov.dataUpdatedAt || undefined} note="bands as the server pools them" />
             </Section>
-            {route ? <LineDetail key={`${system}-${route}`} system={system} route={route} cell={cell} colors={statics?.routes} statics={statics} /> : null}
+            {route ? <LineDetail key={`${system}-${route}`} system={system} route={route} cell={cell} colors={statics?.routes} statics={statics} onStation={setStation} /> : null}
+            <StationPanel key={`st-${system}-${system === "bus" ? route : ""}`} system={system} route={route} cell={cell} statics={statics} colors={statics?.routes} picked={station} onPick={setStation} />
           </div>
         </div>
 
