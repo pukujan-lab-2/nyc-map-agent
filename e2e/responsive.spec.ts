@@ -45,6 +45,18 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
+    test("home shows the red Record button inside the layout bar", async ({ page }) => {
+      await open(page);
+      await expect(page.getByTestId("open-recorder")).toBeVisible();
+      await expectLayout(page);
+    });
+
+    test("the Record button opens /record", async ({ page }) => {
+      await open(page);
+      await page.getByTestId("open-recorder").click();
+      await expect(page).toHaveURL(/\/record$/);
+    });
+
     test("home with the live trains moving", async ({ page }) => {
       await open(page);
       await expect(page.getByTestId("agent-bar")).toBeVisible();
@@ -151,11 +163,24 @@ for (const size of SIZES) {
         // The bar and the chat under it leave most of the screen to the map.
         expect(box.height).toBeLessThan(size.height * 0.3);
       }
+      // A small north-up map of the trip stays in the corner the whole way, as it does for a followed train (2026-11-13).
+      const mini = page.getByRole("button", { name: /^Map of the trip/ });
+      await expect(mini).toBeVisible();
       await page.waitForTimeout(900);
       await expectLayout(page);
       // Change view names the preview's own view for what it is: a walk through your eyes, not a flat map.
       await page.getByRole("button", { name: "Change view", exact: true }).first().click();
       await expect(page.getByRole("menuitemradio", { name: /Walkthrough/ })).toHaveAttribute("aria-checked", "true");
+      await expectLayout(page);
+      // The mini map steps aside while Change view is open, and is back once a view is picked.
+      await expect(mini).toBeHidden();
+      await page.getByRole("menuitemradio", { name: /Chase/ }).click();
+      await expect(mini).toBeVisible();
+      await expectLayout(page);
+      // Tapping it goes to the flat map, as it does when following a train; it stays in the corner.
+      await mini.click();
+      await expect(page.getByRole("button", { name: "Change view", exact: true }).first()).toBeVisible();
+      await expect(mini).toBeVisible();
       await expectLayout(page);
     });
 
@@ -211,23 +236,26 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
-    // The dollhouse view of the Fulton St walk (#129) draws in the map and leaves every control usable.
+    // The dollhouse view of each station model's walk (#129: Fulton St, then Brooklyn Bridge–City Hall
+    // and Atlantic Av–Barclays Ctr) draws in the map and leaves every control usable.
     test("the dollhouse view of a station walk", async ({ page }) => {
       await open(page);
       await page.waitForFunction(() => "__dollhouse" in window, undefined, { timeout: 20_000 });
-      for (const at of [0, 0.6, 1]) {
-        await page.evaluate(async (f) => {
-          const w = window as unknown as { __dollhouse: (o: { at: number }) => Promise<() => void>; __stopDollhouse?: () => void };
+      const views: Array<[string, number]> = [["fulton", 0], ["fulton", 0.6], ["fulton", 1], ["cityhall", 0.5], ["barclays", 0.5]];
+      for (const [station, at] of views) {
+        await page.evaluate(async ([s, f]) => {
+          const w = window as unknown as { __dollhouse: (o: { at: number; station: string }) => Promise<() => void>; __stopDollhouse?: () => void };
           w.__stopDollhouse?.();
-          w.__stopDollhouse = await w.__dollhouse({ at: f });
-        }, at);
+          w.__stopDollhouse = await w.__dollhouse({ at: f, station: s });
+        }, [station, at] as const);
         expect(await page.evaluate(() => Boolean((window as unknown as { __map: { getLayer: (id: string) => unknown } }).__map.getLayer("dollhouse")))).toBe(true);
         await expectLayout(page);
       }
     });
 
     // Fulton St's card offers Walk inside (#126); the walk fills the screen with its back button and,
-    // on a screen without touch, the keys hint; Back to the map closes it.
+    // on a screen without touch, the keys hint; Back to the map closes it. The walls and ceilings it
+    // draws are the ones baked from the model (pnpm build:station-shell).
     test("walking inside Fulton St", async ({ page }) => {
       await open(page);
       // Open the card the way a map tap does, so it carries the station's details.
@@ -238,7 +266,9 @@ for (const size of SIZES) {
       const walkInside = page.getByTestId("walk-inside");
       await expect(walkInside).toBeVisible({ timeout: 15_000 });
       await expectLayout(page);
+      const shell = page.waitForResponse((r) => r.url().endsWith("/transit/fulton-shell.json"));
       await walkInside.click();
+      expect((await shell).ok()).toBe(true);
       const walk = page.getByTestId("station-walk");
       await expect(walk).toBeVisible();
       await expect(walk.locator("canvas")).toBeVisible({ timeout: 30_000 });
@@ -250,7 +280,7 @@ for (const size of SIZES) {
     // The station model's source is credited in the map's credits at every size.
     test("the map credits the station model's source", async ({ page }) => {
       await open(page);
-      await expect(page.locator(".maplibregl-ctrl-attrib")).toContainText("Project Subway NYC", { timeout: 15_000 });
+      await expect(page.locator(".maplibregl-ctrl-attrib")).toContainText("Project Subway NYC (projectsubwaynyc.com)", { timeout: 15_000 });
       await expectLayout(page);
     });
 
