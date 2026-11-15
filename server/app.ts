@@ -28,6 +28,7 @@ import * as agent from "./features/agent/routes";
 import { transcribe } from "./features/agent/stt";
 import { speak, startVoiceKeeper } from "./features/agent/tts";
 import { translate } from "./features/agent/translate";
+import { startSpeechCacheKeeper } from "./features/agent/speechCache";
 import { seeSign } from "./features/agent/seeSign";
 import * as transit from "./features/transit/routes";
 import * as transitSegments from "./features/transit/segments";
@@ -157,6 +158,14 @@ app.openapi(toV1Route(LIVE_WATCH_ROUTE), liveWatchHandler as never);
 app.openapi(legacyAlias(LIVE_WATCH_ROUTE), liveWatchHandler as never);
 // Keep the speech server on our stack so the first spoken answer is not the one that waits for a model swap.
 startVoiceKeeper();
+// The speech and translation caches (#218): prune hourly. A notice counts as in the feed when it is in effect at any
+// time in the next eight days, so this weekend's work opened on a weekday is not taken for withdrawn. A feed that
+// could not be read, or came back empty, says nothing.
+startSpeechCacheKeeper(async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const ids = new Set((await transit.loadAlertsBetween(now, now + 8 * 86_400)).alerts.map((a) => a.id));
+  return ids.size ? ids : null;
+});
 
 const docConfig = { openapi: "3.1.0", info: API_INFO };
 app.doc31("/api/v1/openapi.json", docConfig);

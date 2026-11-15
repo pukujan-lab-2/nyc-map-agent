@@ -366,6 +366,17 @@ describe("offline cache list (public/sw.js)", () => {
     expect(keptKey("/api/agent/translate", body("en"), "https://map.test")).not.toBe(a);
   });
 
+  it("keeps 200 answers and drops one not used for 14 days (#218)", () => {
+    const { KEPT_MAX, keptStale } = self.UW as unknown as { KEPT_MAX: number; keptStale: (usedAt: string | null, now: number) => boolean };
+    const now = Date.parse("2026-11-15T12:00:00Z");
+    const day = 24 * 3600 * 1000;
+    expect(KEPT_MAX).toBe(200);
+    expect(keptStale(String(now - 15 * day), now)).toBe(true);
+    expect(keptStale(String(now - 13 * day), now)).toBe(false);
+    // One kept before answers were stamped is used, and stamped then.
+    expect(keptStale(null, now)).toBe(false);
+  });
+
   it("drops built files from deploys more than 30 days old, and keeps undated ones", () => {
     const now = Date.parse("2026-11-12T12:00:00Z");
     expect(staleAsset("Mon, 05 Oct 2026 12:00:00 GMT", now)).toBe(true);

@@ -195,6 +195,8 @@ export function LinePanel({ map, route, onFollow, trains = () => [] }: { map: Ma
             {notices.map((n) => {
               const open = n.id === picked;
               const tone = TONE[n.tone];
+              // A service alert or an elevator or escalator notice opens as a card of spoken steps; a held train says it in its row.
+              const walked = Boolean(n.alert || n.outages);
               return (
                 <li key={n.id} className="flex flex-col gap-1.5">
                   <button type="button" aria-expanded={open} data-notice={n.id} onClick={(e) => {
@@ -202,21 +204,23 @@ export function LinePanel({ map, route, onFollow, trains = () => [] }: { map: Ma
                       setTapped(open ? null : n.id);
                       // An alert opens as its diagram under the title: bring both into the sheet's view.
                       const row = e.currentTarget.parentElement;
-                      if (!open && n.alert) requestAnimationFrame(() => row?.scrollIntoView({ block: "start", behavior: "smooth" }));
+                      if (!open && walked) requestAnimationFrame(() => row?.scrollIntoView({ block: "start", behavior: "smooth" }));
                     }}
                     className="flex w-full items-start gap-2.5 rounded-[14px] border px-3 py-2.5 text-left text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]"
                     style={{ borderColor: open ? "rgba(96,165,250,0.6)" : "rgba(148,163,184,0.16)", background: open ? "rgba(37,99,235,0.22)" : "rgba(15,23,42,0.35)" }}>
                     <NoticeIcon kind={noticeKind(`${n.title} ${n.body}`, { kind: n.alert?.kind ?? (n.tone === "delay" ? "delay" : undefined), reroute: n.alert?.reroute })} color={tone.dot} className="mt-[2px] h-4 w-4 shrink-0" />
                     <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
                       {/* Closed: one line each; the full text opens on tap. An open alert keeps its one-line label: its card says it all, the dates too (#198). */}
-                      <span className={`font-semibold ${open && !n.alert ? "" : "truncate"}`}>{n.title}</span>
-                      {n.meta && !(open && n.alert?.period) ? <span className={`text-[13px] text-[#cbd5e1] ${open ? "" : "truncate"}`}>{n.meta}</span> : null}
-                      {open && !n.alert && n.body !== n.title ? <span className="mt-1 whitespace-pre-line text-[13px] leading-[1.45] text-[#e2e8f0]">{n.body}</span> : null}
+                      <span className={`font-semibold ${open && !walked ? "" : "truncate"}`}>{n.title}</span>
+                      {n.meta && !(open && (n.alert?.period || n.outages)) ? <span className={`text-[13px] text-[#cbd5e1] ${open ? "" : "truncate"}`}>{n.meta}</span> : null}
+                      {open && !walked && n.body !== n.title ? <span className="mt-1 whitespace-pre-line text-[13px] leading-[1.45] text-[#e2e8f0]">{n.body}</span> : null}
                     </span>
                     <span aria-hidden className="mt-0.5 text-[#a5b4cb] transition-transform" style={{ transform: `rotate(${open ? 180 : 0}deg)` }}>⌄</span>
                   </button>
                   {/* A service alert opens as its stretch of line, read aloud when tapped (owner, 2026-11-07). */}
                   {open && n.alert ? <Suspense fallback={null}><NoticeDiagram alert={n.alert} sys={sys} route={route} color={color} auto={tapped === n.id} /></Suspense> : null}
+                  {/* So does an elevator or escalator notice (owner, 2026-11-14). */}
+                  {open && n.outages ? <Suspense fallback={null}><NoticeDiagram outages={n.outages} at={n.stations[0]?.id} sys={sys} route={route} color={color} auto={tapped === n.id} /></Suspense> : null}
                 </li>
               );
             })}

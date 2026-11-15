@@ -90,6 +90,7 @@ Heavy code is reached only through dynamic `import()` so each feature is its own
 | Camera height (#47), mobile panel (#66) | in flight | — | — | — | — | — |
 
 Octo itself: `OCTO_BASE_URL`, `OCTO_API_KEY`, `OCTO_WORKSPACE_ID` (server and GitHub Actions only).
+The speech cache (#218): `SPEECH_CACHE_DIR` (the folder for saved sound; unset means nothing is kept) and `TTS_MODEL_VERSION` (part of each saved sound's key).
 Dev/ops: `VITE_API_BASE`, `PORT`, `OCTO_ENV_FILE`, `INGEST_MONTHS`, `LIVE_SOCRATA`, `CITY`,
 `CITY_TILES_FILE`, `PART_MB`, `AREA_SIMPLIFY`, `SOCRATA_BASE`, `SABLIER_URL` (VPS only: wakes the
 sleeping trip planner and walking routes, see "Sleeping when idle" in `deploy/README.md`).

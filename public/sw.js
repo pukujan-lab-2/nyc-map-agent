@@ -25,10 +25,12 @@ const PRECACHE = ["/", "/favicon.svg", "/transit/subway.json", "/transit/equipme
 const NAV_TIMEOUT_MS = 3500;
 /** The same for station data, when a saved copy exists; with none, it waits for the network. */
 const DATA_TIMEOUT_MS = 4000;
-/** Trip steps' translations and voice (#132); a new version drops the old. */
+/** Trip and notice steps' translations and voice (#132, #218); a new version drops the old. */
 const KEPT_CACHE = "nyc-map-kept-v1";
-/** Answers kept, oldest out first; a spoken line is about 150 KB, so a few trips' walks. */
-const KEPT_MAX = 120;
+/** Answers kept, least recently used out first; a spoken line is about 150 KB, so about 30 MB of sound. */
+const KEPT_MAX = 200;
+/** A kept answer not used for this long is dropped (the server's rule too, #218). */
+const KEPT_MAX_AGE_MS = 14 * 24 * 3600 * 1000;
 /** The POSTs a page may mark `x-keep`. */
 const KEPT_PATHS = ["/api/tts", "/api/agent/translate"];
 /** Built files older than this are dropped when a new worker starts; one a page still asks for is fetched again. */
@@ -67,6 +69,16 @@ function staleAsset(date, now, maxAge = ASSET_MAX_AGE_MS) {
 }
 
 /**
+ * Whether a kept answer is too old to use: last used more than `maxAge` before `now`.
+ * One with no time (kept before #218) counts as fresh. Pure, for the tests.
+ * @param {string | null} usedAt
+ */
+function keptStale(usedAt, now, maxAge = KEPT_MAX_AGE_MS) {
+  const t = Number(usedAt);
+  return Boolean(usedAt) && Number.isFinite(t) && now - t > maxAge;
+}
+
+/**
  * Where a kept answer is saved: the path and the request body (the text and the language) in the URL.
  * @param {string} body
  */
@@ -74,7 +86,7 @@ function keptKey(path, body, origin) {
   return `${origin}/__kept/v1${path}?${encodeURIComponent(body)}`;
 }
 
-self.UW = { VERSION, CACHE, TILE_CACHE, KEPT_CACHE, PRECACHE, strategyFor, staleAsset, keptKey };
+self.UW = { VERSION, CACHE, TILE_CACHE, KEPT_CACHE, KEPT_MAX, PRECACHE, strategyFor, staleAsset, keptKey, keptStale };
 
 async function put(req, res) {
   if (!res || !res.ok || res.type === "opaque") return res;
@@ -112,23 +124,48 @@ async function pruneAssets() {
   }
 }
 
-/** A kept answer: the saved one when there is one, else the server's, saved once it has all arrived. */
+/** A copy of a response stamped with when it was last used, saved at the end of the kept list. */
+async function keepNow(cache, key, res) {
+  const headers = new Headers(res.headers);
+  headers.set("x-kept-used", String(Date.now()));
+  await cache.delete(key);
+  await cache.put(key, new Response(await res.arrayBuffer(), { status: 200, headers }));
+  // Least recently used first out: the list is in the order answers were last saved.
+  const keys = await cache.keys();
+  await Promise.all(keys.slice(0, Math.max(0, keys.length - KEPT_MAX)).map((k) => cache.delete(k)));
+}
+
+/**
+ * A kept answer: the saved one when there is one and it was used in the last 14 days, else the
+ * server's, saved once it has all arrived. Using one moves it to the end of the list.
+ */
 async function kept(event) {
   const key = keptKey(new URL(event.request.url).pathname, await event.request.clone().text(), self.location.origin);
   const cache = await caches.open(KEPT_CACHE);
   const hit = await cache.match(key);
-  if (hit) return hit;
-  const res = await fetch(event.request);
-  if (res.status === 200) {
-    event.waitUntil(
-      cache
-        .put(key, res.clone())
-        .then(() => cache.keys())
-        .then((keys) => Promise.all(keys.slice(0, Math.max(0, keys.length - KEPT_MAX)).map((k) => cache.delete(k))))
-        .catch(() => undefined), // cut short or full: not kept
-    );
+  if (hit && !keptStale(hit.headers.get("x-kept-used"), Date.now())) {
+    event.waitUntil(keepNow(cache, key, hit.clone()).catch(() => undefined));
+    return hit;
   }
+  let res;
+  try {
+    res = await fetch(event.request);
+  } catch (e) {
+    // No signal: an old copy is better than silence.
+    if (hit) return hit;
+    throw e;
+  }
+  if (res.status === 200) event.waitUntil(keepNow(cache, key, res.clone()).catch(() => undefined)); // cut short or full: not kept
   return res;
+}
+
+/** Drop kept answers nobody used for 14 days, when a new worker starts. */
+async function dropStaleKept(now = Date.now()) {
+  const cache = await caches.open(KEPT_CACHE);
+  for (const req of await cache.keys()) {
+    const res = await cache.match(req);
+    if (res && keptStale(res.headers.get("x-kept-used"), now)) await cache.delete(req);
+  }
 }
 
 async function cacheFirst(request) {
@@ -152,6 +189,7 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => k.startsWith("nyc-map-offline-") && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => pruneAssets().catch(() => undefined))
+      .then(() => dropStaleKept().catch(() => undefined))
       .then(() => self.clients.claim()),
   );
 });
