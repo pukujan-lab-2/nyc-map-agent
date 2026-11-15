@@ -189,6 +189,29 @@ Blocked/uncertain:
 Next:
 - After it merges, run nyc-job.sh update on the VPS between runs and read the first rows with conditions; then show the splits, stops and hours on the page
 
+### 2026-11-15 05:30:24 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["A bounded import of the MTA's published bus speeds and an endpoint that serves them are on a pushed branch"],"decisions":["no new decisions"],"evidence":["72 unit tests in the transit server folder pass; the migration ran in a rolled-back transaction; one route's query returns about 1,000 rows in 5 s"],"next_action":"Open its pull request once the conditions pull request merges; then show the conditions, stops, hours and the MTA comparison on the page","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T05:30:24Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1927f516979fd34591d883cecb171cfd2d1b0436b2ff98c76eed8165802170d1","request_id":"31dd8f94c90648dfa30cb52b90fece4a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- A bounded import of the MTA's published bus speeds and an endpoint that serves them are on a pushed branch
+
+Evidence:
+- 72 unit tests in the transit server folder pass; the migration ran in a rolled-back transaction; one route's query returns about 1,000 rows in 5 s
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open its pull request once the conditions pull request merges; then show the conditions, stops, hours and the MTA comparison on the page
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
