@@ -9,8 +9,10 @@
  * With no folder set nothing is stored and the routes work as before; with no database the files still
  * serve, and are pruned by their own age and size.
  *
- * Only lines the app names a source for are kept: a notice's steps and a trip's steps. An answer from
- * the chat read aloud is never stored.
+ * Only lines the page names a source for are kept, and today that is a notice's steps: the MTA's public
+ * text and our plain summary of it. A trip's steps can name where a rider is going, so the page names
+ * no source for them and they stay on the phone; the tables allow 'trip_step' for the day they can be
+ * told apart. An answer from the chat read aloud is never stored.
  */
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readdir, rename, rm, stat, utimes, writeFile } from "node:fs/promises";
@@ -177,13 +179,17 @@ export function planPrune(entries: Entry[], now: number, liveNotices: Set<string
   return plan;
 }
 
-type Row = { key: string; source_kind: SourceKind; source_id: string | null; last_used_at: string; gone_at: string | null; bytes?: number };
-const toEntry = (r: Row): Entry => ({ key: r.key, sourceKind: r.source_kind, sourceId: r.source_id, lastUsedAt: Date.parse(r.last_used_at), goneAt: r.gone_at ? Date.parse(r.gone_at) : null, bytes: Number(r.bytes ?? 0) });
+/** Times as milliseconds, so nothing depends on how a timestamp is written out. */
+type Row = { key: string; source_kind: SourceKind; source_id: string | null; used_ms: number | string; gone_ms: number | string | null; bytes?: number | string };
+const toEntry = (r: Row): Entry => ({ key: r.key, sourceKind: r.source_kind, sourceId: r.source_id, lastUsedAt: Number(r.used_ms), goneAt: r.gone_ms === null || r.gone_ms === undefined ? null : Number(r.gone_ms), bytes: Number(r.bytes ?? 0) });
+const TIMES = "(extract(epoch FROM last_used_at) * 1000)::float8 AS used_ms, (extract(epoch FROM gone_at) * 1000)::float8 AS gone_ms";
+/** The database, as the prune uses it; the tests pass their own. */
+export type Query = <T>(sql: string, params?: unknown[]) => Promise<{ rows: T[] }>;
 
-async function applyPlan(table: string, plan: PrunePlan): Promise<void> {
-  if (plan.markGone.length) await octoQuery(`UPDATE ${table} SET gone_at = now() WHERE key = ANY($1::text[])`, [plan.markGone]);
-  if (plan.back.length) await octoQuery(`UPDATE ${table} SET gone_at = NULL WHERE key = ANY($1::text[])`, [plan.back]);
-  if (plan.remove.length) await octoQuery(`DELETE FROM ${table} WHERE key = ANY($1::text[])`, [plan.remove]);
+async function applyPlan(q: Query, table: string, plan: PrunePlan): Promise<void> {
+  if (plan.markGone.length) await q(`UPDATE ${table} SET gone_at = now() WHERE key = ANY($1::text[])`, [plan.markGone]);
+  if (plan.back.length) await q(`UPDATE ${table} SET gone_at = NULL WHERE key = ANY($1::text[])`, [plan.back]);
+  if (plan.remove.length) await q(`DELETE FROM ${table} WHERE key = ANY($1::text[])`, [plan.remove]);
 }
 
 /**
@@ -191,27 +197,30 @@ async function applyPlan(table: string, plan: PrunePlan): Promise<void> {
  * With a database: the plan above for both tables, then files with no row and rows with no file are
  * removed (the folder is safe to delete: its rows go here). Without one: files by their own age and size.
  */
-export async function pruneOnce(liveNotices: () => Promise<Set<string> | null>, env = process.env, log: (m: string) => void = console.warn, now = Date.now()): Promise<string> {
+export async function pruneOnce(liveNotices: () => Promise<Set<string> | null>, env = process.env, log: (m: string) => void = console.warn, now = Date.now(), query?: Query): Promise<string> {
+  const q: Query | null = query ?? (hasDb(env) ? (sql, params) => octoQuery(sql, params) : null);
   const dir = cacheDir(env);
   let line: string;
   try {
-    await flushHits(env);
+    if (!query) await flushHits(env);
     const files = new Map<string, string>();
     if (dir) for (const f of await readdir(dir).catch(() => [] as string[])) { const m = FILE.exec(f); if (m) files.set(m[1], f); }
     const del = async (keys: string[]) => { for (const k of keys) { const f = files.get(k); if (f) await rm(join(dir, f), { force: true }); files.delete(k); } };
-    if (hasDb(env)) {
+    if (q) {
       const live = await liveNotices().catch(() => null);
-      const audio = (await octoQuery<Row>("SELECT key, source_kind, source_id, last_used_at, gone_at, bytes FROM core.tts_cache")).rows.map(toEntry);
+      const audio = (await q<Row>(`SELECT key, source_kind, source_id, bytes, ${TIMES} FROM core.tts_cache`)).rows.map(toEntry);
+      // A row we cannot read a time from would look idle for ever: stop before anything is deleted.
+      if (audio.some((e) => !Number.isFinite(e.lastUsedAt))) throw new Error("a row's last_used_at could not be read");
       // A row whose file is gone is a miss already: drop the row.
       const lost = dir ? audio.filter((e) => !files.has(e.key)).map((e) => e.key) : [];
       const plan = planPrune(audio.filter((e) => !lost.includes(e.key)), now, live);
-      await applyPlan("core.tts_cache", { ...plan, remove: [...plan.remove, ...lost] });
+      await applyPlan(q, "core.tts_cache", { ...plan, remove: [...plan.remove, ...lost] });
       await del(plan.remove);
       const known = new Set(audio.map((e) => e.key));
       const orphans = [...files.keys()].filter((k) => !known.has(k));
       await del(orphans);
-      const tr = planPrune((await octoQuery<Row>("SELECT key, source_kind, source_id, last_used_at, gone_at FROM core.translation_cache")).rows.map(toEntry), now, live, Infinity);
-      await applyPlan("core.translation_cache", tr);
+      const tr = planPrune((await q<Row>(`SELECT key, source_kind, source_id, ${TIMES} FROM core.translation_cache`)).rows.map(toEntry), now, live, Infinity);
+      await applyPlan(q, "core.translation_cache", tr);
       const left = audio.length - plan.remove.length - lost.length;
       line = `[speech-cache] prune: sounds ${left} kept, ${plan.remove.length} removed (idle ${plan.reasons.idle}, withdrawn ${plan.reasons.withdrawn}, size ${plan.reasons.size}), ${lost.length} rows without a file, ${orphans.length} files without a row; translations ${tr.remove.length} removed (idle ${tr.reasons.idle}, withdrawn ${tr.reasons.withdrawn})${live ? "" : "; feed not read, withdrawn notices left for the next run"}`;
     } else if (dir) {

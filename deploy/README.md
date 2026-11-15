@@ -35,6 +35,8 @@ STT_PROTOCOL=speech
 STT_STACK=multilingual
 ```
 
+Spoken notice steps are kept so each is made once (#218). The compose file sets `SPEECH_CACHE_DIR=/data/speech-cache` on the `speech-cache` volume; the app prunes it to 300 MB every hour, and the folder can be deleted at any time. Set `TTS_MODEL_VERSION` (default `kokoro-1`) to a new value whenever the speech model or its voice changes, so no old sound is played; phones keep their own copies for up to 14 days, so rename `KEPT_CACHE` in `public/sw.js` in the same change.
+
 Nothing goes to an outside service. Which machine takes a language, and what happens when every machine is full, is decided in the gateway's `demo/live-site/speech/gateway/routes.toml` in `voice-agent-research` (its `docs/speech-gateway.md`), not here. For `nyc-map` a full gateway answers 503 at once and the mic says voice is unavailable while typing keeps working; there is no cloud speech fallback. Check it from the VPS with `curl -s http://127.0.0.1:18800/health`, and `curl -s http://127.0.0.1:18800/routes` for the live routes.
 
 ### Public route

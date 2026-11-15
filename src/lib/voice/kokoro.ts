@@ -5,7 +5,7 @@
  * caller speaks with the browser voice instead; a server that failed is not asked again for a minute.
  * A `keep` line (the trip preview's steps, #132) is marked for the offline worker (public/sw.js), which
  * saves its sound and plays it back from the phone when the same line is asked for again. `source`
- * ("notice:<id>" or "trip_step") tells the server the line may be kept there too, for every rider (#218).
+ * ("notice:<id>") tells the server the line is public text it may keep too, for every rider (#218).
  */
 
 /** The app's languages Kokoro has a voice for (the server's TTS_LANGS). */

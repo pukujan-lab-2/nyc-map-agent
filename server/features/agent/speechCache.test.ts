@@ -2,7 +2,7 @@ import { mkdtemp, readdir, readFile, rm, utimes, writeFile } from "node:fs/promi
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { GONE_MS, IDLE_MS, parseSource, planPrune, pruneOnce, readAudio, saveAudio, translationKey, ttsKey, type Entry } from "./speechCache";
+import { GONE_MS, IDLE_MS, parseSource, planPrune, pruneOnce, readAudio, saveAudio, translationKey, ttsKey, type Entry, type Query } from "./speechCache";
 
 const DAY = 24 * 3600 * 1000;
 const NOW = Date.parse("2026-11-15T12:00:00Z");
@@ -104,6 +104,44 @@ describe("the cache folder", () => {
     // Only our own files are touched.
     expect((await readdir(dir)).sort()).toEqual([`${fresh}.24000.pcm`, "notes.txt"]);
     expect(await readFile(join(dir, "notes.txt"), "utf8")).toBe("not ours");
+    await rm(dir, { recursive: true });
+  });
+
+  // The database branch deletes files, so it is tested against rows as the database returns them.
+  it("with a database, removes what the rules say, rows with no file and files with no row, and nothing else", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "speech-cache-"));
+    const env = { SPEECH_CACHE_DIR: dir } as unknown as NodeJS.ProcessEnv;
+    const k = (c: string) => c.repeat(64);
+    for (const c of ["a", "b", "c", "e"]) await writeFile(join(dir, `${k(c)}.24000.pcm`), new Uint8Array(8));
+    const now = Date.parse("2026-11-15T12:00:00Z");
+    const row = (c: string, over: object = {}) => ({ key: k(c), source_kind: "notice", source_id: "n1", bytes: 8, used_ms: now - DAY, gone_ms: null, ...over });
+    const ran: Array<{ sql: string; params?: unknown[] }> = [];
+    const query = ((sql: string, params?: unknown[]) => {
+      ran.push({ sql, params });
+      if (/^SELECT .* FROM core\.tts_cache/.test(sql)) return Promise.resolve({ rows: [row("a"), row("b", { used_ms: now - IDLE_MS - DAY }), row("c", { source_id: "n2", gone_ms: now - GONE_MS - 1000 }), row("d")] });
+      if (/^SELECT .* FROM core\.translation_cache/.test(sql)) return Promise.resolve({ rows: [row("t", { used_ms: String(now - IDLE_MS - DAY) })] });
+      return Promise.resolve({ rows: [] });
+    }) as Query;
+    const line = await pruneOnce(() => Promise.resolve(new Set(["n1"])), env, () => undefined, now, query);
+    expect(line).toBe("[speech-cache] prune: sounds 1 kept, 2 removed (idle 1, withdrawn 1, size 0), 1 rows without a file, 1 files without a row; translations 1 removed (idle 1, withdrawn 0)");
+    // Kept: the fresh one. Gone: the idle one, the withdrawn one, and the file no row knows.
+    expect(await readdir(dir)).toEqual([`${k("a")}.24000.pcm`]);
+    const deleted = ran.filter((r) => /^DELETE FROM core\.tts_cache/.test(r.sql)).flatMap((r) => r.params![0] as string[]);
+    expect(deleted.sort()).toEqual([k("b"), k("c"), k("d")]);
+    expect(ran.find((r) => /^DELETE FROM core\.translation_cache/.test(r.sql))!.params).toEqual([[k("t")]]);
+    await rm(dir, { recursive: true });
+  });
+
+  it("deletes nothing when the database's answer cannot be read", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "speech-cache-"));
+    const env = { SPEECH_CACHE_DIR: dir } as unknown as NodeJS.ProcessEnv;
+    await writeFile(join(dir, `${"a".repeat(64)}.24000.pcm`), new Uint8Array(8));
+    const ran: string[] = [];
+    const query = ((sql: string) => { ran.push(sql); return Promise.resolve({ rows: /tts_cache/.test(sql) ? [{ key: "a".repeat(64), source_kind: "notice", source_id: "n1", bytes: 8 }] : [] }); }) as Query;
+    const line = await pruneOnce(() => Promise.resolve(new Set(["n1"])), env, () => undefined, Date.now(), query);
+    expect(line).toBe("[speech-cache] prune failed: a row's last_used_at could not be read");
+    expect(await readdir(dir)).toHaveLength(1);
+    expect(ran.some((x) => /^(DELETE|UPDATE)/.test(x))).toBe(false);
     await rm(dir, { recursive: true });
   });
 });
