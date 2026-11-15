@@ -166,6 +166,29 @@ Blocked/uncertain:
 Next:
 - After the direction fix deploys, pick the 1 on the live page; then the station view with per-hour counts, stored conditions, the pooling comparison and the MTA bus speeds comparison
 
+### 2026-11-15 05:19:56 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The tracker health page has a Stations card with per-line dwell and neighbouring stretch times"],"decisions":["no new decisions"],"evidence":["12 browser cases pass at four sizes with the station list and detail; 13 unit tests pass"],"next_action":"Per-hour sample counts on the week grid; then conditions stored with each score, the pooling comparison and the MTA bus speeds comparison","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T05:19:56Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f3c9fd32143deaa47d3af4b5584310d6f9a46361f32b8f569dcc9d39315c4672","request_id":"95b3328749254456b6d788bdaf6b3bb5","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The tracker health page has a Stations card with per-line dwell and neighbouring stretch times
+
+Evidence:
+- 12 browser cases pass at four sizes with the station list and detail; 13 unit tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Per-hour sample counts on the week grid; then conditions stored with each score, the pooling comparison and the MTA bus speeds comparison
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
