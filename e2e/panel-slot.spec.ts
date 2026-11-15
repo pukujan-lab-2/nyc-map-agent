@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectLayout } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
@@ -199,4 +200,20 @@ test("follow card stays clear of Layers and Lines stays on the action row", asyn
   await expectFollowChromeClear(page);
   await page.setViewportSize({ width: 1280, height: 800 });
   await expectFollowChromeClear(page);
+});
+
+test("the follow mini map names the bus's next stop, never its stop id", async ({ page }) => {
+  await open(page);
+  // The live feed names the next stop by id only; the bus's own trip has its name.
+  await page.route(/\/api\/transit\/bus$|\/api\/transit\/bus\?/, (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ at: Math.floor(Date.now() / 1000), buses: [{ ...BUS, next: "305423", t: Math.floor(Date.now() / 1000) }] }) }));
+  await page.route(/\/api\/transit\/bus-trip/, (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ found: true, route: "B62", destination: "DOWNTOWN BKLYN", dir: "0", calls: [{ id: "MTA_305423", name: "GREENPOINT AV/MANHATTAN AV", eta: Math.floor(Date.now() / 1000) + 240, away: "2 stops away" }] }) }));
+  await expect.poll(async () => {
+    await tapMap(page, 0.5, BUS_Y);
+    return page.getByTestId("follow-card").count();
+  }, { timeout: slow(30_000) }).toBeGreaterThan(0);
+  await page.getByTestId("view-switcher").getByRole("button", { name: "Chase", exact: true }).click();
+  const mini = page.getByTestId("follow-minimap");
+  await expect(mini).toContainText("Next: Greenpoint Avenue/Manhattan Avenue", { timeout: slow(15_000) });
+  await expect(mini).not.toContainText("305423");
+  await expectLayout(page);
 });
