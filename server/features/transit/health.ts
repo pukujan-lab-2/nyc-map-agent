@@ -46,7 +46,7 @@ export type CoverageResponse = z.infer<typeof CoverageResponse>;
 const Stats = { n: z.number().int(), maeModel: z.number().nullable(), maeBase: z.number().nullable(), w60Model: z.number().nullable(), w60Base: z.number().nullable() };
 const AccuracyRow = z.object({
   system: System,
-  dim: z.enum(["all", "route", "band", "lead", "samples", "rush", "notice", "weather", "traffic"]),
+  dim: z.enum(["all", "route", "band", "lead", "samples"]),
   key: z.string(),
   ...Stats,
   /** The same over predictions a learned time entered, where learned and default can differ. */
@@ -56,9 +56,12 @@ const ThinRow = z.object({ system: System, route: z.string(), dir: z.number().in
 const RunTotals = z.object({ system: System, runs: z.number().int(), opened: z.number().int(), resolved: z.number().int(), unresolved: z.number().int(), stored: z.number().int(), first: z.string().nullable(), last: z.string().nullable() });
 /** A stop the tracker was scored at 5 or more times: the worst-predicted come first. */
 const StopRow = z.object({ system: System, route: z.string(), stop: z.string(), n: z.number().int(), maeModel: z.number(), maeBase: z.number(), w60Model: z.number() });
-export const AccuracyResponse = z.object({ ready: z.boolean(), rows: z.array(AccuracyRow), thin: z.array(ThinRow), runs: z.array(RunTotals), stops: z.array(StopRow) });
+/** Error split by the conditions at the time: `dim` is "rush", "notice", "weather" or "traffic". A list of its own, so `rows` keeps its groups. */
+const ConditionRow = z.object({ system: System, dim: z.string(), key: z.string(), ...Stats, learned: z.object(Stats) });
+export const AccuracyResponse = z.object({ ready: z.boolean(), rows: z.array(AccuracyRow), thin: z.array(ThinRow), runs: z.array(RunTotals), stops: z.array(StopRow), conditions: z.array(ConditionRow) });
 export type AccuracyResponse = z.infer<typeof AccuracyResponse>;
 
+const BASE_DIMS = new Set(["all", "route", "band", "lead", "samples"]);
 /** The view or table is not there yet: the migration has not run. */
 const missing = (err: unknown) => /does not exist|has not been populated/i.test(err instanceof Error ? err.message : String(err));
 const num = (v: unknown) => (v == null ? null : Number(v));
@@ -84,7 +87,7 @@ export async function GET_COVERAGE(): Promise<Response> {
   }
 }
 
-type SummaryRow = { system: "subway" | "bus"; dim: z.infer<typeof AccuracyRow>["dim"]; key: string; n: number; mae_model: number | null; mae_base: number | null; w60_model: number | null; w60_base: number | null; l_n: number; l_mae_model: number | null; l_mae_base: number | null; l_w60_model: number | null; l_w60_base: number | null };
+type SummaryRow = { system: "subway" | "bus"; dim: string; key: string; n: number; mae_model: number | null; mae_base: number | null; w60_model: number | null; w60_base: number | null; l_n: number; l_mae_model: number | null; l_mae_base: number | null; l_w60_model: number | null; l_w60_base: number | null };
 
 export async function GET_ACCURACY(): Promise<Response> {
   try {
@@ -101,20 +104,22 @@ export async function GET_ACCURACY(): Promise<Response> {
     const stops = await octoQuery<{ system: "subway" | "bus"; route: string; to_stop: string; n: number; mae_model: number; mae_base: number; w60_model: number }>(
       "(SELECT * FROM marts.transit_prediction_stops WHERE system = 'subway' ORDER BY mae_model DESC LIMIT 40) UNION ALL (SELECT * FROM marts.transit_prediction_stops WHERE system = 'bus' ORDER BY mae_model DESC LIMIT 40)",
     ).catch((err) => { if (missing(err)) return { rows: [] }; throw err; });
+    const all = summary.rows.map((r) => ({
+      system: r.system, dim: r.dim, key: r.key,
+      n: Number(r.n), maeModel: num(r.mae_model), maeBase: num(r.mae_base), w60Model: num(r.w60_model), w60Base: num(r.w60_base),
+      learned: { n: Number(r.l_n), maeModel: num(r.l_mae_model), maeBase: num(r.l_mae_base), w60Model: num(r.l_w60_model), w60Base: num(r.l_w60_base) },
+    }));
     const body: AccuracyResponse = {
       ready: true,
       stops: stops.rows.map((r) => ({ system: r.system, route: r.route, stop: r.to_stop, n: Number(r.n), maeModel: Number(r.mae_model), maeBase: Number(r.mae_base), w60Model: Number(r.w60_model) })),
-      rows: summary.rows.map((r) => ({
-        system: r.system, dim: r.dim, key: r.key,
-        n: Number(r.n), maeModel: num(r.mae_model), maeBase: num(r.mae_base), w60Model: num(r.w60_model), w60Base: num(r.w60_base),
-        learned: { n: Number(r.l_n), maeModel: num(r.l_mae_model), maeBase: num(r.l_mae_base), w60Model: num(r.l_w60_model), w60Base: num(r.l_w60_base) },
-      })),
+      rows: all.filter((r) => BASE_DIMS.has(r.dim)) as AccuracyResponse["rows"],
+      conditions: all.filter((r) => !BASE_DIMS.has(r.dim)),
       thin: thin.rows.map((r) => ({ system: r.system, route: r.route, dir: Number(r.dir), from: r.from_stop, to: r.to_stop, n: Number(r.n), learnedN: Number(r.learned_n), maeModel: Number(r.mae_model), maeBase: Number(r.mae_base) })),
       runs: runs.rows.map((r) => ({ system: r.system, runs: Number(r.runs), opened: Number(r.opened), resolved: Number(r.resolved), unresolved: Number(r.unresolved), stored: Number(r.stored), first: r.first ? new Date(r.first).toISOString() : null, last: r.last ? new Date(r.last).toISOString() : null })),
     };
     return json(body, { maxAge: 300, browserMaxAge: 120 });
   } catch (err) {
-    if (missing(err)) return json({ ready: false, rows: [], thin: [], runs: [], stops: [] } satisfies AccuracyResponse, { maxAge: 60, browserMaxAge: 30 });
+    if (missing(err)) return json({ ready: false, rows: [], thin: [], runs: [], stops: [], conditions: [] } satisfies AccuracyResponse, { maxAge: 60, browserMaxAge: 30 });
     return fail(err);
   }
 }

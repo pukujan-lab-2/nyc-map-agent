@@ -4044,11 +4044,7 @@
                               "route",
                               "band",
                               "lead",
-                              "samples",
-                              "rush",
-                              "notice",
-                              "weather",
-                              "traffic"
+                              "samples"
                             ]
                           },
                           "key": {
@@ -4277,6 +4273,104 @@
                           "w60Model"
                         ]
                       }
+                    },
+                    "conditions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "subway",
+                              "bus"
+                            ]
+                          },
+                          "dim": {
+                            "type": "string"
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "n": {
+                            "type": "integer"
+                          },
+                          "maeModel": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "maeBase": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "w60Model": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "w60Base": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "learned": {
+                            "type": "object",
+                            "properties": {
+                              "n": {
+                                "type": "integer"
+                              },
+                              "maeModel": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "maeBase": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "w60Model": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "w60Base": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "n",
+                              "maeModel",
+                              "maeBase",
+                              "w60Model",
+                              "w60Base"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "dim",
+                          "key",
+                          "n",
+                          "maeModel",
+                          "maeBase",
+                          "w60Model",
+                          "w60Base",
+                          "learned"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -4284,7 +4378,8 @@
                     "rows",
                     "thin",
                     "runs",
-                    "stops"
+                    "stops",
+                    "conditions"
                   ]
                 }
               }
@@ -4347,11 +4442,7 @@
                               "route",
                               "band",
                               "lead",
-                              "samples",
-                              "rush",
-                              "notice",
-                              "weather",
-                              "traffic"
+                              "samples"
                             ]
                           },
                           "key": {
@@ -4580,6 +4671,104 @@
                           "w60Model"
                         ]
                       }
+                    },
+                    "conditions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "system": {
+                            "type": "string",
+                            "enum": [
+                              "subway",
+                              "bus"
+                            ]
+                          },
+                          "dim": {
+                            "type": "string"
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "n": {
+                            "type": "integer"
+                          },
+                          "maeModel": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "maeBase": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "w60Model": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "w60Base": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "learned": {
+                            "type": "object",
+                            "properties": {
+                              "n": {
+                                "type": "integer"
+                              },
+                              "maeModel": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "maeBase": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "w60Model": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "w60Base": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "n",
+                              "maeModel",
+                              "maeBase",
+                              "w60Model",
+                              "w60Base"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "system",
+                          "dim",
+                          "key",
+                          "n",
+                          "maeModel",
+                          "maeBase",
+                          "w60Model",
+                          "w60Base",
+                          "learned"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -4587,7 +4776,8 @@
                     "rows",
                     "thin",
                     "runs",
-                    "stops"
+                    "stops",
+                    "conditions"
                   ]
                 }
               }

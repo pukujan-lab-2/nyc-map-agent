@@ -1941,10 +1941,28 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            conditions: {
+                                dim: string;
+                                key: string;
+                                learned: {
+                                    maeBase: number | null;
+                                    maeModel: number | null;
+                                    n: number;
+                                    w60Base: number | null;
+                                    w60Model: number | null;
+                                };
+                                maeBase: number | null;
+                                maeModel: number | null;
+                                n: number;
+                                /** @enum {string} */
+                                system: "subway" | "bus";
+                                w60Base: number | null;
+                                w60Model: number | null;
+                            }[];
                             ready: boolean;
                             rows: {
                                 /** @enum {string} */
-                                dim: "all" | "route" | "band" | "lead" | "samples" | "rush" | "notice" | "weather" | "traffic";
+                                dim: "all" | "route" | "band" | "lead" | "samples";
                                 key: string;
                                 learned: {
                                     maeBase: number | null;
@@ -4466,10 +4484,28 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
+                            conditions: {
+                                dim: string;
+                                key: string;
+                                learned: {
+                                    maeBase: number | null;
+                                    maeModel: number | null;
+                                    n: number;
+                                    w60Base: number | null;
+                                    w60Model: number | null;
+                                };
+                                maeBase: number | null;
+                                maeModel: number | null;
+                                n: number;
+                                /** @enum {string} */
+                                system: "subway" | "bus";
+                                w60Base: number | null;
+                                w60Model: number | null;
+                            }[];
                             ready: boolean;
                             rows: {
                                 /** @enum {string} */
-                                dim: "all" | "route" | "band" | "lead" | "samples" | "rush" | "notice" | "weather" | "traffic";
+                                dim: "all" | "route" | "band" | "lead" | "samples";
                                 key: string;
                                 learned: {
                                     maeBase: number | null;
