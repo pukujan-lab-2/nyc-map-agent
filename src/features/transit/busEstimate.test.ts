@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BusEstimator, buildShape, deadReckon, legMotion, pointAt, project, slerpBearing, speedFromTravel, type BusReport, type LonLat, type RouteGeom } from "./busEstimate";
 import layover from "./busLayover.fixture.json";
+import pullOut from "./busPullOut.fixture.json";
 
 // A straight 2 km line heading north along a meridian, stops every 400 m.
 const LAT0 = 40.7, LON0 = -73.99, M = 1 / 111_320;
@@ -143,9 +144,9 @@ describe("BusEstimator", () => {
 // What the app drew for a real bus: its frames between the times its reports arrived.
 type Seen = BusReport & { seen: number };
 type Drawn = { t: number; lon: number; lat: number; bearing: number; alpha: number; shape: number; disp: number };
-function replay(reports: Seen[], id: string, until = Infinity): Drawn[] {
+function replay(reports: Seen[], id: string, until = Infinity, route: RouteGeom = layover.route as RouteGeom): Drawn[] {
   const e = new BusEstimator();
-  e.setRoute(layover.route as RouteGeom);
+  e.setRoute(route);
   const mine = reports.filter((r) => r.id === id && r.t <= until);
   const out: Drawn[] = [];
   mine.forEach((r, i) => {
@@ -203,6 +204,31 @@ describe("a bus waiting at its terminal (M22 at Battery Park City, recorded 2026
   });
 });
 
+describe("a bus pulling out of its terminal (BX15 at Fordham Plaza, recorded 2026-11-15)", () => {
+  const reports = pullOut.reports as Seen[];
+  const frames = replay(reports, "MTA NYCT_5839", Infinity, pullOut.route as RouteGeom);
+
+  it("stands still, at the end of the route nearest its fix, while it waits", () => {
+    const leaves = reports[4].seen;
+    for (const f of frames.filter((x) => x.t < leaves)) {
+      expect(gap(f, frames[0])).toBeLessThan(2);
+      expect(gap(f, reports[1])).toBeLessThan(60); // the terminal is about 50 m past the end of the drawn route
+    }
+  });
+
+  it("is never thrown back after it leaves, though it changes piece and its fix wobbles 40 m", () => {
+    let seen = frames[0];
+    for (const f of frames.slice(1)) {
+      if (f.alpha < 0.05) continue;
+      expect(gap(f, seen)).toBeLessThan(20 + 30 * (f.t - seen.t)); // 20 m: stepping across to the next piece of the route
+      if (f.shape === seen.shape) expect(f.disp).toBeGreaterThanOrEqual(seen.disp - 1e-6);
+      seen = f;
+    }
+    // It ends on the main piece of the route, heading south, not flipped onto the terminal loop.
+    expect(frames[frames.length - 1].shape).toBe(0);
+  });
+});
+
 describe("a route that comes back down the street it went up", () => {
   // North 500 m, round a small block, then south again along the same street.
   const P = (x: number, y: number): LonLat => [LON0 + x / (111_320 * Math.cos((LAT0 * Math.PI) / 180)), LAT0 + y * M];
@@ -225,6 +251,17 @@ describe("a route that comes back down the street it went up", () => {
     for (let i = 1; i < along.length; i++) expect(along[i]).toBeGreaterThan(along[i - 1]);
     for (let i = 1; i < drawn.length; i++) expect(drawn[i]).toBeGreaterThanOrEqual(drawn[i - 1] - 1e-6);
     expect(along[along.length - 1]).toBeGreaterThan(1100); // on the way back, not at 40 m on the way out
+  });
+
+  it("project() with a last position still returns the nearest point on a street passed once", () => {
+    // Vertices 10 m apart: the neighbouring segments are within the tie distance and must not win.
+    const fine: LonLat[] = Array.from({ length: 101 }, (_, i) => [LON0, LAT0 + i * 10 * M]);
+    const sh = buildShape(fine);
+    for (const [y, was] of [[503, 470], [503, 540], [207, 0], [888, 900]]) {
+      const { lon, lat } = at(y);
+      expect(project(sh, lon, lat, was).s).toBeCloseTo(project(sh, lon, lat).s, 6);
+      expect(project(sh, lon, lat, was).s).toBeCloseTo(y, 0);
+    }
   });
 
   it("project() prefers the pass nearest to where the bus was", () => {
