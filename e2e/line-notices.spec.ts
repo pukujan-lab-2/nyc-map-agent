@@ -4,6 +4,10 @@ import { expectLayout, SIZES } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
+// Notice speech and translations are kept by the offline worker (#218), and the worker's own requests skip
+// the page's mocks: these cases run without it. e2e/offline-replay.spec.ts covers the kept answers.
+test.use({ serviceWorkers: "block" });
+
 // The 2 line with one elevator outage at Times Sq-42 St (captured from /api/transit-live, trimmed).
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/transit-live-2-line.json", import.meta.url), "utf8")) as {
   at: number; systems: { subway: { at: number; trips: Array<{ stops: Array<[string, number]>; vt: number }> } }; alerts: { at: number };

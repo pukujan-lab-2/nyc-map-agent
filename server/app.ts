@@ -159,7 +159,7 @@ app.openapi(legacyAlias(LIVE_WATCH_ROUTE), liveWatchHandler as never);
 // Keep the speech server on our stack so the first spoken answer is not the one that waits for a model swap.
 startVoiceKeeper();
 // The speech and translation caches (#218): prune hourly, with the notices in the feed now so a withdrawn one's entries go.
-startSpeechCacheKeeper(async () => new Set((await loadAlerts()).alerts.map((a) => a.id)));
+startSpeechCacheKeeper(async () => new Set((await transit.loadAlerts()).alerts.map((a) => a.id)));
 
 const docConfig = { openapi: "3.1.0", info: API_INFO };
 app.doc31("/api/v1/openapi.json", docConfig);

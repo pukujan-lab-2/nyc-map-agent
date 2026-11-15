@@ -1,3 +1,6 @@
+import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { speak, ttsConfig, ttsLang, warmVoice } from "./tts";
 
@@ -6,7 +9,7 @@ const post = (body: unknown) => new Request("http://app/api/tts", { method: "POS
 
 describe("POST /api/tts", () => {
   it("uses the speech server that speech-to-text already names", () => {
-    expect(ttsConfig(ENV)).toEqual({ base: "http://gateway.test:18800", stack: "multilingual", project: "nyc-map" });
+    expect(ttsConfig(ENV)).toEqual({ base: "http://gateway.test:18800", stack: "multilingual", project: "nyc-map", modelVersion: "kokoro-1" });
     expect(ttsConfig({} as NodeJS.ProcessEnv).base).toBe("");
   });
 
@@ -23,6 +26,36 @@ describe("POST /api/tts", () => {
     expect(f).toHaveBeenCalledWith("http://gateway.test:18800/tts", expect.objectContaining({ body: JSON.stringify({ text: "Take the 4 train.", stack: "multilingual", lang: "en" }) }));
     const sent = (f.mock.calls[0] as unknown as [string, RequestInit])[1];
     expect((sent.headers as Record<string, string>)["x-speech-project"]).toBe("nyc-map");
+  });
+
+  // #218: a notice's step is made once. The page names the source; a chat answer names none and is never kept.
+  it("saves a named line's sound and answers the next request from the file, without the speech server", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "tts-cache-"));
+    const env = { ...ENV, SPEECH_CACHE_DIR: dir } as unknown as NodeJS.ProcessEnv;
+    const named = (text: string, source?: string) => new Request("http://app/api/tts", { method: "POST", body: JSON.stringify({ text, lang: "en" }), headers: { "x-forwarded-for": "9.9.9.8", ...(source ? { "x-speech-source": source } : {}) } });
+    const f = vi.fn(() => Promise.resolve(new Response(new Uint8Array([5, 6, 7, 8]), { headers: { "x-sample-rate": "22050" } })));
+    const bytes = async (r: Response) => [...new Uint8Array(await r.arrayBuffer())];
+
+    const first = await speak(named("Why: Technical issue.", "notice:n1"), f as unknown as typeof fetch, env);
+    expect(first.headers.get("x-speech-cache")).toBe("miss");
+    expect(await bytes(first)).toEqual([5, 6, 7, 8]);
+    await vi.waitFor(async () => expect(await readdir(dir)).toHaveLength(1));
+
+    const again = await speak(named("Why: Technical issue.", "notice:n2"), f as unknown as typeof fetch, env);
+    expect(again.headers.get("x-speech-cache")).toBe("hit");
+    expect(again.headers.get("x-sample-rate")).toBe("22050");
+    expect(await bytes(again)).toEqual([5, 6, 7, 8]);
+    expect(f).toHaveBeenCalledTimes(1);
+    // A saved sound plays even when no speech server is set.
+    expect((await speak(named("Why: Technical issue.", "trip_step"), fetch, { SPEECH_CACHE_DIR: dir } as unknown as NodeJS.ProcessEnv)).status).toBe(200);
+
+    // No source: passed through and not kept.
+    const chat = await speak(named("Your train leaves in four minutes."), f as unknown as typeof fetch, env);
+    expect(chat.headers.get("x-speech-cache")).toBeNull();
+    await bytes(chat);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(await readdir(dir)).toHaveLength(1);
+    await rm(dir, { recursive: true });
   });
 
   it("answers 503 with no server, 400 for no text, 415 for Russian, 502 when the server fails", async () => {

@@ -24,12 +24,12 @@ export const IDLE_MS = 14 * 24 * 3600 * 1000;
 /** A withdrawn notice's entries go this long after it leaves the feed. */
 export const GONE_MS = 24 * 3600 * 1000;
 /** All stored sound together; a spoken step is about 150 KB, so about 2,000 steps. */
-export const MAX_BYTES = 300 * 1024 * 1024;
+const MAX_BYTES = 300 * 1024 * 1024;
 const PRUNE_EVERY_MS = 3_600_000;
 const FLUSH_EVERY_MS = 5 * 60_000;
 
-export type SourceKind = "notice" | "trip_step";
-export interface Source { kind: SourceKind; id: string | null }
+type SourceKind = "notice" | "trip_step";
+interface Source { kind: SourceKind; id: string | null }
 
 /** "notice:lmm:planned_work:36589" or "trip_step" from the X-Speech-Source header; anything else is not kept. Pure. */
 export function parseSource(header: string | null | undefined): Source | null {
@@ -68,7 +68,7 @@ export async function readAudio(key: string, env = process.env): Promise<{ body:
   }
 }
 
-export interface AudioMeta { key: string; text: string; lang: string; voice: string; modelVersion: string; source: Source }
+interface AudioMeta { key: string; text: string; lang: string; voice: string; modelVersion: string; source: Source }
 
 /** Save a finished sound: the file first (written whole, then renamed), then its row. Never throws. */
 export async function saveAudio(meta: AudioMeta, pcm: Uint8Array, rate: number, env = process.env, log: (m: string) => void = console.warn): Promise<void> {
@@ -106,7 +106,7 @@ export async function readTranslation(key: string, n: number, env = process.env)
     const lines: unknown = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!Array.isArray(lines) || lines.length !== n || !lines.every((l) => typeof l === "string")) return null;
     bump(pending.tr, key);
-    return lines as string[];
+    return lines;
   } catch {
     return null;
   }
@@ -127,7 +127,7 @@ export async function saveTranslation(key: string, lang: string, model: string, 
 }
 
 /** Write the hits counted since the last flush. Never throws; what cannot be written is counted again next time. */
-export async function flushHits(env = process.env): Promise<void> {
+async function flushHits(env = process.env): Promise<void> {
   if (!hasDb(env)) { pending.tts.clear(); pending.tr.clear(); return; }
   for (const [table, m] of [["core.tts_cache", pending.tts], ["core.translation_cache", pending.tr]] as const) {
     if (!m.size) continue;
@@ -146,7 +146,7 @@ export async function flushHits(env = process.env): Promise<void> {
 }
 
 export interface Entry { key: string; sourceKind: SourceKind; sourceId: string | null; lastUsedAt: number; goneAt: number | null; bytes: number }
-export interface PrunePlan { remove: string[]; markGone: string[]; back: string[]; reasons: { idle: number; withdrawn: number; size: number } }
+interface PrunePlan { remove: string[]; markGone: string[]; back: string[]; reasons: { idle: number; withdrawn: number; size: number } }
 
 /**
  * What one prune run does, in the agreed order: entries idle 14 days go; a notice's entries go a day

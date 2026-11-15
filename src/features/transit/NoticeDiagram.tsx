@@ -20,7 +20,7 @@ const readMuted = () => { try { return localStorage.getItem(MUTE_KEY) === "off";
  * voice and does graph walk for me"): each step is said aloud while its stations light up, then the
  * next. Muted, the steps still walk, paced for reading. Each step stays up at least a moment.
  */
-function useNoticeWalk(steps: DiagramStep[], auto: boolean, lang: string) {
+function useNoticeWalk(steps: DiagramStep[], auto: boolean, lang: string, source: string) {
   const [step, setStep] = useState<number | null>(null);
   const [muted, setMutedState] = useState(readMuted);
   const cancel = useRef<(() => void) | null>(null);
@@ -41,11 +41,12 @@ function useNoticeWalk(steps: DiagramStep[], auto: boolean, lang: string) {
       let spoke = muted, dwelt = false;
       const next = () => { if (spoke && dwelt) go(i + 1); };
       timer = setTimeout(() => { dwelt = true; next(); }, muted ? 1500 + steps[i].text.length * 45 : 900);
-      if (!muted) hush = say(steps[i].text, lang, () => { spoke = true; next(); });
+      // Kept: a step spoken once plays from the phone the next time, and from the server's copy for the next rider (#218).
+      if (!muted) hush = say(steps[i].text, lang, () => { spoke = true; next(); }, true, source);
     };
     cancel.current = () => { alive = false; clearTimeout(timer); hush(); };
     go(0);
-  }, [steps, muted, lang]);
+  }, [steps, muted, lang, source]);
   const setMuted = (m: boolean) => {
     try { localStorage.setItem(MUTE_KEY, m ? "off" : "on"); } catch { /* private window: this visit only */ }
     stop();
@@ -174,13 +175,15 @@ export default function NoticeDiagram({ alert, outages, at = "", sys, route, col
   // One call translates the steps, the tags and the heading together (owner, 2026-11-08: "in user preffered language").
   const lang = useAppLang();
   const words = useMemo(() => [...english.map((s) => s.text), ...TAG_KEYS.map((k) => TAG[k]!.label), "Change here", diagram?.heading ?? "", diagram?.tag ?? ""], [english, diagram]);
-  const said = useNoticeLines(words, lang);
+  // Where these lines come from, for the caches: an alert by its id (dropped a day after it leaves the feed); an outage by none.
+  const source = alert ? `notice:${alert.id}` : "notice";
+  const said = useNoticeLines(words, lang, source);
   const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i] })), [english, said.lines]);
   const labels = useMemo(() => {
     const t = said.lines.slice(english.length);
     return { ...Object.fromEntries(TAG_KEYS.map((k, i) => [k, t[i]])), transfer: t[TAG_KEYS.length], heading: diagram?.heading ? t[TAG_KEYS.length + 1] : "", noted: t[TAG_KEYS.length + 2] } as Record<StopState, string> & { heading: string };
   }, [said.lines, english.length, diagram]);
-  const walk = useNoticeWalk(steps, auto && said.ready, lang === "en" || said.failed ? "en-US" : lang);
+  const walk = useNoticeWalk(steps, auto && said.ready, lang === "en" || said.failed ? "en-US" : lang, source);
   const [open, setOpen] = useState(false);
   const lit = walk.step !== null && steps[walk.step].ids.length ? new Set(steps[walk.step].ids) : null;
   // The map follows the walk: this step's stations, their shuttle bus corners, the buses a tip names.
