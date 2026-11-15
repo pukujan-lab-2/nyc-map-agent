@@ -7,7 +7,7 @@ import { sameStation, type ServiceChange } from "../../../src/lib/transit/servic
 import { applyNotices, matchWhere, type Corner, type StreetLine, type Unit } from "../../../src/lib/transit/stationAccess";
 import { parseCorner } from "../../../src/lib/transit/equipment";
 import { accessData, noticesFor, stepFreeFor, streetsNear, type AccessData } from "./access";
-import { distM, octant, openDataEntrances, stubPlanner, type AvoidStop, type Entrance, type Station, type StationEntrances, type TransitPlanner } from "./transit";
+import { distM, legStation, octant, openDataEntrances, stubPlanner, type AvoidStop, type Entrance, type Station, type StationEntrances, type TransitPlanner } from "./transit";
 
 export const TZ = "America/New_York";
 
@@ -262,7 +262,7 @@ export async function buildTrip(
       safe(routeWalk(origin.at, [enter.lon, enter.lat]), straight(origin.at, [enter.lon, enter.lat])),
       safe(routeWalk([exit.lon, exit.lat], destination.at), straight([exit.lon, exit.lat], destination.at)),
     ]);
-    const ref = (s: Station) => ({ id: s.id, name: s.name, lon: s.at[0], lat: s.at[1] });
+    const ref = legStation;
     legs.push(walkLeg("walk", `Walk to ${first.from.name}`, w1));
     const note = (r: (typeof plan.rides)[number]) => {
       const n = platformNotes(changes, r.from, r.route, r.from, r.to, allStations);

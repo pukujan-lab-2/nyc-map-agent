@@ -9,7 +9,7 @@ import { z } from "zod";
 import type { Leg, LngLatTuple, TripCore } from "../../../src/features/agent/schema";
 import { elevatorStatus, routeWalk, serviceAlerts } from "./services";
 import { noticesFor, stationOn, type AccessData } from "./access";
-import { distM, openDataEntrances, type Station, type StationEntrances } from "./transit";
+import { distM, legStation, openDataEntrances, type Station, type StationEntrances } from "./transit";
 import { nyLocalToDate, openPortal, safe, toNyLocal } from "./trip";
 import { decodePolyline } from "./polyline";
 import { OTP_CONTAINER, waker } from "./sablier";
@@ -198,7 +198,7 @@ export async function itineraryToTrip(
         const w = await safe(routeWalk(prev.coords[0], portalAt), { coords: [prev.coords[0], portalAt], distanceM: distM(prev.coords[0], portalAt), durationS: distM(prev.coords[0], portalAt) / 1.35, turns: [] });
         legs[legs.length - 1] = { ...prev, coords: w.coords.length >= 2 ? w.coords : [prev.coords[0], portalAt], distanceM: w.distanceM, durationS: w.durationS, turns: w.turns };
       }
-      legs.push({ kind: "enter", station: { id: inSt.id, name: inSt.name, lon: inSt.at[0], lat: inSt.at[1] }, portal: enter, label: `Enter ${inSt.name} at the ${enter.label}${enter.note ? `. ${enter.note}` : ""}` });
+      legs.push({ kind: "enter", station: legStation(inSt), portal: enter, label: `Enter ${inSt.name} at the ${enter.label}${enter.note ? `. ${enter.note}` : ""}` });
     }
     legs.push({
       kind: "ride", route: b, mode, fromStop, toStop, numStops: stops.length + 1, color: l.route.color ? `#${l.route.color}` : undefined, headsign: l.headsign ?? undefined,
@@ -209,7 +209,7 @@ export async function itineraryToTrip(
       const st = (access.data ? stationOn(access.data.stations, b, ll(l.to), toStop) : undefined) ?? await safe(nearestStation(ll(l.to), src), null);
       if (st) {
         const exit = await openPortal(st, await safe(src.entrances(st.complexId), []), destination.at, "exit", elevators, access.data, access.stepFree);
-        legs.push({ kind: "exit", station: { id: st.id, name: st.name, lon: st.at[0], lat: st.at[1] }, portal: exit, label: `Use the ${exit.label} at ${st.name}${exit.note ? `. ${exit.note}` : ""}` });
+        legs.push({ kind: "exit", station: legStation(st), portal: exit, label: `Use the ${exit.label} at ${st.name}${exit.note ? `. ${exit.note}` : ""}` });
         exitAdvice = `Use the ${exit.label} at ${st.name}.${exit.elevatorOnly ? " It is elevator-only." : ""}${exit.note ? ` ${exit.note}` : ""}`;
         // The walk on from the exit starts at that exit when a closure or Elevators only moved it.
         const next = it.legs[i + 1];
