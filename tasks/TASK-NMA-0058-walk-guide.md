@@ -396,6 +396,29 @@ Blocked/uncertain:
 Next:
 - After pull request 193 merges and deploys, open the live site at /station-3d on a phone and a laptop and press Play
 
+### 2026-11-14 20:32:47 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["docs/demo/live-two-screen/"],"completed":["The laptop at the venue could not connect to the relay, so the phone page of the two-screen demo now shows its own map with the dot and trail (pull request 194)."],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Walk with the phone page on a real iPhone, mirror it to the laptop, and note whether steps and compass register","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T20:32:47Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4a55efb0d38248f539d5bff0c53b67c2d64a24f9fc46e89be8cddff21b93c085","request_id":"bad85cd4676640809cadc410d49a24f1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The laptop at the venue could not connect to the relay, so the phone page of the two-screen demo now shows its own map with the dot and trail (pull request 194).
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- docs/demo/live-two-screen/
+
+Blocked/uncertain:
+- none
+
+Next:
+- Walk with the phone page on a real iPhone, mirror it to the laptop, and note whether steps and compass register
+
 ### 2026-11-14 20:27:41 UTC — claude-code
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["docs/demo/live-two-screen/"],"completed":["The pitch had nothing on a laptop that moves as a phone is carried around; the two-screen demo (a relay, a phone page that follows by steps and compass after one location fix, and a screen page with the dot and trail) is now in docs/demo/live-two-screen (pull request 194)."],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Walk with the phone page on a real iPhone and note whether steps and compass register, then how far Check with location says it drifted","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T20:27:41Z"} -->
@@ -419,28 +442,154 @@ Blocked/uncertain:
 Next:
 - Walk with the phone page on a real iPhone and note whether steps and compass register, then how far Check with location says it drifted
 
-### 2026-11-14 20:32:47 UTC — claude-code
+### 2026-11-14 21:19:55 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
 
-<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["docs/demo/live-two-screen/"],"completed":["The laptop at the venue could not connect to the relay, so the phone page of the two-screen demo now shows its own map with the dot and trail (pull request 194)."],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Walk with the phone page on a real iPhone, mirror it to the laptop, and note whether steps and compass register","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T20:32:47Z"} -->
-<!-- continuity:checkpoint-operation {"payload_sha256":"4a55efb0d38248f539d5bff0c53b67c2d64a24f9fc46e89be8cddff21b93c085","request_id":"bad85cd4676640809cadc410d49a24f1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["The follow-a-phone demo is served by the app at /live/phone.html and /live/screen.html with one code per phone and two in-memory routes; pull request 196 is open with auto-merge armed"],"decisions":["no new decisions"],"evidence":["Server tests pass with the new route tests (504 tests), the type check passes, and the pages showed a posted state when served with the API on a spare port; not walked on a real phone"],"next_action":"After pull request 196 merges and deploys, open /live/phone.html on an iPhone, type its code on /live/screen.html and walk ten steps","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T21:19:55Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6aab1ad5f5cf0d507fa6f3c13d68901c797d6304dabca998128e25dbf4373c7d","request_id":"94800495fe7b46c58bbe358cda49201b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
 
 Completed:
-- The laptop at the venue could not connect to the relay, so the phone page of the two-screen demo now shows its own map with the dot and trail (pull request 194).
+- The follow-a-phone demo is served by the app at /live/phone.html and /live/screen.html with one code per phone and two in-memory routes; pull request 196 is open with auto-merge armed
 
 Evidence:
-- no external evidence recorded
+- Server tests pass with the new route tests (504 tests), the type check passes, and the pages showed a posted state when served with the API on a spare port; not walked on a real phone
+### 2026-11-14 20:53:00 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["The replay map follows the film (dot waits on the Cortlandt St platform, line starts at the Broadway entrance by Dey St and turns north at Church St), the film plays its sound, the task row is away while the replay is open, and a red Record button on home opens /record; pull request 195 is open with auto-merge armed"],"decisions":["no new decisions"],"evidence":["Replay, recorder and walk guide unit tests pass (67 tests); lint and the type check are clean; the browser layout specs run in CI"],"next_action":"After pull request 195 merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T20:53:00Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b25ed292cbe9f8608b6f7596850b7d6556be5f958d39dc661eebd641f23905ea","request_id":"da9152e5b07a41f2a57ea3a0ffaf78af","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The replay map follows the film (dot waits on the Cortlandt St platform, line starts at the Broadway entrance by Dey St and turns north at Church St), the film plays its sound, the task row is away while the replay is open, and a red Record button on home opens /record; pull request 195 is open with auto-merge armed
+
+Evidence:
+- Replay, recorder and walk guide unit tests pass (67 tests); lint and the type check are clean; the browser layout specs run in CI
 
 Decisions:
 - no new decisions
 
 Changed:
-- docs/demo/live-two-screen/
+- none
 
 Blocked/uncertain:
 - none
 
 Next:
-- Walk with the phone page on a real iPhone, mirror it to the laptop, and note whether steps and compass register
+- After pull request 196 merges and deploys, open /live/phone.html on an iPhone, type its code on /live/screen.html and walk ten steps
+- After pull request 195 merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186
+
+### 2026-11-14 21:27:06 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["On a phone the new Record button landed on the answer card and the locate button when an answer or sheet was open (eight layout failures in CI on pull request 195); it now shows on the plain home screen only at phone widths"],"decisions":["no new decisions"],"evidence":["The fix is one CSS rule in src/index.css; the affected browser tests are re-running on the MacBook Pro and in CI, not yet seen green"],"next_action":"Read the re-run of the browser tests on pull request 195; once it merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T21:27:06Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a3dd33511b14e879ce57c3075b69195ace32e6b5b38523b631d561bc3fffdc5c","request_id":"1fbc8610b2f2474a889ca089562cfcdd","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- On a phone the new Record button landed on the answer card and the locate button when an answer or sheet was open (eight layout failures in CI on pull request 195); it now shows on the plain home screen only at phone widths
+
+Evidence:
+- The fix is one CSS rule in src/index.css; the affected browser tests are re-running on the MacBook Pro and in CI, not yet seen green
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Read the re-run of the browser tests on pull request 195; once it merges and deploys, scrub the live replay to steps 1, 4, 7, 10 and 17 and press the Record button on a phone, then report on issue 186
+
+### 2026-11-14 21:52:15 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["Asked for the inside walk between Fulton and Union Square, the chat said it could not map one; it now opens the film and map of that trip (pull request 195, with main merged in)"],"decisions":["no new decisions"],"evidence":["The question matcher has unit tests (2 pass) and the type check is clean; the browser tests run in CI and have not been seen green since the phone fix for the Record button"],"next_action":"Read the browser tests on pull request 195; once it merges and deploys, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T21:52:15Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"cac58ad472cb56913b794e9c086adb12fccb2bd98bc9b8d80a396be5f4606bf7","request_id":"38d417f6400944efa60274b21b208ee6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Asked for the inside walk between Fulton and Union Square, the chat said it could not map one; it now opens the film and map of that trip (pull request 195, with main merged in)
+
+Evidence:
+- The question matcher has unit tests (2 pass) and the type check is clean; the browser tests run in CI and have not been seen green since the phone fix for the Record button
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Read the browser tests on pull request 195; once it merges and deploys, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186
+
+### 2026-11-14 22:30:36 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["The recorder's own Record button was hidden on phones by the rule meant for the home button, because both used one test id (five browser test failures on pull request 195); the home button has its own id now, and the QR popup links to a new what-is-coming page"],"decisions":["no new decisions"],"evidence":["Lint and the type check are clean; the browser tests and the size check run in CI and have not been seen green on this commit"],"next_action":"Read the checks on pull request 195; once it merges and deploys, open the QR popup's link, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T22:30:36Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e9a8e8d24c25629324588ae06c038a6c51ed3b2e6f6598d4d8292670a9837152","request_id":"838c61f47a2b47609808cb96ccc55a53","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The recorder's own Record button was hidden on phones by the rule meant for the home button, because both used one test id (five browser test failures on pull request 195); the home button has its own id now, and the QR popup links to a new what-is-coming page
+
+Evidence:
+- Lint and the type check are clean; the browser tests and the size check run in CI and have not been seen green on this commit
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Read the checks on pull request 195; once it merges and deploys, open the QR popup's link, ask the live chat for the inside walk, scrub the replay to steps 1, 4, 7, 10 and 17, and press the Record button on a phone, then report on issue 186
+
+### 2026-11-14 23:13:18 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["Pull request 195 merged (replay follows the film, sound, Record button, inside-walk question, what-is-coming link); pull request 197 adds search and sharing tags, a share image and a sitemap entry to the what-is-coming page"],"decisions":["no new decisions"],"evidence":["Pull request 195 passed its checks and merged; pull request 197 is open with auto-merge armed and its checks not yet run"],"next_action":"After pull requests 195 and 197 deploy, check on the live site: the QR popup's link and the page's tags and image, the Record button on a phone, the chat's inside-walk question, and the replay at steps 1, 4, 7, 10 and 17; then report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T23:13:18Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"751a51d50438d56639c43e653e513ac88e527ffbe9009673e4503ee91b6900ab","request_id":"732bc18adeb74eeba0b1586bec4fbc8f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- Pull request 195 merged (replay follows the film, sound, Record button, inside-walk question, what-is-coming link); pull request 197 adds search and sharing tags, a share image and a sitemap entry to the what-is-coming page
+
+Evidence:
+- Pull request 195 passed its checks and merged; pull request 197 is open with auto-merge armed and its checks not yet run
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull requests 195 and 197 deploy, check on the live site: the QR popup's link and the page's tags and image, the Record button on a phone, the chat's inside-walk question, and the replay at steps 1, 4, 7, 10 and 17; then report on issue 186
+
+### 2026-11-14 23:13:51 UTC — agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/33171bab-fe2e-4484-b966-545a775331a4","blocked":[],"changed":["none"],"completed":["On a short screen the what-is-coming page hid its picture below a fixed-height body; it now grows and scrolls (pull request 197)"],"decisions":["no new decisions"],"evidence":["Seen on the live page in a short browser pane after pull request 195 deployed; the fix is not yet seen rendered"],"next_action":"After pull request 197 deploys, open the page on a phone-sized screen and check the picture shows, then check its tags and share image; report on issue 186","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-14T23:13:51Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d9a8c2885449cc775a6873b6088160b7440262e4628fd673e46e503ae854b391","request_id":"650e721a96604eeb8479bfbaae43ce20","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- On a short screen the what-is-coming page hid its picture below a fixed-height body; it now grows and scrolls (pull request 197)
+
+Evidence:
+- Seen on the live page in a short browser pane after pull request 195 deployed; the fix is not yet seen rendered
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request 197 deploys, open the page on a phone-sized screen and check the picture shows, then check its tags and share image; report on issue 186
 
 ## Handoff
 
