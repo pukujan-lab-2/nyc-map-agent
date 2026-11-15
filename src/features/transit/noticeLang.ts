@@ -3,6 +3,8 @@ import type { AppLang } from "@/lib/voice/langPref";
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
 const done = new Map<string, string[]>();
+/** Lines in one translate call (server/features/agent/translate.ts takes at most 24). */
+const PER_CALL = 24;
 
 /**
  * A notice's lines in the rider's language (#55), translated by the agent's model on the server.
@@ -17,12 +19,20 @@ export function useNoticeLines(lines: string[], lang: AppLang): { lines: string[
     const ctl = new AbortController();
     // Long enough for a cold model, short enough that the rider still hears the notice soon.
     const timer = setTimeout(() => ctl.abort(), 8000);
-    fetch(`${API_BASE}/api/agent/translate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ lang, lines }), signal: ctl.signal })
+    // The server takes 24 lines a call; a long elevator detour is more, so it goes in parts and comes back whole.
+    const parts: string[][] = [];
+    for (let i = 0; i < lines.length; i += PER_CALL) parts.push(lines.slice(i, i + PER_CALL));
+    const one = (part: string[]) => fetch(`${API_BASE}/api/agent/translate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ lang, lines: part }), signal: ctl.signal })
       .then((r) => (r.ok ? (r.json() as Promise<{ lines?: unknown }>) : Promise.reject(new Error(String(r.status)))))
       .then((b) => {
-        if (!Array.isArray(b.lines) || b.lines.length !== lines.length) throw new Error("shape");
-        done.set(key, b.lines as string[]);
-        setState({ key, lines: b.lines as string[], failed: false });
+        if (!Array.isArray(b.lines) || b.lines.length !== part.length) throw new Error("shape");
+        return b.lines as string[];
+      });
+    Promise.all(parts.map(one))
+      .then((got) => {
+        const all = got.flat();
+        done.set(key, all);
+        setState({ key, lines: all, failed: false });
       })
       .catch(() => setState({ key, lines, failed: true }))
       .finally(() => clearTimeout(timer));
