@@ -2,13 +2,19 @@
  * POST /api/agent/translate {lang, lines}: a service notice's short steps in the rider's language
  * (owner, 2026-11-08: "explaining it live with voice, in user preffered language"). The agent's own
  * model translates our plain summary, not the MTA's paragraph; station, street and line names stay as
- * the map shows them. Answers are kept in memory, so a notice many riders open is translated once.
+ * the map shows them. Answers are kept in memory, and a notice's or a trip's lines (the page names
+ * them with X-Speech-Source) also in core.translation_cache, so they are translated once for every
+ * rider and outlive a restart (speechCache.ts, #218).
  */
 import { generateText, type LanguageModel } from "ai";
 import { clientIp } from "../../lib/clientIp";
 import { APP_LANGS, LANG_LABELS, type AppLang } from "../../../src/lib/voice/langPref";
 import { createLimiter } from "./fair-use";
 import { pickProfile } from "./providers";
+import { parseSource, readTranslation, saveTranslation, translationKey } from "./speechCache";
+
+/** Part of a saved translation's key: raise it when the instruction below changes what comes back. */
+const TRANSLATE_VERSION = "t1";
 
 const MAX_LINES = 24;
 const MAX_LINE = 400;
@@ -49,6 +55,17 @@ export async function translate(req: Request, model?: () => LanguageModel): Prom
   const key = `${lang}\u0000${lines.join("\u0000")}`;
   const hit = cache.get(key);
   if (hit) return json({ lines: hit }, 200);
+  const remember = (out: string[]) => {
+    if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
+    cache.set(key, out);
+  };
+  const source = parseSource(req.headers.get("x-speech-source"));
+  const modelName = `${pickProfile(undefined)}:${TRANSLATE_VERSION}`;
+  const dbKey = source ? translationKey(lines as string[], lang, modelName) : "";
+  if (source) {
+    const saved = await readTranslation(dbKey, lines.length);
+    if (saved) { remember(saved); return json({ lines: saved }, 200); }
+  }
   if (!limiter.take(clientIp(req.headers)).ok) return json({ error: "too many" }, 429);
   try {
     // Imported here so the route file stays light for tests that pass their own model.
@@ -56,8 +73,8 @@ export async function translate(req: Request, model?: () => LanguageModel): Prom
     const { text } = await generateText({ model: m, system: translatePrompt(lang), prompt: JSON.stringify(lines), maxOutputTokens: 2000, abortSignal: req.signal });
     const out = parseLines(text, lines.length);
     if (!out) return json({ error: "the model did not answer with the lines" }, 502);
-    if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
-    cache.set(key, out);
+    remember(out);
+    if (source) void saveTranslation(dbKey, lang, modelName, lines as string[], out, source);
     return json({ lines: out }, 200);
   } catch (e) {
     console.warn(`translate: ${(e as Error).message}`);

@@ -34,6 +34,10 @@ services:
       # The VPS's one Sablier (server-management komodo/resources/platform.toml): the app wakes
       # otp and valhalla through it, and they sleep after 10 idle minutes (#44).
       SABLIER_URL: http://sablier:10000
+      # Spoken notice and trip steps, kept so each is made once (#218). Safe to delete at any time.
+      SPEECH_CACHE_DIR: /data/speech-cache
+    volumes:
+      - speech-cache:/data/speech-cache
     extra_hosts:
       - host.docker.internal:host-gateway
     ports:
@@ -132,6 +136,10 @@ services:
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  # Outlives deploys; pruned by the app to 300 MB (server/features/agent/speechCache.ts).
+  speech-cache:
 
 networks:
   edge:
