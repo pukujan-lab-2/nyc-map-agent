@@ -57,6 +57,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-15 02:14:05 UTC — agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896","blocked":[],"changed":["src/features/transit/busEstimate.ts, followInfo.ts, TransitLayer.tsx, e2e/panel-slot.spec.ts"],"completed":["A parked bus is held, a swinging compass bearing no longer turns it round, and the follow mini map names the next stop; the recorded M22 reports replay with no jump (6 tests that fail on main pass)"],"decisions":["no new decisions"],"evidence":["src/features/transit/busEstimate.test.ts replays busLayover.fixture.json; issue #200 has the recorded numbers"],"next_action":"Merge the pull request for #200, then follow a bus on layover at a terminal on the live site for a few minutes","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T02:14:05Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"303449cb6da49570d668d563c5badfc53f9e41a6ae358b953ecfc22e6b2d6314","request_id":"ce952bb9187a4025a67aa79353414d22","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- A parked bus is held, a swinging compass bearing no longer turns it round, and the follow mini map names the next stop; the recorded M22 reports replay with no jump (6 tests that fail on main pass)
+
+Evidence:
+- src/features/transit/busEstimate.test.ts replays busLayover.fixture.json; issue #200 has the recorded numbers
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/transit/busEstimate.ts, followInfo.ts, TransitLayer.tsx, e2e/panel-slot.spec.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the pull request for #200, then follow a bus on layover at a terminal on the live site for a few minutes
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
