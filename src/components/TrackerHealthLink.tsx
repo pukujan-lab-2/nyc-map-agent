@@ -1,4 +1,4 @@
-import { Activity, ChevronRight } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAdvancedMode } from "@/lib/flags";
 import { useMenuT } from "@/lib/i18n/menuText";
@@ -14,9 +14,9 @@ export function TrackerHealthLink() {
   return (
     <Link to="/tracker-health" data-testid="open-tracker-health"
       className="flex min-h-12 items-center gap-3 rounded-lg px-2 text-[14px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">
-      <Activity className="h-5 w-5 shrink-0" aria-hidden />
+      <BarChart3 className="h-5 w-5 shrink-0" aria-hidden />
       <span className="flex-1">{t("trackerHealth")}</span>
-      <ChevronRight className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+      <span aria-hidden>→</span>
     </Link>
   );
 }
