@@ -607,6 +607,75 @@ Next:
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Close the 57 remaining hole spots in the outline shell (stairwell columns between stair and level ceilings, plus ceiling-to-wall cracks), fix the shell gap test for the ceiling-step strips, then record the walk, run Pro checks and open the PR","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:05:09Z"} -->
 <!-- continuity:checkpoint-operation {"payload_sha256":"d4aadfced53aff84ba663abdfed3eee734b597324348086d357822167b5226c6","request_id":"2ecd89139ae9443282c0e3162e018d3e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+### 2026-11-13 15:21:20 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:21:20Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"acdf048308738ab604961d94e368e680f7e5cb3abc5306c700e64d101948ff04","request_id":"49047d8626984ec5b19ec65feedf346a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s
+
+### 2026-11-13 15:15:08 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:15:08Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"acdf048308738ab604961d94e368e680f7e5cb3abc5306c700e64d101948ff04","request_id":"e6347ec46ff9409a9a3043d298197b39","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s
+
+### 2026-11-13 15:09:34 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:09:34Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"acdf048308738ab604961d94e368e680f7e5cb3abc5306c700e64d101948ff04","request_id":"370ae269247243b2962f21f6f733e9a9","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0055"} -->
+
+Completed:
+- work completed
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After #167 deploys, open Street view at Broadway and Dey on a phone on the live site, wait a few seconds, tap Walk inside Fulton St: the loading card should show briefly and the walker should appear within about 2 s
+
 ### 2026-11-13 15:34:50 UTC — claude-code
 
 <!-- continuity:checkpoint {"agent":"claude-code","blocked":[],"changed":["none"],"completed":["work completed"],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Once the PR for feat/126-walk-signs-gates deploys, walk inside Fulton St on the live site: an Exit sign by a wall lies flat on it, the turnstile arms turn at the fare line, the blue accessible gate stands at a row's end, and the uptown platform has Uptown & The Bronx boards","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0055","timestamp":"2026-11-13T15:34:50Z"} -->

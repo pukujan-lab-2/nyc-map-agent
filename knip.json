@@ -6,6 +6,7 @@
     "scripts/*.ts",
     "api/**/*.ts",
     "src/lib/geo/*.worker.ts",
+    "src/lib/map/three/*.worker.ts",
     "src/features/index.ts",
     "deploy/cd/server.ts"
   ],

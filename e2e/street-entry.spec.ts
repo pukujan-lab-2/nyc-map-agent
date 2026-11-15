@@ -34,7 +34,10 @@ for (const size of SIZES) {
     await entry.click();
     const walk = page.getByTestId("station-walk");
     await expect(walk).toBeVisible();
-    await expect(walk.locator("canvas")).toBeVisible({ timeout: slow(30_000) });
+    // The loading card covers the walk until the walker is on screen; Street view has usually
+    // fetched and built the station by the time the button is tapped.
+    await expect(page.getByTestId("station-walk-loading")).toHaveCount(0, { timeout: slow(60_000) });
+    await expect(walk.locator("canvas")).toBeVisible();
     await page.getByTestId("station-walk-close").click();
     await expect(walk).toHaveCount(0);
   });

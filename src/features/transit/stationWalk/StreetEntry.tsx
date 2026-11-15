@@ -3,10 +3,13 @@ import { DoorOpen } from "lucide-react";
 import { useAmbient } from "@/lib/ambient";
 import { FULTON_EXITS } from "@/lib/map/fultonCorners";
 import { getMapInstance } from "@/lib/map/mapInstance";
+import { prefetchWalk } from "./prefetch";
 import { openStationWalk, useStationWalk } from "./store";
 
 /** Within this many metres of a Fulton St stair in Street view, the way down is offered. */
 export const ENTRY_NEAR_M = 35;
+/** Within this many metres the walk starts loading, so it is ready by the time the button is tapped. */
+export const PREFETCH_NEAR_M = 150;
 
 /** The Fulton St exit nearest (lon, lat) and how far it is, in metres. */
 export function nearestExit(lon: number, lat: number): { exit: [number, number]; m: number } {
@@ -35,6 +38,7 @@ export function StreetEntry() {
     const update = () => {
       const c = map.getCenter();
       const n = nearestExit(c.lng, c.lat);
+      if (n.m < PREFETCH_NEAR_M) void prefetchWalk();
       setExit((was) => (n.m < ENTRY_NEAR_M ? (was && was[0] === n.exit[0] && was[1] === n.exit[1] ? was : n.exit) : null));
     };
     update();
