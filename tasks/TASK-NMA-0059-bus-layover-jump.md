@@ -103,6 +103,29 @@ Blocked/uncertain:
 Next:
 - After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
 
+### 2026-11-15 02:40:33 UTC — agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fe2e67a-1ee6-4ca6-be82-0ca5e680b896","blocked":[],"changed":[".size-limit.json, checkpoints/CURRENT.md"],"completed":["Main (the notice card fix, #199) is merged into the branch and the transit layers size limit is raised from 29 to 29.8 kB for the estimator's new rules"],"decisions":["no new decisions"],"evidence":["On the MacBook Pro: type check passes, 177 transit unit tests pass, no size limit exceeded"],"next_action":"After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0059","timestamp":"2026-11-15T02:40:33Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"e467c56b66719943345513ccbccda7d74b18426af367b30e13d2300554a26fd4","request_id":"1db64880e25d484e832cc032fcf15e6a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0059"} -->
+
+Completed:
+- Main (the notice card fix, #199) is merged into the branch and the transit layers size limit is raised from 29 to 29.8 kB for the estimator's new rules
+
+Evidence:
+- On the MacBook Pro: type check passes, 177 transit unit tests pass, no size limit exceeded
+
+Decisions:
+- no new decisions
+
+Changed:
+- .size-limit.json, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- After pull request #201 merges and deploys, follow a bus on layover at a terminal on the live site for a few minutes
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
