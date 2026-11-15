@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - After the pull request merges, run nyc-job.sh update on the VPS and read the first stored scores; then ship the /tracker-health page and its Advanced-only link
 
+### 2026-11-15 02:51:43 UTC — agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/452cd4bc-f008-4a98-a16c-13cbabce5e68","blocked":[],"changed":["none"],"completed":["The tracker health page at /tracker-health and its Advanced-only Settings link are built on a pushed branch"],"decisions":["no new decisions"],"evidence":["Lint, type check and unit tests pass; 11 of 12 browser cases passed before the last test fix, whose rerun is in progress"],"next_action":"Open the page pull request once the browser tests and size check pass; after pull request 202 merges, run nyc-job.sh update on the VPS and read the first scores; then the station view, stored conditions, pooling comparison and the MTA bus speeds dataset","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0060","timestamp":"2026-11-15T02:51:43Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d785eb1db19c35b590c28c67b78f4fe592a33e006c406b9e6f83b7b995e55ba0","request_id":"1c902adebb444b44a776a0eeec4efdc2","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0060"} -->
+
+Completed:
+- The tracker health page at /tracker-health and its Advanced-only Settings link are built on a pushed branch
+
+Evidence:
+- Lint, type check and unit tests pass; 11 of 12 browser cases passed before the last test fix, whose rerun is in progress
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the page pull request once the browser tests and size check pass; after pull request 202 merges, run nyc-job.sh update on the VPS and read the first scores; then the station view, stored conditions, pooling comparison and the MTA bus speeds dataset
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
