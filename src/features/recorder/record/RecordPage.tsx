@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { SwitchCamera } from "lucide-react";
 import { removeShell } from "@/lib/shellDraft";
 import { MARK_KINDS, type MarkKind } from "../format";
 import { cameraName, listCameras, nextCamera, openCamera, rememberCamera, rememberedCamera, stopStream, type Camera } from "./camera";
@@ -79,7 +78,7 @@ export default function RecordPage() {
 
   const switchCamera = () => {
     const next = nextCamera(cameras, cameraId);
-    if (!next || switching) return;
+    if (!next) return;
     setSwitching(true);
     void startCamera(next).finally(() => setSwitching(false));
   };
@@ -227,11 +226,16 @@ export default function RecordPage() {
             </button>
             {/* Before recording only: changing camera mid-recording would cut the video. */}
             {phase === "idle" && cameras.length > 1 && (
-              <div className="absolute left-full top-1/2 ml-4 flex w-24 -translate-y-1/2 flex-col items-center gap-1">
-                <button type="button" aria-label="Switch camera" data-testid="switch-camera" onClick={switchCamera} disabled={switching} className="grid h-12 w-12 place-items-center rounded-full border-2 border-white bg-black/60 backdrop-blur active:bg-white active:text-black disabled:opacity-60">
-                  <SwitchCamera aria-hidden className="h-6 w-6" />
+              <div className="absolute left-full top-1/2 flex -translate-y-1/2 flex-col items-center pl-3">
+                <button type="button" aria-label="Switch camera" data-testid="switch-camera" onClick={switchCamera} className="h-11 w-11 rounded-full border-2 border-white bg-white/10 [&_svg]:h-6">
+                  {/* Drawn rather than imported: the switch's own icon from the icon package pushed this page past its size budget. */}
+                  <svg aria-hidden viewBox="0 0 24 24">
+                    <rect x="3" y="7" width="12" height="10" rx="2"/>
+                    <path d="M15 11l5-3v8z"/>
+                    <path d="M8 2 6 4l2 2" />
+                  </svg>
                 </button>
-                {cameraName(cameras, cameraId) && <span data-testid="camera-name" aria-live="polite" className="max-w-full truncate rounded-full bg-black/60 px-2 text-xs leading-5 backdrop-blur">{cameraName(cameras, cameraId)}</span>}
+                {cameraName(cameras, cameraId) && <span data-testid="camera-name" className="mt-1 max-w-[5rem] truncate rounded-full bg-black/60 px-2 text-xs">{cameraName(cameras, cameraId)}</span>}
               </div>
             )}
           </div>
