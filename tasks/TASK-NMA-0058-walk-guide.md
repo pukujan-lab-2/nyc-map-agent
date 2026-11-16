@@ -683,6 +683,29 @@ Blocked/uncertain:
 Next:
 - The owner shares the deck with the collaborator; when pull request 224 merges she starts piece 1 from issue 223
 
+### 2026-11-16 21:41:52 UTC — dsh
+
+<!-- continuity:checkpoint {"agent":"dsh","blocked":[],"changed":["src/features/recorder/record/RecordPage.tsx"],"completed":["The recorder page's camera switch is inside its size budget again, so the size check no longer fails every pull request (branch fix/225-camera-switch, pull request #226)."],"decisions":["no new decisions"],"evidence":["no external evidence recorded"],"next_action":"Merge #226 once the unit job's one timeout is retried.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-16T21:41:52Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"912fc79e6801134cd594baf3c5df64fdda6aabecb5d8dc09f3982aeab0c03f44","request_id":"12979b21980b424f836755d5ab96e6be","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The recorder page's camera switch is inside its size budget again, so the size check no longer fails every pull request (branch fix/225-camera-switch, pull request #226).
+
+Evidence:
+- no external evidence recorded
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/recorder/record/RecordPage.tsx
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge #226 once the unit job's one timeout is retried.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
