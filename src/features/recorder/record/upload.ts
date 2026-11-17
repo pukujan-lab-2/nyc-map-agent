@@ -53,10 +53,10 @@ export function checkUpload(a: { bytes: number; sentToday: number }, limits: { m
  * A recording whose start time is not a real time still needs a name, so it falls back to the epoch.
  */
 export function uploadName(startedAt: number): string {
+  // Not a real time (NaN, an infinity): the epoch still gives a name, and a wrong name costs nothing.
   const d = new Date(Number.isFinite(startedAt) ? startedAt : 0);
-  const t = Number.isNaN(d.getTime()) ? new Date(0) : d;
   const p = (n: number) => String(n).padStart(2, "0");
-  return `walk-${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}-${p(t.getHours())}${p(t.getMinutes())}${p(t.getSeconds())}`;
+  return `walk-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
 }
 
 /** The name as a file name the server can keep: one run of letters, digits and dashes. */
