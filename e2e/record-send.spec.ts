@@ -23,9 +23,9 @@ const fakeCamera = (page: Page) =>
     setInterval(() => {
       g.fillStyle = `hsl(${(n++ * 7) % 360} 60% 50%)`;
       g.fillRect(0, 0, 320, 240);
-    }, 50);
+    }, 20);
     const md = navigator.mediaDevices ?? ({} as MediaDevices);
-    md.getUserMedia = () => Promise.resolve(canvas.captureStream(20));
+    md.getUserMedia = () => Promise.resolve(canvas.captureStream(30));
     if (!navigator.mediaDevices) Object.defineProperty(navigator, "mediaDevices", { value: md });
   });
 
@@ -88,19 +88,33 @@ const open = async (page: Page): Promise<Stub> => {
   return stub;
 };
 
-/** Record a few seconds with one mark, then stop, leaving the review screen up. */
+/**
+ * A cut small enough to make at least three parts of the video the browser really recorded. It goes to the
+ * page before Send is pressed, as the server's own answer would.
+ */
+async function partCut(page: Page): Promise<number> {
+  await page.getByTestId("save-button").click();
+  const href = (await page.getByTestId("file-video").getAttribute("href"))!;
+  const size = await page.evaluate(async (u) => (await (await fetch(u)).blob()).size, href);
+  return Math.max(1_000, Math.floor(size / 3));
+}
+
+/** Record three seconds with one mark, then stop, leaving the review screen up. */
 async function recordAndStop(page: Page) {
   await page.getByRole("button", { name: "Record", exact: true }).click();
   await expect(page.getByTestId("record-timer")).toBeVisible({ timeout: slow(10_000) });
   await page.getByTestId("mark-sign").click();
-  await expect(page.getByTestId("record-timer")).not.toHaveText("0:00", { timeout: slow(15_000) });
+  await expect(page.getByTestId("record-timer")).toHaveText(/0:0[3-9]|0:[1-9]/, { timeout: slow(25_000) });
   await page.getByRole("button", { name: "Stop" }).click();
   await expect(page.getByTestId("record-review")).toBeVisible({ timeout: slow(10_000) });
 }
 
+
 test("Send: the data goes up first, then the video in parts, and nothing at all before the button", async ({ page }) => {
   const stub = await open(page);
   await recordAndStop(page);
+  // Cuts are decided on the video the browser really recorded: on a slow machine a fixed chunk may be bigger than it.
+  stub.chunk = await partCut(page);
   await expectLayout(page);
 
   // The review can sit there as long as it likes: no upload starts until the tap.
@@ -130,9 +144,10 @@ test("Send: the data goes up first, then the video in parts, and nothing at all 
 });
 
 test("Send: a 409 is answered from the server's own byte count, not by sending the whole video again", async ({ page }) => {
-  const chunk = 20_000;
   const stub = await open(page);
   await recordAndStop(page);
+  const chunk = await partCut(page);
+  stub.chunk = chunk;
   // The second part arrives when the server already holds more than its start.
   stub.conflictAt = 2;
   await page.getByTestId("review-send").click();
