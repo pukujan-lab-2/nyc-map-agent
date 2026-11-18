@@ -1,0 +1,45 @@
+{
+  "title": "The guided walk: seven stops from Cortlandt St to the street",
+  "questions": [
+    {
+      "question": "What walk does the guide follow?",
+      "answer": "One step-free trip: enter Cortlandt St at Broadway, ride the R or W five stops, and walk out of 14 St-Union Sq to the street at 14th Street and 4th Avenue. It is the trip we filmed for the hackathon, with seven stops.",
+      "sources": [{ "title": "The guided walk", "url": "https://nyc.design-bakery.com/present" }]
+    },
+    {
+      "question": "What do I do at the Broadway entrance?",
+      "answer": "Enter through the glass doors at Cortlandt St. Turn right for the elevator down to the concourse. This is the step-free way in, and the recorded walk starts here.",
+      "sources": [{ "title": "The guided walk, Broadway entrance", "url": "https://nyc.design-bakery.com/present#stop-11" }]
+    },
+    {
+      "question": "Which train do I take from Cortlandt St?",
+      "answer": "At the uptown platform, take the elevator marked Uptown & Queens. Board an R or W and ride five stops to Union Square.",
+      "sources": [{ "title": "The guided walk, uptown platform", "url": "https://nyc.design-bakery.com/present#stop-12" }]
+    },
+    {
+      "question": "How do I leave the train at Union Square?",
+      "answer": "Leave the train at 14 St-Union Sq. Follow the platform to the elevator and go up one level to the mezzanine.",
+      "sources": [{ "title": "The guided walk, platform elevator", "url": "https://nyc.design-bakery.com/present#stop-13" }]
+    },
+    {
+      "question": "Where do I turn on the mezzanine?",
+      "answer": "Turn left under the sign that says Elevator to L, and enter the long corridor. The camera read this exact sign on a saved frame, and the guide matches it to the mezzanine landing.",
+      "sources": [{ "title": "The guided walk, mezzanine", "url": "https://nyc.design-bakery.com/present#stop-4" }]
+    },
+    {
+      "question": "How do I reach the street elevator?",
+      "answer": "Follow the corridor to the wide gate. Turn left at the orange mural and take the elevator to the street.",
+      "sources": [{ "title": "The guided walk, street elevator", "url": "https://nyc.design-bakery.com/present#stop-14" }]
+    },
+    {
+      "question": "How do I know I am outside?",
+      "answer": "You are outside at 14th Street and 4th Avenue. The Climate Clock across the street marks the end of the recorded route.",
+      "sources": [{ "title": "The guided walk, street", "url": "https://nyc.design-bakery.com/present#stop-15" }]
+    },
+    {
+      "question": "Can I see the original footage at each stop?",
+      "answer": "Yes. Ask Design Baker to play the original walk at a stop and he opens the recorded clip for that checkpoint. Say Keep going and he returns to where you left off, even to the same second of a clip.",
+      "sources": [{ "title": "The guided walk", "url": "https://nyc.design-bakery.com/present" }]
+    }
+  ]
+}

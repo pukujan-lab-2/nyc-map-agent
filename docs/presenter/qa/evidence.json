@@ -1,0 +1,53 @@
+{
+  "title": "Evidence: what each test actually measured",
+  "questions": [
+    {
+      "question": "How far did GPS drift?",
+      "answer": "We replayed the same 67 Avenue recording twice. At the mapped exit the GPS estimate was about 14.4 metres away; with GPS withheld, about 160.5 metres. The replay did not use the video to correct either estimate.",
+      "sources": [{ "title": "The guided walk, one walk two estimates", "url": "https://nyc.design-bakery.com/present#stop-3" }]
+    },
+    {
+      "question": "Did the video fix the drifting pin?",
+      "answer": "No. The replay scored the estimates against the mapped exit; it did not use video to correct them. The cleanup instead stretches the path to fixed points: elevators and GPS fixes with an accuracy of 20 metres or better.",
+      "sources": [{ "title": "GeoAI hackathon write-up, from sensors to a path", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "What did the camera read at Union Square?",
+      "answer": "On a saved frame, the sign reader recognized Elevator to L. The guide matched that phrase to a known landing and supplied the turn. The movement and directions shown in that clip were simulated, not live tracking.",
+      "sources": [{ "title": "The guided walk, a sign becomes a clue", "url": "https://nyc.design-bakery.com/present#stop-4" }]
+    },
+    {
+      "question": "What does EL479 tell us?",
+      "answer": "Apple Vision read EL479 on a recorded elevator plaque at Queensboro Plaza. It identifies which elevator it is. The same elevator reaches several floors, so the plaque alone does not tell us the landing.",
+      "sources": [{ "title": "The guided walk, one elevator several floors", "url": "https://nyc.design-bakery.com/present#stop-5" }]
+    },
+    {
+      "question": "What did the barometer add?",
+      "answer": "A barometer measures air pressure, which changes with height. In the Queensboro recording the logged relative height was around nine metres above baseline. That is evidence of a climb, but a mapped landing or another clue is still needed to name the floor.",
+      "sources": [{ "title": "The guided walk, the phone feels a climb", "url": "https://nyc.design-bakery.com/present#stop-6" }]
+    },
+    {
+      "question": "How accurate is the cleaned path?",
+      "answer": "On the filmed Friday walk, the cleaned path ends within one metre of the elevators and within 30 metres of the street fixes; the raw path was more than 30 metres off. The barometer found both elevator rides.",
+      "sources": [{ "title": "GeoAI hackathon write-up, from sensors to a path", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "How does the phone move the dot without GPS?",
+      "answer": "Each counted step moves the dot 0.7 metres in the gyroscope's heading direction. The barometer finds elevator rides and the levels between them. The path is stretched to fixed points, and the underground part is pulled onto the walk's line, only on the same level, never backwards.",
+      "sources": [{ "title": "GeoAI hackathon write-up, from sensors to a path", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "What is the Gaussian splat?",
+      "answer": "COLMAP estimated camera positions and a cloud of points from overlapping frames of the Queensboro walk. Brush used those positions and images to build a Gaussian splat you can move around. Aligning it to the station map and independent localization remain unverified.",
+      "sources": [{ "title": "The guided walk, frames become a place", "url": "https://nyc.design-bakery.com/present#stop-7" }]
+    },
+    {
+      "question": "Is the Fulton Street walk real?",
+      "answer": "It is a simulation. The Fulton St model was traced from Project Subway NYC's drawing; its connected platforms, corridors and stairs provide a route. A live guide would still need to align the phone with the map and track its movement.",
+      "sources": [
+        { "title": "The guided walk, a route through Fulton", "url": "https://nyc.design-bakery.com/present#stop-8" },
+        { "title": "Project Subway NYC", "url": "https://projectsubwaynyc.com" }
+      ]
+    }
+  ]
+}

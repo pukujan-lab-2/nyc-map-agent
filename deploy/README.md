@@ -213,3 +213,9 @@ sudo ./svc.sh install yoav && sudo ./svc.sh start
 - **Health fails:** the previous image is swapped back automatically.
 - **CD container restarts mid-run:** the run is marked `interrupted` on the next start.
 - **Tunnel 502:** the `nyc-map-edge` container is down; check `docker logs nyc-map-edge`.
+
+## The underground walk at `/present`
+
+The React presenter shares the map's web container, Cloudflare Tunnel, and Komodo deployment. Its recorded excerpts and prepared narration ship with the app. For live questions it uses the app's existing `OCTO_WORKSPACE_ID` and `OCTO_API_KEY` — the presenter's reviewed documents live in that workspace and the server's allowlist keeps answers scoped to them; set `NYC_PRESENTER_OCTO_WORKSPACE_ID`/`NYC_PRESENTER_OCTO_KEY` only to point at a dedicated workspace. `NYC_PRESENTER_HAIKU_KEY` accepts the project's Anthropic key or an Octo working key for that provider. Renew a working key in Octo before its expiry. After replacing a key, recreate the web container with the running image and check a live answer. Dictation and speech use the map's existing voice routes.
+
+To check a release, open `/present`, tap **Guide me**, and ask what Washington Metro deployed. Open the source, then say **Keep going**. The same checkpoint should reappear. Also play an original clip, ask a question, and resume from the saved second. `/api/presenter/status` reports configured services. A sourced answer and audible reply verify the upstream connections.

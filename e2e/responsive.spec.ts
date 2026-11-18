@@ -273,6 +273,23 @@ for (const size of SIZES) {
       expect(await page.evaluate(() => localStorage.getItem("nma.stepFree"))).toBe("1");
     });
 
+    // Settings → Meet Design Baker (NMA-0064): the guided presentation opens from the menu on every size.
+    test("the presentation link in Settings", async ({ page }) => {
+      await open(page);
+      await page.route("**/api/presenter/status", (r) => r.fulfill({ json: { haiku: false, octo: false, dictate: false } }));
+      const phone = size.width < 640;
+      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
+      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
+      if (phone) await panel.getByTestId("sheet-grip").click();
+      const link = panel.getByTestId("open-presenter");
+      await expect(link).toBeVisible();
+      await expectLayout(page);
+      await link.click();
+      await expect(page).toHaveURL(/\/present$/);
+      await expect(page.getByRole("heading", { name: "Your trip" })).toBeAttached();
+      await expectLayout(page);
+    });
+
     // Language is one tap from the home screen on every size: the rail's chip (#54 on phones, #124 on wider screens).
     test("changing the language", async ({ page }) => {
       await open(page);

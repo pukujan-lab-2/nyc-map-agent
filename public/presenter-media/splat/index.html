@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Queensboro Plaza · Explore the Gaussian splat</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui,sans-serif;background:#101722;color:#edf6fa}body{margin:0;padding:20px}main{max-width:1000px;margin:auto}h1{margin:0;font-size:clamp(25px,5vw,40px)}p{color:#bdd0de}#view{width:100%;height:min(67dvh,680px);overflow:hidden;border:1px solid #344861;border-radius:10px;background:#0a1119}canvas{display:block;touch-action:none}button{min-height:44px;border:1px solid #476581;border-radius:8px;padding:5px 12px;color:inherit;background:#192837;cursor:pointer;font:inherit}footer{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;justify-content:space-between}
+</style><style>html,body,main,#view{margin:0;padding:0;width:100%;height:100%;max-width:none;border:0;border-radius:0;background:#11140e}h1,p,footer{display:none}canvas{width:100%}</style></head><body><main>
+<h1>Queensboro Plaza</h1><p>Gaussian splat from the elevator landing and platform footage</p>
+<div id="view" aria-label="Interactive 3D render"></div><footer><p id="state" role="status">Loading the splat…</p><button id="reset" type="button">Reset view</button></footer>
+<p>Drag to look around the reconstructed scene. Areas outside the recorded viewpoints can appear incomplete.</p>
+</main><script type="application/json" id="poses">{"reference":{"camera_x":0.48792076022225117,"camera_y":-2.511102237479929,"camera_z":1.8546257694069708,"camera_qx":0.03929848769371966,"camera_qy":0.0603217183053146,"camera_qz":0.05736072725582041,"camera_qw":0.9957543201685666}}</script>
+<script>
+// Design Baker drives this camera from the presenter page (same-origin messages only).
+// Registered before the viewer bundle loads so commands sent at iframe load are queued, not lost.
+window.__presenterCameraMoves = [];
+window.__presenterCameraQueue = [];
+window.addEventListener("message", function (event) {
+  if (event.origin !== location.origin) return;
+  var data = event.data;
+  if (!data || data.type !== "presenter-camera") return;
+  if (data.move !== "overview" && data.move !== "orbit" && data.move !== "closeup") return;
+  window.__presenterCameraMoves.push(data.move);
+  if (window.__presenterCameraApply) window.__presenterCameraApply(data.move);
+  else window.__presenterCameraQueue.push(data.move);
+});
+</script>
+<script src="./viewer.js" defer></script></body></html>

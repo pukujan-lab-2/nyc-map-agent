@@ -1,0 +1,35 @@
+{
+  "title": "Contribute: record a walk, share it safely",
+  "questions": [
+    {
+      "question": "How can I contribute?",
+      "answer": "Record a station walk at nyc.design-bakery.com/record. The page opens the back camera, records video with motion, heading and location, and lets you mark Sign, Stairs and Elevator as you pass them. One recorded walk gives a route's checkpoints, levels and distances.",
+      "sources": [{ "title": "Record a walk", "url": "https://nyc.design-bakery.com/record" }]
+    },
+    {
+      "question": "What happens to my recording?",
+      "answer": "It saves to your phone first, and a Send step submits the walk in one tap. Nothing a rider records is published without their agreement, and video is not published until faces are blurred. Raw footage stays private.",
+      "sources": [{ "title": "Product design document, design rules for rider walks", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/PDD.md" }]
+    },
+    {
+      "question": "What leaves my phone?",
+      "answer": "For sign reading, one camera frame when you ask the app to read a sign; the server passes it to the model and does not keep it. Recordings are saved to the phone; submitting a walk is a separate, explicit step.",
+      "sources": [{ "title": "GeoAI hackathon write-up, what leaves the phone", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Do I need special hardware?",
+      "answer": "No. A phone browser is enough: the recorder uses the browser's own MediaRecorder, motion, orientation, location and wake-lock APIs. A barometer helps find elevator rides; browsers without one still record video, motion and marks. A native barometer app is planned.",
+      "sources": [{ "title": "GeoAI hackathon write-up, tech stack", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Can I contribute code?",
+      "answer": "Yes. The project is open source on GitHub. The format checker, converter and cleanup functions have tests, and the contribution loop is written out on issue #186. New York has 472 stations; riders walk through all of them every day.",
+      "sources": [{ "title": "Project repository", "url": "https://github.com/pukujan-lab-2/nyc-map-agent" }]
+    },
+    {
+      "question": "Why does one walk matter?",
+      "answer": "One walk gives the signs in order, the levels from the barometer and the distances from the step count for a route. That is how the project scales to 472 stations without modelling each one by hand.",
+      "sources": [{ "title": "GeoAI hackathon write-up, what is next", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    }
+  ]
+}

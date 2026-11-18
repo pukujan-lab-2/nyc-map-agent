@@ -25,7 +25,7 @@ export default function SettingsSheet({ onClose }: { onClose: () => void }) {
           </button>
         </div>
       }>
-      <div className="pull-sheet-body flex flex-col gap-2">
+      <div className="pull-sheet-body flex flex-col gap-2" style={{ maxHeight: "min(38dvh, 330px)" }}>
         {/* Phones have no Layers menu: live trains and buses, with the bus route chooser, open the sheet. */}
         <div data-testid="phone-layers" className="text-[#f1f5f9]"><LiveLayerRows /></div>
         <div className="mx-2 h-px bg-[#263449]" />

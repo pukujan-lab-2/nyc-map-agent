@@ -1,0 +1,35 @@
+{
+  "title": "Plan: from recorded walks to guidance",
+  "questions": [
+    {
+      "question": "What is the plan from here?",
+      "answer": "The loop: a rider records a walk, we clean it into a path with levels, it becomes checkpoints others can follow, and each cleaned walk is a versioned dataset the AI's answers are checked against. Walks also feed 3D station views, trip previews and in-station guidance.",
+      "sources": [{ "title": "Product design document, rider walks", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/PDD.md" }]
+    },
+    {
+      "question": "What works today?",
+      "answer": "The recorder is live, the walk guide and replay work for the filmed Cortlandt St to Union Square trip, and the cleanup functions exist with tests. A phone-follow demo without GPS is live. Automatic cleanup of arriving walks and open-data publishing are not built yet.",
+      "sources": [{ "title": "Product design document, rider walks", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/PDD.md" }]
+    },
+    {
+      "question": "What gets built next?",
+      "answer": "In order: the remaining recorder pieces on issue #223, storage for uploads once the owner picks it, automatic clean-up of an arriving walk, then a small barometer app. The barometer app needs an Apple Developer account.",
+      "sources": [{ "title": "Product design document, rider walks", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/PDD.md" }]
+    },
+    {
+      "question": "How do walks become guidance?",
+      "answer": "A recording becomes checkpoints, one per sign or landmark. The guide draws the line through the station, moves your dot by step count, and stops at each checkpoint with the instruction and a photo of the next sign. If lost, you tap or photograph the sign you see.",
+      "sources": [{ "title": "GeoAI hackathon write-up", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Will the data improve over time?",
+      "answer": "Yes, that is the design: each cleaned walk is a versioned dataset, and the AI's answers are checked against it. More walks mean more evidence for the same station. Review and versioning are planned; no comparison runs have been made yet.",
+      "sources": [{ "title": "Product design document, rider walks", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/PDD.md" }]
+    },
+    {
+      "question": "When can people use this in a real station?",
+      "answer": "Not yet verified: nobody has walked the guided route with a phone in the station. The Cortlandt St checkpoint places are estimates fitted to street corners; Union Square ones come from logged mezzanine positions. A live camera guide with arrows is still to build.",
+      "sources": [{ "title": "GeoAI hackathon write-up", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    }
+  ]
+}

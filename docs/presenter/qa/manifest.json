@@ -1,0 +1,10 @@
+[
+  { "file": "mission.json", "title": "Mission: why NYC Map Agent exists", "documentId": null, "verified": false },
+  { "file": "plan.json", "title": "Plan: from recorded walks to guidance", "documentId": null, "verified": false },
+  { "file": "stack.json", "title": "Stack: what the app runs on and where AI helps", "documentId": null, "verified": false },
+  { "file": "get-data.json", "title": "Get the data: samples, format and reproduction", "documentId": null, "verified": false },
+  { "file": "contribute.json", "title": "Contribute: record a walk, share it safely", "documentId": null, "verified": false },
+  { "file": "walk-stops.json", "title": "The guided walk: seven stops from Cortlandt St to the street", "documentId": null, "verified": false },
+  { "file": "evidence.json", "title": "Evidence: what each test actually measured", "documentId": null, "verified": false },
+  { "file": "research.json", "title": "Research: how other cities guide riders underground", "documentId": null, "verified": false }
+]

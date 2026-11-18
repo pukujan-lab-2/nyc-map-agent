@@ -20,6 +20,7 @@ import * as sources from "../api/sources";
 import * as street from "../api/street";
 import * as vehicleModels from "../api/vehicle-models/[mode]";
 import * as weather from "./features/weather/routes";
+import * as presenter from "./features/presenter/routes";
 import * as hazards from "./features/hazards/routes";
 import * as ferry from "./features/ferry/routes";
 import * as traffic from "./features/traffic/routes";
@@ -149,6 +150,11 @@ const seeSignHandler = async (c: Context) => {
 };
 app.openapi(toV1Route(SEE_SIGN_ROUTE), seeSignHandler as never);
 app.openapi(legacyAlias(SEE_SIGN_ROUTE), seeSignHandler as never);
+// Presentation assistant requests keep credentials on the server.
+app.get("/api/presenter/status", () => presenter.status());
+for (const kind of ["ask", "chat", "weather"] as const) {
+  app.post(`/api/presenter/${kind}`, (c) => presenter.post(kind, c.req.raw, undefined, undefined, weather.GET));
+}
 // The live phone demo (#186): a phone posts its state under a code, screens watch the code. A bad code is the handler's 400.
 const liveStateHandler = async (c: Context) => {
   const body: unknown = await c.req.json().catch(() => null);

@@ -1,0 +1,35 @@
+{
+  "title": "Mission: why NYC Map Agent exists",
+  "questions": [
+    {
+      "question": "What is NYC Map Agent?",
+      "answer": "NYC Map Agent is a map of New York with live subway lines and a chat agent you can type or talk to, at nyc.design-bakery.com. Design Bakery builds it to help riders find their way through stations, especially when GPS fails underground.",
+      "sources": [{ "title": "NYC Map Agent live site", "url": "https://nyc.design-bakery.com" }]
+    },
+    {
+      "question": "What problem are you solving?",
+      "answer": "Underground, phones lose GPS and station staff often cannot name the step-free way out. In our own Fulton St test a rider asked five people, two of them staff, and spent about 20 minutes finding the accessible exit. The information simply was not there.",
+      "sources": [{ "title": "GeoAI hackathon write-up", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Who is this for?",
+      "answer": "Three groups, in order: autistic riders, foreign visitors, and people with mobility aids. Many disabilities cannot be seen, so asking a stranger means explaining yourself first. The app never asks why: you say step-free and it gives the step-free way.",
+      "sources": [{ "title": "GeoAI hackathon write-up", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Does GPS really fail underground?",
+      "answer": "Yes, measurably. On one walk out of 14 St-Union Sq, Google Maps said No GPS signal for the first ten minutes. The fixes the phone did log were 17 to 40 metres off, some reported with accuracy as poor as 1,120 metres.",
+      "sources": [{ "title": "GeoAI hackathon write-up", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Who built this?",
+      "answer": "Pujan Bajracharya of Design Bakery and Jenny Liu, for the GISMO NYC GeoAI Hackathon 2026, Transportation and Mobility track. The project is open source and continues as a public demo and contribution platform.",
+      "sources": [{ "title": "Project repository", "url": "https://github.com/pukujan-lab-2/nyc-map-agent" }]
+    },
+    {
+      "question": "Why record walks instead of modelling stations by hand?",
+      "answer": "Hand-built 3D models did not scale: data was incomplete and fitting each station was slow. New York has 472 stations. One recorded walk with a phone gives the signs in order, the levels from the barometer and the distances from steps, so riders build the map by walking.",
+      "sources": [{ "title": "GeoAI hackathon write-up", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    }
+  ]
+}

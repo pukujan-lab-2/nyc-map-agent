@@ -1,7 +1,7 @@
 {
   "status": "held",
-  "who_is_boss_now": "dsh@air",
-  "last_heartbeat": "2026-11-01T11:35:56+00:00",
+  "who_is_boss_now": "dsh-lead",
+  "last_heartbeat": "2026-11-18T17:38:48+00:00",
   "vacated_at": null,
   "claim_queue": [],
   "as_of_history": [
@@ -34,6 +34,18 @@
       "ended_at": null,
       "notes": "first continuer (empty room)",
       "as_of": "2026-11-01T11:35:56+00:00"
+    },
+    {
+      "boss_agent_id": "dsh@air",
+      "ended_at": "2026-11-18T17:38:27+00:00",
+      "notes": "lease expired; seat vacant",
+      "as_of": "2026-11-18T17:38:27+00:00"
+    },
+    {
+      "boss_agent_id": "dsh-lead",
+      "ended_at": null,
+      "notes": "first continuer (empty room)",
+      "as_of": "2026-11-18T17:38:48+00:00"
     }
   ]
 }

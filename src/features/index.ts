@@ -30,3 +30,6 @@ export const loadStationCloudPage = () => import("./recorder/cloud/StationCloudP
 
 /** The tracker health page at /tracker-health (#11), its own chunk; App routes to it by address. */
 export const loadTrackerHealthPage = () => import("./transit/health/TrackerHealthPage");
+
+/** The guided subway presentation at /present, loaded only when opened. */
+export const loadPresentPage = () => import("./presenter/PresentPage");
