@@ -47,3 +47,41 @@ for (const size of SIZES) {
     await expectLayout(page);
   });
 }
+
+test("a Brooklyn-bound A train opens the Fulton dollhouse for its Nassau Street exit", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await mockNetwork(page);
+  const fixture = JSON.parse(readFileSync(new URL("./fixtures/agent-trip-fulton.json", import.meta.url), "utf8")) as {
+    legs: Array<Record<string, unknown>>;
+    [key: string]: unknown;
+  };
+  const fulton = { id: "A38", name: "Fulton St", lon: -74.00769, lat: 40.71020 };
+  const acTrip = {
+    ...fixture,
+    id: "fulton-ac-replay-e2e",
+    origin: { label: "Chambers St", at: [-74.00858, 40.71411] },
+    legs: [
+      { ...fixture.legs[2], route: "A", label: "A train from Chambers St to Fulton St",
+        coords: [[-74.00858, 40.71411], [fulton.lon, fulton.lat]], durationS: 30 },
+      { ...fixture.legs[3], station: fulton },
+      fixture.legs[4],
+    ],
+  };
+  await page.route("**/api/agent", (route) => route.fulfill({
+    contentType: "application/x-ndjson",
+    body: nd([{ type: "command", command: { type: "showRoute", trip: acTrip } },
+      { type: "done", model: "mock", usage: { inputTokens: 0, outputTokens: 0 } }]),
+  }));
+  await page.goto("/?flags=-agentHome");
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  await page.getByLabel("Ask the assistant").fill("Take the A train from Chambers St to Fulton St");
+  await page.getByRole("button", { name: "Send" }).click();
+  await page.getByRole("group", { name: "Preview speed" }).getByRole("button", { name: "30x" }).click();
+  await page.getByRole("button", { name: "Play trip preview" }).click();
+  await expect.poll(
+    () => page.evaluate(() => !!(window as unknown as { __map?: { getLayer: (id: string) => unknown } }).__map?.getLayer("dollhouse")),
+    { timeout: slow(30_000) },
+  ).toBe(true);
+  await expectLayout(page);
+  await page.screenshot({ path: testInfo.outputPath("fulton-ac-platform.png") });
+});

@@ -4,7 +4,7 @@
  * Brooklyn Bridge–City Hall and Atlantic Av–Barclays Ctr have models too (see stationModels).
  */
 import { LngLat, type Map as MaplibreMap } from "maplibre-gl";
-import type { DollhouseModel, DollhouseRig, DollhouseState } from "@/lib/map/three/dollhouse";
+import type { DollhouseModel, DollhouseRig, DollhouseState, FultonArrival } from "@/lib/map/three/dollhouse";
 import type { WalkCallout } from "@/lib/map/three/dollhouseCallouts";
 import type { PlaceSign, PlaceWalk, Spot } from "@/lib/map/stationPlace";
 import { readMap } from "@/lib/map/mapRead";
@@ -54,23 +54,32 @@ export type DollhouseView = {
  */
 export async function openDollhouse(
   map: MaplibreMap, exit: [number, number] | null, getState: () => DollhouseState, street: string | null, station: StationModelId = "fulton",
+  arrivalRoute?: string,
 ): Promise<DollhouseView | null> {
   const [{ dollhouseLayer, pickWalk, walkLength, DOLLHOUSE_LAYER }, { walkCallouts }, m] = await Promise.all([
     import("@/lib/map/three/dollhouse"), import("@/lib/map/three/dollhouseCallouts"), loadModel(station),
   ]);
   // No exit asked for (the dev hook): the longest walk, through the most of the station.
-  const walk = exit ? pickWalk(m, exit) : [...m.walks].sort((a, b) => walkLength(b.path) - walkLength(a.path))[0];
+  const ac = station === "fulton" && /^[AC]$/.test(arrivalRoute ?? "");
+  const arrival: FultonArrival | undefined = station === "fulton" && arrivalRoute
+    ? ac ? "fulton-ac" : "fulton-45"
+    : undefined;
+  const walk = exit ? pickWalk(m, exit, arrival) : [...m.walks].sort((a, b) => walkLength(b.path) - walkLength(a.path))[0];
   if (!walk) return null;
   if (map.getLayer(DOLLHOUSE_LAYER)) map.removeLayer(DOLLHOUSE_LAYER);
   let corner: string | null = null;
   try { corner = cornerLine(readMap(map).placeAt(walk.exit)); } catch { corner = null; }
   const exitLine = corner ?? street;
-  const view = dollhouseLayer(m, walk, getState, exitLine);
+  const isAc = ([line]: [string, string]) => line === "A" || line === "C";
+  const model = ac ? {
+    ...m, lines: m.transfers.filter(isAc), transfers: [...m.lines, ...m.transfers.filter((line) => !isAc(line))],
+  } : m;
+  const view = dollhouseLayer(model, walk, getState, exitLine);
   map.addLayer(view.layer);
   return {
     rig: view.rig,
     lengthM: walkLength(walk.path),
-    callouts: walkCallouts(m, walk.path, exitLine),
+    callouts: walkCallouts(ac && walk.track ? { ...model, track: walk.track } : model, walk.path, exitLine),
     stop: () => { if (map.getLayer(DOLLHOUSE_LAYER)) map.removeLayer(DOLLHOUSE_LAYER); },
   };
 }

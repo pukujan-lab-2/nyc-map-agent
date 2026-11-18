@@ -266,7 +266,7 @@ export function usePlayer(onCallout?: (text: string) => void) {
     doll.current = d;
     const exit = seg.coords[seg.coords.length - 1] ?? null;
     void import("@/lib/map/dollhousePreview")
-      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null, station))
+      .then(({ openDollhouse }) => openDollhouse(map, exit, () => d.state, exitStreet(seg) ?? null, station, ride?.route))
       .catch(() => null)
       .then((opened) => {
         if (doll.current !== d) { opened?.stop(); return; }
