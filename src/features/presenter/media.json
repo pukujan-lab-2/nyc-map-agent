@@ -202,6 +202,21 @@
       "question": "Who is this for?",
       "scene": 10,
       "answer": "Riders who lose their way underground, especially anyone who cannot take stairs. Step-free routes, elevator clues and clear exits matter most. The open data also lets other builders make their own guidance tools."
+    },
+    {
+      "question": "What did the AI actually do?",
+      "scene": 4,
+      "answer": "The vision model read Elevator to L from a saved frame: 6 of 8 sign frames exactly, none wrong. Our code, not the model, matched the words to a mapped landing and chose the turn. On ten frames with no sign, zero wrong matches."
+    },
+    {
+      "question": "What is the tech stack?",
+      "scene": 7,
+      "answer": "React and MapLibre draw the map and guide, three.js the 3D station, a Hono server the agent. Vision reads signs; COLMAP and Brush turn footage into 3D. Octo stores walks and serves reviewed answers; Haiku writes them."
+    },
+    {
+      "question": "How does the vision analysis work?",
+      "scene": 4,
+      "answer": "A frame goes to the vision model, which only reads the words. Our code matches those words against the signs of the station the rider is in, then the route supplies the turn. Keeping the match in code cut wrong guesses to zero."
     }
   ],
   "heights": [

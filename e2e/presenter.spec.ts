@@ -97,3 +97,24 @@ for (const size of SIZES) {
     await expectLayout(page);
   });
 }
+
+test("the opening screen offers the tech story in one tap", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/present");
+  await expect(page.getByRole("heading", { name: "Your trip" })).toBeAttached();
+  const chips = page.locator(".tech-chips");
+  await expect(chips.getByRole("button", { name: "3D map" })).toBeVisible();
+  await expectLayout(page);
+  await chips.getByRole("button", { name: "3D map" }).click();
+  await expect(page.locator("#presenter")).toHaveAttribute("data-scene", "7");
+  await expectLayout(page);
+});
+
+test("suggested questions submit like typed ones", async ({ page }) => {
+  await page.goto("/present");
+  const suggest = page.locator("#suggest");
+  await expect(suggest.getByRole("button", { name: "How did Washington do this?" })).toBeVisible();
+  await suggest.getByRole("button", { name: "How did Washington do this?" }).click();
+  await expect(page.locator("#presenter")).toHaveAttribute("data-scene", "9");
+  await expect(page.locator("#words")).toContainText("Waymap");
+});

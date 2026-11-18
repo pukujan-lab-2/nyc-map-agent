@@ -41,6 +41,7 @@ export default function PresentPage() {
           <span id="words" />
         </p>
         <form id="ask" aria-label="Talk to Design Baker">
+          <div className="suggest" id="suggest" aria-label="Suggested questions" />
           <button type="button" id="back" aria-label="Go back">←</button>
           <div className="inputwrap">
             <input id="q" aria-label="Ask Design Baker" placeholder="Ask or dictate…" maxLength={500} />

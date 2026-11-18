@@ -28,7 +28,7 @@ export function mountMicrophone(root: HTMLElement, signal: AbortSignal, pauseGui
     pauseGuide();
     microphone.disabled = true;
     try {
-      recording = await recordTurn(1200, 6000, 20_000);
+      recording = await recordTurn(2500, 8000, 45_000);
       if (signal.aborted) {
         recording.stop();
         void recording.done.catch(() => undefined);

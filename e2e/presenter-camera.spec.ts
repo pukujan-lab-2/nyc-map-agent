@@ -20,6 +20,13 @@ async function openSplat(page: Page) {
   await ask.fill("Show me the splat");
   await ask.press("Enter");
   await expect(page.locator("#presenter")).toHaveAttribute("data-scene", "7");
+  // Scene 6's default view is now the station map; commandView already maps splat questions
+  // to the splat capture. The click is belt-and-braces: only when splat mode is not already
+  // open (re-clicking would restart the camera sequence) and the button exists.
+  const capture = page.getByRole("button", { name: "Splat capture" });
+  if ((await page.locator("#presenter").getAttribute("data-mode")) !== "splat" && await capture.count()) {
+    await capture.click();
+  }
   await expect(page.locator(SPLAT_FRAME)).toBeVisible();
 }
 
