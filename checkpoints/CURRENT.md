@@ -6,10 +6,11 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Current projection
 
-*Updated 2026-11-17. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-11-18. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
 
 ## Completed recently
 
+- **The presentation has sourced answers on how other subways guide riders without GPS.** Search the NYC project workspace in Octo for “NYC Map Agent presentation Q&A.” The document covers Washington, Singapore, London, Seoul and New York, with answers on our stack and what the replay tests measured. Sample questions retrieved the new document from Octo.
 - **The November 17 Queens station recordings are staged for Octo.** Four downloads and their nested archives were unpacked. The six videos were compressed to MP4, and the batch is excluded from Git and Docker builds. The original files are intact.
 - **The November 14 GeoAI pitch shows what the rider sees when GPS drops underground.** The archived GeoAI submission contains the 2:50 final pitch and the smaller copy titled “LinkedIn - the pitch we presented.” Around 1:12, both show the Cortlandt St elevator beside Google Maps, the route map, and the three-level replay. The live phone demo and the recorded walk use different inputs, documented in the [two-screen demo notes](https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/demo/live-two-screen/README.md) and [GeoAI write-up](https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md).
 
@@ -26,6 +27,7 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Next
 
+- **The presentation currently searches only the recording plan and phone guide.** Add the new Q&A document to its source list and rehearse a Washington Metro question.
 - **The Queens recordings are ready for the owner to send to the private “nyc map” workspace.** The existing station-walk files were visible with the agent key from the shared settings. Upload access is unverified.
 - **For the November 18 demo, connect the phone to the second screen before presenting.** Walk a few steps after the starting location fix, then check that the dot moves. The pitch video has the recorded comparison if the room connection drops.
 
