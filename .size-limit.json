@@ -125,10 +125,16 @@
     "limit": "24 kB"
   },
   {
-    "name": "all JS except the station walk",
+    "name": "lib: livekit (lazy, fetched only when a live call starts)",
+    "path": ".size-build/assets/livekit-client.esm-*.js",
+    "limit": "140 kB"
+  },
+  {
+    "name": "all JS except the station walk and the live-call library",
     "path": [
       ".size-build/assets/*.js",
-      "!.size-build/assets/StationWalkScene-*.js"
+      "!.size-build/assets/StationWalkScene-*.js",
+      "!.size-build/assets/livekit-client.esm-*.js"
     ],
     "limit": "1290 kB"
   }

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
-import { post, status } from "./routes";
+import { post, status, voiceToken } from "./routes";
 import { exportTrace, type SpanSpec } from "../../lib/tracing";
 
 // Same technique as runLog.test.ts: capture the spans the route exports. mask and
@@ -47,8 +47,19 @@ afterEach(() => {
 describe("presentation assistant", () => {
   it("reports configuration without returning credentials", async () => {
     const value: unknown = await status(env).json();
-    expect(value).toEqual({ haiku: true, octo: true, dictate: false });
+    expect(value).toEqual({ haiku: true, octo: true, dictate: false, liveVoice: false });
     expect(JSON.stringify(value)).not.toContain("secret");
+  });
+
+  it("keeps the live-call token endpoint off until the LiveKit key and secret are set", async () => {
+    const off: unknown = await voiceToken(env).json();
+    expect(off).toEqual({ error: "unavailable" });
+    const body: unknown = await voiceToken({ ...env, NYC_PRESENTER_LIVEKIT_KEY: "lk-key", NYC_PRESENTER_LIVEKIT_SECRET: "lk-secret" }).json();
+    const on = body as { url: string; token: string; room: string };
+    expect(on.url).toBe("wss://copilot.design-bakery.com");
+    expect(on.room).toMatch(/^nma-present-/);
+    expect(on.token.split(".")).toHaveLength(3);
+    expect(JSON.stringify(on)).not.toContain("lk-secret");
   });
 
   it("retrieves only allowlisted sources and returns attribution without excerpts", async () => {

@@ -348,3 +348,7 @@
 #presenter .street-invite{padding:8px;gap:8px}
 #presenter .street-invite img{width:96px;height:96px}
 }
+
+/* The draft live-call controls (?flags=+liveVoice); hidden unless the voice service is configured. */
+#presenter #livecall, #presenter #livecall-mute{flex:none}
+#presenter .livecall-error{flex-basis:100%;font-size:12px;color:#f3aa82}

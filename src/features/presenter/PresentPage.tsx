@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { removeShell } from "@/lib/shellDraft";
 import { mountPresenter } from "./flow";
+import { LiveCall } from "./LiveCall";
 import "./presenter.css";
 
 /** The interactive subway presentation at /present. */
@@ -46,6 +47,7 @@ export default function PresentPage() {
             <input id="q" aria-label="Ask Design Baker" placeholder="Ask or dictate…" maxLength={500} />
             <button type="button" id="dictate" aria-label="Dictate a question" hidden>Mic</button>
             <button type="submit">Ask ↗</button>
+            <LiveCall />
           </div>
           <div className="meter" aria-hidden="true" />
           <span className="progress" id="step" />

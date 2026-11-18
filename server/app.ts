@@ -152,6 +152,7 @@ app.openapi(toV1Route(SEE_SIGN_ROUTE), seeSignHandler as never);
 app.openapi(legacyAlias(SEE_SIGN_ROUTE), seeSignHandler as never);
 // Presentation assistant requests keep credentials on the server.
 app.get("/api/presenter/status", () => presenter.status());
+app.get("/api/presenter/voice-token", () => presenter.voiceToken());
 for (const kind of ["ask", "chat", "weather"] as const) {
   app.post(`/api/presenter/${kind}`, (c) => presenter.post(kind, c.req.raw, undefined, undefined, weather.GET));
 }

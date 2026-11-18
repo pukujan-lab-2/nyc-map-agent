@@ -57,6 +57,7 @@ export const FLAGS = {
   signCamera: { tier: "basic", default: false, label: "Sign camera (prototype)", owner: "@Pukujan", expires: "2027-03-31" },
   walkGuide: { tier: "basic", default: false, label: "Walk guide: a filmed step-free walk, sign by sign (prototype)", owner: "@Pukujan", expires: "2027-03-31" },
   stationReplay: { tier: "basic", default: false, label: "Station replay: the film of the step-free trip from Cortlandt St to 14 St-Union Sq, with a dot on the map in step with it (demo)", owner: "@Pukujan", expires: "2027-03-31" },
+  liveVoice: { tier: "basic", default: false, label: "Presenter live call: talk to Design Baker over a LiveKit room (draft)", owner: "@Pukujan", expires: "2027-03-31" },
   dollhouseWalk: { tier: "basic", default: true, label: "Dollhouse view of the walk out of Fulton St (a figure seen from above; off = first person)", owner: "@Pukujan", expires: "2027-04-30" },
   contextClean: { tier: "basic", default: false, label: "Clean map by context (show only your line, trip or street; landmarks always)", owner: "@Pukujan", expires: "2027-04-30" },
 } as const satisfies Record<string, FlagMeta>;

@@ -86,6 +86,7 @@
     "gtfs-realtime-bindings": "1.1.1",
     "hono": "4.13.13",
     "leva": "0.10.1",
+    "livekit-client": "^2.24.1",
     "lucide-react": "0.454.0",
     "mapillary-js": "^4.1.2",
     "maplibre-gl": "6.15.0",

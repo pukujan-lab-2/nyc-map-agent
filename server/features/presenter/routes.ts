@@ -3,6 +3,7 @@ import type { Attributes } from "@opentelemetry/api";
 import { clientIp } from "../../lib/clientIp";
 import { exportTrace, mask, sessionFrom, type SpanSpec } from "../../lib/tracing";
 import sourcesRaw from "./sources.json";
+import { mintVoiceToken, voiceTokenConfigured } from "./voiceToken";
 
 const sources: Record<string, string> = sourcesRaw;
 const places: Record<string, [number, number]> = {
@@ -89,7 +90,13 @@ function configuration(env: Env) {
 }
 export function status(env: Env = process.env): Response {
   const c = configuration(env);
-  return reply({ haiku: !!c.haiku, octo: !!(c.octoKey && c.workspace), dictate: !!env.STT_BASE_URL?.trim() });
+  return reply({ haiku: !!c.haiku, octo: !!(c.octoKey && c.workspace), dictate: !!env.STT_BASE_URL?.trim(), liveVoice: voiceTokenConfigured(env) });
+}
+
+/** One LiveKit room token for a live call, or 503 while the voice service is not configured. */
+export function voiceToken(env: Env = process.env): Response {
+  if (!voiceTokenConfigured(env)) return reply({ error: "unavailable" }, 503);
+  return reply(mintVoiceToken(env));
 }
 
 async function anthropic(payload: unknown, env: Env, fetcher: typeof fetch, children: SpanSpec[]) {
