@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-18 03:40:57 UTC — agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db
+
+<!-- continuity:checkpoint {"agent":"agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db","blocked":[],"changed":["none"],"completed":["Built and recorded the Union Square camera demo. Matching the saved Elevator to L photo with the live service moved the map pin to the mezzanine."],"decisions":["Keep the demo opt-in and label its simulated location and illustrative arrow in the app."],"evidence":["The browser checks passed at all four required sizes. The recorded scan returned the expected sign and showed the updated checkpoint and direction."],"next_action":"Rehearse the camera on a phone and play the saved recording if the venue connection is unreliable.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0064","timestamp":"2026-11-18T03:40:57Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9acc722b90abad588da655263f13a8bd5c7272b41d52caf1faeb4dcd29fb4a43","request_id":"a0bec5a0cdcd4d8e82bc8cfc4efc19ea","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0064"} -->
+
+Completed:
+- Built and recorded the Union Square camera demo. Matching the saved Elevator to L photo with the live service moved the map pin to the mezzanine.
+
+Evidence:
+- The browser checks passed at all four required sizes. The recorded scan returned the expected sign and showed the updated checkpoint and direction.
+
+Decisions:
+- Keep the demo opt-in and label its simulated location and illustrative arrow in the app.
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Rehearse the camera on a phone and play the saved recording if the venue connection is unreliable.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
