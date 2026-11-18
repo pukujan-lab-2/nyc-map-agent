@@ -706,6 +706,29 @@ Blocked/uncertain:
 Next:
 - Merge #226 once the unit job's one timeout is retried.
 
+### 2026-11-18 02:23:32 UTC — codex
+
+<!-- continuity:checkpoint {"agent":"codex","blocked":[],"changed":[".gitignore, .dockerignore, checkpoints/CURRENT.md"],"completed":["The Queens recordings are staged locally, and the sensor audit matched the videos to their source logs."],"decisions":["no new decisions"],"evidence":["Six videos decode. The duplicate turnstile export matches byte for byte. The unique sensor CSVs compress from 608.7 MB to 224.6 MB with gzip."],"next_action":"Verify the video links and sync offsets in a per-walk file list before the owner uploads the Queens batch to Octo.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-18T02:23:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b788509b8211f9426c47c0fdb2c23f5984de5feb40496b8090217c176d870000","request_id":"aa35bcea425e441082e87c3fd378bd42","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The Queens recordings are staged locally, and the sensor audit matched the videos to their source logs.
+
+Evidence:
+- Six videos decode. The duplicate turnstile export matches byte for byte. The unique sensor CSVs compress from 608.7 MB to 224.6 MB with gzip.
+
+Decisions:
+- no new decisions
+
+Changed:
+- .gitignore, .dockerignore, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Verify the video links and sync offsets in a per-walk file list before the owner uploads the Queens batch to Octo.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
