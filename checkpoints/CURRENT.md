@@ -6,7 +6,12 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Current projection
 
-*Updated 2026-11-16. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-11-17. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+
+## Completed recently
+
+- **The November 17 Queens station recordings are staged for Octo.** Four downloads and their nested archives were unpacked. The six videos were compressed to MP4, and the batch is excluded from Git and Docker builds. The original files are intact.
+- **The November 14 GeoAI pitch shows what the rider sees when GPS drops underground.** The archived GeoAI submission contains the 2:50 final pitch and the smaller copy titled “LinkedIn - the pitch we presented.” Around 1:12, both show the Cortlandt St elevator beside Google Maps, the route map, and the three-level replay. The live phone demo and the recorded walk use different inputs, documented in the [two-screen demo notes](https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/demo/live-two-screen/README.md) and [GeoAI write-up](https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md).
 
 ## In flight
 
@@ -16,6 +21,9 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 **A followed bus waiting at its terminal was drawn driving up the street and snapping back, about four times while the owner watched an M22 in Battery Park City (#200, branch `fix/200-bus-layover-jump`, task NMA-0059).** The feed was fine. The app moved a bus it had not seen move, and turned it round whenever its reported compass bearing swung, which it does while a bus is parked. Now a bus is held until a report shows it moving, its direction comes from how it moved and from its next stop, a drawing that is ahead waits for its bus where it used to jump back, and a route that passes one street twice keeps the bus on the pass it is driving. The follow mini map names the next stop where it printed a stop id. Bus routes still come from Bus Time in pieces, and a bus still fades across a gap between two pieces. Next: after it deploys, follow a bus on layover at a terminal on the live site for a few minutes.
 
 ## Next
+
+- **The Queens recordings are ready for the owner to send to the private “nyc map” workspace.** The existing station-walk files were visible with the agent key from the shared settings. Upload access is unverified.
+- **For the November 18 demo, connect the phone to the second screen before presenting.** Walk a few steps after the starting location fix, then check that the dot moves. The pitch video has the recorded comparison if the room connection drops.
 
 - **Walk the guide at 14 St-Union Sq with a phone once its pull request deploys.** The map places are estimates (#88). Open the live site with `?flags=+walkGuide`, tap Lost and pick "Elevator to L", then walk to the street elevator: the dot should stay near you, and each "Look for" sign should come up where the guide says.
 - **Play a trip to Brooklyn Bridge and one to Atlantic Av–Barclays Ctr on the live site once #161's pull request deploys.** Those stations had no model (#161). Ask "Take the 4 train from Grand Central to Brooklyn Bridge" and "Take the 2 train from Fulton St to Atlantic Av" and play each preview: the figure should step off the downtown platform and walk to the trip's exit, with the platform sign naming the station.

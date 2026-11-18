@@ -8,3 +8,4 @@ test-results
 deploy/dashboard/node_modules
 deploy/dashboard/dist
 .aba-results
+.octo-staging/
