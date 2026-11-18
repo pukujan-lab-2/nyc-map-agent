@@ -388,3 +388,6 @@
 #presenter .street-invite{max-width:min(320px,88vw,calc(100% - 20px))}
 
 #presenter .popover[hidden]{display:none}
+
+#presenter .baker-bubble{pointer-events:none}
+#presenter:has(.popover:not([hidden])) .tech-chips{visibility:hidden}
