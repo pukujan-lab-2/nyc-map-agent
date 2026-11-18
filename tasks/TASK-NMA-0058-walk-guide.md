@@ -752,6 +752,29 @@ Blocked/uncertain:
 Next:
 - The presentation searches a fixed list of source documents. Add the new Q&A to that list and rehearse the Washington Metro question.
 
+### 2026-11-18 17:09:43 UTC — agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db
+
+<!-- continuity:checkpoint {"agent":"agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db","blocked":[],"changed":["none"],"completed":["The local presenter can answer a question about Washington Metro from the subway positioning Q&A and return to the Union Square sign."],"decisions":["no new decisions"],"evidence":["A browser test retrieved the Q&A from the NYC Octo workspace, displayed the 98-station answer, and resumed the bookmarked sign."],"next_action":"After public deployment, repeat the Washington question and the return to the bookmarked sign.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-18T17:09:43Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"545dad589782adc4eef6aacf6d204bced789e14b2e586c447925367c7b8d09bf","request_id":"71dfdc5bac4849c486cd5f6dfd451652","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The local presenter can answer a question about Washington Metro from the subway positioning Q&A and return to the Union Square sign.
+
+Evidence:
+- A browser test retrieved the Q&A from the NYC Octo workspace, displayed the 98-station answer, and resumed the bookmarked sign.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After public deployment, repeat the Washington question and the return to the bookmarked sign.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
