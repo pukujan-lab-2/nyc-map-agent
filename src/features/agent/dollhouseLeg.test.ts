@@ -5,11 +5,22 @@ import type { Segment } from "./flythrough";
 const seg = (over: Partial<Segment>): Segment => ({ kind: "ascend", label: "", coords: [], realS: 60, underground: true, callouts: [], ...over });
 const CITY_HALL: [number, number] = [-74.00413, 40.71307], FULTON: [number, number] = [-74.00957, 40.71037], WALL: [number, number] = [-74.0118, 40.7076];
 const GRAND_CENTRAL: [number, number] = [-73.97659, 40.75187], ATLANTIC: [number, number] = [-73.97768, 40.68431], NEVINS: [number, number] = [-73.98025, 40.68831];
+const CHAMBERS_AC: [number, number] = [-74.00858, 40.71411], FULTON_AC: [number, number] = [-74.00769, 40.71020], HIGH: [number, number] = [-73.99053, 40.69934];
 
 describe("which station leg plays in the dollhouse view", () => {
   it("is the walk off a downtown 4 at Fulton St", () => {
     expect(dollhouseLeg(seg({}), seg({ kind: "ride", route: "4", coords: [CITY_HALL, FULTON] }))).toBe("fulton");
     expect(dollhouseLeg(seg({}), seg({ kind: "ride", route: "5", coords: [CITY_HALL, FULTON] }))).toBe("fulton");
+  });
+  it("uses the Fulton model for a Brooklyn-bound A/C arrival at its own station stop", () => {
+    const exit = seg({ station: "A38" });
+    for (const route of ["A", "C"]) {
+      const ride = seg({ kind: "ride", route, coords: [CHAMBERS_AC, FULTON_AC] });
+      expect(dollhouseLeg(exit, ride)).toBe("fulton");
+      expect(dollhouseLeg(seg({ station: "418" }), ride)).toBeNull();
+      expect(dollhouseLeg(seg({ station: "A38", elevator: true }), ride)).toBeNull();
+      expect(dollhouseLeg(exit, seg({ kind: "ride", route, coords: [HIGH, FULTON_AC] }))).toBeNull();
+    }
   });
   it("is the walk off a downtown 4, 5 or 6 at Brooklyn Bridge–City Hall", () => {
     for (const route of ["4", "5", "6"]) expect(dollhouseLeg(seg({}), seg({ kind: "ride", route, coords: [GRAND_CENTRAL, CITY_HALL] }))).toBe("cityhall");

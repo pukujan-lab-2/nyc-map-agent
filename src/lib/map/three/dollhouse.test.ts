@@ -215,6 +215,20 @@ describe.each(MODELS)("the dollhouse walks in the $name model", ({ name, model }
 });
 
 describe("the dollhouse walks at Fulton St", () => {
+  it("keeps the arrival platform when paths share the Nassau St exit", () => {
+    const from45 = pickWalk(model, NASSAU_EXIT, "fulton-45");
+    const fromAc = pickWalk(model, NASSAU_EXIT, "fulton-ac");
+    expect(from45?.exit).toEqual(fromAc?.exit);
+    expect(from45?.path[0][2]).toBeCloseTo(-4.2);
+    expect(fromAc?.path[0][2]).toBeCloseTo(-16.87);
+    const exitOnlyFrom45: [number, number] = [-74.00969, 40.71039];
+    expect(pickWalk(model, exitOnlyFrom45, "fulton-45")).not.toBeNull();
+    expect(pickWalk(model, exitOnlyFrom45, "fulton-ac")).toBeNull();
+    const neighboringExit: [number, number] = [NASSAU_EXIT[0] + 0.00003, NASSAU_EXIT[1]];
+    const modelWithNeighbor = { ...model, walks: [...model.walks, { ...from45!, exit: neighboringExit }] };
+    expect(pickWalk(modelWithNeighbor, neighboringExit, "fulton-ac")).toBeNull();
+  });
+
   it("takes the trip to Fulton St the long way, under Fulton St to the exit at Nassau St", () => {
     const walk = pickWalk(model, NASSAU_EXIT);
     expect(walk).not.toBeNull();
