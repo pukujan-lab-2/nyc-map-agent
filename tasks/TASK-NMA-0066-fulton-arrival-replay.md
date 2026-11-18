@@ -51,6 +51,29 @@ Run the Fulton trip-station browser test and the dollhouse and recorder unit tes
 
 No checkpoints yet.
 
+### 2026-11-18 05:38:40 UTC — agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db
+
+<!-- continuity:checkpoint {"agent":"agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db","blocked":[],"changed":["none"],"completed":["Selected Fulton exit walks by arrival platform and ran the 67 Av tracking baseline using existing data."],"decisions":["Keep the pressure and GPS replay offline and keep accessibility directions limited to verified links."],"evidence":["Unit checks separate the shared Nassau exit by platform. The A-train browser simulation opens the Fulton model. The replay left all floors uncertain and rejected two of three injected GPS jumps."],"next_action":"Evaluate partial floor confirmation and recovery from a bad GPS correction on a separate recording.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0066","timestamp":"2026-11-18T05:38:40Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"ef5cf48783bc83c5c2c75e8b98a000b2f74765bad5cdd5e0f2addbcbdd996230","request_id":"f35c7a7ad5d54683a6edd677ddb856f0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0066"} -->
+
+Completed:
+- Selected Fulton exit walks by arrival platform and ran the 67 Av tracking baseline using existing data.
+
+Evidence:
+- Unit checks separate the shared Nassau exit by platform. The A-train browser simulation opens the Fulton model. The replay left all floors uncertain and rejected two of three injected GPS jumps.
+
+Decisions:
+- Keep the pressure and GPS replay offline and keep accessibility directions limited to verified links.
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Evaluate partial floor confirmation and recovery from a bad GPS correction on a separate recording.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
