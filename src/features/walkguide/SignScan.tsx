@@ -1,18 +1,34 @@
 import { Camera } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
 /** The frame is sent no wider than this: wider only slows the answer. */
 const FRAME_W = 960;
 
+export function captureSignFrame(video: HTMLVideoElement): string | null {
+  if (!video.videoWidth) return null;
+  const scale = Math.min(1, FRAME_W / video.videoWidth);
+  const frame = document.createElement("canvas");
+  frame.width = Math.round(video.videoWidth * scale);
+  frame.height = Math.round(video.videoHeight * scale);
+  const context = frame.getContext("2d");
+  if (!context) return null;
+  context.drawImage(video, 0, 0, frame.width, frame.height);
+  return frame.toDataURL("image/jpeg", 0.72);
+}
+
 type Cam = "off" | "starting" | "on" | "blocked";
 type Ask = "idle" | "asking" | "none" | "failed";
 
 /** One frame and the signs it may show, to the server; the id it names, or null. */
-export async function askSign(image: string, signs: ReadonlyArray<{ id: string; sign: string }>, signal?: AbortSignal): Promise<string | null> {
+export async function askSign(image: string, signs: ReadonlyArray<{ id: string; sign: string }>, signal?: AbortSignal, requiredText?: string): Promise<string | null> {
   const res = await fetch(`${API_BASE}/api/agent/see-sign`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ image, signs: signs.map((s) => ({ id: s.id, sign: s.sign })) }), signal });
   if (!res.ok) throw new Error(`see-sign ${res.status}`);
-  const body = (await res.json()) as { id?: unknown };
+  const body = (await res.json()) as { id?: unknown; read?: unknown };
+  if (requiredText) {
+    const words = (text: string) => ` ${text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `;
+    if (typeof body.read !== "string" || !words(body.read).includes(words(requiredText))) return null;
+  }
   return typeof body.id === "string" ? body.id : null;
 }
 
@@ -22,7 +38,12 @@ export async function askSign(image: string, signs: ReadonlyArray<{ id: string; 
  * under the button says so before the first photo is taken. Kept small: the
  * map above the sheet stays the main view.
  */
-export function SignScan({ signs, onFound }: { signs: ReadonlyArray<{ id: string; sign: string }>; onFound: (id: string) => void }) {
+export function SignScan({ signs, onFound, previewOverlay, requiredText }: {
+  signs: ReadonlyArray<{ id: string; sign: string }>;
+  onFound: (id: string) => void;
+  previewOverlay?: ReactNode;
+  requiredText?: string;
+}) {
   const [cam, setCam] = useState<Cam>("off");
   const [ask, setAsk] = useState<Ask>("idle");
   const video = useRef<HTMLVideoElement>(null);
@@ -33,6 +54,7 @@ export function SignScan({ signs, onFound }: { signs: ReadonlyArray<{ id: string
     live.current.stream?.getTracks().forEach((t) => t.stop());
     live.current.ctl?.abort();
     live.current = { alive: false };
+    setAsk("idle");
     setCam((c) => (c === "blocked" ? c : "off"));
   }, []);
 
@@ -59,23 +81,28 @@ export function SignScan({ signs, onFound }: { signs: ReadonlyArray<{ id: string
 
   const scan = () => {
     const v = video.current;
-    if (!v || !v.videoWidth) return;
-    const k = Math.min(1, FRAME_W / v.videoWidth);
-    const frame = document.createElement("canvas");
-    frame.width = Math.round(v.videoWidth * k);
-    frame.height = Math.round(v.videoHeight * k);
-    frame.getContext("2d")?.drawImage(v, 0, 0, frame.width, frame.height);
+    const image = v && captureSignFrame(v);
+    if (!image) return;
     const ctl = (live.current.ctl = new AbortController());
     setAsk("asking");
-    askSign(frame.toDataURL("image/jpeg", 0.72), signs, ctl.signal).then((id) => {
+    askSign(image, signs, ctl.signal, requiredText).then((id) => {
       if (ctl.signal.aborted) return;
-      if (id) { setAsk("idle"); stop(); onFound(id); } else setAsk("none");
+      if (id && signs.some((sign) => sign.id === id)) {
+        setAsk("idle");
+        if (previewOverlay === undefined) stop();
+        onFound(id);
+      } else {
+        setAsk("none");
+      }
     }).catch(() => { if (!ctl.signal.aborted) setAsk("failed"); });
   };
 
   return (
     <div className="flex flex-col gap-2" data-testid="walk-scan">
-      <video ref={video} playsInline muted aria-hidden className={`${cam === "on" ? "block" : "hidden"} max-h-[22dvh] w-full rounded-xl bg-black object-cover`} style={{ aspectRatio: "16 / 9" }} />
+      <div className={`${cam === "on" ? "relative" : "hidden"}`}>
+        <video ref={video} playsInline muted aria-hidden className={`block w-full rounded-xl bg-black ${previewOverlay === undefined ? "max-h-[22dvh] object-cover" : "max-h-[16dvh] object-contain"}`} style={{ aspectRatio: "16 / 9" }} />
+        {previewOverlay}
+      </div>
       {cam === "on" ? <button type="button" className="task-action min-h-11 px-3" disabled={ask === "asking"} onClick={scan}>{ask === "asking" ? "Looking…" : "Which sign is this?"}</button>
         : <button type="button" className="task-action min-h-11 px-3" disabled={cam === "starting"} onClick={start}>
           <span className="inline-flex items-center gap-1.5"><Camera size={16} aria-hidden />{cam === "starting" ? "Starting…" : "Point the camera at a sign"}</span>

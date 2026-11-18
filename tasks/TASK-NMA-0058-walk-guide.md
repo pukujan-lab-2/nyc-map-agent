@@ -706,6 +706,75 @@ Blocked/uncertain:
 Next:
 - Merge #226 once the unit job's one timeout is retried.
 
+### 2026-11-18 02:23:32 UTC — codex
+
+<!-- continuity:checkpoint {"agent":"codex","blocked":[],"changed":[".gitignore, .dockerignore, checkpoints/CURRENT.md"],"completed":["The Queens recordings are staged locally, and the sensor audit matched the videos to their source logs."],"decisions":["no new decisions"],"evidence":["Six videos decode. The duplicate turnstile export matches byte for byte. The unique sensor CSVs compress from 608.7 MB to 224.6 MB with gzip."],"next_action":"Verify the video links and sync offsets in a per-walk file list before the owner uploads the Queens batch to Octo.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-18T02:23:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b788509b8211f9426c47c0fdb2c23f5984de5feb40496b8090217c176d870000","request_id":"aa35bcea425e441082e87c3fd378bd42","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The Queens recordings are staged locally, and the sensor audit matched the videos to their source logs.
+
+Evidence:
+- Six videos decode. The duplicate turnstile export matches byte for byte. The unique sensor CSVs compress from 608.7 MB to 224.6 MB with gzip.
+
+Decisions:
+- no new decisions
+
+Changed:
+- .gitignore, .dockerignore, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Verify the video links and sync offsets in a per-walk file list before the owner uploads the Queens batch to Octo.
+
+### 2026-11-18 16:54:32 UTC — agent:codex/01a1ef8d-0ee9-7d50-8ad2-92398ee695a1
+
+<!-- continuity:checkpoint {"agent":"agent:codex/01a1ef8d-0ee9-7d50-8ad2-92398ee695a1","blocked":[],"changed":["Octo presentation research and checkpoints/CURRENT.md"],"completed":["The presentation needed sourced answers on walking through subway stations without GPS. The NYC project workspace in Octo now has ten answers covering Washington, Singapore, London, Seoul, New York, and our implementation and tests."],"decisions":["no new decisions"],"evidence":["Octo search returned the new document for sample questions about each international example, the app stack, the 67 Av replay, and train tracking."],"next_action":"The presentation searches a fixed list of source documents. Add the new Q&A to that list and rehearse the Washington Metro question.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-18T16:54:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f82e1323d01d0a4ef650c33e226c0d4a22089868b8e1fd1961c7344b1f00bb47","request_id":"5a51d09de8a14843a83b99579faa3084","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The presentation needed sourced answers on walking through subway stations without GPS. The NYC project workspace in Octo now has ten answers covering Washington, Singapore, London, Seoul, New York, and our implementation and tests.
+
+Evidence:
+- Octo search returned the new document for sample questions about each international example, the app stack, the 67 Av replay, and train tracking.
+
+Decisions:
+- no new decisions
+
+Changed:
+- Octo presentation research and checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- The presentation searches a fixed list of source documents. Add the new Q&A to that list and rehearse the Washington Metro question.
+
+### 2026-11-18 17:09:43 UTC — agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db
+
+<!-- continuity:checkpoint {"agent":"agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db","blocked":[],"changed":["none"],"completed":["The local presenter can answer a question about Washington Metro from the subway positioning Q&A and return to the Union Square sign."],"decisions":["no new decisions"],"evidence":["A browser test retrieved the Q&A from the NYC Octo workspace, displayed the 98-station answer, and resumed the bookmarked sign."],"next_action":"After public deployment, repeat the Washington question and the return to the bookmarked sign.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-18T17:09:43Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"545dad589782adc4eef6aacf6d204bced789e14b2e586c447925367c7b8d09bf","request_id":"71dfdc5bac4849c486cd5f6dfd451652","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The local presenter can answer a question about Washington Metro from the subway positioning Q&A and return to the Union Square sign.
+
+Evidence:
+- A browser test retrieved the Q&A from the NYC Octo workspace, displayed the 98-station answer, and resumed the bookmarked sign.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- After public deployment, repeat the Washington question and the return to the bookmarked sign.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.

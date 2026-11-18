@@ -159,14 +159,23 @@ export function walkAt(walk: P3[], f: number): WalkPose {
 const metresBetween = (a: [number, number], b: [number, number]) =>
   Math.hypot((a[0] - b[0]) * 111_320 * Math.cos((a[1] * Math.PI) / 180), (a[1] - b[1]) * 111_320);
 
-/** The walk that comes up at `exit` (the trip's exit), or null when the model has no walk to it. */
-export function pickWalk(model: DollhouseModel, exit: [number, number]): DollhouseWalk | null {
+export type FultonArrival = "fulton-ac" | "fulton-45";
+
+/** The walk from the arrival platform to the trip's exit, when modeled. */
+export function pickWalk(model: DollhouseModel, exit: [number, number], arrival?: FultonArrival): DollhouseWalk | null {
   let best: DollhouseWalk | null = null, bestD = EXIT_MATCH_M;
   for (const w of model.walks) {
     const d = metresBetween(w.exit, exit);
     if (d < bestD) { best = w; bestD = d; }
   }
-  return best;
+  if (!best || !arrival) return best;
+  const [lon, lat] = best.exit;
+  return model.walks.find((w) => {
+    // The lower track is explicit on Fulton A/C walks. Resolve the portal before checking the platform
+    // so a missing route to it cannot send a rider to the other door across the street.
+    const ac = w.track !== undefined && w.track.at[2] < model.track.at[2];
+    return w.exit[0] === lon && w.exit[1] === lat && ac === (arrival === "fulton-ac");
+  }) ?? null;
 }
 
 /** Where along the walk things go: the stair feet and heads (signs) and the fare line (gates). */

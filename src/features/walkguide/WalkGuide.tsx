@@ -1,12 +1,14 @@
 import "@/components/task-screens.css";
-import { ArrowLeft, ArrowRight, Download, Film, Navigation, Pause, Play, Search, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, Camera, Download, Film, Navigation, Pause, Play, Search, X } from "lucide-react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
 import { onMapInstance } from "@/lib/map/mapInstance";
+import { measureCover } from "@/lib/map/mapCover";
 import { say } from "@/lib/voice/say";
 import { countStep, dueAtNext, facingAt, initialSteps, legPath, nearbyFirst, nextStop, placeAt, placeForSign, simTick, stepsToNextStop, type Place } from "./progress";
+import { CameraGuide } from "./CameraGuide";
 import { SignScan } from "./SignScan";
 import { SIGN_WORDS } from "./signWords";
 import { photoUrl, WALK, WRONG_WAYS, type Checkpoint } from "./walks";
@@ -21,6 +23,9 @@ const TRIP_FILM = "/walks/trip.mp4";
 /** How far ahead of the dot the facing beam reaches, metres. */
 const BEAM_M = 10;
 const LEVEL: Record<Checkpoint["level"], string> = { street: "Street", concourse: "Concourse", mezzanine: "Mezzanine", platform: "Platform" };
+const DEMO_START = WALK.findIndex((checkpoint) => checkpoint.id === "us-platform");
+const DEMO_SIGN = WALK.findIndex((checkpoint) => checkpoint.id === "us-to-l");
+const DEMO_SIGN_CHOICE = { id: WALK[DEMO_SIGN].id, sign: SIGN_WORDS[WALK[DEMO_SIGN].id] };
 
 type MotionCtor = { requestPermission?: () => Promise<"granted" | "denied"> };
 
@@ -73,9 +78,13 @@ function ensure(map: MapLibreMap): void {
  * front of them. The map stays in view above the sheet.
  */
 export default function WalkGuide() {
+  const [demo] = useState(() => new URLSearchParams(window.location.search).get("walkDemo") === "union-square");
+  const [cameraGuide, setCameraGuide] = useState(false);
+  const closeCameraGuide = useCallback(() => setCameraGuide(false), []);
+  const [demoSource, setDemoSource] = useState<"camera" | "manual" | null>(null);
   const [open, setOpen] = useState(true);
   const [level, setLevel] = useState<SheetLevel>(1);
-  const [place, setPlace] = useState<Place>({ i: 0, walked: 0 });
+  const [place, setPlace] = useState<Place>(() => ({ i: demo ? DEMO_START : 0, walked: 0 }));
   const [started, setStarted] = useState(false);
   const [lost, setLost] = useState(false);
   const [wrong, setWrong] = useState<string | null>(null);
@@ -134,8 +143,8 @@ export default function WalkGuide() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !open) return;
-    map.easeTo({ center: WALK[place.i].at, zoom: 17.6, duration: 900 });
-  }, [place.i, open, mapReady]);
+    map.easeTo({ center: WALK[place.i].at, zoom: 17.6, duration: 900, ...(demo ? { padding: measureCover(map) } : {}) });
+  }, [place.i, open, mapReady, demo]);
   useEffect(() => () => {
     stopSay.current?.();
     const map = mapRef.current;
@@ -214,6 +223,10 @@ export default function WalkGuide() {
   });
 
   const close = () => { stopSay.current?.(); clearTimeout(heardTimer.current); setSim(false); setOpen(false); };
+  const confirmDemoSign = (source: "camera" | "manual") => {
+    setDemoSource(source);
+    go({ i: DEMO_SIGN, walked: 0 });
+  };
   if (!open) return null;
 
   const signs = nearbyFirst(WALK, [...WALK, ...WRONG_WAYS], place.i);
@@ -222,20 +235,43 @@ export default function WalkGuide() {
   const scanSigns = signs.filter((s) => SIGN_WORDS[s.id] && stationOf(s) === here.station).map((s) => ({ id: s.id, sign: SIGN_WORDS[s.id] }));
   const togo = here.by === "elevator" ? "Elevator" : here.by === "train" ? "Train" : left > 0 ? `About ${Math.max(5, Math.round(left / 5) * 5)} steps to ${stop.by === "train" ? "the train" : stop.by === "elevator" ? "the elevator" : "the way out"}` : "You are here";
 
-  return (
+  const sheet = (
     <PullSheet testId="walk-guide" label="Walk guide" level={level} onLevel={setLevel} onClose={close}
       header={<div className="flex items-center gap-2.5">
         <button type="button" className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left" aria-expanded={level > 0} onClick={() => setLevel((l) => (l === 0 ? 1 : l))}>
           <Navigation size={18} className="shrink-0" aria-hidden />
           <span className="min-w-0 flex-1">
-            <span className="task-caption block truncate" data-testid="walk-level">{sim ? "Simulation · " : ""}{here.station} · {LEVEL[here.level]}</span>
-            <span className="block truncate text-[15px] font-bold" data-testid="walk-togo">{togo}</span>
+            <span className="task-caption block truncate" data-testid="walk-level">{sim || demo ? "Simulation · " : ""}{here.station} · {LEVEL[here.level]}</span>
+            <span className="block truncate text-[15px] font-bold" data-testid="walk-togo">{demo ? "Camera guidance demo" : togo}</span>
           </span>
         </button>
         <button type="button" aria-label="Close" className="task-action task-close" onClick={close}><X size={18} /></button>
       </div>}>
       <section className="pull-sheet-body mt-1 flex flex-col gap-2" aria-label="Walk guide">
-        {lost ? <>
+        {demo ? <>
+          <button type="button" className="task-action min-h-11 px-3" onClick={() => setCameraGuide(true)}>
+            <span className="inline-flex items-center gap-1.5"><Camera size={16} aria-hidden /> Camera view <ArrowRight size={14} aria-hidden /></span>
+          </button>
+          {demoSource ? (
+            <div role="status" className="space-y-1" data-testid="walk-demo-direction">
+              <p className="task-caption">{demoSource === "camera" ? "Sign matched" : "Sign selected"} · Mezzanine</p>
+              <p className="text-sm font-bold leading-snug">{here.say}</p>
+            </div>
+          ) : <p className="text-sm font-bold">Show the camera the Elevator to L sign.</p>}
+          {!cameraGuide ? <SignScan
+            key={demoSource === "manual" ? "manual" : "camera"}
+            signs={[DEMO_SIGN_CHOICE]}
+            requiredText={DEMO_SIGN_CHOICE.sign}
+            onFound={() => confirmDemoSign("camera")}
+            previewOverlay={demoSource === "camera" ? <>
+              <ArrowUp aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 size-11 -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500 p-2 text-black" />
+              <span className="pointer-events-none absolute bottom-1 left-2 rounded bg-black/80 px-2 py-1 text-xs">Illustrative arrow</span>
+            </> : null}
+          /> : null}
+          <button type="button" className="task-action min-h-11 px-3" onClick={() => confirmDemoSign("manual")}>
+            Choose “Elevator to L” manually
+          </button>
+        </> : lost ? <>
           {scanSigns.length ? <SignScan signs={scanSigns} onFound={pick} /> : null}
           <p className="text-sm font-bold">Or tap the one you can see</p>
           <div className="grid shrink-0 auto-rows-max grid-cols-2 gap-2" data-testid="walk-signs">
@@ -294,4 +330,11 @@ export default function WalkGuide() {
       </section>
     </PullSheet>
   );
+
+  return <>
+    {sheet}
+    {cameraGuide ? <CameraGuide sign={DEMO_SIGN_CHOICE} matched={demoSource !== null}
+      path={legPath(WALK, place.i)} bearing={facingAt(WALK, place)} level={LEVEL[here.level]}
+      onFound={() => confirmDemoSign("camera")} onClose={closeCameraGuide} /> : null}
+  </>;
 }

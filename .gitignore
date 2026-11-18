@@ -11,6 +11,7 @@ playwright-report/
 test-results/
 .aba-results/
 .superpowers/
+/.octo-staging/
 
 # Claude Code subagent worktrees (ACS wants them under ~/.cache/acs/worktrees)
 .claude/worktrees/
