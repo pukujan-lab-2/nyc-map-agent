@@ -53,6 +53,29 @@ Open `/?flags=+walkGuide&walkDemo=union-square` and select Camera view. Scan the
 
 No checkpoints yet.
 
+### 2026-11-18 04:26:28 UTC — agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db
+
+<!-- continuity:checkpoint {"agent":"agent:codex/01a1ec5e-b70c-7342-bade-77e99cb521db","blocked":[],"changed":["none"],"completed":["Built and recorded the camera-first Union Square demo. The sign moved the simulated pin to the mezzanine. An aligned arrow turned with the camera orientation and disappeared when updates stopped."],"decisions":["Keep the camera view opt-in, with arrows based on heading and the minimap visible."],"evidence":["The four required browser layouts passed, including sign match, turn, heading loss and camera shutdown. The browser recording used two saved public photographs, the live sign service and simulated orientation."],"next_action":"Rehearse the camera and heading calibration on a physical phone in portrait orientation.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0065","timestamp":"2026-11-18T04:26:28Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"155ee0966fec710e22fcc5e6d339129cab6cb185da5e1bce29990f16ba71d5b7","request_id":"792c0ad57d584c11a4cfe0e4775b293a","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0065"} -->
+
+Completed:
+- Built and recorded the camera-first Union Square demo. The sign moved the simulated pin to the mezzanine. An aligned arrow turned with the camera orientation and disappeared when updates stopped.
+
+Evidence:
+- The four required browser layouts passed, including sign match, turn, heading loss and camera shutdown. The browser recording used two saved public photographs, the live sign service and simulated orientation.
+
+Decisions:
+- Keep the camera view opt-in, with arrows based on heading and the minimap visible.
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Rehearse the camera and heading calibration on a physical phone in portrait orientation.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
