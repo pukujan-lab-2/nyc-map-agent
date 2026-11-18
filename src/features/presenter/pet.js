@@ -103,6 +103,14 @@ export function createPet(root, signal) {
     bubble.removeAttribute("data-open");
   }
 
+  // When the line finishes, the whole reply stays in the bubble, like a chat
+  // bubble, until the next action clears it.
+  function settle(current) {
+    if (current.settled) return;
+    current.settled = true;
+    renderPhrase(current.parts.map((part) => part.value).join(" "));
+  }
+
   function say(text, audioGetter) {
     if (typeof text !== "string" || !text.trim()) {
       clear();
@@ -123,7 +131,7 @@ export function createPet(root, signal) {
       speech.seconds = audio.currentTime;
     }
     if (audio?.ended && speech.usedAudio) {
-      clear();
+      settle(speech);
       return;
     }
     const expectedDuration = Math.max(2.1, speech.weight / 2.75);
@@ -131,7 +139,7 @@ export function createPet(root, signal) {
       ? speech.seconds / audio.duration
       : elapsed / expectedDuration;
     if (ratio >= 1) {
-      clear();
+      settle(speech);
       return;
     }
     let time = ratio * speech.weight;
@@ -202,7 +210,7 @@ export function createPet(root, signal) {
     if (!geometry || !moon.firstElementChild) return;
     updatePhrase(now);
     const { size, minX, maxX, minY, maxY } = geometry;
-    const playing = !reduced.matches && !speech && !moon.classList.contains("talk");
+    const playing = !reduced.matches && (!speech || speech.settled) && !moon.classList.contains("talk");
     const kick = playing && reaction.until > now ? clamp((reaction.until - now) / 280, 0, 1) : 0;
     const drift = playing ? Math.sin(now / 1240) * 3 : 0;
     const bob = playing ? Math.sin(now / 630) * 2.8 : 0;

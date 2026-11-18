@@ -51,7 +51,7 @@
 #presenter .guide{display:flex;align-items:center;gap:14px;justify-content:space-between}
 #presenter .caption{position:relative;max-width:78ch;min-width:0;margin:0;font-size:clamp(14px,1.35vw,19px)}
 #presenter #by{display:block;font:10px Menlo,monospace;letter-spacing:.1em;color:var(--lime);text-transform:uppercase;margin-bottom:4px}
-#presenter form{margin-top:14px;display:flex;align-items:center;gap:7px}
+#presenter form{margin-top:14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 #presenter .inputwrap{display:flex;align-items:center;background:#1b1f19;border:1px solid var(--line);border-radius:30px;flex:1;max-width:690px;min-width:0}
 #presenter .inputwrap input{padding:10px 15px;background:transparent;border:0;color:var(--ink);min-width:0;flex:1}
 #presenter .inputwrap button{margin:3px;border:0;background:#353b2e;padding:6px 16px}
@@ -348,3 +348,43 @@
 #presenter .street-invite{padding:8px;gap:8px}
 #presenter .street-invite img{width:96px;height:96px}
 }
+
+/* The way to go at each walk stop: a big arrow over the photo, pointing where the rider turns. */
+#presenter .guide-arrow{position:absolute;left:50%;bottom:12%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;z-index:2;pointer-events:none}
+#presenter .guide-arrow svg{width:clamp(64px,12vw,108px);height:clamp(64px,12vw,108px);transform:rotate(var(--turn,0deg));filter:drop-shadow(0 2px 8px #000a);animation:arrow-nudge 1.6s ease-in-out infinite}
+#presenter .guide-arrow small{font:600 clamp(11px,1.3vw,14px)/1.2 system-ui,sans-serif;letter-spacing:.04em;color:#eaf5d8;background:#0d130cd9;border:1px solid #d5fa8055;border-radius:999px;padding:4px 10px}
+@keyframes arrow-nudge{0%,100%{translate:0 0}50%{translate:0 -7px}}
+@media (prefers-reduced-motion: reduce){#presenter .guide-arrow svg{animation:none}}
+
+/* One tap from the opening screen to every piece of the tech story. */
+#presenter .tech-chips{position:absolute;left:0;right:0;bottom:clamp(8px,2vh,20px);width:max-content;margin-inline:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:min(92%,640px,calc(100vw - 24px));z-index:2}
+#presenter .tech-chips button{min-height:28px;padding:5px 12px;border-radius:999px;border:1px solid #d5fa8066;background:#0d130cd9;color:#eaf5d8;font:600 clamp(11px,1.2vw,13px)/1.2 system-ui,sans-serif;letter-spacing:.03em;cursor:pointer}
+#presenter .tech-chips button:hover,#presenter .tech-chips button:focus-visible{border-color:#d5fa80;background:#1a2416}
+
+/* Suggested questions above the chat: the guide offers where to go next. */
+#presenter .suggest{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;scrollbar-width:none;flex:0 0 100%;min-width:0}
+#presenter .suggest::-webkit-scrollbar{display:none}
+#presenter .suggest button{flex:none;min-height:26px;padding:4px 12px;border-radius:999px;border:1px solid #adcd7f55;background:#141a12e6;color:#dbe6d1;font:500 12px/1.3 system-ui,sans-serif;cursor:pointer}
+#presenter .suggest button:hover,#presenter .suggest button:focus-visible{border-color:#d5fa80;color:#f1f3e9}
+
+/* Stage-width guarantees (scene-views): no frame, scroll content or overlay may
+   exceed the stage width at any of the four supported sizes. */
+#presenter .frame{max-width:100%;min-width:0}
+#presenter .frame>iframe{width:100%;height:100%;border:0;display:block}
+#presenter .globe-wrap{min-width:0;flex:none}
+#presenter .tech-chips{max-width:min(92%,640px,calc(100vw - 24px));min-width:0}
+#presenter .tech-chips button{min-width:0;max-width:100%}
+#presenter .build{max-width:100%;min-width:0}
+#presenter .build-scroll{max-width:100%;min-width:0;overflow-x:hidden}
+#presenter .mission{max-width:min(64ch,100%);overflow-wrap:anywhere}
+#presenter .build-grid{max-width:100%;min-width:0}
+#presenter .build-grid>*{min-width:0;max-width:100%}
+#presenter .build-left{max-width:100%}
+#presenter .build .flow{max-width:100%}
+#presenter .build .links{min-width:0;max-width:100%}
+#presenter .build .links a{overflow-wrap:anywhere}
+#presenter .qr-card{max-width:100%;min-width:0}
+#presenter .qr-card img{max-width:100%;height:auto}
+#presenter .street-invite{max-width:min(320px,88vw,calc(100% - 20px))}
+
+#presenter .popover[hidden]{display:none}

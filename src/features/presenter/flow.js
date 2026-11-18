@@ -49,7 +49,9 @@ export function mountPresenter(root) {
     [/\b(colmap|splat|meshroom|3d capture|point cloud|3d thing)\b/i, 6],
     [/\b(fulton|arrow|arkit|nassau|route graph|augmented reality|live guidance)\b/i, 7],
     [/\b(toei|tokyo|floorpair|clew|research|anyone else|other people)\b/i, 8],
-    [/\b(license|privacy|contribut\w*|github|download|data today|collecting|data flow|stack|octo|upload|give feedback)\b/i, 9],
+    [/\b(license|privacy|contribut\w*|github|download|data today|collecting|data flow|octo|upload|give feedback)\b/i, 9],
+    [/\b(ai|artificial intelligence|vision model|vision analysis|what did the model|neural|how does the vision)\b/i, 16],
+    [/\b(tech stack|stack|technologies|what is it built|built with|gis)\b/i, 15],
     [/\b(archive|first pitch|original video|hackathon)\b/i, 1],
     [/\b(starting point|introduction|beginning)\b/i, 0],
   ];
@@ -133,12 +135,49 @@ export function mountPresenter(root) {
       if (id === actionId && !signal.aborted) callback();
       return;
     }
-    setTimeout(() => { if (id === actionId && !signal.aborted) callback(); }, 680);
+    setTimeout(() => { if (id === actionId && !signal.aborted) callback(); }, 480);
   }
 
   function snapshot() {
     const video = media();
     return { ...current, time: video?.currentTime || 0, playing: Boolean(video && !video.paused && !video.ended) };
+  }
+
+  // Tappable options above the chat, like the Design Bakery site: each scene offers
+  // the questions a visitor is most likely to want next.
+  const suggestions = {
+    0: ["Start the tour", "Show me the splat", "How did Washington do this?"],
+    1: ["Keep going", "What did the phone record?"],
+    2: ["Show the GPS replay", "How far off was GPS?"],
+    3: ["Play the original walk here", "What did the sign reader see?", "Show me the left turn", "What did the AI actually do?"],
+    4: ["What does EL479 tell us?", "What did the barometer add?"],
+    5: ["Show the pressure readings", "How does this become 3D?"],
+    6: ["Show the COLMAP points", "How was this made?", "What is a Gaussian splat?", "What is the tech stack?"],
+    7: ["Is this live guidance?", "Show the Fulton simulation"],
+    8: ["How did Singapore do this?", "How did London do this?", "How did Seoul do this?"],
+    9: ["How can I contribute a walk?", "What's the plan from here?", "How can I get the data today?"],
+    10: ["Play the original walk here", "What do I do here?"],
+    11: ["Play the original walk here", "What do I do here?"],
+    12: ["Play the original walk here", "Where do I go?"],
+    13: ["Play the original walk here", "Where do I go?"],
+    14: ["Show me the GPS test", "How can I contribute a walk?"],
+    15: ["What did the AI actually do?", "How can I get the data today?"],
+    16: ["Show me the sign match", "What is the tech stack?"],
+  };
+  function updateSuggestions() {
+    const tray = get("suggest");
+    if (!tray) return;
+    tray.replaceChildren();
+    for (const text of suggestions[current.scene] || suggestions[0]) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.textContent = text;
+      listen(chip, "click", () => {
+        question.value = text;
+        get("ask").requestSubmit();
+      });
+      tray.append(chip);
+    }
   }
 
   function updateNav() {
@@ -153,6 +192,7 @@ export function mountPresenter(root) {
     route.querySelectorAll(".item").forEach((item) => item.setAttribute("aria-current", String(Number(item.dataset.index) === current.scene)));
     question.placeholder = "Ask or dictate…";
     question.setAttribute("aria-description", scene.question || "");
+    updateSuggestions();
   }
 
   // On the splat scene Moon drives the camera: pull back to the overview, then start a slow orbit.
@@ -162,7 +202,7 @@ export function mountPresenter(root) {
     if (!frame) return;
     const post = (move) => {
       if (signal.aborted || id !== actionId || !frame.isConnected) return;
-      if (current.scene !== 6 || current.mode !== "default") return;
+      if (current.scene !== 6 || current.mode !== "splat") return;
       frame.contentWindow?.postMessage({ type: "presenter-camera", move }, location.origin);
     };
     const send = () => {
@@ -198,7 +238,7 @@ export function mountPresenter(root) {
     }
     const id = actionId;
     requestAnimationFrame(() => { if (id === actionId && !signal.aborted && !guiding) glide(evidence(), true); });
-    if (current.scene === 6 && current.mode === "default") driveSplat(id);
+    if (current.scene === 6 && current.mode === "splat") driveSplat(id);
   }
 
   function describe(target, words, label) {
@@ -243,8 +283,13 @@ export function mountPresenter(root) {
 
   function onward(control) {
     if (resume()) return;
+    // The walk's last stop leads into the tech story instead of looping.
+    if (current.scene === 14) {
+      follow({ scene: 2 }, control);
+      return;
+    }
     const scene = WALK[(WALK.indexOf(current.scene) + 1) % WALK.length];
-    follow({ scene, playing: [1, 7].includes(scene) }, control);
+    follow({ scene, playing: [1, 2, 7].includes(scene) }, control);
   }
 
   function closeRoute() {
@@ -331,6 +376,13 @@ export function mountPresenter(root) {
     setWords(blockedVoice, get("by").textContent);
   }
   listen(document, "click", unlockSound, { capture: true });
+
+  listen(document, "click", (event) => {
+    const chip = event.target.closest("button[data-jump]");
+    if (!chip) return;
+    const to = Number(chip.dataset.jump);
+    if (Number.isInteger(to) && SCENES[to]) follow({ scene: to }, chip);
+  });
 
   listen(document, "click", (event) => {
     const control = event.target.closest("button[data-mode]");
@@ -424,7 +476,7 @@ export function mountPresenter(root) {
         done(true);
       };
       if (reducedMotion.matches) click();
-      else setTimeout(click, 550);
+      else setTimeout(click, 350);
     });
   }
 
@@ -440,6 +492,8 @@ export function mountPresenter(root) {
     }
     guiding = true;
     root.dataset.moonGuiding = "";
+    // Speak first, navigate second: the visitor hears the answer while Moon flies to the evidence.
+    setReply(result, label);
     try {
       if (route.hidden && !await clickAfterGlide(routeButton, id, options)) return;
       if (EXTRAS.includes(index) && !more.open && !await clickAfterGlide(more.querySelector("summary"), id, options)) return;
@@ -453,7 +507,6 @@ export function mountPresenter(root) {
       }
       if (signal.aborted || id !== actionId) return;
       closeRoute();
-      setReply(result, label);
     } finally {
       if (id === actionId && !signal.aborted) {
         guiding = false;
@@ -466,8 +519,10 @@ export function mountPresenter(root) {
     if (city) return city;
     if (stops[index]?.[5] && /\b(original walk|recorded walk|this (part|stop|walk|clip))\b/i.test(words)) return "walk";
     if (index === 5 && /\b(readings|values|numbers|sensor export)\b/i.test(words)) return "data";
+    if (index === 6 && /\bsplat\b/i.test(words)) return "splat";
     if (index === 6 && /\b(point cloud|camera positions|points)\b/i.test(words)) return "points";
     if (index === 6 && /\b(process|pipeline|steps|sequence)\b/i.test(words)) return "process";
+    if (index === 2 && /\b(map|estimates|tracks?)\b/i.test(words)) return "map";
     if ([2, 3, 6].includes(index) && /\b(play|watch|clip|footage|video)\b/i.test(words)) return "video";
     return undefined;
   }
@@ -480,7 +535,7 @@ export function mountPresenter(root) {
     updateNav();
     const controller = new AbortController();
     request = controller;
-    const timeout = setTimeout(() => controller.abort(), 55000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
       const result = await chat.ask(words, { signal: controller.signal, scene: before.scene + 1 });
       if (signal.aborted || id !== actionId || typeof result?.answer !== "string" || !result.answer.trim()) return;
@@ -552,7 +607,7 @@ export function mountPresenter(root) {
     setWords("I’m looking that up.", "Design Baker");
     const controller = new AbortController();
     request = controller;
-    const timeout = setTimeout(() => controller.abort(), 55000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
       const response = await fetch("/api/presenter/ask", {
         method: "POST",
