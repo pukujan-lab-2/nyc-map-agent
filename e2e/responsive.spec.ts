@@ -502,3 +502,44 @@ test("Escape while typing a follow-up leaves the answer open", async ({ page }) 
   await box.press("Escape");
   await expect(page.getByTestId("answer-card")).toHaveCount(0);
 });
+
+// The QR dialog is a starting point, not a dead end: more-info buttons beside the code (owner, 2026-11-18).
+test("the QR panel offers more than a code", async ({ page }) => {
+  for (const size of SIZES) {
+    await page.setViewportSize(size);
+    await open(page);
+    const phone = size.width < 640;
+    if (phone) {
+      await page.getByTestId("settings-chip").click();
+      const panel = page.getByTestId("settings-sheet");
+      await panel.getByTestId("sheet-grip").click();
+      await panel.getByTestId("qr-button").click();
+    } else {
+      await page.getByTestId("qr-button").click();
+    }
+    const sheet = page.getByTestId("qr-sheet");
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByTestId("qr-more-presenter")).toBeVisible();
+    await expect(sheet.getByTestId("qr-more-record")).toBeVisible();
+    await expect(sheet.getByTestId("coming-soon-link")).toBeVisible();
+    // The dialog fits its window and every button is a real tap target.
+    const fit = await sheet.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const small = Array.from(el.querySelectorAll("a,button")).filter((b) => {
+        const t = (b as HTMLElement).getBoundingClientRect();
+        return t.width > 0 && (t.width < 24 || t.height < 24);
+      }).length;
+      return { w: r.width, h: r.height, small };
+    });
+    expect(fit.w, `QR dialog width at ${size.name}`).toBeLessThanOrEqual(size.width);
+    expect(fit.h, `QR dialog height at ${size.name}`).toBeLessThanOrEqual(size.height);
+    expect(fit.small, `QR dialog tap targets at ${size.name}`).toBe(0);
+    await sheet.getByRole("button", { name: "Close QR code" }).last().click();
+    await expect(sheet).toHaveCount(0);
+    await expectLayout(page);
+  }
+  await page.getByTestId("qr-button").click();
+  await page.getByTestId("qr-more-presenter").click();
+  await expect(page).toHaveURL(/\/present$/);
+  await expect(page.getByRole("heading", { name: "Your trip" })).toBeAttached();
+});

@@ -177,6 +177,15 @@ function truth(body: Record<string, unknown> | undefined): number | null {
 }
 
 /**
+ * The start request body, in the shape the server's schema requires: the walk's
+ * JSON as an object (not a string — the validator refuses a string before the
+ * handler runs) and the video's byte count so the finish check can verify it.
+ */
+export function startBody(input: { recording: Recording; json: string; video: Blob | null; name: string }) {
+  return { device: input.recording.device, name: input.name, json: JSON.parse(input.json) as Record<string, unknown>, bytes: input.video?.size ?? 0 };
+}
+
+/**
  * Sends one recording: its JSON first, then the video in parts. When a part
  * fails, or the server answers 409 with the byte count it truly has, the next
  * attempt starts from that count, so a dropped connection costs one part and
@@ -184,7 +193,7 @@ function truth(body: Record<string, unknown> | undefined): number | null {
  * the recording on screen to send again or save.
  */
 export async function send(input: SendInput): Promise<SendResult> {
-  const { json, video, name } = input;
+  const { json, video } = input;
   const signal = input.signal ?? new AbortController().signal;
   const total = json.length + (video?.size ?? 0);
   const report = (confirmed: number, part: SendProgress["part"]) => input.onProgress?.({ done: total ? Math.min(1, (json.length + confirmed) / total) : 1, part });
@@ -193,7 +202,7 @@ export async function send(input: SendInput): Promise<SendResult> {
   const created = await ask("/api/recordings", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ device: input.recording.device, name, json }),
+    body: JSON.stringify(startBody(input)),
   }, signal);
   if (!created.ok) return { ok: false, why: created.why };
   const uploadId = created.body.uploadId;

@@ -154,7 +154,7 @@ describe("send", () => {
       "PUT /api/recordings/up-1/part?from=8",
       "POST /api/recordings/up-1/finish",
     ]);
-    expect(JSON.parse(String(seen[0].body))).toEqual({ device: "iPhone", name: "walk-2026-11-14-170512", json: '{"v":1}' });
+    expect(JSON.parse(String(seen[0].body))).toEqual({ device: "iPhone", name: "walk-2026-11-14-170512", json: { v: 1 }, bytes: 10 });
     expect(progress.at(-1)).toBe(1);
   });
 
