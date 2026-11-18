@@ -131,3 +131,60 @@ for (const size of SIZES) {
     expect(errors).toEqual([]);
   });
 }
+
+for (const size of SIZES) {
+  test(`camera guidance keeps the minimap and follows turns at ${size.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    await mockNetwork(page);
+    await page.addInitScript(() => {
+      navigator.mediaDevices.getUserMedia = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 480;
+        canvas.height = 270;
+        const context = canvas.getContext("2d")!;
+        const stream = canvas.captureStream(15);
+        const track = stream.getVideoTracks()[0];
+        (window as Window & { cameraTrack?: MediaStreamTrack }).cameraTrack = track;
+        const timer = setInterval(() => {
+          if (track.readyState === "ended") { clearInterval(timer); return; }
+          context.fillRect(0, 0, canvas.width, canvas.height);
+        }, 80);
+        return Promise.resolve(stream);
+      };
+    });
+    await page.route("**/api/agent/see-sign", (route) => route.fulfill({ json: { id: "us-to-l", read: "Elevator to L" } }));
+    await page.goto("/?flags=+walkGuide&walkDemo=union-square");
+    await page.getByRole("button", { name: "Camera view" }).click();
+    const camera = page.getByRole("dialog", { name: "Camera guidance" });
+    const dot = camera.getByTestId("camera-minimap-position");
+    await expect(camera.getByRole("figure", { name: "Route minimap, Platform" })).toBeVisible();
+    await expect(dot).toBeInViewport({ ratio: 1 });
+    const scan = camera.getByRole("button", { name: "Scan sign" });
+    await expect(scan).toBeEnabled();
+    await expectLayout(page);
+
+    await scan.click();
+    await expect(camera.getByRole("figure", { name: "Route minimap, Mezzanine" })).toBeVisible();
+    await expect(dot).toBeInViewport({ ratio: 1 });
+    const arrow = camera.getByTestId("camera-direction-arrow");
+    await expect(arrow).toHaveCount(0);
+    await camera.getByRole("button", { name: "Align arrow" }).click();
+    const yaw = (alpha: number) => page.evaluate((yaw) => window.dispatchEvent(new DeviceOrientationEvent("deviceorientation", { alpha: yaw, beta: 90, gamma: 0 })), alpha);
+    await yaw(0);
+    await expect(arrow).toHaveAttribute("data-turn", "0");
+    await yaw(315);
+    await expect(arrow).toHaveAttribute("data-turn", "-45");
+    await expectLayout(page);
+
+    await expect(camera.getByRole("status")).toContainText("Heading unavailable");
+    await expect(camera.getByRole("status")).toContainText("long corridor");
+    await expect(arrow).toHaveCount(0);
+    await expect(dot).toBeInViewport({ ratio: 1 });
+    await expectLayout(page);
+    await camera.getByRole("button", { name: "Map", exact: true }).click();
+    await expect(camera).toHaveCount(0);
+    await expect(page.getByTestId("walk-level")).toContainText("Mezzanine");
+    await expect(page.getByRole("button", { name: "Camera view" })).toBeFocused();
+    expect(await page.evaluate(() => (window as Window & { cameraTrack?: MediaStreamTrack }).cameraTrack?.readyState)).toBe("ended");
+  });
+}
