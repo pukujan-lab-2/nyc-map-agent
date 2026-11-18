@@ -1,0 +1,350 @@
+
+#presenter{color-scheme:dark;--ink:#f4f3e8;--lime:#d5fa80;--quiet:#b5bba9;--line:#42473c;--black:#10120f}
+#presenter *{box-sizing:border-box}
+#presenter{margin:0;background:var(--black);color:var(--ink);font:16px/1.35 'Helvetica Neue',Arial,sans-serif}
+#presenter button,#presenter input,#presenter select,#presenter a{font:inherit}
+#presenter button,#presenter a{color:inherit}
+#presenter button{cursor:pointer;border:1px solid var(--line);background:#191c17;border-radius:30px;padding:9px 15px}
+#presenter button:disabled{opacity:.4;cursor:default}
+#presenter button:hover,#presenter a:hover{color:var(--lime)}
+#presenter button:focus-visible,#presenter a:focus-visible,#presenter input:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+#presenter .primary{background:var(--lime);color:#171b10;border:0;font-weight:650}
+#presenter .primary:hover{background:#e2ffa3;color:#171b10}
+#presenter [hidden]{display:none!important}
+#presenter{min-height:100svh;position:relative;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;background:radial-gradient(ellipse at 69% 47%,#242c20 0%,#141813 37%,#0d100d 72%)}
+#presenter header,#presenter footer{position:relative;z-index:3;padding:18px clamp(16px,4vw,68px);display:flex;align-items:center;gap:12px}
+#presenter header{border-bottom:1px solid #ffffff20;justify-content:space-between}
+#presenter .word{font-weight:850;letter-spacing:-1.2px;font-size:23px}
+#presenter .word i{color:var(--lime);font:italic 26px Georgia}
+#presenter .brand{display:flex;align-items:center;gap:14px}
+#presenter .mini{font:11px ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--quiet)}
+#presenter .headBtns{display:flex;gap:7px}
+#presenter header button{font-size:13px}
+#presenter main{position:relative;display:grid;align-content:center;padding:20px clamp(16px,5vw,78px);min-height:350px}
+#presenter #scene{display:grid;grid-template-columns:minmax(250px,.76fr) minmax(0,1.45fr);align-items:center;gap:4vw;position:relative;z-index:1}
+#presenter .eyebrow{font:11px ui-monospace,Menlo,monospace;letter-spacing:.15em;color:var(--lime);text-transform:uppercase}
+#presenter h1{font-size:clamp(48px,6.2vw,105px);font-weight:590;line-height:.94;letter-spacing:-.068em;margin:18px 0 16px}
+#presenter h1 em{font:italic 1.04em/.9 Georgia,serif;color:var(--lime);letter-spacing:-.07em}
+#presenter .desc{max-width:30ch;color:#bec4b8;font-size:clamp(15px,1.65vw,22px);margin:0 0 24px}
+#presenter .frame{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:center;height:clamp(320px,52vh,610px);min-width:0}
+#presenter .frame.media{border:1px solid #53604b;background:#080a09;overflow:hidden;border-radius:14px}
+#presenter .frame img,#presenter .frame video,#presenter .frame iframe{display:block;width:100%;height:100%;object-fit:contain;border:0}
+#presenter .frame svg{width:100%;height:100%}
+#presenter .orbit{position:absolute;inset:3% 2%;border:1px solid #b7d67445;border-radius:50%;transform:rotate(-22deg) scaleY(.5);pointer-events:none}
+#presenter .globe{filter:drop-shadow(0 0 22px #82a04725);animation:earthIn 1.15s ease-out}
+#presenter .stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#presenter .pin{position:absolute;left:49%;top:40%;width:11px;height:11px;border-radius:100%;background:var(--lime);box-shadow:0 0 0 6px #c3ee7435,0 0 0 14px #c3ee741a}
+#presenter .pin span{position:absolute;top:-13px;left:20px;white-space:nowrap;color:var(--lime);font:11px Menlo,monospace}
+#presenter .scene-enter{animation:arrive .55s ease-out}
+#presenter .actions{display:flex;gap:7px;flex-wrap:wrap}
+#presenter .actions button{font-size:13px}
+#presenter .corner{position:absolute;left:12px;top:12px;padding:5px 9px;background:#10140ee3;border:1px solid #68765a;border-radius:7px;font:11px Menlo,monospace;color:#e4efd7;pointer-events:none}
+#presenter .plate{position:relative;height:100%;max-width:60%}
+#presenter .plate img{width:auto;max-width:100%;object-fit:fill}
+#presenter .plate b{position:absolute;left:37%;top:26%;width:12%;height:4%;border:2px solid var(--lime);box-shadow:0 0 0 5px #d5fa8033}
+#presenter .witness{padding:15px;text-align:left;font:13px Menlo,monospace;color:var(--quiet)}
+#presenter .witness strong{display:block;font:clamp(22px,3vw,40px) Georgia;color:var(--lime);margin-bottom:6px}
+#presenter .links{display:grid;gap:14px;padding:25px}
+#presenter .links a{padding:12px 0;border-bottom:1px solid var(--line);font-size:clamp(18px,2.6vw,38px);text-decoration:none}
+#presenter .links small{display:block;font:12px Menlo,monospace;color:var(--quiet)}
+#presenter footer{display:block;border-top:1px solid #ffffff20;background:#10120fec}
+#presenter .guide{display:flex;align-items:center;gap:14px;justify-content:space-between}
+#presenter .caption{position:relative;max-width:78ch;min-width:0;margin:0;font-size:clamp(14px,1.35vw,19px)}
+#presenter #by{display:block;font:10px Menlo,monospace;letter-spacing:.1em;color:var(--lime);text-transform:uppercase;margin-bottom:4px}
+#presenter form{margin-top:14px;display:flex;align-items:center;gap:7px}
+#presenter .inputwrap{display:flex;align-items:center;background:#1b1f19;border:1px solid var(--line);border-radius:30px;flex:1;max-width:690px;min-width:0}
+#presenter .inputwrap input{padding:10px 15px;background:transparent;border:0;color:var(--ink);min-width:0;flex:1}
+#presenter .inputwrap button{margin:3px;border:0;background:#353b2e;padding:6px 16px}
+#presenter .jump{flex-shrink:0}
+#presenter .meter{margin-left:auto;display:flex;align-items:center;gap:4px}
+#presenter .meter i{width:13px;height:3px;background:#454b40}
+#presenter .meter i.on{background:var(--lime)}
+#presenter #pet{width:50px;height:50px;position:fixed;left:0;top:0;pointer-events:none;z-index:6;filter:drop-shadow(0 3px 7px #0009);transition:transform .85s cubic-bezier(.36,.04,.17,1)}
+#presenter #pet svg{width:100%;height:100%}
+#presenter .moon-mouth-scared,#presenter .moon-mouth-whee,#presenter .moon-mouth-think,#presenter .moon-mouth-talk,#presenter .moon-eye-happy,#presenter .moon-eye-closed,#presenter .moon-eye-love,#presenter .moon-eye-wink{display:none}
+#presenter .talk .moon-mouth-talk{display:block;animation:talk .25s ease-in-out infinite alternate;transform-origin:center;transform-box:fill-box}
+#presenter .talk .moon-mouth-happy{display:none}
+#presenter .flash{animation:focusPulse 1.1s ease-out}
+#presenter .popover{position:absolute;right:3vw;top:61px;width:min(360px,92vw);border:1px solid #637054;padding:14px;background:#161b14;z-index:8;border-radius:14px;box-shadow:0 12px 70px #0009;max-height:65svh;overflow:auto}
+#presenter .popover div{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+#presenter .popover button.item{display:block;width:100%;text-align:left;border:0;border-radius:6px;background:transparent;padding:8px}
+#presenter .popover button.item[aria-current=true]{color:var(--lime);background:#293022}
+#presenter .mark{position:absolute;width:10px;height:10px;pointer-events:none}
+#presenter .heroAction{margin-top:8px}
+#presenter .short{display:none}
+@keyframes earthIn{from{transform:scale(.83) rotate(-7deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes arrive{from{opacity:.15;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes focusPulse{0%,35%{outline:2px solid var(--lime);outline-offset:-3px}100%{outline:1px solid transparent;outline-offset:0}}
+@keyframes talk{to{transform:scaleY(.45)}}
+@media(max-width:700px){#presenter header,#presenter footer{padding:11px 14px}
+#presenter .brand .mini,#presenter .meter{display:none}
+#presenter .word{font-size:18px}
+#presenter .word i{font-size:21px}
+#presenter header button{padding:7px 10px}
+#presenter main{padding:12px 14px;align-content:start;min-height:0}
+#presenter #scene{grid-template-columns:1fr;gap:10px}
+#presenter .intro{display:grid;grid-template-columns:1fr auto;align-items:end}
+#presenter .eyebrow,#presenter h1{grid-column:1/-1}
+#presenter .desc{font-size:14px;max-width:34ch;margin:0}
+#presenter .actions{justify-content:end;max-width:155px}
+#presenter .actions button{padding:6px 10px;font-size:12px}
+#presenter h1{font-size:clamp(33px,8vw,51px);margin:6px 0 8px}
+#presenter h1 br{display:none}
+#presenter .frame{height:clamp(170px,37svh,380px)}
+#presenter .guide{gap:8px}
+#presenter .jump{font-size:12px;padding:8px 10px}
+#presenter .caption{font-size:14px}
+#presenter form{margin-top:9px}
+#presenter .short{display:inline}
+#presenter .long{display:none}
+#presenter #pet{width:34px;height:34px}
+#presenter .popover{top:50px}
+#presenter .links{gap:5px}
+#presenter .links a{padding:7px}
+#presenter .heroAction{margin:0}
+#presenter .witness{padding:8px}
+#presenter .headBtns{gap:4px}}
+@media(prefers-reduced-motion:reduce){#presenter *,#presenter *::before,#presenter *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* The recording or instrument occupies the stage. All navigation shares one dock. */
+#presenter{height:100svh;min-height:365px;grid-template-rows:auto minmax(0,1fr) auto;background:#0d100e}
+#presenter header{padding:9px clamp(12px,2.6vw,40px);min-height:46px;background:#101310;border-color:#30352e}
+#presenter .word{font-size:17px;letter-spacing:-.7px}
+#presenter .word i{font-size:20px}
+#presenter .brand{gap:16px}
+#presenter #location{color:#c4cbbf;font-size:12px;border-left:1px solid #46503f;padding-left:15px}
+#presenter .headBtns button{font-size:12px;padding:5px 11px;min-height:30px}
+#presenter main{padding:0;min-height:0;display:block;overflow:hidden}
+#presenter #scene{height:100%;width:100%;display:block}
+#presenter .frame,#presenter .frame.media{width:100%;height:100%;border:0;border-radius:0;overflow:hidden;background:radial-gradient(ellipse at center,#212820,#111610 80%)}
+#presenter #scene .corner{font-size:10px;top:10px;left:15px}
+#presenter .screen-reader{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);margin:0}
+#presenter .ride-photo{background:#11150f;overflow:hidden}
+#presenter .photo-haze{position:absolute;inset:-35px;background:linear-gradient(#14191470,#10130fa8),var(--photo) center/cover;filter:blur(28px);opacity:.8}
+#presenter .station-photo{position:relative;z-index:1}
+#presenter .sign-outline{stroke:#d9ff92;stroke-width:1.4;fill:none;filter:drop-shadow(0 1px 2px #000)}
+#presenter .route-focus{position:absolute;left:50%;top:61%;width:2px;height:2px}
+#presenter .route-title{position:absolute;left:6vw;bottom:10%;pointer-events:none;text-shadow:0 2px 22px #000}
+#presenter .route-title small{display:block;font:12px Menlo,monospace;color:#d5fa80;margin-bottom:9px}
+#presenter .route-title b{font:500 clamp(35px,5vw,80px)/.99 Georgia,serif;letter-spacing:-.06em}
+#presenter .route-title span{color:#d5fa80}
+#presenter[data-scene="1"] .frame{padding-left:24vw}
+#presenter[data-scene="1"] .orbit{inset:5% 6% 5% 23%}
+#presenter footer{padding:10px clamp(14px,3vw,42px) 12px;background:#111411}
+#presenter .guide{gap:8px;display:block}
+#presenter .caption{display:flex;align-items:baseline;gap:10px;max-width:100%;font-size:clamp(14px,1.2vw,17px);line-height:1.38}
+#presenter #by{flex:none;margin:0;color:#bccba8;font-size:9px;max-width:30%;overflow-wrap:anywhere}
+#presenter #words{max-width:84ch}
+#presenter .inputwrap{max-width:500px}
+#presenter .inputwrap input{font-size:14px}
+#presenter .inputwrap button{font-size:13px}
+#presenter form{margin-top:8px}
+#presenter .meter{display:none}
+#presenter #next{margin-left:auto;font-size:13px;padding:9px 14px;min-height:36px}
+#presenter .progress{color:#a4ad9c;font:11px Menlo,monospace;white-space:nowrap;padding:0 8px}
+#presenter .popover{top:47px;right:2vw}
+#presenter .popover .section-name{color:var(--lime);font:10px Menlo,monospace;letter-spacing:.1em;margin:10px 6px 3px}
+#presenter .popover .item{font-size:14px}
+#presenter .popover #viewGroup{display:block;border-top:1px solid #394035;margin:10px 0 0;padding-top:5px}
+#presenter .popover #viewChoices{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:5px;margin:0}
+#presenter .popover #viewChoices button{font-size:12px;padding:6px 10px}
+#presenter #pet{width:36px;height:36px}
+#presenter .flash{outline:none}
+#presenter .pressure{padding:clamp(18px,5.5vw,82px);display:flex;align-items:stretch;justify-content:center;flex-direction:column;gap:18px;background:radial-gradient(ellipse at 56% 52%,#202b1d,#101610 80%)!important}
+#presenter .pressure .metric{font:500 clamp(40px,7vh,94px)/1 Georgia,serif;color:#ecf3e2}
+#presenter .metric span,#presenter .chart-caption{font:13px 'Helvetica Neue',Arial,sans-serif;color:#beccaf}
+#presenter .plot{position:relative;margin:0 20px 0 32px;flex:1;min-height:50px;max-height:50vh}
+#presenter .plot svg{position:absolute;inset:0}
+#presenter .plot .axis-y{position:absolute;left:-34px;font:11px Menlo,monospace;color:#a7b39d;transform:translateY(-50%)}
+#presenter .plot .mark{width:5px;height:5px;border-radius:50%;background:#d5fa80;right:-2px}
+#presenter .times{display:flex;justify-content:space-between;font:11px Menlo,monospace;color:#a7b39d;margin:-8px 20px 0 32px}
+#presenter .chart-caption{margin:0;letter-spacing:.01em}
+@media(max-width:700px){#presenter header{padding:7px 10px}
+#presenter .brand{gap:7px}
+#presenter #location{font-size:10px;padding-left:7px}
+#presenter .word{font-size:15px}
+#presenter .word i{font-size:17px}
+#presenter .headBtns button{padding:5px 8px;font-size:11px}
+#presenter .route-title{bottom:6%;left:6%}
+#presenter[data-scene="1"] .frame{padding:0 0 12vh}
+#presenter .caption{gap:6px;font-size:14px}
+#presenter #by{display:none}
+#presenter footer{padding:9px 10px}
+#presenter .inputwrap input{width:50px;padding:9px}
+#presenter .progress{display:none}
+#presenter #next{max-width:40%;font-size:12px;padding:8px 10px}
+#presenter #back{padding:7px 10px}
+#presenter #ask{gap:4px}
+#presenter .inputwrap button{padding:5px 8px}
+#presenter .pressure{padding:20px;gap:18px}
+#presenter .plate{height:auto;max-height:100%}
+#presenter .plate img{height:auto}
+#presenter .witness{font-size:11px}
+#presenter .links{width:100%;padding:20px}
+#presenter .route-focus{left:54%}}
+#presenter #ask{margin-top:0}
+#presenter footer{padding-block:8px}
+#presenter .popover details{margin:9px 0;font-size:13px}
+#presenter .popover summary{padding:6px;cursor:pointer;min-height:30px}
+#presenter .popover details p{padding:0 6px;color:#d2d8c9}
+#presenter .popover #viewGroup .section-name{display:block}
+#presenter .popover #viewGroup{border:0}
+#presenter .popover .item{padding:5px 8px;min-height:28px}
+#presenter .popover{max-height:min(75svh,650px)}
+#presenter .guide[hidden]{display:none!important}
+#presenter .case-study>div{max-width:86%;min-width:min(48vw,420px)}
+#presenter .case-study strong{display:block;font:500 clamp(55px,10vh,110px) Georgia,serif;color:#d5fa80}
+#presenter .case-study a{margin-top:26px;display:block;font-size:13px}
+#presenter .station-dots{display:grid;grid-template-columns:repeat(14,1fr);max-width:380px;gap:6px;margin-top:18px}
+#presenter .station-dots i{height:6px;background:#99ad80;border-radius:4px}
+#presenter #pet.baker-pet{z-index:5}
+#presenter .baker-bubble{z-index:6}
+#presenter .popover{z-index:9}
+#presenter #viewChoices button[aria-pressed="true"]{border-color:#adcd7f}
+
+#presenter #pet.baker-pet {
+  pointer-events: none;
+  transition: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+#presenter #pet.baker-pet .moon-eyes {
+  transform: translate(var(--baker-look-x, 0px), var(--baker-look-y, 0px));
+}
+
+#presenter #pet.baker-pet .moon-eye {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: baker-blink 5.7s infinite;
+}
+
+#presenter #pet.baker-pet[data-mood="whee"] .moon-eye,
+#presenter #pet.baker-pet[data-mood="wink"] .moon-eye:nth-child(2),
+#presenter #pet.baker-pet[data-mood="whee"] .moon-mouth-happy,
+#presenter #pet.baker-pet[data-mood="surprised"] .moon-mouth-happy {
+  display: none;
+}
+
+#presenter #pet.baker-pet[data-mood="whee"] .moon-eye-happy,
+#presenter #pet.baker-pet[data-mood="whee"] .moon-mouth-whee,
+#presenter #pet.baker-pet[data-mood="wink"] .moon-eye-wink,
+#presenter #pet.baker-pet[data-mood="surprised"] .moon-mouth-scared {
+  display: inline;
+}
+
+@keyframes baker-blink {
+  0%, 52%, 57%, 100% { transform: scaleY(1); }
+  54%, 55% { transform: scaleY(.12); }
+}
+
+#presenter .baker-bubble {
+  position: fixed;
+  z-index: 7;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(214px, 58vw);
+  margin: 0;
+  padding: 7px 11px;
+  border: 1px solid #bcaa80;
+  border-radius: 10px;
+  background: #fff7de;
+  color: #241f13;
+  font: 620 13px/1.25 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing: .005em;
+  box-shadow: 0 4px 17px #08080570;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity .15s ease, visibility .15s;
+  will-change: transform;
+}
+
+#presenter .baker-bubble[data-open] {
+  opacity: 1;
+  visibility: visible;
+}
+
+#presenter .baker-bubble::after {
+  content: "";
+  position: absolute;
+  left: var(--baker-tail-x, 16px);
+  bottom: -4px;
+  width: 7px;
+  height: 7px;
+  transform: rotate(45deg);
+  background: #fff7de;
+  border-right: 1px solid #bcaa80;
+  border-bottom: 1px solid #bcaa80;
+}
+
+#presenter .baker-bubble[data-below]::after {
+  top: -4px;
+  bottom: auto;
+  transform: rotate(225deg);
+}
+
+@media (max-width: 700px) {
+  #presenter .baker-bubble {
+    max-width: min(170px, 60vw);
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #presenter #pet.baker-pet .moon-eye, #presenter .baker-bubble { animation: none; transition: none; }
+}
+
+#presenter[data-moon-guiding] #pet.baker-pet { z-index: 12; }
+#presenter[data-moon-guiding] #presenter #menu .flash,
+#presenter[data-moon-guiding] #places.flash { box-shadow: 0 0 0 1px #d5fa80; }
+
+
+/* Vision-review fixes and the closing invitation (mission-visuals). */
+/* Moon reads as a companion, not a dot; his bubble reads as speech. */
+#presenter #pet{width:clamp(44px,6vw,72px);height:clamp(44px,6vw,72px)}
+#presenter .baker-bubble{font-size:clamp(13px,1.4vw,17px);line-height:1.3;max-width:min(300px,64vw)}
+/* Portrait clips: a blurred, dimmed copy of the poster fills the letterbox bands. */
+#presenter .clip-haze{position:absolute;inset:-32px;background:var(--poster) center/cover;filter:blur(26px) brightness(.5);opacity:.75;pointer-events:none}
+#presenter .frame.media video{position:relative;z-index:1}
+#presenter .frame.media .corner{z-index:2;padding:6px 10px}
+/* City case studies: the number is the hero, centered on the stage. */
+#presenter .case-study{text-align:center}
+#presenter .case-study>div{max-width:min(92%,760px);display:flex;flex-direction:column;align-items:center}
+#presenter .case-study strong{font-size:clamp(64px,14vh,120px)}
+#presenter .case-study span{font-size:clamp(15px,2vh,22px);color:#c9d4bd}
+#presenter .case-study a{margin-top:22px;display:inline-flex;align-items:center;min-height:26px;padding:4px 12px;font-size:14px;border:1px solid #53604b;border-radius:20px}
+#presenter .station-dots{max-width:min(560px,80%);gap:8px;margin-top:20px}
+#presenter .station-dots i{height:10px}
+/* Scene 9, Build with us: the mission line, the walks loop, the links and the QR invitation. */
+#presenter .build{display:block}
+#presenter .build-scroll{height:100%;overflow-y:auto;display:flex;flex-direction:column;gap:clamp(10px,2vh,20px);padding:clamp(14px,3vh,30px) clamp(16px,4vw,48px)}
+#presenter .mission{margin:0;font:500 clamp(15px,1.7vw,23px)/1.3 Georgia,serif;color:#ecf3e2;max-width:64ch}
+#presenter .build-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,.85fr);gap:clamp(16px,3vw,44px);align-items:center;flex:1;min-height:0}
+#presenter .build-left{display:flex;flex-direction:column;gap:clamp(8px,1.6vh,18px);min-width:0}
+#presenter .build .flow{width:100%;height:auto;max-height:36vh}
+#presenter .build .links{padding:0;gap:4px;width:100%}
+#presenter .build .links a{font-size:clamp(15px,1.7vw,24px);padding:8px 0}
+#presenter .qr-card{display:flex;flex-direction:column;align-items:center;gap:10px;background:#fff;border-radius:14px;padding:clamp(12px,2.2vh,22px);text-align:center;box-shadow:0 8px 30px #0006}
+#presenter .qr-card img{width:clamp(120px,23vh,200px);height:auto}
+#presenter .qr-text{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+#presenter a.qr-link{display:inline-flex;align-items:center;min-height:26px;padding:4px 10px;border-radius:8px;background:#eef3e2;color:#171b10;font-weight:650;font-size:clamp(13px,1.3vw,16px);text-decoration:none;overflow-wrap:anywhere}
+#presenter a.qr-link:hover{background:#d5fa80;color:#171b10}
+#presenter .qr-caption{font:10px Menlo,monospace;letter-spacing:.07em;text-transform:uppercase;color:#4c5340}
+/* The guided walk ends with the same invitation, small, over the street photo's corner. */
+#presenter .street-invite{position:absolute;right:clamp(10px,2vw,24px);bottom:clamp(10px,2vh,24px);z-index:2;display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:10px;box-shadow:0 6px 24px #0009;max-width:min(320px,88vw)}
+#presenter .street-invite img{width:104px;height:104px;flex:none}
+#presenter .street-invite .qr-text{align-items:flex-start}
+#presenter .street-invite a.qr-link{font-size:12.5px;padding:5px 8px;overflow-wrap:anywhere}
+#presenter .street-invite .qr-caption{font-size:11px}
+@media(max-width:700px){
+#presenter .build-grid{grid-template-columns:1fr;gap:12px}
+#presenter .qr-card{order:-1;flex-direction:row;justify-content:center;text-align:left;padding:12px}
+#presenter .qr-card img{width:92px}
+#presenter .qr-text{align-items:flex-start}
+#presenter .build .flow{max-height:none}
+#presenter .street-invite{padding:8px;gap:8px}
+#presenter .street-invite img{width:96px;height:96px}
+}

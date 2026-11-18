@@ -1,0 +1,35 @@
+{
+  "title": "Get the data: samples, format and reproduction",
+  "questions": [
+    {
+      "question": "Can I download real data today?",
+      "answer": "Yes. One Union Square sample walk is public as JSON. It holds timestamped motion, heading, GPS, barometer, steps and marks. The recorder and the recording format are public too, so another team can record and run the same cleanup.",
+      "sources": [{ "title": "Union Square sample walk (JSON)", "url": "https://nyc.design-bakery.com/replay/union-sq-walk.json" }]
+    },
+    {
+      "question": "What does a recording look like?",
+      "answer": "One JSON file per walk, version 1. Lists of timestamped rows: motion (acceleration and rotation), heading, GPS fixes with accuracy, barometer height, step counts, and marks for signs, stairs and elevators. Video is referenced by filename, never embedded. Every timestamp is epoch milliseconds.",
+      "sources": [{ "title": "Recording format", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/RECORDING_FORMAT.md" }]
+    },
+    {
+      "question": "Can I record with my own app?",
+      "answer": "Yes. The iPhone app Sensor Logger writes one CSV per sensor; our converter turns an export folder or zip into the same recording JSON: pnpm walk:from-sensor-logger <export> <out.json> --station name. The checker and cleanup functions are in the repository with tests.",
+      "sources": [{ "title": "Recording format, converting a Sensor Logger export", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/RECORDING_FORMAT.md" }]
+    },
+    {
+      "question": "Is my phone's data complete?",
+      "answer": "Every list can be empty: a phone browser has no barometer, and GPS is often off underground. Heading has no north reference; it starts from the phone's own frame. The format documents these conventions so another team can reproduce the cleanup.",
+      "sources": [{ "title": "Recording format, conventions", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/RECORDING_FORMAT.md" }]
+    },
+    {
+      "question": "Will there be an open dataset?",
+      "answer": "Planned, not published yet. Each cleaned walk becomes a versioned dataset with sources and reuse terms. Publishing needs decisions on faces in video, consent and licence. Raw recordings and video stay out of the repository and private until then.",
+      "sources": [{ "title": "Product design document, rider walks", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/PDD.md" }]
+    },
+    {
+      "question": "How do I check a recording is valid?",
+      "answer": "parseRecording in src/features/recorder/format.ts checks a file and lists what is wrong in plain language. The converter prints each list's row count and time span. Keep the raw export and the video out of the repository.",
+      "sources": [{ "title": "Recording format", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/RECORDING_FORMAT.md" }]
+    }
+  ]
+}

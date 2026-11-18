@@ -7,7 +7,7 @@
   {
     "name": "app (boot chunk, loaded after the first paint)",
     "path": ".size-build/assets/boot-*.js",
-    "limit": "295 kB"
+    "limit": "295.5 kB"
   },
   {
     "name": "map library (maplibre-gl, its own chunk so it stays cached across deploys)",
@@ -120,11 +120,16 @@
     "limit": "10 kB"
   },
   {
+    "name": "feature: presenter page (lazy, loaded only at /present)",
+    "path": ".size-build/assets/PresentPage-*.js",
+    "limit": "24 kB"
+  },
+  {
     "name": "all JS except the station walk",
     "path": [
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js"
     ],
-    "limit": "1264.5 kB"
+    "limit": "1290 kB"
   }
 ]

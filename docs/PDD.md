@@ -220,6 +220,7 @@ This file was written for the agent-first app: the map, the chat and its screens
 | 3D station from walk video | #186 (the mentor's tools) | Not built |
 | Preview before the trip, camera guidance in the station | #186; `public/coming-soon.html` shows the intended look | Preview exists for the one trip; camera guidance with arrows is not built |
 | Follow a phone without GPS | #196; `public/live/` | Built and live; not walked with on a real phone |
+| The underground presenter (`/present`, Design Baker) | NMA-0064; `docs/specs/PRESENTER.md`; `src/features/presenter/`, `server/features/presenter/` | Built on `codex/present-underground`; guided walk, live Q&A, QR end screen; shipping check in the spec's test plan |
 
 **Also built since this file was written, and specified elsewhere:** the tracker health page and prediction scoring (#11), the spoken notice walks, their sorting and their speech cache (#198, #206, #208, #218), and the what-is-coming page.
 

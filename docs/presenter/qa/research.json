@@ -1,0 +1,45 @@
+{
+  "title": "Research: how other cities guide riders underground",
+  "questions": [
+    {
+      "question": "Has anyone solved underground guidance before?",
+      "answer": "Yes, in pieces. Tokyo deployed camera arrows, Washington and Singapore deployed phone-sensor guidance, London trialled beacons, and Seoul offers app guidance. Research covers pressure-based floors and iPhone path retracing. Each addresses part of the rider's problem.",
+      "sources": [{ "title": "The guided walk, ideas proven elsewhere", "url": "https://nyc.design-bakery.com/present#stop-9" }]
+    },
+    {
+      "question": "How does Washington Metro guide riders underground?",
+      "answer": "Waymap is deployed across 98 Metro stations. It pairs phone motion sensors with mapped walking routes, the closest published comparison to our phone-sensors-plus-mapped-routes approach.",
+      "sources": [{ "title": "Waymap case study: WMATA Washington Metro", "url": "https://www.waymapnav.com/case-studies/wmata-washington-metro" }]
+    },
+    {
+      "question": "What did Singapore deploy?",
+      "answer": "SBS Transit deployed Waymap at three stations, using the same phone-motion and mapped-route approach as Washington.",
+      "sources": [{ "title": "Waymap case study: SBS Transit Singapore", "url": "https://www.waymapnav.com/case-studies/sbs-transit-singapore" }]
+    },
+    {
+      "question": "What did London try?",
+      "answer": "Wayfindr trialled Bluetooth-beacon guidance at Euston, in a major London Underground trial announced by Transport for London in December 2015. Beacons are station hardware; our approach instead uses the phone's own sensors.",
+      "sources": [{ "title": "Transport for London: Wayfindr Euston trial", "url": "https://tfl.gov.uk/info-for/media/press-releases/2015/december/wayfindr-launches-with-major-london-underground-trial-at-euston" }]
+    },
+    {
+      "question": "What does Seoul offer?",
+      "answer": "Seoul's official subway app offers platform and exit guidance, announced for foreign residents and tourists. The city's announcement leaves the positioning method unspecified, so we cannot say which technique it uses.",
+      "sources": [{ "title": "Seoul Metropolitan Government announcement", "url": "https://english.seoul.go.kr/new-subway-app-exclusive-for-foreign-residents-and-tourists/" }]
+    },
+    {
+      "question": "What did Tokyo deploy?",
+      "answer": "Tokyo's Toei Subway deployed camera arrows at Tochomae: the rider points the camera and arrows show the way. Announced in January 2024, it is the clearest precedent for camera-based guidance underground.",
+      "sources": [{ "title": "Toei Subway announcement", "url": "https://www.kotsu.metro.tokyo.jp/eng/news/2024/20240123_11382.html" }]
+    },
+    {
+      "question": "Can pressure really tell which floor?",
+      "answer": "FloorPair tested pressure-based floor identification at two subway stations. It shows calibrated phone pressure can distinguish levels, which supports our barometer step. Our own Queensboro trace shows a climb of about nine metres but still cannot name the landing alone.",
+      "sources": [{ "title": "FloorPair study (Sensors, MDPI)", "url": "https://www.mdpi.com/1424-8220/19/16/3622" }]
+    },
+    {
+      "question": "Can an iPhone retrace an indoor walk?",
+      "answer": "Clew is an open-source iPhone app that retraces an indoor path using ARKit. It shows consumer phone tracking can work indoors without GPS, which is the tracking step our live guide would need.",
+      "sources": [{ "title": "Clew source code", "url": "https://github.com/occamLab/Clew" }]
+    }
+  ]
+}

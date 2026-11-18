@@ -1,5 +1,6 @@
 import { QrButton } from "@/components/MapChrome";
 import { TrackerHealthLink } from "@/components/TrackerHealthLink";
+import { PresenterLink } from "@/components/PresenterLink";
 import { useMenuT } from "@/lib/i18n/menuText";
 import { setStepFreePref, useStepFreePref } from "@/lib/stepFreePref";
 import { healthLine, setProfilePref, useProfilePref, useSmartHealth } from "@/lib/modelProfile";
@@ -40,6 +41,7 @@ export function SettingsBody() {
       </label>
       {line && profile !== "dev" ? <p data-testid="model-health" className="px-1 text-[12px] text-slate-300">{line}</p> : null}
       <TrackerHealthLink />
+      <PresenterLink />
       <QrButton wide />
     </>
   );

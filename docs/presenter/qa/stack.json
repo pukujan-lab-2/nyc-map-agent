@@ -1,0 +1,40 @@
+{
+  "title": "Stack: what the app runs on and where AI helps",
+  "questions": [
+    {
+      "question": "What is the tech stack?",
+      "answer": "React and TypeScript built with Vite; MapLibre GL for the map and three.js for 3D stations; a Hono server for the chat agent and sign reading; XState for app state. Vitest and Playwright run the unit, end-to-end and layout tests.",
+      "sources": [{ "title": "GeoAI hackathon write-up, tech stack", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Where does AI actually help?",
+      "answer": "Two places: the chat agent answers by calling tools on the map and transit data, and a vision model reads words from station signs. The path cleanup, step counting and sign matching are ordinary code with tests, not AI.",
+      "sources": [{ "title": "GeoAI hackathon write-up, tech stack", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "How does a sign become a position?",
+      "answer": "The vision model only reads the words; our code matches them to the signs of the station the rider is in. On eight sign frames the server model read six exactly and none wrong, in 2 to 5 seconds each. The phone's own text reader returned nothing usable.",
+      "sources": [{ "title": "GeoAI hackathon write-up, signs read by a vision model", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "Why did you change how the vision model is asked?",
+      "answer": "Asked to pick from a numbered sign list, the model named a wrong sign on 3 of 10 frames with no sign in view. Letting it only read words, with code doing the match, gave zero wrong signs on those same ten frames. Unreadable signs fall back to tapping a photo.",
+      "sources": [{ "title": "GeoAI hackathon write-up, signs read by a vision model", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    },
+    {
+      "question": "What turns video into 3D?",
+      "answer": "COLMAP estimates camera positions and a sparse point cloud from overlapping frames. Brush uses those positions and images to build a Gaussian splat you can move around. Aligning the splat to the station map and testing new views are still to do.",
+      "sources": [{ "title": "Presenter scene: frames become a place", "url": "https://nyc.design-bakery.com/present" }]
+    },
+    {
+      "question": "What does this presenter run on?",
+      "answer": "The presenter is a React page in the same app, served by the existing web container and Cloudflare Tunnel. Questions go to Claude Haiku through our server, which searches reviewed evidence in Octo. Credentials stay on the server; speech uses the app's existing voice routes.",
+      "sources": [{ "title": "Deployment notes", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/deploy/README.md" }]
+    },
+    {
+      "question": "What public data do you use?",
+      "answer": "MTA feeds give lines, live trains, service alerts and elevator outages. NYC Open Data and OpenStreetMap give streets and places. Track lines place platforms: the Union Square platform checkpoint sits 130 metres north of the elevator, matching the 220 steps we counted.",
+      "sources": [{ "title": "GeoAI hackathon write-up, public data", "url": "https://github.com/pukujan-lab-2/nyc-map-agent/blob/main/docs/HACKATHON_GEOAI_2026.md" }]
+    }
+  ]
+}

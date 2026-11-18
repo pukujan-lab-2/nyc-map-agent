@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { LiveLayerRows, SwitchRow } from "@/components/LiveLayerRows";
 import { TrackerHealthLink } from "@/components/TrackerHealthLink";
+import { PresenterLink } from "@/components/PresenterLink";
 import { FEATURES } from "@/features";
 import { setAmbient, useAmbient, type LightingMode, type WeatherMode } from "@/lib/ambient";
 import { useAdvancedMode, useFlags } from "@/lib/flags";
@@ -262,6 +263,7 @@ function SettingsBody() {
       <SwitchRow icon={<Accessibility className={ICON} aria-hidden />} label={t("elevatorsOnly")} on={stepFree} onChange={setStepFreePref} testId="elevators-only-menu" />
       <SwitchRow icon={<Gauge className={ICON} aria-hidden />} label={t("advanced")} on={advanced} onChange={setAdvanced} />
       <TrackerHealthLink />
+      <PresenterLink />
       <ModelChoice />
     </div>
   );
