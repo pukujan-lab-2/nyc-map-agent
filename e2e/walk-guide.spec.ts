@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectLayout, SIZES } from "./layout";
+import { expectLayout, layoutProblems, SIZES } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
@@ -16,6 +16,59 @@ const hook = async (page: Page, fn: "pick" | "walk", arg: string | number) => {
 };
 
 for (const size of SIZES) {
+  test(`the Union Square camera demo fits and responds at ${size.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: size.width, height: size.height });
+    await mockNetwork(page);
+    await page.addInitScript(() => {
+      navigator.mediaDevices.getUserMedia = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 480;
+        canvas.height = 270;
+        const context = canvas.getContext("2d")!;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        let white = false;
+        const stream = canvas.captureStream(15);
+        const frame = setInterval(() => {
+          if (stream.getVideoTracks()[0].readyState === "ended") {
+            clearInterval(frame);
+            return;
+          }
+          white = !white;
+          context.fillStyle = white ? "white" : "gray";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+        }, 80);
+        return Promise.resolve(stream);
+      };
+    });
+    let calls = 0;
+    await page.route("**/api/agent/see-sign", async (route) => {
+      const request = route.request().postDataJSON() as { signs?: unknown };
+      expect(request.signs).toEqual([{ id: "us-to-l", sign: "Elevator to L" }]);
+      await route.fulfill({ json: { id: "us-to-l", read: ++calls === 1 ? "Elevator to N" : "Elevator to L" } });
+    });
+    await page.goto("/?flags=+walkGuide&walkDemo=union-square");
+    const sheet = page.getByTestId("walk-guide");
+    await expect(page.getByTestId("walk-level")).toHaveText("Simulation · 14 St-Union Sq · Platform");
+    await expectLayout(page);
+    await sheet.getByRole("button", { name: "Point the camera at a sign" }).click();
+    await expect.poll(() => sheet.locator("video").evaluate((video) => (video as HTMLVideoElement).videoWidth)).toBe(480);
+    const scan = sheet.getByRole("button", { name: "Which sign is this?" });
+    await scan.click();
+    await expect(page.getByTestId("walk-scan-note")).toContainText("Could not read");
+    await expect(page.getByTestId("walk-level")).toContainText("Platform");
+    await scan.click();
+    await expect(page.getByTestId("walk-level")).toHaveText("Simulation · 14 St-Union Sq · Mezzanine");
+    await expect(page.getByTestId("walk-demo-direction")).toContainText("long corridor");
+    await expect(sheet.getByText("Illustrative arrow")).toBeVisible();
+    const focus: [number, number] = [-73.99064, 40.73529];
+    await expect.poll(() => layoutProblems(page, { focus })).toEqual([]);
+    await expectLayout(page, { focus });
+    await sheet.getByRole("button", { name: /manually/ }).click();
+    await expect(page.getByTestId("walk-demo-direction")).toContainText("Sign selected");
+    await expect(sheet.locator("video")).toBeHidden();
+    await expectLayout(page);
+  });
+
   test(`the walk guide keeps the layout at ${size.name} ${size.width}×${size.height}`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
     await mockNetwork(page);
