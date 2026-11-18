@@ -5,6 +5,18 @@ const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
 /** The frame is sent no wider than this: wider only slows the answer. */
 const FRAME_W = 960;
 
+export function captureSignFrame(video: HTMLVideoElement): string | null {
+  if (!video.videoWidth) return null;
+  const scale = Math.min(1, FRAME_W / video.videoWidth);
+  const frame = document.createElement("canvas");
+  frame.width = Math.round(video.videoWidth * scale);
+  frame.height = Math.round(video.videoHeight * scale);
+  const context = frame.getContext("2d");
+  if (!context) return null;
+  context.drawImage(video, 0, 0, frame.width, frame.height);
+  return frame.toDataURL("image/jpeg", 0.72);
+}
+
 type Cam = "off" | "starting" | "on" | "blocked";
 type Ask = "idle" | "asking" | "none" | "failed";
 
@@ -69,15 +81,11 @@ export function SignScan({ signs, onFound, previewOverlay, requiredText }: {
 
   const scan = () => {
     const v = video.current;
-    if (!v || !v.videoWidth) return;
-    const k = Math.min(1, FRAME_W / v.videoWidth);
-    const frame = document.createElement("canvas");
-    frame.width = Math.round(v.videoWidth * k);
-    frame.height = Math.round(v.videoHeight * k);
-    frame.getContext("2d")?.drawImage(v, 0, 0, frame.width, frame.height);
+    const image = v && captureSignFrame(v);
+    if (!image) return;
     const ctl = (live.current.ctl = new AbortController());
     setAsk("asking");
-    askSign(frame.toDataURL("image/jpeg", 0.72), signs, ctl.signal, requiredText).then((id) => {
+    askSign(image, signs, ctl.signal, requiredText).then((id) => {
       if (ctl.signal.aborted) return;
       if (id && signs.some((sign) => sign.id === id)) {
         setAsk("idle");
