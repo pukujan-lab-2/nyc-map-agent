@@ -729,6 +729,29 @@ Blocked/uncertain:
 Next:
 - Verify the video links and sync offsets in a per-walk file list before the owner uploads the Queens batch to Octo.
 
+### 2026-11-18 16:54:32 UTC — agent:codex/01a1ef8d-0ee9-7d50-8ad2-92398ee695a1
+
+<!-- continuity:checkpoint {"agent":"agent:codex/01a1ef8d-0ee9-7d50-8ad2-92398ee695a1","blocked":[],"changed":["Octo presentation research and checkpoints/CURRENT.md"],"completed":["The presentation needed sourced answers on walking through subway stations without GPS. The NYC project workspace in Octo now has ten answers covering Washington, Singapore, London, Seoul, New York, and our implementation and tests."],"decisions":["no new decisions"],"evidence":["Octo search returned the new document for sample questions about each international example, the app stack, the 67 Av replay, and train tracking."],"next_action":"The presentation searches a fixed list of source documents. Add the new Q&A to that list and rehearse the Washington Metro question.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0058","timestamp":"2026-11-18T16:54:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"f82e1323d01d0a4ef650c33e226c0d4a22089868b8e1fd1961c7344b1f00bb47","request_id":"5a51d09de8a14843a83b99579faa3084","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0058"} -->
+
+Completed:
+- The presentation needed sourced answers on walking through subway stations without GPS. The NYC project workspace in Octo now has ten answers covering Washington, Singapore, London, Seoul, New York, and our implementation and tests.
+
+Evidence:
+- Octo search returned the new document for sample questions about each international example, the app stack, the 67 Av replay, and train tracking.
+
+Decisions:
+- no new decisions
+
+Changed:
+- Octo presentation research and checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- The presentation searches a fixed list of source documents. Add the new Q&A to that list and rehearse the Washington Metro question.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
