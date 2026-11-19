@@ -41,6 +41,7 @@ export default function PresentPage() {
           <span id="words" />
         </p>
         <form id="ask" aria-label="Talk to Design Baker">
+          <div className="offer" id="offer" aria-label="Offered chapters" hidden />
           <div className="suggest" id="suggest" aria-label="Suggested questions" />
           <button type="button" id="back" aria-label="Go back">←</button>
           <div className="inputwrap">

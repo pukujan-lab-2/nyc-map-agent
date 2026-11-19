@@ -65,157 +65,157 @@
   "bank": [
     {
       "question": "Why did it jump so far?",
-      "scene": 3,
+      "scene": 9,
       "answer": "That was the same 67 Av walk in both views. Without GPS, steps and turns drifted. At the mapped street exit, the GPS-on estimate was 14 metres away and the GPS-off estimate was 161 metres away."
     },
     {
       "question": "How do you know where you are?",
-      "scene": 4,
+      "scene": 10,
       "answer": "We look for a recognizable clue, then match it to a reviewed landing on the station map. At Union Square the reader found “Elevator to L,” and the guide moved to the mezzanine."
     },
     {
       "question": "Okay, but what did the AI do?",
-      "scene": 4,
+      "scene": 17,
       "answer": "The vision model read words from the saved sign image. The map resolved those words to a landing, and the route supplied the next direction. Those are separate pieces you can see on screen."
     },
     {
       "question": "Could it work if my GPS and barometer were off?",
-      "scene": 6,
+      "scene": 12,
       "answer": "At a distinctive mapped landmark, yes, the camera can help identify your floor without those sensors. Between landmarks the web app has fewer clues and may have to leave the floor uncertain."
     },
     {
       "question": "Why didn’t it know the floor after reading the sign?",
-      "scene": 5,
+      "scene": 11,
       "answer": "It read the elevator ID, EL479. That elevator serves several levels, so the ID alone couldn’t tell us which landing we were on."
     },
     {
       "question": "What does that green line mean?",
-      "scene": 7,
+      "scene": 14,
       "answer": "If you mean the line on the 3D reconstruction, it traces the camera positions estimated by COLMAP. On the GPS slide, green labels the run that used recorded GPS."
     },
     {
       "question": "What’s the 3D thing for?",
-      "scene": 7,
+      "scene": 13,
       "answer": "COLMAP estimates camera positions and reconstructs points. Brush uses the images and those positions to train the splat, which lets us view the space from another angle. The reviewed station map still decides where people can walk."
     },
     {
       "question": "Can this guide someone right now?",
-      "scene": 8,
+      "scene": 14,
       "answer": "Today we show recorded sign matching and a simulated route. The first live pilot needs one reviewed route and a good station match. Native ARKit arrows are a later validation step."
     },
     {
       "question": "Can you show me somebody else who did this?",
-      "scene": 9,
+      "scene": 15,
       "answer": "Tokyo’s Toei Subway deployed camera arrows. FloorPair identified levels in tests at two subway stations. Clew shows how ARKit can help retrace a recorded indoor path."
     },
     {
       "question": "What’s under the hood?",
-      "scene": 10,
+      "scene": 18,
       "answer": "The web guide uses React and MapLibre, with Three.js for the station view. Vision reads the clues, COLMAP and Brush handle the 3D experiments, and Octo stores and retrieves the evidence."
     },
     {
       "question": "Do you use Apple or another model?",
-      "scene": 4,
+      "scene": 17,
       "answer": "Apple Vision is our measured local sign reader. Haiku can explain the evidence during the demo. Gemini or Gemma are candidates for reviewing more footage, with GPT or Claude as options for selected frames. We haven’t compared those candidates on this same set."
     },
     {
       "question": "What happens if the elevator is out?",
-      "scene": 8,
+      "scene": 11,
       "answer": "The route needs a verified elevator path. If we have another step-free route, the guide can offer it. If the data doesn’t support one, the guide should say so instead of pointing someone to stairs."
     },
     {
       "question": "Can I get the data today?",
-      "scene": 10,
+      "scene": 18,
       "answer": "You can download the public Union Square recording sample today. The planned release would add reviewed floors, connections, and landmarks with versions and reuse terms. Original contributed video and logs stay in the project’s protected storage."
     },
     {
       "question": "What are you collecting from my phone?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Depending on the phone and the recording method, a walk can pair video with motion, orientation, GPS, steps, and pressure. The manifest records what was available and how the streams line up in time."
     },
     {
       "question": "How does this help people?",
-      "scene": 1,
+      "scene": 18,
       "answer": "Near a known landing, it can turn station signs and a floor map into a plain instruction like “Take the elevator to the mezzanine.” That’s useful when GPS has dropped and you need a route you can follow."
     },
     {
       "question": "How do you check that it works?",
-      "scene": 3,
+      "scene": 9,
       "answer": "Use the same recording with one input changed at a time. Hide GPS, pressure, or the sign, then compare the result to the filmed landing and turn. Show where the guide got it right, got it wrong, or stayed uncertain."
     },
     {
       "question": "Can we help without recording a video?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Yes. You can check which stair or elevator connects two floors, point out an ambiguous sign, or review a route on the map. The project repository and recorder are linked in the final scene."
     },
     {
       "question": "Can you get that from the research instead?",
-      "scene": 9,
+      "scene": 15,
       "answer": "When live lookup is available, Design Baker can search the project’s Octo notes and show the source it used. For example, we can ask what the Cortlandt Street recording plan says about elevator landmarks."
     },
     {
       "question": "What is NYC Map Agent?",
-      "scene": 10,
+      "scene": 18,
       "answer": "An accessible assistant for getting around New York. Riders record station walks; we clean them into paths and checkpoints, publish them as versioned open data, and build 3D previews and in-station guidance from them."
     },
     {
       "question": "What’s the plan from here?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Next come the recorder’s remaining pieces, storage for uploads, and automatic clean-up of each arriving walk. A barometer app would add fuller sensor data. Camera guidance with arrows is the goal; live AR tracking is still to do."
     },
     {
       "question": "How can I get the data today?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Download the Union Square sample from this screen: video paired with timestamped motion, orientation and GPS where available. The recording format is documented in the repository. Reviewed open-data releases with reuse terms are still to come."
     },
     {
       "question": "How can I contribute a walk?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Open the recorder linked here, film a station walk, add marks as you go, and tap Send. Nothing you record is published without your agreement, and faces are blurred before any video is shared."
     },
     {
       "question": "Is my recording private?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Yes. Raw recordings stay private, and nothing is published without your agreement; faces are blurred first. The app’s own memory, like rides and chats, stays on your phone by default."
     },
     {
       "question": "Why does GPS fail underground?",
-      "scene": 3,
+      "scene": 9,
       "answer": "GPS needs a clear view of satellites, and the station above blocks it. The phone falls back to steps and compass, and small errors grow: our replay ended 161 metres from the mapped exit without GPS."
     },
     {
       "question": "What does the phone record?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Video plus timestamped motion and orientation, and GPS when available. A sensor export can add steps and barometer pressure. Browsers cannot read every sensor, so a companion phone app is planned for fuller data."
     },
     {
       "question": "What is simulated and what is measured?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Measured: the replay’s GPS-on and GPS-off estimates, the sign words read from a saved frame, and the logged pressure climb. Simulated: the Union Square guide’s movement, the Fulton walk, and the splat’s alignment to the map."
     },
     {
       "question": "Will it guide me with AR?",
-      "scene": 8,
+      "scene": 14,
       "answer": "That is the plan: camera arrows inside stations, like Tokyo’s Toei deployment. Today’s Fulton preview is simulated. Live guidance needs the phone aligned to the station map and tracked; ARKit on iPhone is a later step."
     },
     {
       "question": "Who is this for?",
-      "scene": 10,
+      "scene": 18,
       "answer": "Riders who lose their way underground, especially anyone who cannot take stairs. Step-free routes, elevator clues and clear exits matter most. The open data also lets other builders make their own guidance tools."
     },
     {
       "question": "What did the AI actually do?",
-      "scene": 4,
+      "scene": 17,
       "answer": "The vision model read Elevator to L from a saved frame: 6 of 8 sign frames exactly, none wrong. Our code, not the model, matched the words to a mapped landing and chose the turn. On ten frames with no sign, zero wrong matches."
     },
     {
       "question": "What is the tech stack?",
-      "scene": 7,
+      "scene": 16,
       "answer": "React and MapLibre draw the map and guide, three.js the 3D station, a Hono server the agent. Vision reads signs; COLMAP and Brush turn footage into 3D. Octo stores walks and serves reviewed answers; Haiku writes them."
     },
     {
       "question": "How does the vision analysis work?",
-      "scene": 4,
+      "scene": 17,
       "answer": "A frame goes to the vision model, which only reads the words. Our code matches those words against the signs of the station the rider is in, then the route supplies the turn. Keeping the match in code cut wrong guesses to zero."
     }
   ],

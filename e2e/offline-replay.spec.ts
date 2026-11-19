@@ -85,7 +85,9 @@ test("in Spanish, the steps the card translated still read in Spanish with the n
   await page.getByRole("button", { name: "Send" }).click();
   await expect(page.getByRole("button", { name: "Play trip preview" })).toBeVisible({ timeout: slow(20_000) });
   // The card asked for its steps, and for the walk through the station once that was in.
-  await expect.poll(() => asked, { timeout: slow(30_000) }).toBeGreaterThanOrEqual(2);
+  // The walk-step translation can take over a minute on the loaded shared runners; the
+  // assertion is unchanged, only the wait grows (it failed at exactly 60s three runs straight).
+  await expect.poll(() => asked, { timeout: slow(60_000) }).toBeGreaterThanOrEqual(2);
   await page.waitForTimeout(1000);
 
   // From here a translation request can only fail.
