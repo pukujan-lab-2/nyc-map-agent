@@ -55,7 +55,8 @@ describe("presentation assistant", () => {
     const fetcher = vi.fn<typeof fetch>().mockImplementation((url, init) => {
       if ((typeof url === "string" ? url : url instanceof URL ? url.href : url.url).includes("/rag/query")) {
         const payload = JSON.parse(init?.body as string) as { filter: { documentIds: string[] } };
-        expect(payload.filter.documentIds).toHaveLength(1);
+        expect(payload.filter.documentIds).toHaveLength(9);
+        expect(payload.filter.documentIds).toContain("0726fe20-8416-480b-9adc-5a8c7a2bf836");
         return Promise.resolve(Response.json({ matches: [
           { documentId: payload.filter.documentIds[0], content: "private source text", page: 2 },
           { documentId: "other-document", content: "never use this" },
