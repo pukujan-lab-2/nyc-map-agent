@@ -104,8 +104,10 @@ for (const c of RETURN_CASES) {
     if (await clip.count()) {
       await expect.poll(() => clip.evaluate((v: HTMLVideoElement) => v.readyState)).toBeGreaterThan(0);
       await clip.evaluate((v: HTMLVideoElement) => { v.pause(); v.currentTime = 2; });
-      // Let the throttled CLIP_STATE reach the machine before the interrupt.
-      await page.waitForTimeout(700);
+      // Wait for the seek to settle, then let the seeked event reach the machine
+      // (the pause event can report the pre-seek position; CI load delays events).
+      await expect.poll(() => clip.evaluate((v: HTMLVideoElement) => v.currentTime), { timeout: 10_000 }).toBeCloseTo(2, 1);
+      await page.waitForTimeout(1200);
       paused = true;
     }
     await ask(page, c.question);

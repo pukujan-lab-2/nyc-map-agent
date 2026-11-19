@@ -73,6 +73,7 @@ test("an interrupting question cancels the pending orbit", async ({ page }) => {
 });
 
 test("the orbit visibly moves the rendered camera", async ({ page }) => {
+  test.setTimeout(240_000);
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/present");

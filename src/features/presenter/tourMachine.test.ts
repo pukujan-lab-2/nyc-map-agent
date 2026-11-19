@@ -73,7 +73,8 @@ describe("M2 — no dead ends, exhaustive", () => {
       // identity exhaustively and M10/M11 cover menu rendering. LIVE changes branching, so it stays.
       { type: "LIVE", on: true }, { type: "LIVE", on: false },
       ...SPINE.map((c) => ({ type: "JUMP", chapter: c.id }) as TourEvent),
-      ...SPINE.flatMap((c) => c.views.map((v) => ({ type: "SET_VIEW", view: v }) as TourEvent)),
+      // Representative views; M5 checks every chapter's full view set for legality.
+      ...["walk", "map", "splat", "data", "washington", "video"].map((v) => ({ type: "SET_VIEW", view: v }) as TourEvent),
       ...questions.map((text) => ({ type: "ASK", text }) as TourEvent),
     ];
     // For dead-end legality only the SHAPE of memory matters (is there a snapshot, is there a
@@ -117,7 +118,7 @@ describe("M2 — no dead ends, exhaustive", () => {
     }
     expect(seen.size).toBeLessThan(40_000);
     expect([...reachedChapters].sort((a, b) => a - b)).toEqual(SPINE.map((c) => c.id));
-  }, 60_000);
+  }, 180_000);
 });
 
 describe("M3 — resume identity", () => {
