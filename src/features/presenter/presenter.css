@@ -124,7 +124,7 @@
 #presenter .station-photo{position:relative;z-index:1}
 #presenter .sign-outline{stroke:#d9ff92;stroke-width:1.4;fill:none;filter:drop-shadow(0 1px 2px #000)}
 #presenter .route-focus{position:absolute;left:50%;top:61%;width:2px;height:2px}
-#presenter .route-title{position:absolute;left:6vw;bottom:10%;pointer-events:none;text-shadow:0 2px 22px #000}
+#presenter .route-title{position:absolute;left:6vw;bottom:clamp(96px,14vh,128px);pointer-events:none;text-shadow:0 2px 22px #000}
 #presenter .route-title small{display:block;font:12px Menlo,monospace;color:#d5fa80;margin-bottom:9px}
 #presenter .route-title b{font:500 clamp(35px,5vw,80px)/.99 Georgia,serif;letter-spacing:-.06em}
 #presenter .route-title span{color:#d5fa80}
@@ -165,7 +165,7 @@
 #presenter .word{font-size:15px}
 #presenter .word i{font-size:17px}
 #presenter .headBtns button{padding:5px 8px;font-size:11px}
-#presenter .route-title{bottom:6%;left:6%}
+#presenter .route-title{bottom:clamp(88px,13vh,110px);left:6%}
 #presenter[data-scene="1"] .frame{padding:0 0 12vh}
 #presenter .caption{gap:6px;font-size:14px}
 #presenter #by{display:none}
