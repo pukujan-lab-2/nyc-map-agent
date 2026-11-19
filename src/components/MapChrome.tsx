@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useFlag } from "@/lib/flags";
 import { sharedCoords, startSharing, useSharedLocation } from "@/lib/geo/sharedLocation";
@@ -66,6 +66,11 @@ export function QrButton({ wide }: { wide?: boolean } = {}) {
           <p className="pr-10 text-left text-[15px] font-semibold">Scan to open the app</p>
           <img src="/qr-live.svg" alt={`QR code for ${LIVE_URL}`} width={220} height={220} className="h-[220px] w-[220px] [image-rendering:pixelated]" />
           <p className="text-[13px] font-medium text-[#334155]">nyc.design-bakery.com</p>
+          {/* More than a code: what the project is, in one tap (owner, 2026-11-18). */}
+          <Link to="/present" data-testid="qr-more-presenter" onClick={() => setOpen(false)}
+            className="flex min-h-11 w-full items-center justify-center rounded-full bg-[#0b1220] px-4 text-[14px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">Meet Design Baker →</Link>
+          <Link to="/record" data-testid="qr-more-record" onClick={() => setOpen(false)}
+            className="flex min-h-11 w-full items-center justify-center rounded-full border border-[#0b1220]/25 px-4 text-[14px] font-semibold text-[#0b1220] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">Record a station walk →</Link>
           {/* Where the product is going: a short animated page of the full loop. */}
           <a href="/coming-soon.html" data-testid="coming-soon-link"
             className="flex min-h-11 w-full items-center justify-center rounded-full bg-[#0b1220] px-4 text-[14px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">See what is coming →</a>
