@@ -196,7 +196,7 @@ describe("presentation assistant traces", () => {
 
   it("traces a rate-limited turn without reading the body", async () => {
     let last!: Response;
-    for (let i = 0; i < 9; i += 1) last = await post("chat", req({ question: "hello" }, "192.0.2.99"), {});
+    for (let i = 0; i < 21; i += 1) last = await post("chat", req({ question: "hello" }, "192.0.2.99"), {});
     expect(last.status).toBe(429);
     const root = lastRoot();
     expect(root.name).toBe("presenter.chat");
@@ -204,6 +204,40 @@ describe("presentation assistant traces", () => {
     expect(root.children).toEqual([]);
     const before = vi.mocked(exportTrace).mock.calls.at(-2)![0];
     expect(before.attributes).toMatchObject({ outcome: "prepared-fallback" });
+  });
+
+  it("allows twenty questions a minute and refuses the twenty-first with an honest answer", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(() => Promise.resolve(Response.json({ content: [{ type: "text", text: "Hello" }] })));
+    for (let i = 0; i < 20; i += 1) {
+      const response = await post("chat", req({ question: "hello", history: [] }, "192.0.2.120"), env, fetcher);
+      expect(response.status).toBe(200);
+    }
+    const refused = await post("chat", req({ question: "hello", history: [] }, "192.0.2.120"), env, fetcher);
+    expect(refused.status).toBe(429);
+    expect(await refused.json()).toEqual({
+      error: "rate_limited",
+      answer: "Give me a moment — too many questions at once. Try again in a few seconds.",
+    });
+    expect(fetcher).toHaveBeenCalledTimes(20);
+    expect(lastRoot().attributes).toMatchObject({ outcome: "rate_limited" });
+  });
+
+  it("accepts chapter 18 on the rebuilt spine and refuses 19", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ content: [{ type: "tool_use", name: "present_answer", input: { chapter: 18, answer: "The last chapter.", sourceIds: [] } }] }));
+    const accepted = await post("ask", req({ question: "What is the last chapter?", scene: 18, octo: false }, "192.0.2.121"), env, fetcher);
+    expect(accepted.status).toBe(200);
+    expect(await accepted.json()).toMatchObject({ chapter: 18, answer: "The last chapter." });
+    const refused = await post("ask", req({ question: "Beyond the spine?", scene: 19, octo: false }, "192.0.2.122"), env, fetcher);
+    expect(refused.status).toBe(400);
+    expect(await refused.json()).toEqual({ error: "invalid_request" });
+  });
+
+  it("refuses a model answer that names a chapter beyond the spine", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ content: [{ type: "tool_use", name: "present_answer", input: { chapter: 19, answer: "Out of range.", sourceIds: [] } }] }));
+    const response = await post("ask", req({ question: "hello", scene: 4, octo: false }, "192.0.2.123"), env, fetcher);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "unavailable" });
+    expect(lastRoot().attributes).toMatchObject({ outcome: "prepared-fallback" });
   });
 });
 

@@ -21,7 +21,7 @@
 #presenter .headBtns{display:flex;gap:7px}
 #presenter header button{font-size:13px}
 #presenter main{position:relative;display:grid;align-content:center;padding:20px clamp(16px,5vw,78px);min-height:350px}
-#presenter #scene{display:grid;grid-template-columns:minmax(250px,.76fr) minmax(0,1.45fr);align-items:center;gap:4vw;position:relative;z-index:1}
+#presenter #scene{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:10px;position:relative;z-index:1}
 #presenter .eyebrow{font:11px ui-monospace,Menlo,monospace;letter-spacing:.15em;color:var(--lime);text-transform:uppercase}
 #presenter h1{font-size:clamp(48px,6.2vw,105px);font-weight:590;line-height:.94;letter-spacing:-.068em;margin:18px 0 16px}
 #presenter h1 em{font:italic 1.04em/.9 Georgia,serif;color:var(--lime);letter-spacing:-.07em}
@@ -56,8 +56,8 @@
 #presenter .inputwrap input{padding:10px 15px;background:transparent;border:0;color:var(--ink);min-width:0;flex:1}
 #presenter .inputwrap button{margin:3px;border:0;background:#353b2e;padding:6px 16px}
 #presenter .jump{flex-shrink:0}
-#presenter .meter{margin-left:auto;display:flex;align-items:center;gap:4px}
-#presenter .meter i{width:13px;height:3px;background:#454b40}
+#presenter .meter{margin-left:auto;display:flex;align-items:center;gap:3px}
+#presenter .meter i{width:9px;height:3px;background:#454b40}
 #presenter .meter i.on{background:var(--lime)}
 #presenter #pet{width:50px;height:50px;position:fixed;left:0;top:0;pointer-events:none;z-index:6;filter:drop-shadow(0 3px 7px #0009);transition:transform .85s cubic-bezier(.36,.04,.17,1)}
 #presenter #pet svg{width:100%;height:100%}
@@ -391,3 +391,25 @@
 
 #presenter .baker-bubble{pointer-events:none}
 #presenter:has(.popover:not([hidden])) .tech-chips{visibility:hidden}
+
+/* The view switcher lives on the stage (D22): a visible segmented control under the visual. */
+#presenter .view-switch{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;min-width:0}
+#presenter .view-switch button{min-height:28px;padding:5px 14px;border-radius:999px;border:1px solid #637054;background:#161b14;color:#dbe6d1;font:600 12.5px/1.3 system-ui,sans-serif;cursor:pointer}
+#presenter .view-switch button[aria-pressed="true"]{border-color:var(--lime);background:#293022;color:var(--lime)}
+#presenter .view-switch button:hover,#presenter .view-switch button:focus-visible{border-color:var(--lime)}
+
+/* An unknown question offers its nearest chapters as tappable actions (D33). */
+#presenter .offer{display:flex;flex-wrap:wrap;gap:6px;flex:0 0 100%;min-width:0;padding:2px 0 4px}
+#presenter .offer[hidden]{display:none}
+#presenter .offer button{min-height:28px;padding:5px 14px;border-radius:999px;border:1px solid var(--lime);background:#1d2415;color:var(--lime);font:600 12.5px/1.3 system-ui,sans-serif;cursor:pointer}
+
+/* The chapter menu: one flat list grouped by act (PDD). */
+#presenter .popover .menu-act{display:block;color:var(--lime);font:10px Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;margin:10px 6px 3px}
+
+/* Progress is always visible: where the visitor is, in every size (D23). */
+#presenter .progress{display:inline}
+
+/* On phones the progress gets its own footer row so the input keeps its width (D23 + layout bar). */
+@media(max-width:700px){
+#presenter .progress{display:block;flex:0 0 100%;order:-1;padding:0 0 2px}
+}

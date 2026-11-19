@@ -15,18 +15,13 @@ function cameraMoves(page: Page): Promise<string[]> {
   return frame.evaluate(() => (window as unknown as { __presenterCameraMoves?: string[] }).__presenterCameraMoves ?? []);
 }
 
+/** "Show me the splat" resolves through the machine to chapter 12, view splat. */
 async function openSplat(page: Page) {
   const ask = page.getByRole("textbox", { name: "Ask Design Baker" });
   await ask.fill("Show me the splat");
   await ask.press("Enter");
-  await expect(page.locator("#presenter")).toHaveAttribute("data-scene", "7");
-  // Scene 6's default view is now the station map; commandView already maps splat questions
-  // to the splat capture. The click is belt-and-braces: only when splat mode is not already
-  // open (re-clicking would restart the camera sequence) and the button exists.
-  const capture = page.getByRole("button", { name: "Splat capture" });
-  if ((await page.locator("#presenter").getAttribute("data-mode")) !== "splat" && await capture.count()) {
-    await capture.click();
-  }
+  await expect(page.locator("#presenter")).toHaveAttribute("data-scene", "13");
+  await expect(page.locator("#presenter")).toHaveAttribute("data-mode", "splat");
   await expect(page.locator(SPLAT_FRAME)).toBeVisible();
 }
 
@@ -52,7 +47,7 @@ test("an interrupting question cancels the pending orbit", async ({ page }) => {
   await openSplat(page);
   await expect.poll(() => cameraMoves(page), { timeout: 15_000 }).toContain("overview");
   // Record what the presenter posts to this iframe, so a late orbit would still be seen
-  // after the question moves the page to another scene and the iframe is gone.
+  // after the question moves the page to another chapter and the iframe is gone.
   await page.evaluate((selector) => {
     const frame = document.querySelector<HTMLIFrameElement>(selector);
     const target = frame?.contentWindow;
@@ -68,6 +63,7 @@ test("an interrupting question cancels the pending orbit", async ({ page }) => {
   const ask = page.getByRole("textbox", { name: "Ask Design Baker" });
   await ask.fill("Show the pressure readings");
   await ask.press("Enter");
+  await expect(page.locator("#presenter")).toHaveAttribute("data-scene", "12");
   await expect(page.locator("#presenter")).toHaveAttribute("data-mode", "data");
   // The orbit was due 2.5 s after the overview; give it time to arrive if the guard failed.
   // The spy went in after overview was posted, so a working guard leaves it empty; a late

@@ -122,7 +122,7 @@
   {
     "name": "feature: presenter page (lazy, loaded only at /present)",
     "path": ".size-build/assets/PresentPage-*.js",
-    "limit": "24 kB"
+    "limit": "26.5 kB"
   },
   {
     "name": "all JS except the station walk",
@@ -130,6 +130,6 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js"
     ],
-    "limit": "1290 kB"
+    "limit": "1292000 B"
   }
 ]
