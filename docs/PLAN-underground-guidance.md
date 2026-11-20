@@ -11,9 +11,17 @@ Two things came out of that replay.
 1. Step count along the mapped route is usable. If the step length is measured on the platform leg first (231 steps over about 130 metres, so 0.56 metres a step), the overshoot at the second elevator falls from 63 metres to about 23. That is a drift of 16% of the distance walked, against 44% with the fixed step.
 2. The phone's direction is not usable on this recording. Leg by leg, the gap between the direction the phone reported and the direction the route runs moved between +54 and −147 degrees, most likely because the phone was held up to film. A dot that moves freely by steps and heading was 27 metres off on average with the elevators as its only fixed points, and adding a fixed point at every sign made the worst case 117 metres, because each correction was followed by a badly aimed leg.
 
-So the guide should keep the dot on the mapped route, measure the rider's step, and reset the drift whenever it recognises a known spot.
+So the dot belongs on the mapped route, moved by steps and reset whenever the guide recognises a known spot.
 
-These numbers come from one recording and a one-off script that is not in the repository yet. The mezzanine sign times in that recording are estimates, so only the figures at the two elevators are measured against something we know for certain.
+The Walk Guide already works that way (`src/features/walkguide/progress.ts`). Its dot is the last checkpoint the rider confirmed, by tapping a sign or having the camera read it, plus the steps counted since, laid along the line to the next checkpoint and never past it. A confirmed sign puts the dot back exactly. What it lacks:
+
+- It counts in its own steps. The guide says 212 steps between the two elevators and this rider took 296, which is 40% more; on the platform the gap was 5% (231 against 220). So the guide says "the sign should be in view" early, by a different amount on each stretch, and it has no way to learn a rider's step.
+- Only a tapped or camera-read sign resets it. An elevator ride, which the barometer can detect, and a NaviLens code do not.
+- Nothing measured any of this on a recording until now.
+
+These numbers come from one recording. The step counts and distances are now pinned by a test (`src/features/recorder/clean/metamorphic.test.ts`, pull request 256); the free-moving dot's 27 and 117 metres came from a one-off script that is not in the repository. The mezzanine sign times in that recording are estimates, so only the figures at the two elevators are measured against something we know for certain.
+
+Three sources disagree about the mezzanine, and that limits how much to read into the step-length gain. The map says about 144 metres. The guide's 212 steps would make a step 0.68 metres there, against 0.59 on the platform. The rider's 296 steps make it 0.49. Measuring the step on the platform closes most of the gap if the map's distances are right (63 metres down to 23) and little of it if the guide's step counts are right (the guide would be 28% early, against 25% after scaling by the platform's 5%). Which is right needs a second recording.
 
 ## What other cities did
 
@@ -37,10 +45,10 @@ The same steps as a list, with what "done" means for each.
 
 | Step | What gets built | Done when |
 | --- | --- | --- |
-| 0. Replay test | The one-off simulation becomes a test that runs on every recording we hold | The 63 m and 23 m figures are reproduced by a command in `package.json` |
+| 0. Replay test | Checks on the real recording that need no true position | Done for the first set in pull request 256. The first test written found that the cleaned path moved by up to 21 m with the phone's compass frame, now fixed |
 | 1. Station as data | Levels, paths and checkpoints in one standard format, stored in a PostGIS database (PostGIS is the spatial extension for Postgres) | The filmed Cortlandt St to Union Sq route can be rebuilt from the data alone, and "nearest checkpoint on this level" is one query |
-| 2. Position | The dot moves along the route by steps, with the step length measured between the first two known points | Drift at the far elevator is under 25 m on recordings the settings were not tuned on |
-| 3. Anchors | A read sign, a NaviLens code, an elevator ride or a tap all do one thing: put the dot on a checkpoint | Drift before each correction stays under about 12 m; the sign reader never names the wrong checkpoint on held-out frames |
+| 2. Position | The Walk Guide's dot learns the rider's step: the ratio of steps taken to steps the guide counted, measured between confirmed checkpoints and applied to the next stretch | Drift at the far elevator is under 25 m on recordings the settings were not tuned on |
+| 3. Anchors | An elevator ride found by the barometer and a NaviLens code reset the dot the way a tapped or camera-read sign already does | Drift before each correction stays under about 12 m; the sign reader never names the wrong checkpoint on held-out frames |
 | 4. Validation | The hidden holdout and the agent checks described below | The checks run in CI and report totals only |
 | 5. Native app | Phone in a pocket, spoken turns, barometer | The step 2 and 3 numbers hold on pocket-carried recordings |
 | 6. Watch | A tap on the wrist for each instruction | The tap fires within a few steps of the checkpoint in replay |
@@ -128,7 +136,7 @@ The MTA released a draft Pathways dataset for 106 stations and complexes. We hav
 
 ## First moves
 
-1. Land the replay simulation as a test (step 0), with the metamorphic rows that need no new data.
+1. Land the metamorphic tests that need no new data (step 0). Done in pull request 256.
 2. Confirm the `nyc-map-postgis` container from pull request 255 is healthy on the VPS, then add the station tables.
 3. Open the MTA's draft Pathways dataset and report what it holds for Union Sq, Cortlandt St and Fulton St.
 4. Send NaviLens two requests: the Union Sq code list with positions and text, and whether their reader runs in a web app.
