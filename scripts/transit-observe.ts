@@ -23,12 +23,31 @@ import { nyHourOfWeek } from "../server/features/transit/segments";
 import { SegmentObserver, type SegmentObs } from "../server/features/transit/observe";
 import { BusScorer, sample, SubwayScorer, type BusSegRow, type Score, type Tally } from "../server/features/transit/score";
 import { noticeRoutes, trafficNear, wetness, type SpeedLink } from "../server/features/transit/conditions";
+import { StopObserver, type StopObs } from "../server/features/transit/stopObserve";
 import type { SegmentRow } from "../src/features/transit/history";
 import type { RouteGeom } from "../src/features/transit/busEstimate";
 import { foldSpeeds, speedsUrl, type SocrataRow } from "../server/features/transit/busSpeeds";
 import { loadEnv } from "./env";
 
 const RETENTION_DAYS = 60;
+/** Measured stops are kept for less time: two rows a stop on nine lines is about 130,000 rows a day. */
+const STOP_DAYS = 30;
+
+/** Store measured stops; `notices` are the lines with a service notice in effect, when known. */
+async function writeStops(rows: StopObs[], notices?: Set<string>) {
+  for (let i = 0; i < rows.length; i += 500) {
+    const params: unknown[] = [];
+    const values = rows.slice(i, i + 500).map((r) => {
+      params.push(new Date(r.observedAt * 1000).toISOString(), r.route, r.dir, r.stop, r.method, r.seconds, r.slack, notices ? notices.has(r.route) : null, r.tripId);
+      const b = params.length - 9;
+      return `(${Array.from({ length: 9 }, (_, k) => `$${b + k + 1}`).join(",")})`;
+    });
+    await octoQuery(
+      `INSERT INTO raw.transit_stop_obs (observed_at, route, dir, stop, method, seconds, slack, notice, trip_id) VALUES ${values.join(",")} ON CONFLICT DO NOTHING`,
+      params,
+    );
+  }
+}
 
 async function write(rows: SegmentObs[]) {
   for (let i = 0; i < rows.length; i += 500) {
@@ -214,6 +233,8 @@ async function main() {
   const ext = await octoQuery<{ name: string }>("SELECT name FROM pg_available_extensions WHERE name = 'timescaledb'");
   console.log(`timescaledb available: ${ext.rows.length > 0} (rollup uses a plain materialized view either way)`);
   const obs = new SegmentObserver("subway");
+  const stopObs = new StopObserver();
+  let stops = 0, stopsOff = false;
   const busKey = process.env.MTA_BUSTIME_KEY;
   const busObs = new BusObserver();
   const busRows: BusObs[] = [];
@@ -232,6 +253,11 @@ async function main() {
       const rows = obs.ingest(trips, at);
       if (rows.length) await write(rows);
       total += rows.length;
+      // Stops are timed apart from the travel times above, and their table comes with a later migration.
+      const stopRows = stopObs.ingest(trips, at);
+      if (stopRows.length && !stopsOff) {
+        await writeStops(stopRows, ctx.notices).then(() => { stops += stopRows.length; }, (err) => { stopsOff = true; logged("stops: not stored this run")(err); });
+      }
       if (!subTried) {
         subTried = true;
         subScore = await subwayScorer(trips.map((t) => t.route), end / 1000).catch(logged("score: subway off this run"));
@@ -261,6 +287,11 @@ async function main() {
     octoQuery("REFRESH MATERIALIZED VIEW marts.transit_segment_hourly"),
   );
   console.log(`logged ${total} observations`);
+  if (!stopsOff) {
+    await octoQuery(`DELETE FROM raw.transit_stop_obs WHERE observed_at < now() - interval '${STOP_DAYS} days'`)
+      .then(() => refresh("marts.transit_stop_hourly"))
+      .then(() => console.log(`stops: ${stops} measured`), logged("stops: rollup not refreshed"));
+  }
   if (busKey) console.log(`bus: ${busRows.length} observations -> ${await writeBus(busRows)} segment samples`);
   try {
     const tallies: Array<[Score["system"], Tally]> = [];
