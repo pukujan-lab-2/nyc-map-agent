@@ -138,7 +138,7 @@ Asked for a route with no stairs or escalators, it gives back the two routes we 
 
 What it lacks is position. Only the 985 street entrances have coordinates; the 844 points inside stations (mezzanines, gates, landings) have none. There is no levels file and no length or walking time on any pathway. One entrance coordinate is plainly wrong (a WTC Cortlandt entrance placed in upper Manhattan).
 
-So the two fit together. The draft knows how a station connects and what the signs say, for 230 stations, and does not know where anything is or how far apart. A recording knows where and how far, for one route. Using the draft as the skeleton and recordings to add positions, levels and step counts would mean a rider records a route we can already name, instead of one we have to work out from the film. Two cautions: the MTA asked that the draft not be used in public-facing applications, so shipping anything derived from it needs their agreement, and it is five years old, so each station needs checking against what is there now.
+So the two fit together. The draft knows how a station connects and what the signs say, for 230 stations, and does not know where anything is or how far apart. A recording knows where and how far, for one route. Using the draft as the skeleton and recordings to add positions, levels and step counts would mean a rider records a route we can already name, instead of one we have to work out from the film. The announcement asked that the draft not be used in public-facing applications; the owner said on 2026-11-20 that they have permission to use it. One caution remains. The files are from 2021, and stations change: an elevator added or replaced, an entrance closed, a sign reworded. Before a station's draft data is shown to riders, its elevators should be compared with the MTA's live equipment feed, which uses the same identifiers, and its sign text with a current recording.
 
 ## What we do not know
 
@@ -151,7 +151,7 @@ So the two fit together. The draft knows how a station connects and what the sig
 
 1. Land the metamorphic tests that need no new data (step 0). Done in pull request 256.
 2. Confirm the `nyc-map-postgis` container from pull request 255 is healthy on the VPS, then add the station tables.
-3. Ask the MTA whether the draft Pathways data may be used, and whether a newer version exists. Until then it is a reference for checking our recordings.
+3. Load the draft Pathways data as the station skeleton, and compare its elevators with the live equipment feed to see what has changed since 2021. Ask the MTA whether a newer version exists.
 4. Send NaviLens two requests: the Union Sq code list with positions and text, and whether their reader runs in a web app.
 5. Write the specification for steps 2 and 3 with their contract tests.
 
