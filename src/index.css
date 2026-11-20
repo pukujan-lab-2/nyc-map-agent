@@ -92,16 +92,20 @@
   }
 }
 
-/* MapLibre overrides: keep chrome dark and unobtrusive */
-.maplibregl-ctrl-attrib,
-.maplibregl-ctrl-attrib a {
-  background: rgba(9, 12, 20, 0.72) !important;
-  color: hsl(var(--muted-foreground)) !important;
+/* MapLibre overrides: keep attribution legible (WCAG AA+) over both light and dark maps */
+.maplibregl-ctrl-attrib {
+  background: rgba(9, 12, 20, 0.84) !important;
+  color: #e2e8f0 !important;
   font-size: 10px !important;
   padding: 2px 6px !important;
 }
 
 .maplibregl-ctrl-attrib a {
+  background: transparent !important;
+  color: #f8fafc !important;
+  font-size: 10px !important;
+  text-decoration: underline;
+  text-underline-offset: 2px;
   padding: 0 !important;
 }
 

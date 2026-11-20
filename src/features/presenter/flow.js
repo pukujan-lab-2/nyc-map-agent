@@ -43,14 +43,14 @@ export function mountPresenter(root) {
 
   const routeToEvidence = [
     [/\b(jump\w*|drift\w*|gps|withheld|67\s*(av|ave|avenue))\b/i, 2],
-    [/\b(vision|camera reads|sign reader|elevator sign|union square|ocr|elevator to l)\b/i, 3],
+    [/\b(vision|camera reads|sign reader|sign match|elevator sign|union square|ocr|elevator to l)\b/i, 3],
     [/\b(el479|plaque|elevator number|elevator id|queensboro sign)\b/i, 4],
     [/\b(barometer|pressure|vertical|altitude|go upstairs|climb|elevator ride)\b/i, 5],
-    [/\b(colmap|splat|meshroom|3d capture|point cloud|3d thing)\b/i, 6],
+    [/\b(colmap|splat|meshroom|3d capture|point cloud|3d thing|become 3d|how was this made)\b/i, 6],
     [/\b(fulton|arrow|arkit|nassau|route graph|augmented reality|live guidance)\b/i, 7],
     [/\b(toei|tokyo|floorpair|clew|research|anyone else|other people)\b/i, 8],
     [/\b(license|privacy|contribut\w*|github|download|data today|collecting|data flow|octo|upload|give feedback)\b/i, 9],
-    [/\b(ai|artificial intelligence|vision model|vision analysis|what did the model|neural|how does the vision)\b/i, 16],
+    [/\b(ai|artificial intelligence|vision model|vision analysis|what did the (?:model|ai)|neural|how does the vision)\b/i, 16],
     [/\b(tech stack|stack|technologies|what is it built|built with|gis)\b/i, 15],
     [/\b(archive|first pitch|original video|hackathon)\b/i, 1],
     [/\b(starting point|introduction|beginning)\b/i, 0],
@@ -147,7 +147,7 @@ export function mountPresenter(root) {
   // the questions a visitor is most likely to want next.
   const suggestions = {
     0: ["Start the tour", "Show me the splat", "How did Washington do this?"],
-    1: ["Keep going", "What did the phone record?"],
+    1: ["Keep going", "What does the phone record?"],
     2: ["Show the GPS replay", "How far off was GPS?"],
     3: ["Play the original walk here", "What did the sign reader see?", "Show me the left turn", "What did the AI actually do?"],
     4: ["What does EL479 tell us?", "What did the barometer add?"],
@@ -216,6 +216,7 @@ export function mountPresenter(root) {
   }
 
   function show(state) {
+    blockedVoice = undefined;
     media()?.pause();
     current = { mode: "default", time: 0, playing: false, ...state };
     drawScene(current.scene, current.mode);
@@ -334,7 +335,8 @@ export function mountPresenter(root) {
   const more=document.createElement("details");
   more.innerHTML="<summary>Explore the evidence</summary>";route.append(more);
   EXTRAS.forEach(i=>{menuItem(i,true);more.append(route.lastElementChild)});
-  const group=document.createElement("div");group.id="viewGroup";group.innerHTML='<span class="section-name">View this stop</span><div id="viewChoices"></div>';route.append(group);
+  // View-mode tabs live on the stage, not buried in the Route drawer (#issue-log 2026-11-19).
+  const group=document.createElement("div");group.id="viewGroup";group.innerHTML='<span class="section-name">View this stop</span><div id="viewChoices"></div>';root.querySelector("main").append(group);
   const transcript=document.createElement("details");transcript.innerHTML='<summary>Read Moon’s reply</summary><p id="transcript"></p>';route.append(transcript);
   listen(routeButton, "click", () => {
     if (!automatedClick && guiding) {
@@ -372,7 +374,7 @@ export function mountPresenter(root) {
   sound.textContent = "Sound on";
   sound.setAttribute("aria-pressed", "true");
   function unlockSound(event) {
-    if (!blockedVoice || event.target.closest?.("#sound,video,iframe")) return;
+    if (!blockedVoice || event.target.closest?.("#sound,video,iframe,button,a,#ask")) return;
     setWords(blockedVoice, get("by").textContent);
   }
   listen(document, "click", unlockSound, { capture: true });
@@ -431,9 +433,11 @@ export function mountPresenter(root) {
 
   function prepared(words, scene, destination) {
     const bare = normalize(words);
-    if (stops[scene] && destination === undefined && /^(why|how|what now|where do i go|what do i do|which way|what happened|tell me more)$/.test(bare)) return {chapter:scene+1,answer:stops[scene][2]};
+    if (stops[scene] && destination === undefined && /^(why|how|what now|where do i go(?: here)?|what do i do(?: here)?|which way|what happened|tell me more)$/.test(bare)) return {chapter:scene+1,answer:stops[scene][2]};
+    if (destination === 15 || destination === 16) return { chapter: destination + 1, answer: SCENES[destination].answer };
     const known = D.bank.find((item) => normalize(item.question) === bare);
-    if (known) return { chapter: known.scene, answer: known.answer };
+    // chapter is 1-based (deliver subtracts 1); bank scenes are 0-based (#issue-log 2026-11-19).
+    if (known) return { chapter: known.scene + 1, answer: known.answer };
     if (/^(why|why though|what happened|how did that happen|what is that|what does that mean|explain that|tell me more|how|go deeper)$/.test(bare)) {
       return { chapter: scene + 1, answer: SCENES[scene].answer };
     }
@@ -490,6 +494,11 @@ export function mountPresenter(root) {
       setReply(result, label);
       return;
     }
+    if (index === current.scene && view) {
+      show({ scene: index, mode: view, playing: play });
+      setReply(result, label);
+      return;
+    }
     guiding = true;
     root.dataset.moonGuiding = "";
     // Speak first, navigate second: the visitor hears the answer while Moon flies to the evidence.
@@ -521,7 +530,7 @@ export function mountPresenter(root) {
     if (index === 5 && /\b(readings|values|numbers|sensor export)\b/i.test(words)) return "data";
     if (index === 6 && /\bsplat\b/i.test(words)) return "splat";
     if (index === 6 && /\b(point cloud|camera positions|points)\b/i.test(words)) return "points";
-    if (index === 6 && /\b(process|pipeline|steps|sequence)\b/i.test(words)) return "process";
+    if (index === 6 && /\b(process|pipeline|steps|sequence|how was this made|become 3d)\b/i.test(words)) return "process";
     if (index === 2 && /\b(map|estimates|tracks?)\b/i.test(words)) return "map";
     if ([2, 3, 6].includes(index) && /\b(play|watch|clip|footage|video)\b/i.test(words)) return "video";
     return undefined;
@@ -555,6 +564,12 @@ export function mountPresenter(root) {
       return;
     }
     let destination = stageFor(words);
+    // Known bank questions route deterministically in live mode too, so chips never
+    // wander to a model-chosen slide (#issue-log 2026-11-19).
+    if (!Number.isInteger(destination)) {
+      const banked = D.bank.find((item) => normalize(item.question) === normalize(words));
+      if (banked) destination = banked.scene;
+    }
     const city = cityFor(words);
     const outsideNYC = Boolean(city) || /\b(waymap|navilens|wmata|pimlico)\b/i.test(words);
     if (outsideNYC) destination = 8;
