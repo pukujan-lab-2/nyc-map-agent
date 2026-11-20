@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - open the pull request that closes #273
 
+### 2026-11-20 20:42:05 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["nothing since the last checkpoint"],"completed":["Opened the pull request for the 40 s limit and the connection rule"],"decisions":["no new decisions"],"evidence":["the description passes the repository's shape check and all 2,292 unit tests pass; CI has not finished"],"evidence_class":"observed","next_action":"read CI on pull request #274; it merges after #267","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0069","timestamp":"2026-11-20T20:42:05Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"6aa7ae0561902cb9a3166958b9873faf6b82beed2eaab75760161171ed17cf03","request_id":"57af5f8bb70644c9b6e5c66c8cbd429f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0069"} -->
+
+Completed:
+- Opened the pull request for the 40 s limit and the connection rule
+
+Evidence:
+- the description passes the repository's shape check and all 2,292 unit tests pass; CI has not finished
+
+Decisions:
+- no new decisions
+
+Changed:
+- nothing since the last checkpoint
+
+Blocked/uncertain:
+- none
+
+Next:
+- read CI on pull request #274; it merges after #267
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
