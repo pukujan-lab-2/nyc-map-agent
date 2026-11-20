@@ -35,6 +35,7 @@ import { busesInFocus, busesToShow, clearStopWatch, holdShuttle, watchStopBuses,
 import { publishLiveDots } from "@/lib/transit/liveVehicles";
 import { heldTrains } from "@/lib/transit/holds";
 import { troubledStations, troubledTrips } from "./troubledTrains";
+import { connectingStops } from "./connections";
 import { setLinesControl } from "@/lib/transit/linesControl";
 import { lineOf, setSelectedLine, useSelectedLine } from "@/lib/transit/selectedLine";
 import { useActiveTrip } from "@/lib/transit/activeTrip";
@@ -801,8 +802,10 @@ export default function TransitLayer() {
         const held = s === "subway" ? heldTrains(lv) : undefined;
         // Subway: also the trains about to queue behind a held one, or about to reach a station a delay notice names.
         const inTrouble = held ? troubledTrips(lv.trips, troubleRoutes, held, troubleStations) : undefined;
+        // Subway: a train at a transfer station may stop longer while a connecting train pulls in across the platform.
+        const connecting = s === "subway" ? connectingStops(lv.trips) : undefined;
         for (const trip of lv.trips) {
-          const est = estimateTrain(st, trip, now, liveProgress, s === "subway" ? history : undefined, { troubled: inTrouble ? inTrouble.has(trip.id) : troubleRoutes.has(trip.route) });
+          const est = estimateTrain(st, trip, now, liveProgress, s === "subway" ? history : undefined, { troubled: inTrouble ? inTrouble.has(trip.id) : troubleRoutes.has(trip.route), connecting: connecting?.get(trip.id) });
           const h = held?.get(trip.id);
           const v = est && s !== "subway" ? { ...est, grade: "grade" as const } : est && h ? { ...est, held: { since: h.since, stop: h.stop, stopped: h.stopped } } : est;
           if (v && (inView(v) || v.key === selectedKey || v.key === followedKey)) out.push(v);

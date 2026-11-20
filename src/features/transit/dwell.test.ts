@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DWELL_DEFAULT, DWELL_EXPRESS_LOCAL, DWELL_MIN, DWELL_TERMINAL, defaultDwell, deriveExpressLocal, ease, fastestRun, motionAt, typicalRun, type MotionStop } from "./dwell";
+import { DWELL_DEFAULT, DWELL_LONG, DWELL_MIN, DWELL_TERMINAL, defaultDwell, deriveExpressLocal, ease, fastestRun, motionAt, typicalRun, type MotionStop } from "./dwell";
 import { estimateTrain, type StaticSystem } from "./model";
 
 const dwell30 = () => 30;
@@ -66,7 +66,7 @@ describe("motionAt: the run gets its time before the stop does", () => {
 
   it("a long default stop no longer makes the train race: 725 m in a 96 s gap at a 60 s station", () => {
     // Before, the stop took half the gap (48 s) and left 48 s for a run whose fastest possible time is 50 s.
-    const dep = leaves(725, 96, DWELL_EXPRESS_LOCAL);
+    const dep = leaves(725, 96, 60);
     expect(96 - dep).toBeCloseTo(typicalRun(725), 6);
     expect(dep).toBeGreaterThan(15);
     expect(dep).toBeLessThan(30);
@@ -122,11 +122,12 @@ describe("motionAt: origin and terminal", () => {
 });
 
 describe("dwell defaults and express/local derivation", () => {
-  it("gives express/local transfer points the longer hold", () => {
-    expect(defaultDwell("120")).toBe(DWELL_EXPRESS_LOCAL); // 96 St (1/2/3)
-    expect(defaultDwell("R30")).toBe(DWELL_EXPRESS_LOCAL); // DeKalb Av (override)
+  it("gives a transfer point the longer stop only while a connection is pulling in", () => {
+    expect(defaultDwell("120")).toBe(DWELL_DEFAULT); // 96 St (1/2/3), nobody to wait for
+    expect(defaultDwell("120", undefined, true)).toBe(DWELL_LONG);
+    expect(defaultDwell("R30", undefined, true)).toBe(DWELL_LONG); // DeKalb Av (override)
     expect(defaultDwell("XYZ")).toBe(DWELL_DEFAULT);
-    expect(defaultDwell("XYZ", "Fulton St")).toBeGreaterThan(DWELL_DEFAULT);
+    expect(defaultDwell("XYZ", "Fulton St")).toBe(DWELL_LONG);
   });
   it("derives transfer points where an express skips stops a local makes", () => {
     const local = { route: "1", stops: ["103", "96", "86", "79", "72", "66"] };
