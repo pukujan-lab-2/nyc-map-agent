@@ -78,15 +78,20 @@ test("an interrupting question cancels the pending orbit", async ({ page }) => {
 
 test("the orbit visibly moves the rendered camera", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.setViewportSize({ width: 1280, height: 800 });
+  // A small window: CI draws the splat on the CPU, and at 1280×800 a frame took so long that the
+  // two screenshots alone used up the test's two minutes.
+  await page.setViewportSize({ width: 480, height: 400 });
   await page.goto("/present");
   await openSplat(page);
   await expect.poll(() => cameraMoves(page), { timeout: 20_000 }).toEqual(["overview", "orbit"]);
   // The overview tweens 2.5 s; the orbit arrives 2.5 s later and tweens another 2.5 s before it turns.
   await page.waitForTimeout(6000);
-  const frame = page.locator(SPLAT_FRAME);
-  const first = await frame.screenshot();
+  // Clip the page to the iframe's box. A locator screenshot first waits for the element to hold
+  // still across two animation frames, and on a starved renderer that wait never finished.
+  const box = await page.locator(SPLAT_FRAME).boundingBox();
+  if (!box) throw new Error("the splat frame has no box");
+  const first = await page.screenshot({ clip: box });
   await page.waitForTimeout(1200);
-  const second = await frame.screenshot();
+  const second = await page.screenshot({ clip: box });
   expect(first.equals(second), "two frames a second apart during the orbit should differ").toBe(false);
 });

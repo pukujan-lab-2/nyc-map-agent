@@ -11,7 +11,8 @@
 #presenter .primary{background:var(--lime);color:#171b10;border:0;font-weight:650}
 #presenter .primary:hover{background:#e2ffa3;color:#171b10}
 #presenter [hidden]{display:none!important}
-#presenter{min-height:100svh;position:relative;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;background:radial-gradient(ellipse at 69% 47%,#242c20 0%,#141813 37%,#0d100d 72%)}
+/* One column that can never be wider than the window: without minmax(0,…) the ask row's buttons set the track's width and pushed every region 2px past a 320px phone. */
+#presenter{min-height:100svh;position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;overflow:hidden;background:radial-gradient(ellipse at 69% 47%,#242c20 0%,#141813 37%,#0d100d 72%)}
 #presenter header,#presenter footer{position:relative;z-index:3;padding:18px clamp(16px,4vw,68px);display:flex;align-items:center;gap:12px}
 #presenter header{border-bottom:1px solid #ffffff20;justify-content:space-between}
 #presenter .word{font-weight:850;letter-spacing:-1.2px;font-size:23px}
@@ -148,6 +149,14 @@
 #presenter .popover #viewGroup{display:block;border-top:1px solid #394035;margin:10px 0 0;padding-top:5px}
 #presenter .popover #viewChoices{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:5px;margin:0}
 #presenter .popover #viewChoices button{font-size:12px;padding:6px 10px}
+/* On-stage view switcher: visible without opening the Route drawer (#issue-log 2026-11-19). */
+#presenter main{position:relative;display:flex;flex-direction:column}
+#presenter main #scene{flex:1;min-height:0}
+/* In normal flow below the stage: visible without the drawer, covers no control (e2e/layout.ts). */
+#presenter main #viewGroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 12px;background:rgba(12,15,10,.82);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+#presenter main #viewGroup .section-name{color:var(--lime);font:10px Menlo,monospace;letter-spacing:.1em}
+#presenter main #viewGroup #viewChoices{display:flex;flex-wrap:wrap;gap:5px;margin:0}
+#presenter main #viewGroup #viewChoices button{font-size:12px;padding:6px 10px}
 #presenter #pet{width:36px;height:36px}
 #presenter .flash{outline:none}
 #presenter .pressure{padding:clamp(18px,5.5vw,82px);display:flex;align-items:stretch;justify-content:center;flex-direction:column;gap:18px;background:radial-gradient(ellipse at 56% 52%,#202b1d,#101610 80%)!important}
