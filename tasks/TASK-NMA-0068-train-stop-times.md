@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - read CI on pull request #271, then after a week of runs read the rollup and time ten stops by hand
 
+### 2026-11-20 20:01:37 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["stopObserve.ts and its test, the migration, scripts/transit-observe.ts, checkpoints/CURRENT.md"],"completed":["Corrected the stop observer to store one timing, the vehicle report, and removed the feed timing; corrected issue #270 and the pull request text"],"decisions":["store only the vehicle timing and say plainly that it may include the run in along the platform until stops are timed by hand"],"evidence":["the feed timing was not a second measurement: the feed lists a stopped train's arrival as the vehicle timestamp plus exactly 30 s in 77% of 1,619 stopped reports; nothing this change touches fails (all 2,284 unit tests pass; type check and lint clean)"],"evidence_class":"observed","next_action":"read CI on pull request #271; time ten stops by hand before the map uses the stored number","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0068","timestamp":"2026-11-20T20:01:37Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"92161e887ca367d224a1b1966b6539bcb3d518174fcad2081825264f174076a4","request_id":"617bd039fb4148d5ab00d98bd0af5dec","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0068"} -->
+
+Completed:
+- Corrected the stop observer to store one timing, the vehicle report, and removed the feed timing; corrected issue #270 and the pull request text
+
+Evidence:
+- the feed timing was not a second measurement: the feed lists a stopped train's arrival as the vehicle timestamp plus exactly 30 s in 77% of 1,619 stopped reports; nothing this change touches fails (all 2,284 unit tests pass; type check and lint clean)
+
+Decisions:
+- store only the vehicle timing and say plainly that it may include the run in along the platform until stops are timed by hand
+
+Changed:
+- stopObserve.ts and its test, the migration, scripts/transit-observe.ts, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- read CI on pull request #271; time ten stops by hand before the map uses the stored number
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
