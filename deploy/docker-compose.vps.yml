@@ -123,6 +123,35 @@ services:
       driver: json-file
       options: { max-size: "10m", max-file: "3" }
 
+  # Station data for the underground guide (levels, paths, checkpoints): Postgres 16 with PostGIS.
+  # It is its own database because Octo, which holds the rest of the app's data, has no PostGIS
+  # and other projects on Octo do not need it. No port is published: only containers in this
+  # project reach it, as nyc-map-postgis:5432. Nothing in the app reads it yet.
+  # deploy/vps/autodeploy.sh makes the password file before any `compose up`; without that file
+  # Docker would create a directory in its place and the database would not start.
+  postgis:
+    container_name: nyc-map-postgis
+    image: postgis/postgis:16-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: stations
+      POSTGRES_USER: stations
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    # Healthy only when PostGIS itself answers, not just Postgres.
+    healthcheck:
+      test: ["CMD-SHELL", "psql -U stations -d stations -tAc 'select postgis_version()' | grep -q ."]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    mem_limit: 512m
+    volumes:
+      - ${POSTGIS_ROOT:-/home/ubuntu/apps/nyc-map-postgis}/data:/var/lib/postgresql/data
+      - ${POSTGIS_ROOT:-/home/ubuntu/apps/nyc-map-postgis}/password:/run/secrets/postgres_password:ro
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
   lfm3-bridge:
     container_name: nyc-map-lfm3-bridge
     image: alpine/socat:1.8.0.3

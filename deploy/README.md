@@ -12,6 +12,7 @@ in case it comes back.
 | `nyc-map-otp` | OpenTripPlanner, the trip planner (subway, buses, LIRR, Metro-North, ferries); sleeps when idle |
 | `nyc-map-valhalla` | Valhalla, the walking router; sleeps when idle |
 | `nyc-map-motis` | MOTIS, the old trip planner, kept until 2026-11-08 in case OTP has to be switched off |
+| `nyc-map-postgis` | Postgres 16 with PostGIS, for station data (levels, paths, checkpoints); no published port |
 | `nyc-map-lfm3-bridge` | re-offers the LFM3 tunnel port to containers on the Docker gateway |
 
 Chat uses LFM3, which runs on the MacBook Pro. The Pro keeps an SSH reverse tunnel open to the
@@ -19,11 +20,30 @@ VPS's `127.0.0.1:18099` (launchd job `com.pukujan.lfm3-tunnel`). If the Pro slee
 drops, chat stops answering while maps and trips keep working.
 
 The checkout is `~/apps/nyc-map-agent` and the env file is `~/apps/nyc-map-agent.env`. Router data
-lives beside them in `~/apps/nyc-map-otp`, `~/apps/nyc-map-valhalla` and `~/apps/nyc-map-motis`. Everything is in `deploy/docker-compose.vps.yml`.
+lives beside them in `~/apps/nyc-map-otp`, `~/apps/nyc-map-valhalla`, `~/apps/nyc-map-motis` and `~/apps/nyc-map-postgis`. Everything is in `deploy/docker-compose.vps.yml`.
 
 The env file's `OCTO_WORKSPACE_ID` must be the **nyc-neighbourhood** workspace (`ce74d86f…`), with
 an `OCTO_API_KEY` bound to it. Until 2026-11-01 it named another project's workspace, so neighbourhood
 areas, segment times and block tiles failed with "relation does not exist" or 404 (#614).
+
+### Station database (PostGIS)
+
+`nyc-map-postgis` is a Postgres 16 database with PostGIS, the spatial extension, added on 2026-11-20 for
+the underground guide's station data. It is separate from Octo because Octo has no PostGIS and the
+other projects there do not need it. Nothing in the app reads it yet.
+
+- Database and user are both `stations`. Other containers in this compose project reach it at
+  `nyc-map-postgis:5432`; no port is published on the host.
+- The data is in `~/apps/nyc-map-postgis/data` and the password in `~/apps/nyc-map-postgis/password`.
+  `deploy/vps/autodeploy.sh` makes the password once, on the host, so it is in no repository.
+- Nothing backs the data up yet. Add a dump job before anything is stored there that cannot be rebuilt.
+
+To check it from the VPS:
+
+```bash
+docker ps --filter name=nyc-map-postgis --format '{{.Names}} {{.Status}}'
+docker exec nyc-map-postgis psql -U stations -d stations -tAc 'select postgis_full_version()'
+```
 
 ### Voice (speech-to-text)
 

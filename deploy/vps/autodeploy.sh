@@ -23,6 +23,16 @@ git_() {
   else sudo -u "$OWNER" git -C "$REPO_DIR" "$@"; fi
 }
 
+# The station database's password (nyc-map-postgis). Made once, here on the host, so it is in no
+# repository. Compose mounts the file into the container, so it must exist before any `compose up`,
+# including the one Komodo runs after this script: this runs before every early exit below.
+POSTGIS_ROOT="${POSTGIS_ROOT:-/home/ubuntu/apps/nyc-map-postgis}"
+if [ ! -s "$POSTGIS_ROOT/password" ]; then
+  mkdir -p "$POSTGIS_ROOT"
+  (umask 077; head -c 32 /dev/urandom | base64 | tr -d '/+=\n' > "$POSTGIS_ROOT/password")
+  echo "made the station database password at $POSTGIS_ROOT/password"
+fi
+
 write_image() { printf 'NYC_MAP_IMAGE=%s\n' "$1" > "$DEPLOY_DIR/.env"; }
 
 git_ fetch --quiet origin main
