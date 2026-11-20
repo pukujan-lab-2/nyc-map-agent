@@ -37,6 +37,24 @@ describe("the step-free way through a station", () => {
     expect(north.note).toBe("No way without stairs right now: elevator EL219 is out, back 11/21/2026 06:00:00 AM.");
   });
 
+  it("keeps an out-of-service elevator out of the way in as well, whichever entrance is tried", () => {
+    // The way in tries every entrance. An earlier version read the list of outages once and then
+    // found it empty, so only the first entrance tried went round the elevator.
+    const stops = [...new Set(Object.entries(data.nodes).filter(([, n]) => n.kind === "p").map(([id]) => id.replace(/[NS]$/, "")))];
+    let checked = 0;
+    for (const gtfsId of stops) {
+      for (const usual of stationRoutes(data, { gtfsId }, "to-platform", []) ?? []) {
+        const unit = /Elevator (\S+?)(,|$)/.exec(usual.steps.find((s) => s.startsWith("Elevator")) ?? "")?.[1];
+        if (!unit) continue;
+        const now = stationRoutes(data, { gtfsId }, "to-platform", [{ unit, back: "later" }])!.find((r) => r.toward === usual.toward)!;
+        for (const s of now.steps) expect(s, `${gtfsId} with ${unit} out`).not.toContain(`Elevator ${unit},`);
+        expect(now.out.map((o) => o.unit)).toContain(unit);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(200);
+  });
+
   it("is not changed by an elevator that is out somewhere else", () => {
     const usual = stationRoutes(data, unionSqNqrw, "to-street", [])!;
     expect(stationRoutes(data, unionSqNqrw, "to-street", [{ unit: "EL999", back: "later" }])).toEqual(usual);
