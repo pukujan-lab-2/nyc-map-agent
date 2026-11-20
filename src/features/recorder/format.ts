@@ -15,7 +15,7 @@ export type BaroRow = [t: number, relativeAltitudeM: number];
 /** [t, count]: cumulative step count since the recording started. */
 export type StepRow = [t: number, count: number];
 
-export const MARK_KINDS = ["sign", "stairs", "elevator"] as const;
+export const MARK_KINDS = ["sign", "stairs", "elevator", "turnstile"] as const;
 export type MarkKind = (typeof MARK_KINDS)[number];
 
 export interface Mark {
@@ -81,7 +81,7 @@ export function parseRecording(json: unknown): ParseResult {
     for (let i = 0; i < json.marks.length; i++) {
       const m: unknown = json.marks[i];
       if (!isObj(m) || !isNum(m.t) || !(MARK_KINDS as readonly unknown[]).includes(m.kind) || (m.note !== undefined && typeof m.note !== "string")) {
-        errors.push(`"marks" item ${i + 1} needs a number "t", a "kind" of sign, stairs or elevator, and optional text "note".`);
+        errors.push(`"marks" item ${i + 1} needs a number "t", a "kind" of sign, stairs, elevator or turnstile, and optional text "note".`);
         break;
       }
     }

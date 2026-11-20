@@ -28,7 +28,7 @@ type Sending =
 /** The phone's own store; a private tab or a full disk reads as nothing, never an error. */
 const store = (): Storage | null => { try { return globalThis.localStorage; } catch { return null; } };
 
-const MARK_LABEL: Record<MarkKind, string> = { sign: "Sign", stairs: "Stairs", elevator: "Elevator" };
+const MARK_LABEL: Record<MarkKind, string> = { sign: "Sign", stairs: "Stairs", elevator: "Elevator", turnstile: "Turnstile" };
 
 function download(href: string, name: string): void {
   const a = document.createElement("a");

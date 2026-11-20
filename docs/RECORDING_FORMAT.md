@@ -15,7 +15,7 @@ Every `t` is epoch milliseconds. Every list can be empty: a phone browser has no
 | `gps` | Rows of `[t, lat, lon, accuracyM]`: a location fix and how far off it may be | degrees, metres |
 | `baro` | Rows of `[t, relativeAltitudeM]`: height relative to where the recording started | metres |
 | `steps` | Rows of `[t, count]`: steps counted since the recording started | steps |
-| `marks` | Things the walker flagged: `{ t, kind, note? }` with `kind` one of `sign`, `stairs`, `elevator` | |
+| `marks` | Things the walker flagged: `{ t, kind, note? }` with `kind` one of `sign`, `stairs`, `elevator`, `turnstile` | |
 | `video` | The camera file and when it started: `{ file, startedAt }` (optional; the video itself never goes in this file) | text, epoch ms |
 
 ## Conventions worth knowing
