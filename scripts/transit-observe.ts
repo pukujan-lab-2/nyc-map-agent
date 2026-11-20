@@ -30,7 +30,7 @@ import { foldSpeeds, speedsUrl, type SocrataRow } from "../server/features/trans
 import { loadEnv } from "./env";
 
 const RETENTION_DAYS = 60;
-/** Measured stops are kept for less time: two rows a stop on nine lines is about 130,000 rows a day. */
+/** Measured stops are kept for less time: one row a stop on nine lines is about 65,000 rows a day. */
 const STOP_DAYS = 30;
 
 /** Store measured stops; `notices` are the lines with a service notice in effect, when known. */
@@ -38,12 +38,12 @@ async function writeStops(rows: StopObs[], notices?: Set<string>) {
   for (let i = 0; i < rows.length; i += 500) {
     const params: unknown[] = [];
     const values = rows.slice(i, i + 500).map((r) => {
-      params.push(new Date(r.observedAt * 1000).toISOString(), r.route, r.dir, r.stop, r.method, r.seconds, r.slack, notices ? notices.has(r.route) : null, r.tripId);
-      const b = params.length - 9;
-      return `(${Array.from({ length: 9 }, (_, k) => `$${b + k + 1}`).join(",")})`;
+      params.push(new Date(r.observedAt * 1000).toISOString(), r.route, r.dir, r.stop, r.seconds, r.slack, notices ? notices.has(r.route) : null, r.tripId);
+      const b = params.length - 8;
+      return `(${Array.from({ length: 8 }, (_, k) => `$${b + k + 1}`).join(",")})`;
     });
     await octoQuery(
-      `INSERT INTO raw.transit_stop_obs (observed_at, route, dir, stop, method, seconds, slack, notice, trip_id) VALUES ${values.join(",")} ON CONFLICT DO NOTHING`,
+      `INSERT INTO raw.transit_stop_obs (observed_at, route, dir, stop, seconds, slack, notice, trip_id) VALUES ${values.join(",")} ON CONFLICT DO NOTHING`,
       params,
     );
   }
