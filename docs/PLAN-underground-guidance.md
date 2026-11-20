@@ -38,7 +38,7 @@ The same steps as a list, with what "done" means for each.
 | Step | What gets built | Done when |
 | --- | --- | --- |
 | 0. Replay test | The one-off simulation becomes a test that runs on every recording we hold | The 63 m and 23 m figures are reproduced by a command in `package.json` |
-| 1. Station as data | Levels, paths and checkpoints in one standard format, stored in the database | The filmed Cortlandt St to Union Sq route can be rebuilt from the data alone |
+| 1. Station as data | Levels, paths and checkpoints in one standard format, stored in the database with PostGIS (the spatial extension for Postgres) | The filmed Cortlandt St to Union Sq route can be rebuilt from the data alone, and "nearest checkpoint on this level" is one query |
 | 2. Position | The dot moves along the route by steps, with the step length measured between the first two known points | Drift at the far elevator is under 25 m on recordings the settings were not tuned on |
 | 3. Anchors | A read sign, a NaviLens code, an elevator ride or a tap all do one thing: put the dot on a checkpoint | Drift before each correction stays under about 12 m; the sign reader never names the wrong checkpoint on held-out frames |
 | 4. Validation | The hidden holdout and the agent checks described below | The checks run in CI and report totals only |
@@ -110,10 +110,12 @@ Two rules keep this honest. The agent that builds a change is never the agent th
 | GTFS Pathways and Levels, the transit standard for station interiors (nodes, walkways, stairs, elevators, fare gates, levels, sign text) | The format for step 1 | Adopt. Our checkpoints map onto it almost one to one |
 | OpenTripPlanner, the open trip planner noted in `docs/OTP.md` | Step-free routing through a station from Pathways data | Use to check step 1: it should find the route we filmed |
 | pgvector, already installed in the Octo database (version 0.8.7) | Matching read sign text or a photo to a checkpoint | Try in step 3 |
-| PostGIS, the spatial extension for Postgres | Nearest checkpoint on a level | Not available in Octo (checked 2026-11-20: only `plpgsql` and `vector`). Plain longitude, latitude and level columns are enough at this size |
+| PostGIS, the spatial extension for Postgres | Where station data lives: checkpoints as points, paths as lines, each with its level. Nearest checkpoint, distance along a path and snapping a point to the route become queries | Adopt (owner, 2026-11-20). It has to be installed first, see below |
 | IMDF, Apple's indoor map format, and ARKit | Indoor positioning in a native app | Later, with step 5 |
 | OpenStreetMap indoor tagging | A source for levels and elevators | Check per station |
 | IndoorGML, matching camera frames against a 3D model | | Not now |
+
+PostGIS is not in the Octo database today. On 2026-11-20 the server (PostgreSQL 16.15 on Debian) listed two installed extensions, `plpgsql` and `vector`, and offered no others, so `create extension postgis` would fail. Someone with access to the Octo server has to install the PostGIS package for PostgreSQL 16 first; we have not looked at how that server runs Postgres, so we do not know whether that is one package or a change of container image. Once it is there, a migration in `db/migrations/` creates the extension and the station tables. Until then step 1 can define the tables and load the data into a local Postgres with PostGIS for the tests.
 
 The MTA released a draft Pathways dataset for 106 stations and complexes. We have not opened it, so we do not know whether it covers our stations, how detailed it is, or whether it is current. Checking it is the first task of step 1, because it decides how much of the station data we get without recording.
 
@@ -127,8 +129,9 @@ The MTA released a draft Pathways dataset for 106 stations and complexes. We hav
 ## First moves
 
 1. Land the replay simulation as a test (step 0), with the metamorphic rows that need no new data.
-2. Open the MTA's draft Pathways dataset and report what it holds for Union Sq, Cortlandt St and Fulton St.
-3. Send NaviLens two requests: the Union Sq code list with positions and text, and whether their reader runs in a web app.
-4. Write the specification for steps 2 and 3 with their contract tests.
+2. Install PostGIS on the Octo server, then add the migration that creates the extension.
+3. Open the MTA's draft Pathways dataset and report what it holds for Union Sq, Cortlandt St and Fulton St.
+4. Send NaviLens two requests: the Union Sq code list with positions and text, and whether their reader runs in a web app.
+5. Write the specification for steps 2 and 3 with their contract tests.
 
 Sources: [MTA, accessible wayfinding through NaviLens](https://www.mta.info/accessibility/innovations/navilens); [MTA developer group, draft GTFS-Pathways announcement](https://groups.google.com/g/mtadeveloperresources/c/j-vVGirkKkc); [GTFS Pathways](https://gtfs.org/getting-started/features/pathways/); [Waymap, WMATA case study](https://www.waymapnav.com/case-studies/wmata-washington-metro); [FloorPair study](https://www.mdpi.com/1424-8220/19/16/3622).
