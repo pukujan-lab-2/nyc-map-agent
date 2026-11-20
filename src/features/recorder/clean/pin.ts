@@ -38,10 +38,17 @@ const len = (v: XY) => Math.hypot(v[0], v[1]);
  * short to give a direction, or the stretch would be wild, the gap is closed by
  * sliding instead. Before the first fix and after the last, the path is moved,
  * not turned. Returns places, one per raw point and one per fix.
+ *
+ * The raw path arrives in the phone's own frame, which is wherever it pointed
+ * when it started. It is first turned once, by the angle that best lines it up
+ * with all the fixes, so the stretches that are only slid or moved come out
+ * the same whichever way that frame happened to face.
  */
-export function pinPath(raw: readonly Timed<XY>[], fixes: readonly Fix[], origin: LonLat, { minM = 3, maxStretch = 4 } = {}): Timed<LonLat>[] {
-  if (!raw.length) return [];
-  if (!fixes.length) return raw.map((p) => ({ t: p.t, at: toLonLat(origin, p.at) }));
+export function pinPath(rawIn: readonly Timed<XY>[], fixes: readonly Fix[], origin: LonLat, { minM = 3, maxStretch = 4 } = {}): Timed<LonLat>[] {
+  if (!rawIn.length) return [];
+  if (!fixes.length) return rawIn.map((p) => ({ t: p.t, at: toLonLat(origin, p.at) }));
+  const z = bestTurn(rawIn, fixes, origin);
+  const raw = rawIn.map((p) => ({ t: p.t, at: mul(z, p.at) }));
   const F = fixes.map((f) => ({ t: f.t, xy: toXY(origin, f.at) }));
   const R = F.map((f) => pathAt(raw, f.t));
   const times = [...new Set([...raw.map((p) => p.t), ...F.map((f) => f.t)])].sort((a, b) => a - b);
@@ -77,13 +84,21 @@ export function placeRaw(raw: readonly Timed<XY>[], fixes: readonly Fix[], origi
   if (!raw.length || !fixes.length) return raw.map((p) => ({ t: p.t, at: toLonLat(origin, p.at) }));
   const f0 = toXY(origin, fixes[0].at);
   const r0 = pathAt(raw, fixes[0].t);
+  const z = bestTurn(raw, fixes, origin);
+  return raw.map((p) => ({ t: p.t, at: toLonLat(origin, add(f0, mul(z, sub(p.at, r0)))) }));
+}
+
+/** The single turn (a unit complex number) that best lines the raw path up with the fixes, measured from the first fix. No turn when there is one fix or none. */
+function bestTurn(raw: readonly Timed<XY>[], fixes: readonly Fix[], origin: LonLat): XY {
+  const f0 = toXY(origin, fixes[0].at);
+  const r0 = pathAt(raw, fixes[0].t);
   let dot = 0, cross = 0;
   for (const f of fixes.slice(1)) {
     const a = sub(pathAt(raw, f.t), r0), b = sub(toXY(origin, f.at), f0);
     dot += a[0] * b[0] + a[1] * b[1];
     cross += a[0] * b[1] - a[1] * b[0];
   }
+  if (dot === 0 && cross === 0) return [1, 0];
   const th = Math.atan2(cross, dot);
-  const z: XY = [Math.cos(th), Math.sin(th)];
-  return raw.map((p) => ({ t: p.t, at: toLonLat(origin, add(f0, mul(z, sub(p.at, r0)))) }));
+  return [Math.cos(th), Math.sin(th)];
 }
