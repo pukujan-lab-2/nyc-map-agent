@@ -148,6 +148,14 @@
 #presenter .popover #viewGroup{display:block;border-top:1px solid #394035;margin:10px 0 0;padding-top:5px}
 #presenter .popover #viewChoices{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:5px;margin:0}
 #presenter .popover #viewChoices button{font-size:12px;padding:6px 10px}
+/* On-stage view switcher: visible without opening the Route drawer (#issue-log 2026-11-19). */
+#presenter main{position:relative;display:flex;flex-direction:column}
+#presenter main #scene{flex:1;min-height:0}
+/* In normal flow below the stage: visible without the drawer, covers no control (e2e/layout.ts). */
+#presenter main #viewGroup{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 12px;background:rgba(12,15,10,.82);border:1px solid var(--line);border-radius:12px;padding:6px 10px}
+#presenter main #viewGroup .section-name{color:var(--lime);font:10px Menlo,monospace;letter-spacing:.1em}
+#presenter main #viewGroup #viewChoices{display:flex;flex-wrap:wrap;gap:5px;margin:0}
+#presenter main #viewGroup #viewChoices button{font-size:12px;padding:6px 10px}
 #presenter #pet{width:36px;height:36px}
 #presenter .flash{outline:none}
 #presenter .pressure{padding:clamp(18px,5.5vw,82px);display:flex;align-items:stretch;justify-content:center;flex-direction:column;gap:18px;background:radial-gradient(ellipse at 56% 52%,#202b1d,#101610 80%)!important}

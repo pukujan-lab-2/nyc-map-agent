@@ -436,8 +436,7 @@ export function mountPresenter(root) {
     if (stops[scene] && destination === undefined && /^(why|how|what now|where do i go(?: here)?|what do i do(?: here)?|which way|what happened|tell me more)$/.test(bare)) return {chapter:scene+1,answer:stops[scene][2]};
     if (destination === 15 || destination === 16) return { chapter: destination + 1, answer: SCENES[destination].answer };
     const known = D.bank.find((item) => normalize(item.question) === bare);
-    // chapter is 1-based (deliver subtracts 1); bank scenes are 0-based (#issue-log 2026-11-19).
-    if (known) return { chapter: known.scene + 1, answer: known.answer };
+    if (known) return { chapter: known.scene, answer: known.answer };
     if (/^(why|why though|what happened|how did that happen|what is that|what does that mean|explain that|tell me more|how|go deeper)$/.test(bare)) {
       return { chapter: scene + 1, answer: SCENES[scene].answer };
     }
