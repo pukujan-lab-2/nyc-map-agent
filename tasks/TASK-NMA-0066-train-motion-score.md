@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - open the pull request for #260 once #258 merges, and read CI's browser test result for the new card
 
+### 2026-11-20 18:18:39 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["checkpoints/CURRENT.md and the merge commit"],"completed":["Merged main into the score branch after the racing fix (#258) landed, kept the branch's versions of dwell.ts and model.ts, and moved the #257 entry in CURRENT.md to Completed recently"],"decisions":["no new decisions"],"evidence":["the branch merges cleanly again (GitHub reports it mergeable; type check, lint and the 298 transit tests pass); the earlier lint failure in CI was the runner killed with exit code 137, not a lint error"],"evidence_class":"observed","next_action":"read CI's browser test result for the new card on pull request #262","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0066","timestamp":"2026-11-20T18:18:39Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4be50d155474ff1c6b63ea2115edd9a6d4b6a8db84277d1d13eb92d7aa118229","request_id":"30a901791cda434ba06cba356646d3a8","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0066"} -->
+
+Completed:
+- Merged main into the score branch after the racing fix (#258) landed, kept the branch's versions of dwell.ts and model.ts, and moved the #257 entry in CURRENT.md to Completed recently
+
+Evidence:
+- the branch merges cleanly again (GitHub reports it mergeable; type check, lint and the 298 transit tests pass); the earlier lint failure in CI was the runner killed with exit code 137, not a lint error
+
+Decisions:
+- no new decisions
+
+Changed:
+- checkpoints/CURRENT.md and the merge commit
+
+Blocked/uncertain:
+- none
+
+Next:
+- read CI's browser test result for the new card on pull request #262
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
