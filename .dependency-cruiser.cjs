@@ -27,6 +27,8 @@ module.exports = {
           "^scripts/[^/]+\\.ts$",
           "^src/lib/geo/[^/]+\\.worker\\.ts$",
           "^src/features/index\\.ts$",
+          // The NaviLens reader waits for its table of codes before a screen uses it (src/lib/navilens/README.md).
+          "^src/lib/navilens/",
         ],
       },
       to: {},
