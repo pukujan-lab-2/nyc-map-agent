@@ -16,6 +16,7 @@ import { planTrip, type PlanDeps } from "./plan";
 import { askFor, followUpFor, preferFrom, type Line } from "./ask";
 import { withSources, type SourceLedger } from "./freshness";
 import { parseWhen, sayWhen, scheduleFor } from "./when";
+import { stationPathways, stationRoutes, type Out } from "./stationRoute";
 import { dayWindow, weekendWindow } from "../../../src/lib/transit/weekend";
 
 export interface ToolContext {
@@ -84,6 +85,11 @@ export const args = {
     to: z.string().min(2).describe("Where they are going once out: a landmark or address"),
   }),
   elevator_status: z.object({ station: z.string().min(2) }),
+  station_route: z.object({
+    station: z.string().min(2).default("here").describe("The subway station as the user names it (\"Union Sq\", \"Cortlandt St\"), or \"here\" for the one they are at"),
+    way: z.enum(["to-platform", "to-street"]).describe("to-platform: from the street down to the train; to-street: from the train out to the street"),
+    line: z.string().regex(/^[A-Za-z0-9]{1,3}$/).optional().describe("The line they are taking or getting off, when they said one (\"R\", \"4\"); leave out to get every line at the station"),
+  }),
   line_status: z.object({
     lines: z.array(z.string().regex(/^[A-Za-z0-9]{1,3}$/)).min(1).max(6).describe("Subway lines as the MTA names them, e.g. [\"L\"] or [\"4\",\"5\",\"6\"]"),
     when: when.describe("The time the user asks about, in their words: \"now\", \"this weekend\", \"Saturday 2pm\", \"tomorrow morning\". Planned work is checked for that time."),
@@ -385,6 +391,33 @@ function allTools(ctx: ToolContext) {
     hazards: tool({ description: "Active National Weather Service alerts at a place.", inputSchema: args.hazards, execute: sourced(async ({ place }: z.infer<typeof args.hazards>) => ({ alerts: await hazardsAt(at(await resolve(place))) })) }),
     find_event: tool({ description: "Search the web for a named event in New York (Luma, Eventbrite, Meetup, Partiful, the organiser's site). Only when the user asks about a specific event or what is on at a place they name. Tries a wider search on its own when the first finds nothing.", inputSchema: args.find_event, execute: sourced(async ({ query }: z.infer<typeof args.find_event>) => findEvent(query)) }),
     read_page: tool({ description: "Read one event page from find_event to get its venue address, date and time.", inputSchema: args.read_page, execute: sourced(async ({ url }: z.infer<typeof args.read_page>) => readPage(url)) }),
+    station_route: tool({
+      description: "The way through a subway station with no stairs, step by step: each elevator by its number and the sign to follow, between the street and the platform, going round any elevator that is out right now. Use for \"how do I get to the platform without stairs\", \"is there an elevator to the R at Union Sq\", \"how do I get out with a wheelchair or a stroller\".",
+      inputSchema: args.station_route,
+      execute: sourced(async ({ station, way, line }: z.infer<typeof args.station_route>) => {
+        const all = await (ctx.deps?.entrances ?? openDataEntrances).stations();
+        const here = /^(here|my station|this station)$/i.test(station.trim());
+        const named = here ? [] : all.filter((x) => sameStation(station, x.name));
+        // Several stations share a name ("86 St"): the one nearest the rider, when we know where they are.
+        const anchor = named.length ? (ctx.location ? nearestTo(named, [ctx.location.lon, ctx.location.lat]) : named[0]) : nearestTo(all, at(await resolve(here ? "here" : station)));
+        if (!anchor) throw new Error(`Could not find the station "${station}".`);
+        const wanted = line?.toUpperCase();
+        const stops = all.filter((x) => x.complexId === anchor.complexId && x.gtfsId && (!wanted || x.routes.includes(wanted)));
+        const rows = await safe((ctx.deps?.outages ?? elevatorOutages)(), null);
+        const out: Out[] = (rows ?? []).flatMap((o) => (o.isupcomingoutage !== "Y" && o.equipmenttype === "EL" && o.equipment ? [{ unit: o.equipment, back: o.estimatedreturntoservice }] : []));
+        const data = stationPathways();
+        const lines = stops.map((x) => ({ lines: x.routes.join(" "), platforms: stationRoutes(data, { gtfsId: x.gtfsId!, north: x.north, south: x.south }, way, out) }));
+        return {
+          station: anchor.name,
+          way,
+          lines: lines.filter((l) => l.platforms),
+          // Said plainly, so the model does not fill a gap with a guess.
+          ...(lines.some((l) => !l.platforms) || !lines.length ? { notKnown: `The MTA's station data has no map of the inside of ${lines.length ? `the ${lines.filter((l) => !l.platforms).map((l) => l.lines).join(", ")} part of this station` : wanted ? `the ${wanted} at this station` : "this station"}.` } : {}),
+          ...(rows ? {} : { outagesNotChecked: "Could not reach the MTA's elevator outage list just now, so an elevator named here may be out." }),
+          dataFrom: "MTA draft station data from 2021: a station changed since may differ.",
+        };
+      }),
+    }),
     elevator_status: tool({ description: "Current MTA elevator/escalator outages at a station.", inputSchema: args.elevator_status, execute: sourced(async ({ station }: z.infer<typeof args.elevator_status>) => ({ outages: await elevatorStatus(station) })) }),
     flyTo: tool({ description: "Map: fly the camera to a place.", inputSchema: args.flyTo, execute: async ({ place, zoom }) => { const p = await resolve(place); offer(placeActions(p)); return emit({ type: "flyTo", lon: p.at[0], lat: p.at[1], zoom }); } }),
     showRoute: tool({ description: "Map: draw a planned trip.", inputSchema: args.tripRef, execute: ({ tripId }) => (exitShown ? waitForYes : emit({ type: "showRoute", trip: tripOf(tripId) })) }),
