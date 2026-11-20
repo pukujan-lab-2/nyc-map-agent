@@ -53,8 +53,7 @@ describe("14 St-Union Sq mezzanine, between the two elevators", () => {
 
 describe("Cortlandt St, the street elevator to the uptown R/W platform", () => {
   const { steps, baro } = walk("cortlandt-leg1");
-  const rides = findRides(baro);
-  const lifts = rides.filter((r) => r.t1 - r.t0 >= 3000);
+  const lifts = findRides(baro);
 
   it("rode two elevators: down about 12 m from the street, then up about 6 m to the platform", () => {
     expect(lifts).toHaveLength(2);
@@ -68,12 +67,12 @@ describe("Cortlandt St, the street elevator to the uptown R/W platform", () => {
     expect(280 / 235).toBeCloseTo(1.19, 2);
   });
 
-  it("also shows the passage sloping down 1.6 m, which the ride finder reports as a ride with no length", () => {
-    // A known weakness: a slope is a lasting change of height, so it counts as a ride, and the
-    // count of rides then no longer matches the count of levels. The barometer falls about
-    // 0.07 m a second there for some 40 seconds; no elevator does that.
-    const slope = rides.filter((r) => r.t1 - r.t0 < 3000);
-    expect(slope).toHaveLength(1);
-    expect(slope[0].riseM).toBeCloseTo(-1.6, 0);
+  it("does not take the passage, which slopes down 1.6 m over some 40 seconds, for a ride", () => {
+    // The barometer falls about 0.07 m a second there. Until the ride finder asked for a steep
+    // reading it reported this as a third ride with no length, and the rides no longer matched the levels.
+    const t0 = baro[0][0];
+    const at = (s: number) => baro.reduce((h, b) => (b[0] <= t0 + s * 1000 ? b[1] : h), baro[0][1]);
+    expect(at(140) - at(180)).toBeGreaterThan(1.2);
+    expect(lifts.every((r) => r.t1 - r.t0 >= 3000)).toBe(true);
   });
 });

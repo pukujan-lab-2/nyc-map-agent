@@ -32,6 +32,8 @@ Two more recordings from the same day, kept in the project's Octo files, settle 
 
 The afternoon mezzanine walk was the odd one. The same stretch on the same phone took 218 steps that evening, 3% over the guide's count, and at 0.7 metres a step that walk overshoots the far elevator by about 9 metres, where the afternoon walk overshoots by 63. So the guide's step counts are sound, the fixed 0.7-metre step is about right for an unhurried walk, and what varies is the walk: a rider filming in a rush-hour crowd took a third more steps than the same rider that evening.
 
+The evening walk is also the one walk where the phone kept a location below ground, good to about 18 metres, so the clean-up can be scored against places it was not given (`src/features/recorder/replay/evening.test.ts`). Given half of the mezzanine's fixes, the cleaned path lands about 5 metres from the other half. Given none, with the two elevators as its only fixed points, it is about 36 metres off; the Walk Guide's way, along the line by the share of steps taken, is about 27. Both are on the line and in the wrong place along it. Two elevators 160 metres apart are not enough, which is the case for more places to reset: a read sign, a code.
+
 That changes what learning the step is for. A pace measured once per rider would have been wrong for one of these two walks. The pace has to be learned during the walk, from the legs already confirmed, which is how pull request 259 built it.
 
 ## What other cities did
