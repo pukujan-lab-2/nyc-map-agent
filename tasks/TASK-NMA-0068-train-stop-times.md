@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - open the pull request that closes #270
 
+### 2026-11-20 18:51:35 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["nothing since the last checkpoint"],"completed":["Opened the pull request for the stop observer"],"decisions":["no new decisions"],"evidence":["the description passes the repository's shape check and all 2,286 unit tests pass; CI has not finished"],"evidence_class":"observed","next_action":"read CI on pull request #271, then after a week of runs read the rollup and time ten stops by hand","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0068","timestamp":"2026-11-20T18:51:35Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"004e7073b6aeab3941afea2c3c77747cae3501c04f35422af54a8e605d57d190","request_id":"03e40ccb511b45d4b21f8d81eba68e2d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0068"} -->
+
+Completed:
+- Opened the pull request for the stop observer
+
+Evidence:
+- the description passes the repository's shape check and all 2,286 unit tests pass; CI has not finished
+
+Decisions:
+- no new decisions
+
+Changed:
+- nothing since the last checkpoint
+
+Blocked/uncertain:
+- none
+
+Next:
+- read CI on pull request #271, then after a week of runs read the rollup and time ten stops by hand
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
