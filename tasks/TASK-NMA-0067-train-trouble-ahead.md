@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - open the pull request that closes #266
 
+### 2026-11-20 18:52:21 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["the merge commit only"],"completed":["Merged main into the trouble mode branch so CI reruns with the no-layout-change label in place"],"decisions":["no new decisions"],"evidence":["the first title check failed because the label was added after the job had run; type check and the six rule tests pass after the merge; CI has not finished"],"evidence_class":"observed","next_action":"read CI on pull request #267","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0067","timestamp":"2026-11-20T18:52:21Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"cb75870f399e37b3eb78d3e2b50858251259b98f50e667d69a3b951c4b69fe96","request_id":"441bb5be11ad4219bd3305be6a4564e0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0067"} -->
+
+Completed:
+- Merged main into the trouble mode branch so CI reruns with the no-layout-change label in place
+
+Evidence:
+- the first title check failed because the label was added after the job had run; type check and the six rule tests pass after the merge; CI has not finished
+
+Decisions:
+- no new decisions
+
+Changed:
+- the merge commit only
+
+Blocked/uncertain:
+- none
+
+Next:
+- read CI on pull request #267
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
