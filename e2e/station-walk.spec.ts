@@ -42,8 +42,8 @@ for (const size of SIZES) {
 }
 
 /**
- * The view below the street has two ways of drawing (#264): with shadows and the post pass, or in eco
- * mode plainly at one device pixel per CSS pixel. Either way it must draw without a shader failing to
+ * The view below the street has two ways of drawing (#264): with shadows and the post pass, or plainly
+ * at one device pixel per CSS pixel (eco mode, a browser that draws on the CPU, a device that falls behind). Either way it must draw without a shader failing to
  * build, which the browser reports on the console and not as a page error, and the layout bar must hold.
  */
 for (const eco of [false, true]) {
@@ -53,6 +53,8 @@ for (const eco of [false, true]) {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => { if (/THREE\.WebGL|shader|GL_INVALID|Framebuffer/i.test(m.text()) && m.type() !== "log") errors.push(m.text()); });
+    // Test browsers draw on the CPU, where the station keeps to its plain look; this asks for all of it, so every shader is built.
+    if (!eco) await page.addInitScript(() => Object.assign(window, { __stationLook: "full" }));
     await page.goto(eco ? "/?eco=1" : "/");
     await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
     await expect.poll(() => page.evaluate(() => typeof (window as unknown as { __walk?: unknown }).__walk), { timeout: slow(15_000) }).toBe("function");

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import { setAmbient } from "@/lib/ambient";
-import { metalFinish, shadowed, stationLights, stationQuality, toStandard } from "./stationLook";
+import { metalFinish, shadowed, slowFrames, stationLights, stationQuality, toStandard } from "./stationLook";
 
 describe("stationQuality", () => {
   it("drops shadows, the post pass and extra pixels in eco mode", () => {
@@ -10,6 +10,28 @@ describe("stationQuality", () => {
     setAmbient({ eco: false });
     expect(stationQuality().shadows).toBe(true);
     expect(stationQuality().pixelRatio).toBe(2);
+  });
+});
+
+describe("slowFrames", () => {
+  const run = (gapMs: number, frames: number, slow = slowFrames()) => {
+    let t = 0, fired = 0;
+    for (let i = 0; i < frames; i++) if (slow((t += gapMs))) fired++;
+    return fired;
+  };
+  it("says nothing at 60 or 30 frames a second", () => {
+    expect(run(16.7, 600)).toBe(0);
+    expect(run(33.4, 600)).toBe(0);
+  });
+  it("says so once when frames stay under 20 a second, after the first frames that build shaders", () => {
+    expect(run(70, 30 + 44)).toBe(0);
+    expect(run(70, 600)).toBe(1);
+  });
+  it("skips a hidden tab's long gap", () => {
+    const slow = slowFrames();
+    let t = 0, fired = 0;
+    for (let i = 0; i < 300; i++) if (slow((t += i % 10 === 0 ? 4000 : 16.7))) fired++;
+    expect(fired).toBe(0);
   });
 });
 

@@ -12,7 +12,7 @@ import { EYE_HEIGHT_M } from "../walk";
 import { guideSigns, placeSigns, type Bullet, type ExitName, type Sign, type SignInfo } from "../stationSigns";
 import { cornerLine } from "../cornerLine";
 import { readMap } from "../mapRead";
-import { createStationPost, dressRenderer, glowSigns, LOOK, metalFinish, shadowed, stationLights, stationQuality, toStandard, type Quality } from "./stationLook";
+import { createStationPost, dressRenderer, glowSigns, LOOK, slowFrames, metalFinish, shadowed, stationLights, stationQuality, toStandard, type Quality } from "./stationLook";
 
 /** Railing height on an elevated platform or stair. */
 const RAIL_M = 1.1;
@@ -412,7 +412,7 @@ function exitNamer(map: MapLibreMap, m: StationModel): ExitName {
  * `own` is how a station on its own canvas is drawn (see stationLook.ts): standard materials, the key
  * light and its shadows, lamps that glow. Without it the scene is as the map's canvas has always drawn it.
  */
-function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]>>, trip?: StationTrip, signs?: SignInfo, own?: Quality): { group: THREE.Group; update: () => void; nameExits: (map: MapLibreMap) => void; aim: (x: number, y: number, z: number) => void } {
+function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]>>, trip?: StationTrip, signs?: SignInfo, own?: Quality): { group: THREE.Group; update: () => void; nameExits: (map: MapLibreMap) => void; aim: (x: number, y: number, z: number) => void; /** Drop the shadows (a device not keeping up). */ plain: () => void } {
   const group = new THREE.Group();
   const F = (k: keyof typeof FINISH): Finish | undefined => (own ? FINISH[k] : undefined);
   const under = !m.elevated;
@@ -686,11 +686,13 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
   };
 
   let aim: (x: number, y: number, z: number) => void = () => {};
+  let plain = () => {};
   if (own) {
     const lights = stationLights("z", own);
     group.add(...lights.lights);
     group.userData.dispose = lights.dispose;
     aim = lights.aim;
+    plain = lights.plain;
   } else {
     // On the map's canvas: the flat light every map layer uses.
     group.add(new THREE.AmbientLight(0xffffff, (under ? 0.6 : 0.5) * LEGACY_LIGHT));
@@ -699,7 +701,7 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
     group.add(sun);
   }
 
-  if (!trip) return { group, update: () => {}, nameExits, aim };
+  if (!trip) return { group, update: () => {}, nameExits, aim, plain };
   const boardZ = trip.guide.length ? trip.guide.reduce((z, p) => (Math.hypot(p[0] - trip.board[0], p[1] - trip.board[1]) < 1 ? p[2] : z), trip.guide[trip.guide.length - 1][2]) : 0;
   group.add(...guideMeshes(trip, boardZ));
   const train = trainMesh(trip.color, own ? LOOK.lamp : 1);
@@ -713,7 +715,7 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
     train.visible = off !== null;
     if (off !== null) train.position.set(trip.track.at[0] + dx * off, trip.track.at[1] + dy * off, boardZ);
   };
-  return { group, update, nameExits, aim };
+  return { group, update, nameExits, aim, plain };
 }
 
 function disposeGroup(g: THREE.Object3D) {
@@ -781,11 +783,12 @@ export function mountStationView(canvas: HTMLCanvasElement, m: StationModel, tra
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !quality.post });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
   dressRenderer(renderer, quality);
-  const post = quality.post ? createStationPost(renderer) : null;
+  let post = quality.post ? createStationPost(renderer) : null;
+  const slow = slowFrames();
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1b1a19);
   scene.fog = new THREE.Fog(0x1b1a19, 20, 120);
-  const { group, update, nameExits, aim } = buildStationScene(m, tracks, trip, signs, quality);
+  const { group, update, nameExits, aim, plain } = buildStationScene(m, tracks, trip, signs, quality);
   scene.add(group);
   if (map) nameExits(map);
   const camera = new THREE.PerspectiveCamera(fov, 1, 0.1, 400);
@@ -801,7 +804,14 @@ export function mountStationView(canvas: HTMLCanvasElement, m: StationModel, tra
   resize();
   let frame = 0;
   const look = new THREE.Vector3();
-  const tick = () => {
+  const tick = (now: number) => {
+    // A device that cannot keep up loses the shadows and the post pass, and keeps the rest.
+    if ((post || renderer.shadowMap.enabled) && slow(now)) {
+      plain();
+      renderer.shadowMap.enabled = false;
+      post?.dispose();
+      post = null;
+    }
     // Dev and test hook: window.__stationEye stands the camera at a fixed spot, so two screenshots match.
     const eye = (TEST_HOOKS && (window as unknown as { __stationEye?: Eye }).__stationEye) || getEye();
     if (eye) {

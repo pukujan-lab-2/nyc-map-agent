@@ -20,7 +20,7 @@ import { bakedShellSurfaces, SMOOTH_SEAMS, type BakedShell, toYUp, walkGeometry,
 import { stationShell } from "@/lib/map/three/stationShell";
 import { loadModel } from "@/lib/map/dollhousePreview";
 import { forgetWalkSpot, savedWalkSpot, WalkDevHud } from "@/lib/map/three/WalkDevHud";
-import { createStationPost, glowSigns, lampTexture, LOOK, metalFinish, shadowed, stationLights, stationQuality, toStandard, type Quality, type StationPost } from "@/lib/map/three/stationLook";
+import { createStationPost, glowSigns, lampTexture, LOOK, metalFinish, shadowed, slowFrames, stationLights, stationQuality, toStandard, type Quality, type StationPost } from "@/lib/map/three/stationLook";
 
 /** The figure's body: a capsule 1.6 m tall floating 0.25 m over the floor, so it climbs stairs. */
 const BODY = { halfHeight: 0.5, radius: 0.3, float: 0.25 };
@@ -127,11 +127,21 @@ export type Ride = "walking" | "boarding" | "riding";
 function Look({ quality, feet }: { quality: Quality; feet: React.MutableRefObject<THREE.Vector3> }) {
   const gl = useThree((s) => s.gl);
   const lights = useMemo(() => stationLights("y", quality), [quality]);
-  const post = useMemo(() => (quality.post ? createStationPost(gl) : null), [gl, quality]);
+  // A device that cannot keep up loses the shadows and the post pass, and keeps the rest.
+  const [plain, setPlain] = useState(false);
+  const post = useMemo(() => (quality.post && !plain ? createStationPost(gl) : null), [gl, quality, plain]);
+  const slow = useMemo(slowFrames, []);
   useEffect(() => () => lights.dispose(), [lights]);
   useEffect(() => () => post?.dispose(), [post]);
   useEffect(() => { gl.toneMappingExposure = LOOK.exposure; }, [gl]);
-  useFrame(() => lights.aim(feet.current.x, feet.current.y, feet.current.z));
+  useFrame(() => {
+    lights.aim(feet.current.x, feet.current.y, feet.current.z);
+    if (!plain && (quality.post || quality.shadows) && slow(performance.now())) {
+      lights.plain();
+      gl.shadowMap.enabled = false;
+      setPlain(true);
+    }
+  });
   return (
     <>
       {lights.lights.map((l, i) => <primitive key={i} object={l} />)}

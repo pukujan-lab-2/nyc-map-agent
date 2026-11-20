@@ -38,23 +38,53 @@ export type Quality = { /** Soft shadows from the key light. */ shadows: boolean
  * drops what costs a frame: shadows, the post pass and any pixel ratio above 1.
  */
 export function stationQuality(): Quality {
-  const eco = getAmbient().eco;
-  return { shadows: !eco, post: !eco && postSupported(), pixelRatio: eco ? 1 : 2 };
+  const can = probe();
+  // Dev and test hook: window.__stationLook = "full" draws everything even on a software renderer, so a test can build every shader.
+  const forced = !!(import.meta.env.DEV || import.meta.env.VITE_E2E) && (globalThis as { __stationLook?: string }).__stationLook === "full";
+  const plain = getAmbient().eco || (can.software && !forced);
+  return { shadows: !plain, post: !plain && can.post, pixelRatio: plain ? 1 : 2 };
 }
 
-let canPost: boolean | null = null;
-/** Whether this browser can make the post pass's target: a multisampled buffer that holds more than white. Asked once, on a scrap canvas. */
-function postSupported(): boolean {
-  if (canPost !== null) return canPost;
-  canPost = false;
+let probed: { post: boolean; software: boolean } | null = null;
+/**
+ * Asked once, on a scrap canvas: whether this browser can make the post pass's target (a multisampled
+ * buffer that holds more than white), and whether it draws on the CPU (no graphics chip, or a blocked
+ * driver), where shadows and a post pass cost whole frames.
+ */
+function probe(): { post: boolean; software: boolean } {
+  if (probed) return probed;
+  probed = { post: false, software: false };
   try {
     const gl = document.createElement("canvas").getContext("webgl2");
     if (gl) {
-      canPost = !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float")) && (gl.getParameter(gl.MAX_SAMPLES) as number) >= 4;
+      probed.post = !!(gl.getExtension("EXT_color_buffer_float") || gl.getExtension("EXT_color_buffer_half_float")) && (gl.getParameter(gl.MAX_SAMPLES) as number) >= 4;
+      const info = gl.getExtension("WEBGL_debug_renderer_info");
+      probed.software = /swiftshader|llvmpipe|softpipe|software/i.test(String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)));
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     }
-  } catch { /* no WebGL 2: no post pass */ }
-  return canPost;
+  } catch { /* no WebGL 2: the plain look */ }
+  return probed;
+}
+
+/**
+ * Watches the gaps between frames and says, once, when the device is not keeping up: after the first
+ * frames (which build shaders), a run of `GOVERNOR.frames` frames averaging under 20 a second. The scene
+ * then drops its shadows and post pass for the rest of the visit. Gaps of half a second or more are a
+ * hidden tab or a stall, not the device's pace, and are skipped.
+ */
+const GOVERNOR = { skip: 30, frames: 45, slowMs: 50, stallMs: 500 };
+export function slowFrames(): (now: number) => boolean {
+  let last = 0, seen = 0, sum = 0, n = 0, done = false;
+  return (now) => {
+    const gap = now - last;
+    last = now;
+    if (done || ++seen <= GOVERNOR.skip || gap <= 0 || gap >= GOVERNOR.stallMs) return false;
+    sum += gap;
+    if (++n < GOVERNOR.frames) return false;
+    done = sum / n > GOVERNOR.slowMs;
+    sum = n = 0;
+    return done;
+  };
 }
 
 /** The tone curve, and shadows when asked for. */
@@ -74,6 +104,8 @@ type StationLights = {
   lights: THREE.Object3D[];
   /** Centre the shadows on the viewer's feet (world coordinates). Call each frame. */
   aim: (x: number, y: number, z: number) => void;
+  /** Stop casting shadows, for a device that is not keeping up. */
+  plain: () => void;
   dispose: () => void;
 };
 
@@ -143,7 +175,7 @@ export function stationLights(up: "y" | "z", q: Quality): StationLights {
     key.position.copy(key.target.position).addScaledVector(toward, 40);
     key.target.updateMatrixWorld();
   };
-  return { lights: [fill, key, key.target], aim, dispose: () => { key.shadow.map?.dispose(); key.dispose(); fill.dispose(); } };
+  return { lights: [fill, key, key.target], aim, plain: () => { key.castShadow = false; key.shadow.map?.dispose(); key.shadow.map = null; }, dispose: () => { key.shadow.map?.dispose(); key.dispose(); fill.dispose(); } };
 }
 
 type Finish = { roughness?: number; metalness?: number };
