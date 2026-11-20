@@ -125,9 +125,20 @@ Two rules keep this honest. The agent that builds a change is never the agent th
 
 PostGIS is not in the Octo database: on 2026-11-20 that server (PostgreSQL 16.15) listed two installed extensions, `plpgsql` and `vector`, and offered no others. The other projects on Octo do not need PostGIS, so station data gets its own database. Pull request 255 adds a Postgres 16 with PostGIS as the container `nyc-map-postgis` in the app's own compose project on the VPS, deployed by Komodo like the rest of the app. It has a database called `stations`, publishes no port, and nothing reads it yet; `deploy/README.md` says where its data and password live. The app's other data stays in Octo.
 
-The MTA's own station-interior data is old and marked not for public use. Its two current subway schedule feeds, downloaded on 2026-11-20, hold no `pathways.txt` or `levels.txt`. The Pathways data is a separate draft that New York City Transit announced on 2020-05-26: 106 stations and complexes, with elevators and escalators carrying the same identifiers as the live outage feed. The announcement asks developers not to use the draft in public-facing applications, says its entrance and mezzanine names are not final, and notes that every station is modelled with one northbound and one southbound platform. A developer asked for an update in 2022 and the thread shows no reply. We have not opened the files, which sit in a shared Google Drive folder linked from the announcement.
+The MTA's own station-interior data is old and marked not for public use. Its two current subway schedule feeds, downloaded on 2026-11-20, hold no `pathways.txt` or `levels.txt`. The Pathways data is a separate draft that New York City Transit announced on 2020-05-26: 106 stations and complexes, with elevators and escalators carrying the same identifiers as the live outage feed. The announcement asks developers not to use the draft in public-facing applications, says its entrance and mezzanine names are not final, and notes that every station is modelled with one northbound and one southbound platform. A developer asked for an update in 2022 and the thread shows no reply. The files sit in a shared Google Drive folder linked from the announcement.
 
-So the draft can be a reference for which elevators, stairs and mezzanines a station has, and for checking our own recordings against. It cannot be the app's station data as it stands, both because of the MTA's request and because it is six years old. Our recordings remain the source, written in the same Pathways format so the two can be compared.
+We opened the feed on 2026-11-20 (its files are dated 2021-10-11, so it was updated after the announcement). It holds 3,810 pathways across 230 station entries: 2,044 stairs, 401 elevators, 264 escalators, 231 walkways and 870 fare and exit gates. 3,307 of them carry the sign a rider sees.
+
+Asked for a route with no stairs or escalators, it gives back the two routes we filmed, with the same elevators and the same signs:
+
+| Our filmed route | The draft's route |
+| --- | --- |
+| Union Sq, uptown N/Q/R/W platform to the street | Elevator EL219 ("Elevator to Mezzanine"), a walkway signed "Exit 14 St, 4 5 6, Elevator to L", the exit gate signed "Exit 14 St & 4 Av", then elevator EL217 to the north-east corner |
+| Cortlandt St, the Broadway and Dey St elevator to the uptown R/W platform | Elevator EL728X down to the lower concourse, a walkway signed "WTC/PATH", the fare gate, then elevator EL727X ("Elevator to Uptown & Queens") |
+
+What it lacks is position. Only the 985 street entrances have coordinates; the 844 points inside stations (mezzanines, gates, landings) have none. There is no levels file and no length or walking time on any pathway. One entrance coordinate is plainly wrong (a WTC Cortlandt entrance placed in upper Manhattan).
+
+So the two fit together. The draft knows how a station connects and what the signs say, for 230 stations, and does not know where anything is or how far apart. A recording knows where and how far, for one route. Using the draft as the skeleton and recordings to add positions, levels and step counts would mean a rider records a route we can already name, instead of one we have to work out from the film. Two cautions: the MTA asked that the draft not be used in public-facing applications, so shipping anything derived from it needs their agreement, and it is five years old, so each station needs checking against what is there now.
 
 ## What we do not know
 
@@ -140,7 +151,7 @@ So the draft can be a reference for which elevators, stairs and mezzanines a sta
 
 1. Land the metamorphic tests that need no new data (step 0). Done in pull request 256.
 2. Confirm the `nyc-map-postgis` container from pull request 255 is healthy on the VPS, then add the station tables.
-3. Open the MTA's 2020 draft Pathways files and report what they hold for Union Sq, Cortlandt St and Fulton St, as a reference only.
+3. Ask the MTA whether the draft Pathways data may be used, and whether a newer version exists. Until then it is a reference for checking our recordings.
 4. Send NaviLens two requests: the Union Sq code list with positions and text, and whether their reader runs in a web app.
 5. Write the specification for steps 2 and 3 with their contract tests.
 
