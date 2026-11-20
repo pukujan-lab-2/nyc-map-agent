@@ -32,7 +32,14 @@ export interface RouteStep {
 const STEPS: ReadonlySet<PathMode> = new Set<PathMode>(["stairs", "escalator"]);
 
 type Edge = { to: string; row: PathRow; back: boolean };
+/** The two graphs with nothing out of service, kept per data file: a station answer asks for dozens of routes. */
+const whole = new WeakMap<Pathways, { free?: Map<string, Edge[]>; any?: Map<string, Edge[]> }>();
 function graph(data: Pathways, stepFree: boolean, out: ReadonlySet<string>): Map<string, Edge[]> {
+  if (out.size) return build(data, stepFree, out);
+  const kept = whole.get(data) ?? whole.set(data, {}).get(data)!;
+  return stepFree ? (kept.free ??= build(data, true, out)) : (kept.any ??= build(data, false, out));
+}
+function build(data: Pathways, stepFree: boolean, out: ReadonlySet<string>): Map<string, Edge[]> {
   const g = new Map<string, Edge[]>();
   const add = (from: string, e: Edge) => { const list = g.get(from); if (list) list.push(e); else g.set(from, [e]); };
   for (const row of data.paths) {
@@ -58,7 +65,10 @@ export interface RouteOptions {
  * elevators, walkways and gates.
  */
 export function route(data: Pathways, from: string, goal: (id: string, node: PathNode | undefined) => boolean, { stepFree = true, outOfService = [] }: RouteOptions = {}): RouteStep[] | null {
-  const g = graph(data, stepFree, new Set(outOfService));
+  return search(data, graph(data, stepFree, new Set(outOfService)), from, goal);
+}
+
+function search(data: Pathways, g: Map<string, Edge[]>, from: string, goal: (id: string, node: PathNode | undefined) => boolean): RouteStep[] | null {
   const came = new Map<string, { from: string; edge: Edge } | null>([[from, null]]);
   const queue = [from];
   for (let head = 0; head < queue.length; head++) {
@@ -87,20 +97,33 @@ export const toPlatform = (data: Pathways, entrance: string, platform: string, o
  * The step-free way from the street to a platform: the entrance with the
  * fewest steps to it. Only entrances joined to the platform at all are tried.
  */
-export function fromStreet(data: Pathways, platform: string, opts?: RouteOptions): RouteStep[] | null {
-  // Everything joined to the platform, whichever way the pathways run.
-  const joined = new Map<string, string[]>();
-  for (const [a, b] of data.paths) {
-    (joined.get(a) ?? joined.set(a, []).get(a)!).push(b);
-    (joined.get(b) ?? joined.set(b, []).get(b)!).push(a);
+const neighbours = new WeakMap<Pathways, Map<string, string[]>>();
+/** Every point's neighbours, whichever way the pathways run. */
+function joinedOf(data: Pathways): Map<string, string[]> {
+  let joined = neighbours.get(data);
+  if (!joined) {
+    joined = new Map<string, string[]>();
+    for (const [a, b] of data.paths) {
+      (joined.get(a) ?? joined.set(a, []).get(a)!).push(b);
+      (joined.get(b) ?? joined.set(b, []).get(b)!).push(a);
+    }
+    neighbours.set(data, joined);
   }
+  return joined;
+}
+
+export function fromStreet(data: Pathways, platform: string, opts?: RouteOptions): RouteStep[] | null {
+  const joined = joinedOf(data);
+  // With equipment out, the graph is built once here and not again for each entrance tried.
+  const out = new Set(opts?.outOfService ?? []);
+  const g = graph(data, opts?.stepFree ?? true, out);
   const seen = new Set([platform]);
   const queue = [platform];
   for (let head = 0; head < queue.length; head++) for (const next of joined.get(queue[head]) ?? []) if (!seen.has(next)) { seen.add(next); queue.push(next); }
   let best: RouteStep[] | null = null;
   for (const id of queue) {
     if (data.nodes[id]?.kind !== "e") continue;
-    const steps = toPlatform(data, id, platform, opts);
+    const steps = search(data, g, id, (at) => at === platform);
     if (steps && (!best || steps.length < best.length)) best = steps;
   }
   return best;

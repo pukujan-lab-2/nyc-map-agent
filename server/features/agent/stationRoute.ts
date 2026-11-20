@@ -55,7 +55,7 @@ export function stationRoutes(data: Pathways, stop: { gtfsId: string; north?: st
     const platform = stop.gtfsId + suffix;
     if (!data.nodes[platform]) continue;
     const usual = find(platform);
-    const now = down.size ? find(platform, { outOfService: down.keys() }) : usual;
+    const now = down.size ? find(platform, { outOfService: [...down.keys()] }) : usual;
     const blocked = (usual ?? []).flatMap((s) => (down.has(s.equipment) ? [down.get(s.equipment)!] : []));
     const street = (steps: RouteStep[]) => (way === "to-street" ? data.nodes[steps[steps.length - 1].to]?.name ?? null : entranceOf(data, steps, platform));
     const route: PlatformRoute = { toward: label || fallback, steps: (now ?? []).map(say), entrance: now?.length ? street(now) : null, stepFree: !!now, out: blocked };
