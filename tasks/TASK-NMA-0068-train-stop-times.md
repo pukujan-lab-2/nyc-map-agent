@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-20 18:46:57 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["server/features/transit/stopObserve.ts and its test, scripts/transit-observe.ts, a migration, checkpoints/CURRENT.md, this task record"],"completed":["Built the stop observer: it times each stop on the numbered lines and the 7 two ways and stores both, with an hourly rollup"],"decisions":["both timings are stored because neither has been checked against a stopwatch; lettered lines and the L are left out; rows are kept 30 days"],"evidence":["nothing this change touches fails (all 2,286 unit tests pass; type check, lint and the dependency rules are clean); replaying a 520 s live recording gives a median stop of 30 s from the feed and 54 s from the vehicle report, a near-constant 25 s apart on 563 stops; the migration and the database writes have not run against the database"],"evidence_class":"observed","next_action":"open the pull request that closes #270","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0068","timestamp":"2026-11-20T18:46:57Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a94518e6d49b67df0997c9bb3d863b8c77cea2fcdad56b1b0430f46c114b4a9e","request_id":"3d324d22ad544fc0856fb0b212f69129","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0068"} -->
+
+Completed:
+- Built the stop observer: it times each stop on the numbered lines and the 7 two ways and stores both, with an hourly rollup
+
+Evidence:
+- nothing this change touches fails (all 2,286 unit tests pass; type check, lint and the dependency rules are clean); replaying a 520 s live recording gives a median stop of 30 s from the feed and 54 s from the vehicle report, a near-constant 25 s apart on 563 stops; the migration and the database writes have not run against the database
+
+Decisions:
+- both timings are stored because neither has been checked against a stopwatch; lettered lines and the L are left out; rows are kept 30 days
+
+Changed:
+- server/features/transit/stopObserve.ts and its test, scripts/transit-observe.ts, a migration, checkpoints/CURRENT.md, this task record
+
+Blocked/uncertain:
+- none
+
+Next:
+- open the pull request that closes #270
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
