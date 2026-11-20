@@ -103,7 +103,7 @@ function bearingOf(a: [number, number], b: [number, number]) {
  */
 export const MAX_PIN_S = 60;
 
-export function estimateTrain(sys: StaticSystem, trip: LiveTrip, now: number, tracker?: ProgressTracker, hist?: SegmentLookup, opts: { troubled?: boolean } = {}): Vehicle | null {
+export function estimateTrain(sys: StaticSystem, trip: LiveTrip, now: number, tracker?: ProgressTracker, hist?: SegmentLookup, opts: { troubled?: boolean; /** Platform ids where a connecting train is pulling in (connections.ts). */ connecting?: ReadonlySet<string> } = {}): Vehicle | null {
   const shape = sys.shapes[trip.route];
   const sm = sys.stopM[trip.route];
   if (!shape || !sm) return null;
@@ -117,7 +117,7 @@ export function estimateTrain(sys: StaticSystem, trip: LiveTrip, now: number, tr
   const names = stationNames(sys);
   let mo = motionAt(pts, now, (p) => {
     const st = stationOf(sys.system, p.id);
-    return sys.system === "subway" ? defaultDwell(st, names.get(st)) : 45;
+    return sys.system === "subway" ? defaultDwell(st, names.get(st), opts.connecting?.has(p.id)) : 45;
   }, { origin: trip.origin, runOf: sys.system === "subway" ? (a, b) => typicalRun(Math.abs(b.m - a.m)) : undefined });
   if (!mo) return null; // finished
   // The feed has not cleared the stop the vehicle reports: never draw the train past it.
