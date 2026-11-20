@@ -11,7 +11,8 @@
 #presenter .primary{background:var(--lime);color:#171b10;border:0;font-weight:650}
 #presenter .primary:hover{background:#e2ffa3;color:#171b10}
 #presenter [hidden]{display:none!important}
-#presenter{min-height:100svh;position:relative;display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;background:radial-gradient(ellipse at 69% 47%,#242c20 0%,#141813 37%,#0d100d 72%)}
+/* One column that can never be wider than the window: without minmax(0,…) the ask row's buttons set the track's width and pushed every region 2px past a 320px phone. */
+#presenter{min-height:100svh;position:relative;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto 1fr auto;overflow:hidden;background:radial-gradient(ellipse at 69% 47%,#242c20 0%,#141813 37%,#0d100d 72%)}
 #presenter header,#presenter footer{position:relative;z-index:3;padding:18px clamp(16px,4vw,68px);display:flex;align-items:center;gap:12px}
 #presenter header{border-bottom:1px solid #ffffff20;justify-content:space-between}
 #presenter .word{font-weight:850;letter-spacing:-1.2px;font-size:23px}
