@@ -44,6 +44,8 @@ describe("/api/transit-health/accuracy", () => {
           ? [{ system: "subway", route: "A", dir: 0, from_stop: "A02N", to_stop: "A03N", n: 4, learned_n: 3, mae_model: 40, mae_base: 20 }]
           : sql.includes("transit_prediction_stops")
             ? [{ system: "subway", route: "Q", to_stop: "D25N", n: 9, mae_model: 80, mae_base: 70, w60_model: 0.4 }]
+            : sql.includes("transit_motion_runs")
+              ? [{ notice: "no", runs: 2, trains: 900, parked: 250, legs: 3000, racing: 15, tight: 150, first: "2026-11-20T02:00:00Z", last: "2026-11-20T02:15:00Z" }]
             : [{ system: "subway", runs: 2, opened: 100, resolved: 90, unresolved: 10, stored: 90, first: "2026-11-15T02:00:00Z", last: "2026-11-15T02:15:00Z" }],
     }));
     const body = AccuracyResponse.parse(await (await GET_ACCURACY()).json());
@@ -56,16 +58,22 @@ describe("/api/transit-health/accuracy", () => {
     expect(body.rows.map((r) => r.dim)).toEqual(["lead", "all"]);
     expect(body.conditions).toMatchObject([{ system: "subway", dim: "weather", key: "rain", n: 12, maeModel: 40, learned: { n: 10 } }]);
     expect(body.stops).toEqual([{ system: "subway", route: "Q", stop: "D25N", n: 9, maeModel: 80, maeBase: 70, w60Model: 0.4 }]);
+    expect(body.motion).toEqual([{ notice: "no", runs: 2, trains: 900, parked: 250, legs: 3000, racing: 15, tight: 150, first: "2026-11-20T02:00:00.000Z", last: "2026-11-20T02:15:00.000Z" }]);
   });
 
   it("answers without stops while only the first migration has run", async () => {
     octoQuery.mockImplementation((sql) => (sql.includes("transit_prediction_stops") ? Promise.reject(new Error('relation "marts.transit_prediction_stops" does not exist')) : Promise.resolve({ rows: [] })));
-    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: true, rows: [], thin: [], runs: [], stops: [], conditions: [] });
+    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: true, rows: [], thin: [], runs: [], stops: [], conditions: [], motion: [] });
+  });
+
+  it("answers without the motion score until its migration has run", async () => {
+    octoQuery.mockImplementation((sql) => (sql.includes("transit_motion_runs") ? Promise.reject(new Error('relation "raw.transit_motion_runs" does not exist')) : Promise.resolve({ rows: [] })));
+    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toMatchObject({ ready: true, motion: [] });
   });
 
   it("says it is not ready before the migration has run", async () => {
     octoQuery.mockRejectedValue(new Error('relation "marts.transit_prediction_summary" does not exist'));
-    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: false, rows: [], thin: [], runs: [], stops: [], conditions: [] });
+    expect(AccuracyResponse.parse(await (await GET_ACCURACY()).json())).toEqual({ ready: false, rows: [], thin: [], runs: [], stops: [], conditions: [], motion: [] });
   });
 });
 

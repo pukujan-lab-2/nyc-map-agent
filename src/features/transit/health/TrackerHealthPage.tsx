@@ -31,7 +31,10 @@ type Accuracy = {
   stops?: Array<{ system: System; route: string; stop: string; n: number; maeModel: number; maeBase: number; w60Model: number }>;
   /** Error split by rush hour, notice, weather and traffic: a list of its own in the answer. */
   conditions?: AccuracyRow[];
+  /** How subway trains are drawn: parked at a station, and stretches run faster than a train can go. */
+  motion?: MotionRow[];
 };
+type MotionRow = { notice: "yes" | "no" | "unknown"; runs: number; trains: number; parked: number; legs: number; racing: number; tight: number; first: string | null; last: string | null };
 type Hours = { ready: boolean; cells: HourCell[] };
 type BusSpeeds = { ready: boolean; since: string | null; segments: Array<{ direction: string; order: number; from: string; to: string; seconds: number; metres: number; trips: number }> };
 type SubwayStatic = { routes: Record<string, { color: string; text: string }>; stations: { features: Array<{ properties: { id: string; name: string; routes: string }; geometry: { coordinates: [number, number] } }> }; stopM: Record<string, Record<string, number>> };
@@ -86,6 +89,49 @@ function Pair({ label, row, max }: { label: ReactNode; row: Stats; max: number }
         {row.maeModel == null ? "–" : `${Math.round(row.maeModel)} s`} / {row.maeBase == null ? "–" : `${Math.round(row.maeBase)} s`} · {percent(row.w60Model)} · n {short(row.n)}
       </span>
     </div>
+  );
+}
+
+const NOTICE_LABEL: Record<MotionRow["notice"], string> = { no: "No notice on the line", yes: "Notice active", unknown: "Notice not known" };
+
+/** A share as a percentage, with one decimal under 10% so a fraction of a percent does not round away. */
+const sharePct = (x: number) => (x > 0 && x < 0.1 ? `${(x * 100).toFixed(1)}%` : `${Math.round(x * 100)}%`);
+
+/** One share as a bar with its count: `part` of `whole`. */
+function Share({ label, part, whole, warn }: { label: string; part: number; whole: number; warn?: boolean }) {
+  const share = whole ? part / whole : 0;
+  return (
+    <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] items-center gap-2 py-0.5 text-[12px]">
+      <span className="truncate text-white/80">{label}</span>
+      <span className="h-2 overflow-hidden rounded bg-white/10"><span className={`block h-full rounded ${warn ? "bg-amber-400" : "bg-sky-400"}`} style={{ width: `${Math.min(100, share * 100)}%` }} /></span>
+      <span className="tabular-nums text-white/80">{sharePct(share)} · {part.toLocaleString("en-US")} of {whole.toLocaleString("en-US")}</span>
+    </div>
+  );
+}
+
+/**
+ * How subway trains are drawn between arrivals: the share standing at a station, and the share of
+ * stretches run faster than a subway car can go. Lines with a service notice are shown apart,
+ * because a disrupted line parks trains for real.
+ */
+function MotionPanel() {
+  const url = `${API}/api/transit-health/accuracy`;
+  const q = useQuery({ queryKey: ["tracker-health", "accuracy"], queryFn: () => getJson<Accuracy>(url), staleTime: 60_000, retry: 1 });
+  const rows = (["no", "yes", "unknown"] as const).flatMap((k) => (q.data?.motion ?? []).filter((r) => r.notice === k));
+  return (
+    <Section title="How trains are drawn" id="motion">
+      {q.isError ? <p role="alert" className="text-[13px] text-amber-300">Could not load.</p> : null}
+      {q.data && !rows.length ? <p data-testid="motion-waiting" className="rounded-lg bg-amber-400/15 px-3 py-2 text-[13px] text-amber-200">Not scored yet</p> : null}
+      {rows.map((r) => (
+        <div key={r.notice} data-testid="motion-row" data-notice={r.notice}>
+          <h3 className="mt-2 text-[12px] font-semibold text-white/70">{NOTICE_LABEL[r.notice]} · {r.runs.toLocaleString("en-US")} runs</h3>
+          <Share label="Standing at a station" part={r.parked} whole={r.trains} />
+          <Share label="Faster than a train can go" part={r.racing} whole={r.legs} warn />
+          <Share label="Within a quarter of that" part={r.tight} whole={r.legs} warn />
+        </div>
+      ))}
+      <Source url={url} at={q.dataUpdatedAt || undefined} note="trains counted in every feed snapshot of a run; stretches the map times itself, starting within 10 minutes" />
+    </Section>
   );
 }
 
@@ -520,6 +566,7 @@ export default function TrackerHealthPage() {
 
         {system === "bus" && route ? <MtaCompare key={`mta-${route}`} route={route} cell={cell} /> : null}
         <AccuracyPanel system={system} stopName={stopName} />
+        {system === "subway" ? <MotionPanel /> : null}
       </div>
     </main>
   );

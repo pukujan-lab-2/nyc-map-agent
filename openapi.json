@@ -4371,6 +4371,63 @@
                           "learned"
                         ]
                       }
+                    },
+                    "motion": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "notice": {
+                            "type": "string",
+                            "enum": [
+                              "yes",
+                              "no",
+                              "unknown"
+                            ]
+                          },
+                          "runs": {
+                            "type": "integer"
+                          },
+                          "trains": {
+                            "type": "integer"
+                          },
+                          "parked": {
+                            "type": "integer"
+                          },
+                          "legs": {
+                            "type": "integer"
+                          },
+                          "racing": {
+                            "type": "integer"
+                          },
+                          "tight": {
+                            "type": "integer"
+                          },
+                          "first": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "last": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "notice",
+                          "runs",
+                          "trains",
+                          "parked",
+                          "legs",
+                          "racing",
+                          "tight",
+                          "first",
+                          "last"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -4379,7 +4436,8 @@
                     "thin",
                     "runs",
                     "stops",
-                    "conditions"
+                    "conditions",
+                    "motion"
                   ]
                 }
               }
@@ -4769,6 +4827,63 @@
                           "learned"
                         ]
                       }
+                    },
+                    "motion": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "notice": {
+                            "type": "string",
+                            "enum": [
+                              "yes",
+                              "no",
+                              "unknown"
+                            ]
+                          },
+                          "runs": {
+                            "type": "integer"
+                          },
+                          "trains": {
+                            "type": "integer"
+                          },
+                          "parked": {
+                            "type": "integer"
+                          },
+                          "legs": {
+                            "type": "integer"
+                          },
+                          "racing": {
+                            "type": "integer"
+                          },
+                          "tight": {
+                            "type": "integer"
+                          },
+                          "first": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "last": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "notice",
+                          "runs",
+                          "trains",
+                          "parked",
+                          "legs",
+                          "racing",
+                          "tight",
+                          "first",
+                          "last"
+                        ]
+                      }
                     }
                   },
                   "required": [
@@ -4777,7 +4892,8 @@
                     "thin",
                     "runs",
                     "stops",
-                    "conditions"
+                    "conditions",
+                    "motion"
                   ]
                 }
               }
