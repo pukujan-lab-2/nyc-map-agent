@@ -82,3 +82,36 @@ export const toStreet = (data: Pathways, platform: string, opts?: RouteOptions):
 /** The step-free way from a street entrance to a platform. */
 export const toPlatform = (data: Pathways, entrance: string, platform: string, opts?: RouteOptions): RouteStep[] | null =>
   route(data, entrance, (id) => id === platform, opts);
+
+/**
+ * The step-free way from the street to a platform: the entrance with the
+ * fewest steps to it. Only entrances joined to the platform at all are tried.
+ */
+export function fromStreet(data: Pathways, platform: string, opts?: RouteOptions): RouteStep[] | null {
+  // Everything joined to the platform, whichever way the pathways run.
+  const joined = new Map<string, string[]>();
+  for (const [a, b] of data.paths) {
+    (joined.get(a) ?? joined.set(a, []).get(a)!).push(b);
+    (joined.get(b) ?? joined.set(b, []).get(b)!).push(a);
+  }
+  const seen = new Set([platform]);
+  const queue = [platform];
+  for (let head = 0; head < queue.length; head++) for (const next of joined.get(queue[head]) ?? []) if (!seen.has(next)) { seen.add(next); queue.push(next); }
+  let best: RouteStep[] | null = null;
+  for (const id of queue) {
+    if (data.nodes[id]?.kind !== "e") continue;
+    const steps = toPlatform(data, id, platform, opts);
+    if (steps && (!best || steps.length < best.length)) best = steps;
+  }
+  return best;
+}
+
+/** Where a route from the street starts: the entrance its first step leaves. */
+export function entranceOf(data: Pathways, steps: readonly RouteStep[], platform: string): string | null {
+  if (!steps.length) return null;
+  const first = steps[0];
+  const row = data.paths.find(([a, b, mode, both, , , eq]) => eq === first.equipment && PATH_MODES[mode] === first.mode && ((b === first.to && data.nodes[a]?.kind === "e") || (both === 1 && a === first.to && data.nodes[b]?.kind === "e")));
+  if (!row) return null;
+  const id = row[1] === first.to ? row[0] : row[1];
+  return id === platform ? null : data.nodes[id]?.name ?? null;
+}
