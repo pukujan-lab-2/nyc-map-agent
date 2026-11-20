@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-20 20:41:31 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["none"],"changed":["src/features/transit/connections.ts and its test, dwell.ts, model.ts, TransitLayer.tsx, holds.json, dwell.test.ts, checkpoints/CURRENT.md, this task record"],"completed":["Capped every drawn subway stop at 40 s and gave transfer stations the longer stop only while a connecting train is arriving"],"decisions":["a connection is a train of another service due on the same platform from 15 s before to 30 s after; the 20 to 40 s range is the owner's observation"],"evidence":["nothing this change touches fails (all 2,292 unit tests pass; type check, lint and the dependency rules are clean); on a live snapshot of 1,862 stops the share over 40 s falls from 13.1% to none and 63 of 433 stops at transfer stations have a connection arriving; not watched on the live map"],"evidence_class":"observed","next_action":"open the pull request that closes #273","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0069","timestamp":"2026-11-20T20:41:31Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d0882b5289b63d964b674662a313253c1cbfa0d96f2866c81777df79e42d2787","request_id":"78e8363c61894b109b6647862059b2d5","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0069"} -->
+
+Completed:
+- Capped every drawn subway stop at 40 s and gave transfer stations the longer stop only while a connecting train is arriving
+
+Evidence:
+- nothing this change touches fails (all 2,292 unit tests pass; type check, lint and the dependency rules are clean); on a live snapshot of 1,862 stops the share over 40 s falls from 13.1% to none and 63 of 433 stops at transfer stations have a connection arriving; not watched on the live map
+
+Decisions:
+- a connection is a train of another service due on the same platform from 15 s before to 30 s after; the 20 to 40 s range is the owner's observation
+
+Changed:
+- src/features/transit/connections.ts and its test, dwell.ts, model.ts, TransitLayer.tsx, holds.json, dwell.test.ts, checkpoints/CURRENT.md, this task record
+
+Blocked/uncertain:
+- none
+
+Next:
+- open the pull request that closes #273
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
