@@ -1,10 +1,50 @@
 [
-  { "file": "mission.json", "title": "Mission: why NYC Map Agent exists", "documentId": null, "verified": false },
-  { "file": "plan.json", "title": "Plan: from recorded walks to guidance", "documentId": null, "verified": false },
-  { "file": "stack.json", "title": "Stack: what the app runs on and where AI helps", "documentId": null, "verified": false },
-  { "file": "get-data.json", "title": "Get the data: samples, format and reproduction", "documentId": null, "verified": false },
-  { "file": "contribute.json", "title": "Contribute: record a walk, share it safely", "documentId": null, "verified": false },
-  { "file": "walk-stops.json", "title": "The guided walk: seven stops from Cortlandt St to the street", "documentId": null, "verified": false },
-  { "file": "evidence.json", "title": "Evidence: what each test actually measured", "documentId": null, "verified": false },
-  { "file": "research.json", "title": "Research: how other cities guide riders underground", "documentId": null, "verified": false }
+  {
+    "file": "mission.json",
+    "title": "Presenter Q&A: Mission: why NYC Map Agent exists [presenter-mission]",
+    "documentId": "4ce37d4a-a41e-4c78-bf3a-80a61bdeb843",
+    "verified": true
+  },
+  {
+    "file": "plan.json",
+    "title": "Presenter Q&A: Plan: from recorded walks to guidance [presenter-plan]",
+    "documentId": "1ebbc135-2b6b-44be-a1e9-724bb1e2d0b9",
+    "verified": true
+  },
+  {
+    "file": "stack.json",
+    "title": "Presenter Q&A: Stack: what the app runs on and where AI helps [presenter-stack]",
+    "documentId": "baaf60d1-3b9b-47d9-aa39-e36124c9cd4e",
+    "verified": true
+  },
+  {
+    "file": "get-data.json",
+    "title": "Presenter Q&A: Get the data: samples, format and reproduction [presenter-get-data]",
+    "documentId": "80079f2b-4541-4759-9f67-46a25eb47547",
+    "verified": true
+  },
+  {
+    "file": "contribute.json",
+    "title": "Presenter Q&A: Contribute: record a walk, share it safely [presenter-contribute]",
+    "documentId": "da69f9d5-6a62-4bc7-95ac-825c295eafde",
+    "verified": true
+  },
+  {
+    "file": "walk-stops.json",
+    "title": "Presenter Q&A: The guided walk: seven stops from Cortlandt St to the street [presenter-walk-stops]",
+    "documentId": "1f0e0a9c-620b-4684-9d82-3b0a023c0eaf",
+    "verified": true
+  },
+  {
+    "file": "evidence.json",
+    "title": "Presenter Q&A: Evidence: what each test actually measured [presenter-evidence]",
+    "documentId": "fc0df41f-a4f7-4733-961e-26e77e5733a0",
+    "verified": true
+  },
+  {
+    "file": "research.json",
+    "title": "Presenter Q&A: Research: how other cities guide riders underground [presenter-research]",
+    "documentId": "c3f2456a-0d3f-40b4-9bff-b9fec9e33b36",
+    "verified": true
+  }
 ]

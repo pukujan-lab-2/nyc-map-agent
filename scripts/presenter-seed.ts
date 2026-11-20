@@ -77,7 +77,10 @@ function asRecord(value: unknown): Record<string, unknown> {
 function listedDocuments(data: unknown): Array<{ id: string; title: string }> {
   const record = asRecord(data);
   const list = Array.isArray(record.documents) ? record.documents : Array.isArray(data) ? data : [];
-  return list.map(asRecord).filter((doc) => typeof doc.id === "string" && typeof doc.title === "string") as Array<{ id: string; title: string }>;
+  return list
+    .map(asRecord)
+    .map((doc) => ({ id: typeof doc.documentId === "string" ? doc.documentId : typeof doc.id === "string" ? doc.id : "", title: typeof doc.title === "string" ? doc.title : "" }))
+    .filter((doc) => doc.id.length > 0 && doc.title.length > 0);
 }
 
 async function findByTitle(title: string): Promise<string | null> {
@@ -105,7 +108,16 @@ async function main(): Promise<void> {
     if (!ingest.ok) fail(`Ingest failed for ${slug} (HTTP ${ingest.status}).`);
     const body = asRecord(ingest.data);
     const nested = asRecord(body.document);
-    let documentId = typeof body.id === "string" ? body.id : typeof nested.id === "string" ? nested.id : null;
+    let documentId =
+      typeof body.documentId === "string"
+        ? body.documentId
+        : typeof body.id === "string"
+          ? body.id
+          : typeof nested.documentId === "string"
+            ? nested.documentId
+            : typeof nested.id === "string"
+              ? nested.id
+              : null;
     documentId ??= await findByTitle(title);
     if (!documentId) fail(`Ingest returned no document id for ${slug}.`);
 
