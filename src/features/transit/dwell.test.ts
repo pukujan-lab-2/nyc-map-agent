@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DWELL_DEFAULT, DWELL_EXPRESS_LOCAL, DWELL_TERMINAL, defaultDwell, deriveExpressLocal, ease, motionAt, type MotionStop } from "./dwell";
+import { DWELL_DEFAULT, DWELL_EXPRESS_LOCAL, DWELL_MIN, DWELL_TERMINAL, defaultDwell, deriveExpressLocal, ease, fastestRun, motionAt, typicalRun, type MotionStop } from "./dwell";
 import { estimateTrain, type StaticSystem } from "./model";
 
 const dwell30 = () => 30;
@@ -44,6 +44,62 @@ describe("motionAt: dwell, easing, timetable", () => {
   it("caps the default dwell so a short hop still makes its arrival", () => {
     const s = [{ id: "A", arr: 0, m: 0 }, { id: "B", arr: 40, m: 300 }];
     expect(motionAt(s, 25, () => 60)!.phase).toBe("moving");
+  });
+});
+
+describe("motionAt: the run gets its time before the stop does", () => {
+  const runOf = (a: MotionStop, b: MotionStop) => typicalRun(Math.abs(b.m - a.m));
+  /** When the train leaves stop 0 of a two-stop trip `metres` long with `gap` seconds between arrivals. */
+  const leaves = (metres: number, gap: number, dwell: number) => {
+    const s = [{ id: "A", arr: 0, m: 0 }, { id: "B", arr: gap, m: metres }, { id: "C", arr: gap * 2, m: metres * 2 }];
+    const mo = motionAt(s, 0, () => dwell, { runOf })!;
+    return mo.phase === "dwell" ? mo.departs : NaN;
+  };
+
+  it("knows how fast a train can cover a distance", () => {
+    expect(fastestRun(0)).toBe(0);
+    expect(fastestRun(300)).toBeCloseTo(31.7, 1); // never reaches top speed
+    expect(fastestRun(1000)).toBeCloseTo(61.3, 1); // 40.7 s at top speed plus speeding up and braking
+    for (let d = 50; d < 4000; d += 50) expect(fastestRun(d + 50)).toBeGreaterThan(fastestRun(d));
+    expect(fastestRun(508)).toBeCloseTo(fastestRun(507), 0); // the two formulas meet where top speed is first reached
+  });
+
+  it("a long default stop no longer makes the train race: 725 m in a 96 s gap at a 60 s station", () => {
+    // Before, the stop took half the gap (48 s) and left 48 s for a run whose fastest possible time is 50 s.
+    const dep = leaves(725, 96, DWELL_EXPRESS_LOCAL);
+    expect(96 - dep).toBeCloseTo(typicalRun(725), 6);
+    expect(dep).toBeGreaterThan(15);
+    expect(dep).toBeLessThan(30);
+  });
+
+  it("never draws a run faster than a train can go when the gap is a realistic one", () => {
+    for (let metres = 200; metres <= 4000; metres += 100) {
+      for (const dwell of [30, 50, 60]) {
+        const gap = typicalRun(metres) + 25; // a real gap: the run plus an ordinary stop
+        expect(gap - leaves(metres, gap, dwell)).toBeGreaterThanOrEqual(typicalRun(metres) - 1e-9);
+      }
+    }
+  });
+
+  it("gives the stop its full default when the gap has room for it", () => {
+    expect(leaves(725, 200, 30)).toBe(30);
+    expect(leaves(725, 200, 60)).toBe(60);
+  });
+
+  it("still stops briefly when the gap is too short for the run", () => {
+    expect(leaves(1500, 90, 30)).toBe(DWELL_MIN);
+    expect(leaves(300, 12, 30)).toBe(6); // and never for more than half of a very short gap
+  });
+
+  it("arrives at the next stop exactly on its predicted time", () => {
+    const s = [{ id: "A", arr: 0, m: 0 }, { id: "B", arr: 96, m: 725 }, { id: "C", arr: 192, m: 1450 }];
+    expect(motionAt(s, 96, () => 60, { runOf })!.m).toBe(725);
+    expect(motionAt(s, 95.999, () => 60, { runOf })!.m).toBeCloseTo(725, 0);
+  });
+
+  it("leaves a departure time from the feed alone", () => {
+    const s = [{ id: "A", arr: 0, dep: 45, m: 0 }, { id: "B", arr: 96, m: 725 }];
+    expect(motionAt(s, 40, () => 30, { runOf })).toMatchObject({ phase: "dwell", departs: 45 });
   });
 });
 
@@ -97,6 +153,16 @@ describe("estimateTrain with dwell", () => {
     expect(v.stopped).toMatchObject({ kind: "at", stop: "BN" });
     expect(v.lat).toBeCloseTo(40.71, 4);
     expect(v.nextStop).toBe("CN");
+  });
+  it("stops for what the gap leaves after the run, not for a fixed 30 s", () => {
+    // 1113 m normally takes 99 s, so a 120 s gap leaves a 21 s stop.
+    expect(estimateTrain(sys, trip, 140)!.stopped).toMatchObject({ kind: "at", stop: "BN" });
+    expect(estimateTrain(sys, trip, 143)!.stopped).toBeUndefined();
+  });
+  it("leaves commuter rail as it was: a 45 s stop capped at half the gap", () => {
+    const rail = { ...sys, system: "lirr" as const, stopM: { G: { AN: 0, BN: 1113, CN: 2226 } } };
+    expect(estimateTrain(rail, trip, 160)!.stopped).toMatchObject({ kind: "at", stop: "BN" });
+    expect(estimateTrain(rail, trip, 166)!.stopped).toBeUndefined();
   });
   it("reports departures from the origin and arrival at the terminal", () => {
     expect(estimateTrain(sys, { ...trip, origin: true, stops: [["AN", 60, 60], ["BN", 180]] }, 0)!.stopped).toMatchObject({ kind: "departs", stop: "AN", t: 60 });
