@@ -6,7 +6,7 @@
  */
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { CameraControls } from "@react-three/drei";
 import { Physics, RigidBody, TrimeshCollider } from "@react-three/rapier";
 import { Ecctrl, type EcctrlHandle } from "ecctrl";
@@ -20,6 +20,7 @@ import { bakedShellSurfaces, SMOOTH_SEAMS, type BakedShell, toYUp, walkGeometry,
 import { stationShell } from "@/lib/map/three/stationShell";
 import { loadModel } from "@/lib/map/dollhousePreview";
 import { forgetWalkSpot, savedWalkSpot, WalkDevHud } from "@/lib/map/three/WalkDevHud";
+import { createStationPost, glowSigns, lampTexture, LOOK, metalFinish, shadowed, slowFrames, stationLights, stationQuality, toStandard, type Quality, type StationPost } from "@/lib/map/three/stationLook";
 
 /** The figure's body: a capsule 1.6 m tall floating 0.25 m over the floor, so it climbs stairs. */
 const BODY = { halfHeight: 0.5, radius: 0.3, float: 0.25 };
@@ -67,15 +68,22 @@ function geometryOf(s: Surface): THREE.BufferGeometry {
 
 function Station({ geo, walls }: { geo: WalkGeometry; walls: React.MutableRefObject<THREE.Object3D[]> }) {
   const parts = useMemo(() => {
-    const floor = new THREE.Mesh(geometryOf(geo.floors), new THREE.MeshLambertMaterial({ map: concreteTexture(), color: 0xc9c6bf, side: THREE.DoubleSide }));
-    const stairs = new THREE.Mesh(geometryOf(geo.stairs), new THREE.MeshLambertMaterial({ map: treadTexture(), color: 0xbdb9b1, side: THREE.DoubleSide }));
-    const wall = new THREE.Mesh(geometryOf(geo.walls), new THREE.MeshLambertMaterial({ map: wallTexture(), side: THREE.DoubleSide }));
-    const ceiling = new THREE.Mesh(geometryOf(geo.ceiling), new THREE.MeshLambertMaterial({ color: 0x8f8c86, side: THREE.FrontSide }));
+    // Dull concrete underfoot, glazed tile on the walls, and a ceiling whose strip lights glow (stationLook.ts).
+    const floor = new THREE.Mesh(geometryOf(geo.floors), new THREE.MeshStandardMaterial({ map: concreteTexture(), color: 0xc9c6bf, side: THREE.DoubleSide, roughness: 0.93, metalness: 0 }));
+    const stairs = new THREE.Mesh(geometryOf(geo.stairs), new THREE.MeshStandardMaterial({ map: treadTexture(), color: 0xbdb9b1, side: THREE.DoubleSide, roughness: 0.86, metalness: 0 }));
+    const wall = new THREE.Mesh(geometryOf(geo.walls), new THREE.MeshStandardMaterial({ map: wallTexture(), side: THREE.DoubleSide, roughness: 0.36, metalness: 0 }));
+    const ceiling = new THREE.Mesh(geometryOf(geo.ceiling), new THREE.MeshStandardMaterial({
+      color: 0x8f8c86, side: THREE.FrontSide, roughness: 0.96, metalness: 0, emissive: new THREE.Color(0xfff3dc).multiplyScalar(LOOK.lamp), emissiveMap: lampTexture(),
+    }));
+    // Floors and the ceiling never cast: each level has its own lamps, and a slab that cast would black out the level under it.
+    floor.receiveShadow = true;
+    stairs.castShadow = stairs.receiveShadow = true;
+    wall.castShadow = wall.receiveShadow = true;
     return [floor, stairs, wall, ceiling];
   }, [geo]);
   useEffect(() => {
     walls.current = parts;
-    return () => { for (const m of parts) { m.geometry.dispose(); const mat = m.material; mat.map?.dispose(); mat.dispose(); } };
+    return () => { for (const m of parts) { m.geometry.dispose(); const mat = m.material; mat.map?.dispose(); mat.emissiveMap?.dispose(); mat.dispose(); } };
   }, [parts, walls]);
   return (
     <>
@@ -115,8 +123,41 @@ const HIDE_FIGURE_M = 1.1;
 
 export type Ride = "walking" | "boarding" | "riding";
 
-function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onRide }: {
-  start: THREE.Vector3; heading: number; lowest: number; walls: React.MutableRefObject<THREE.Object3D[]>;
+/** The station's light and finish (stationLook.ts): the key light's shadows follow the walker, and the post pass, where it can run, draws each frame. */
+function Look({ quality, feet }: { quality: Quality; feet: React.MutableRefObject<THREE.Vector3> }) {
+  const gl = useThree((s) => s.gl);
+  const lights = useMemo(() => stationLights("y", quality), [quality]);
+  // A device that cannot keep up loses the shadows and the post pass, and keeps the rest.
+  const [plain, setPlain] = useState(false);
+  const post = useMemo(() => (quality.post && !plain ? createStationPost(gl) : null), [gl, quality, plain]);
+  const slow = useMemo(slowFrames, []);
+  useEffect(() => () => lights.dispose(), [lights]);
+  useEffect(() => () => post?.dispose(), [post]);
+  useEffect(() => { gl.toneMappingExposure = LOOK.exposure; }, [gl]);
+  useFrame(() => {
+    lights.aim(feet.current.x, feet.current.y, feet.current.z);
+    if (!plain && (quality.post || quality.shadows) && slow(performance.now())) {
+      lights.plain();
+      gl.shadowMap.enabled = false;
+      setPlain(true);
+    }
+  });
+  return (
+    <>
+      {lights.lights.map((l, i) => <primitive key={i} object={l} />)}
+      {post ? <PostPass post={post} /> : null}
+    </>
+  );
+}
+
+/** Draws the frame through the post pass. A frame callback with a priority takes the drawing over from the canvas. */
+function PostPass({ post }: { post: StationPost }) {
+  useFrame(({ scene, camera }) => post.render(scene, camera), 1);
+  return null;
+}
+
+function Walker({ start, heading, lowest, walls, dressing, ride, feet: feetAt, onNearDoor, onRide }: {
+  start: THREE.Vector3; heading: number; lowest: number; walls: React.MutableRefObject<THREE.Object3D[]>; feet: React.MutableRefObject<THREE.Vector3>;
   dressing: WalkDressing; ride: Ride; onNearDoor: (near: boolean) => void; onRide: (r: Ride) => void;
 }) {
   const body = useRef<EcctrlHandle>(null);
@@ -139,6 +180,8 @@ function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onR
     outer.rotation.y = Math.PI;
     outer.position.y = FEET_Y;
     outer.add(inner);
+    toStandard(outer);
+    shadowed(outer, true, true);
     return { object: outer, stride };
   }, []);
 
@@ -191,6 +234,7 @@ function Walker({ start, heading, lowest, walls, dressing, ride, onNearDoor, onR
     if (!b?.body) return;
     const p = b.currPos;
     const feet = p.y + FEET_Y;
+    feetAt.current.set(p.x, feet, p.z);
     // The model's frame (z up) for the dressing: x, -z, y.
     const mx = p.x, my = -p.z, mz = feet;
 
@@ -322,7 +366,17 @@ export function StationWalk({ exit, onClose: close }: { exit: [number, number] |
   const [nearDoor, setNearDoor] = useState(false);
   // Walk again starts a fresh round: a new scene, the train back at the platform.
   const [round, setRound] = useState(0);
-  const dressing = useMemo(() => (model && shell ? walkDressing(model, fultonCorner, shell) : null), [model, shell, round]); // eslint-disable-line react-hooks/exhaustive-deps
+  const quality = useMemo(stationQuality, []);
+  const feet = useRef(new THREE.Vector3());
+  const dressing = useMemo(() => {
+    if (!model || !shell) return null;
+    const d = walkDressing(model, fultonCorner, shell);
+    // The furniture is built by helpers the map's dollhouse shares; here it takes this scene's finish.
+    toStandard(d.group, metalFinish);
+    shadowed(d.group, true, true);
+    glowSigns(d.group);
+    return d;
+  }, [model, shell, round]); // eslint-disable-line react-hooks/exhaustive-deps
   const boardTrain = () => { if (ride === "walking") setRide("boarding"); };
   // E or Enter at a door boards, as the button does.
   useEffect(() => {
@@ -348,17 +402,17 @@ export function StationWalk({ exit, onClose: close }: { exit: [number, number] |
   return (
     <div data-testid="station-walk" className="fixed inset-0 z-[70] bg-[#1d1f23] touch-none select-none">
       {geo && start && dressing ? (
-        <Canvas key={round} camera={{ fov: 62, near: 0.05, far: 300 }} dpr={[1, 2]} gl={{ antialias: true }}>
+        <Canvas key={round} camera={{ fov: 62, near: 0.05, far: 300 }} dpr={[1, quality.pixelRatio]} gl={{ antialias: !quality.post }}
+          shadows={quality.shadows ? { enabled: true, type: THREE.PCFShadowMap } : false}>
           <color attach="background" args={["#1d1f23"]} />
-          <hemisphereLight args={[0xfdfbf3, 0x55524c, 1.6]} />
-          <ambientLight intensity={0.5} />
+          <Look quality={quality} feet={feet} />
           <Suspense fallback={null}>
             {/* A fixed step: a slow frame takes several small steps, never one big one that throws the body. */}
             <Physics timeStep={1 / 60}>
               <Station geo={geo} walls={walls} />
               <Guide path={start.path} />
               <Dressing dressing={dressing} />
-              <Walker start={start.at} heading={start.heading} lowest={geo.lowest} walls={walls} dressing={dressing}
+              <Walker start={start.at} heading={start.heading} lowest={geo.lowest} walls={walls} dressing={dressing} feet={feet}
                 ride={ride} onNearDoor={setNearDoor} onRide={setRide} />
             </Physics>
           </Suspense>

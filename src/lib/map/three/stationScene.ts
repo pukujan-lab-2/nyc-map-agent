@@ -12,6 +12,7 @@ import { EYE_HEIGHT_M } from "../walk";
 import { guideSigns, placeSigns, type Bullet, type ExitName, type Sign, type SignInfo } from "../stationSigns";
 import { cornerLine } from "../cornerLine";
 import { readMap } from "../mapRead";
+import { createStationPost, dressRenderer, glowSigns, LOOK, slowFrames, metalFinish, shadowed, stationLights, stationQuality, toStandard, type Quality } from "./stationLook";
 
 /** Railing height on an elevated platform or stair. */
 const RAIL_M = 1.1;
@@ -55,7 +56,8 @@ class Quads {
     if (up > 0) this.add(a, d, c, b);
     else this.add(a, b, c, d);
   }
-  mesh(color: number, opts: THREE.MeshLambertMaterialParameters = {}) {
+  /** `finish` (how rough the surface is) draws it as a standard material, for a station on its own canvas; without it, Lambert as on the map. */
+  mesh(color: number, opts: THREE.MeshLambertMaterialParameters = {}, finish?: Finish) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(this.pos, 3));
     if (this.uv.length) g.setAttribute("uv", new THREE.Float32BufferAttribute(this.uv, 2));
@@ -66,9 +68,32 @@ class Quads {
       g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     }
     g.computeVertexNormals();
-    return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, ...opts }));
+    const mesh = new THREE.Mesh(g, finish ? new THREE.MeshStandardMaterial({ color, side: THREE.DoubleSide, metalness: 0, ...opts, ...finish.mat }) : new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, ...opts }));
+    if (finish) { mesh.castShadow = !!finish.cast; mesh.receiveShadow = finish.receive !== false; }
+    return mesh;
   }
 }
+
+/** A surface on a station's own canvas: its material's finish, and whether it casts or takes shadows (it takes them unless told not to). */
+type Finish = { mat: THREE.MeshStandardMaterialParameters; cast?: boolean; receive?: boolean };
+/**
+ * Glazed tile is the one shiny surface; concrete and steel decking are dull. Floors and ceilings never
+ * cast: each level is lit by its own lamps, and a slab that cast would black out the level under it.
+ */
+const FINISH = {
+  floor: { mat: { roughness: 0.93 } },
+  platform: { mat: { roughness: 0.88 } },
+  ceiling: { mat: { roughness: 0.96 }, receive: false },
+  wall: { mat: { roughness: 0.36 }, cast: true },
+  trim: { mat: { roughness: 0.4 } },
+  edge: { mat: { roughness: 0.7 } },
+  drop: { mat: { roughness: 0.92 } },
+  bed: { mat: { roughness: 0.96 } },
+  rail: { mat: { roughness: 0.3, metalness: 0.6 } },
+  railing: { mat: { roughness: 0.5, metalness: 0.3 }, cast: true },
+  canopy: { mat: { roughness: 0.8 }, receive: false },
+  tread: { mat: { roughness: 0.86 }, cast: true },
+} satisfies Record<string, Finish>;
 
 /** A flat ribbon `w` wide along a polyline at height z. */
 function ribbon(q: Quads, line: Array<[number, number]>, w: number, z: number, offset = 0) {
@@ -137,7 +162,7 @@ function guideMeshes(trip: StationTrip, boardZ: number): THREE.Object3D[] {
 const DOOR = { perCar: 4, width: 1.3, height: 2.0 };
 
 /** The trip's train: silver cars with a window band, doors and a stripe in the line's colour, headlights in front and red lights behind, centred on its middle. */
-function trainMesh(color: string): THREE.Group {
+function trainMesh(color: string, glow = 1): THREE.Group {
   const train = new THREE.Group();
   const total = CAR.count * CAR.length + (CAR.count - 1) * CAR.gap;
   const body = new THREE.BoxGeometry(CAR.length, CAR.width, CAR.height);
@@ -148,7 +173,7 @@ function trainMesh(color: string): THREE.Group {
   const lamp = new THREE.BoxGeometry(0.1, 0.35, 0.22);
   const [metal, glass, paint, doors] = [0xb9bec5, 0x1c2630, color, 0x868c94].map((c) => new THREE.MeshLambertMaterial({ color: new THREE.Color(c) }));
   // Lights are unlit, so they glow in the tunnel.
-  const [head, tail] = [0xfff6d8, 0xff3030].map((c) => new THREE.MeshBasicMaterial({ color: c, fog: false }));
+  const [head, tail] = [0xfff6d8, 0xff3030].map((c) => new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(glow), fog: false }));
   const add = (geo: THREE.BoxGeometry, mat: THREE.Material, x: number, y: number, z: number) => {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(x, y, z);
@@ -259,6 +284,14 @@ function ceilingPattern(ctx: CanvasRenderingContext2D, size: number) {
   ctx.fillRect(14, 0, 2, size);
   // The strip light.
   ctx.fillStyle = "#f6f1e2";
+  ctx.fillRect(40, 66, 62, 8);
+}
+
+/** The ceiling's strip lights alone, white on black: what glows. Laid over ceilingPattern, so it must match it. */
+function ceilingLamps(ctx: CanvasRenderingContext2D, size: number) {
+  ctx.fillStyle = "#000000";
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(40, 66, 62, 8);
 }
 
@@ -375,8 +408,13 @@ function exitNamer(map: MapLibreMap, m: StationModel): ExitName {
   return (x, y) => cornerLine(read.placeAt(toLngLat(m, x, y)));
 }
 
-function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]>>, trip?: StationTrip, signs?: SignInfo): { group: THREE.Group; update: () => void; nameExits: (map: MapLibreMap) => void } {
+/**
+ * `own` is how a station on its own canvas is drawn (see stationLook.ts): standard materials, the key
+ * light and its shadows, lamps that glow. Without it the scene is as the map's canvas has always drawn it.
+ */
+function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]>>, trip?: StationTrip, signs?: SignInfo, own?: Quality): { group: THREE.Group; update: () => void; nameExits: (map: MapLibreMap) => void; aim: (x: number, y: number, z: number) => void; /** Drop the shadows (a device not keeping up). */ plain: () => void } {
   const group = new THREE.Group();
+  const F = (k: keyof typeof FINISH): Finish | undefined => (own ? FINISH[k] : undefined);
   const under = !m.elevated;
   const [floor, platform, ceiling, wall, edge, drop, bed, rail, railing, canopy, trim] = Array.from({ length: 11 }, () => new Quads());
   // A stair's own ceiling, seen only from below. Looking down a stair from the floor it leaves, the opening shows
@@ -549,7 +587,8 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
   if (sky.pos.length) {
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(sky.pos, 3));
-    group.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: STAIR.sky, side: THREE.DoubleSide, fog: false })));
+    // On its own canvas the daylight is brighter than white, so it glows down the stair.
+    group.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: new THREE.Color(STAIR.sky).multiplyScalar(own ? LOOK.lamp * 0.7 : 1), side: THREE.DoubleSide, fog: false })));
   }
   // A room's floor ends at a stair going down from it: that edge is the stair's opening, which the stair rings
   // with its own parapets. Read as a wall, it stood full height round the opening once the treads were a step
@@ -594,26 +633,29 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
     for (const side of [-GAUGE_M / 2, GAUGE_M / 2]) ribbon(rail, line, 0.08, bz + 0.15, side);
   }
 
+  /** A ceiling whose strip lights glow: the same pattern's lamps, drawn brighter than white. */
+  const lit = (f?: Finish): Finish | undefined => f && { ...f, mat: { ...f.mat, emissive: new THREE.Color(0xfff3dc).multiplyScalar(LOOK.lamp), emissiveMap: surfaceTexture(3, ceilingLamps) } };
   group.add(
     // Below the street each surface has its own look, so floor, platform and ceiling read apart (owner, 2026-11-10).
-    under ? floor.mesh(0xffffff, { map: surfaceTexture(1.2, concrete(143, 2)) }) : floor.mesh(COLORS.floor),
-    under ? platform.mesh(0xffffff, { map: surfaceTexture(2.4, concrete(184, 2)) }) : platform.mesh(COLORS.platform),
-    under ? ceiling.mesh(0xffffff, { map: surfaceTexture(3, ceilingPattern) }) : ceiling.mesh(COLORS.ceiling),
-    under ? soffit.mesh(0xffffff, { map: surfaceTexture(3, ceilingPattern), side: THREE.FrontSide }) : soffit.mesh(COLORS.ceiling, { side: THREE.FrontSide }),
-    wall.mesh(COLORS.wall, { map: under ? tileTexture() : null }),
-    trim.mesh(new THREE.Color(signs?.trim ?? "#2f6b45").getHex(), { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-    edge.mesh(COLORS.edge),
-    drop.mesh(COLORS.drop),
-    bed.mesh(COLORS.bed),
-    rail.mesh(COLORS.rail),
-    railing.mesh(COLORS.railing, under ? {} : { transparent: true, opacity: 0.75 }),
-    canopy.mesh(COLORS.canopy),
+    under ? floor.mesh(0xffffff, { map: surfaceTexture(1.2, concrete(143, 2)) }, F("floor")) : floor.mesh(COLORS.floor, {}, F("floor")),
+    under ? platform.mesh(0xffffff, { map: surfaceTexture(2.4, concrete(184, 2)) }, F("platform")) : platform.mesh(COLORS.platform, {}, F("platform")),
+    under ? ceiling.mesh(0xffffff, { map: surfaceTexture(3, ceilingPattern) }, lit(F("ceiling"))) : ceiling.mesh(COLORS.ceiling, {}, F("ceiling")),
+    under ? soffit.mesh(0xffffff, { map: surfaceTexture(3, ceilingPattern), side: THREE.FrontSide }, lit(F("ceiling"))) : soffit.mesh(COLORS.ceiling, { side: THREE.FrontSide }, F("ceiling")),
+    wall.mesh(COLORS.wall, { map: under ? tileTexture() : null }, F("wall")),
+    trim.mesh(new THREE.Color(signs?.trim ?? "#2f6b45").getHex(), { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }, F("trim")),
+    edge.mesh(COLORS.edge, {}, F("edge")),
+    drop.mesh(COLORS.drop, {}, F("drop")),
+    bed.mesh(COLORS.bed, {}, F("bed")),
+    rail.mesh(COLORS.rail, {}, F("rail")),
+    railing.mesh(COLORS.railing, under ? {} : { transparent: true, opacity: 0.75 }, F("railing")),
+    canopy.mesh(COLORS.canopy, {}, F("canopy")),
   );
 
   const steps = treads(m);
   if (steps.length) {
     const box = new THREE.BoxGeometry(1, 1, 1).translate(0, 0, -0.5);
-    const mesh = new THREE.InstancedMesh(box, new THREE.MeshLambertMaterial({ color: COLORS.tread }), steps.length);
+    const mesh = new THREE.InstancedMesh(box, own ? new THREE.MeshStandardMaterial({ color: COLORS.tread, ...FINISH.tread.mat }) : new THREE.MeshLambertMaterial({ color: COLORS.tread }), steps.length);
+    mesh.castShadow = mesh.receiveShadow = !!own;
     const mx = new THREE.Matrix4(), q = new THREE.Quaternion(), zAxis = new THREE.Vector3(0, 0, 1);
     steps.forEach((t, i) => mesh.setMatrixAt(i, mx.compose(new THREE.Vector3(t.x, t.y, t.z), q.setFromAxisAngle(zAxis, t.angle), new THREE.Vector3(t.run + 0.02, STAIR_W, 0.35))));
     group.add(mesh);
@@ -621,7 +663,9 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
 
   // Over the trip's own way: arrows before its turns, Exit signs leaving and the train's line going to it.
   const onWay = trip?.signs ? guideSigns(trip.guide, trip.signs.exit, trip.signs.routes, trip.signs.words) : [];
-  let hung = signs ? signMeshes(m, signs, undefined, onWay) : [];
+  // A hung sign casts its shadow; its face is unlit, so it always reads.
+  const hang = (list: THREE.Object3D[]) => { if (own) for (const o of list) { shadowed(o, true, false); glowSigns(o); } return list; };
+  let hung = hang(signs ? signMeshes(m, signs, undefined, onWay) : []);
   group.add(...hung);
   /**
    * Hang the signs again with each street stair's corner on its Exit sign. The streets come from
@@ -629,27 +673,39 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
    */
   const nameExits = (map: MapLibreMap) => {
     if (!signs) return;
-    const hang = () => {
+    const rehang = () => {
       if (!group.parent) return;
-      const next = signMeshes(m, signs, exitNamer(map, m), onWay);
+      const next = hang(signMeshes(m, signs, exitNamer(map, m), onWay));
       group.remove(...hung);
       for (const o of hung) ((o as THREE.Mesh).material as THREE.MeshBasicMaterial).map?.dispose();
       hung = next;
       group.add(...hung);
     };
-    hang();
-    void map.once("idle").then(hang);
+    rehang();
+    void map.once("idle").then(rehang);
   };
 
-  group.add(new THREE.AmbientLight(0xffffff, (under ? 0.6 : 0.5) * LEGACY_LIGHT));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.45 * LEGACY_LIGHT);
-  sun.position.set(0.3, -0.5, 1);
-  group.add(sun);
+  let aim: (x: number, y: number, z: number) => void = () => {};
+  let plain = () => {};
+  if (own) {
+    const lights = stationLights("z", own);
+    group.add(...lights.lights);
+    group.userData.dispose = lights.dispose;
+    aim = lights.aim;
+    plain = lights.plain;
+  } else {
+    // On the map's canvas: the flat light every map layer uses.
+    group.add(new THREE.AmbientLight(0xffffff, (under ? 0.6 : 0.5) * LEGACY_LIGHT));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.45 * LEGACY_LIGHT);
+    sun.position.set(0.3, -0.5, 1);
+    group.add(sun);
+  }
 
-  if (!trip) return { group, update: () => {}, nameExits };
+  if (!trip) return { group, update: () => {}, nameExits, aim, plain };
   const boardZ = trip.guide.length ? trip.guide.reduce((z, p) => (Math.hypot(p[0] - trip.board[0], p[1] - trip.board[1]) < 1 ? p[2] : z), trip.guide[trip.guide.length - 1][2]) : 0;
   group.add(...guideMeshes(trip, boardZ));
-  const train = trainMesh(trip.color);
+  const train = trainMesh(trip.color, own ? LOOK.lamp : 1);
+  if (own) { toStandard(train, metalFinish); shadowed(train, true, true); }
   train.rotation.z = trip.track.angle;
   train.visible = false;
   group.add(train);
@@ -659,16 +715,18 @@ function buildStationScene(m: StationModel, tracks: Array<Array<[number, number]
     train.visible = off !== null;
     if (off !== null) train.position.set(trip.track.at[0] + dx * off, trip.track.at[1] + dy * off, boardZ);
   };
-  return { group, update, nameExits };
+  return { group, update, nameExits, aim, plain };
 }
 
 function disposeGroup(g: THREE.Object3D) {
+  (g.userData.dispose as (() => void) | undefined)?.();
   g.traverse((o) => {
     if (!(o instanceof THREE.Mesh)) return;
     const mesh = o as THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
     mesh.geometry.dispose();
-    const mat = mesh.material as THREE.MeshBasicMaterial;
+    const mat = mesh.material as THREE.MeshBasicMaterial & { emissiveMap?: THREE.Texture | null };
     mat.map?.dispose();
+    mat.emissiveMap?.dispose();
     mat.dispose();
   });
 }
@@ -709,6 +767,8 @@ export function createStationLayer(m: StationModel, tracks: Array<Array<[number,
   };
 }
 
+const TEST_HOOKS = !!(import.meta.env.DEV || import.meta.env.VITE_E2E);
+
 type Eye = { lon: number; lat: number; bearing: number; pitch: number; z?: number; /** Vertical field of view in degrees, when it differs from the one the view was mounted with. */ fov?: number };
 
 /**
@@ -718,12 +778,17 @@ type Eye = { lon: number; lat: number; bearing: number; pitch: number; z?: numbe
  * function that stops it.
  */
 export function mountStationView(canvas: HTMLCanvasElement, m: StationModel, tracks: Array<Array<[number, number]>>, getEye: () => Eye | null, fov: number, trip?: StationTrip, signs?: SignInfo, map?: MapLibreMap | null): () => void {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const quality = stationQuality();
+  // With the post pass the scene is drawn into its own smoothed target, so the canvas needs no smoothing of its own.
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !quality.post });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
+  dressRenderer(renderer, quality);
+  let post = quality.post ? createStationPost(renderer) : null;
+  const slow = slowFrames();
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1b1a19);
   scene.fog = new THREE.Fog(0x1b1a19, 20, 120);
-  const { group, update, nameExits } = buildStationScene(m, tracks, trip, signs);
+  const { group, update, nameExits, aim, plain } = buildStationScene(m, tracks, trip, signs, quality);
   scene.add(group);
   if (map) nameExits(map);
   const camera = new THREE.PerspectiveCamera(fov, 1, 0.1, 400);
@@ -739,8 +804,16 @@ export function mountStationView(canvas: HTMLCanvasElement, m: StationModel, tra
   resize();
   let frame = 0;
   const look = new THREE.Vector3();
-  const tick = () => {
-    const eye = getEye();
+  const tick = (now: number) => {
+    // A device that cannot keep up loses the shadows and the post pass, and keeps the rest.
+    if ((post || renderer.shadowMap.enabled) && slow(now)) {
+      plain();
+      renderer.shadowMap.enabled = false;
+      post?.dispose();
+      post = null;
+    }
+    // Dev and test hook: window.__stationEye stands the camera at a fixed spot, so two screenshots match.
+    const eye = (TEST_HOOKS && (window as unknown as { __stationEye?: Eye }).__stationEye) || getEye();
     if (eye) {
       const [x, y] = toLocal(m, eye.lon, eye.lat);
       const z = (eye.z ?? 0) + EYE_HEIGHT_M;
@@ -750,7 +823,9 @@ export function mountStationView(canvas: HTMLCanvasElement, m: StationModel, tra
       camera.position.set(x, y, z);
       camera.lookAt(look.set(x + Math.sin(b) * Math.sin(p), y + Math.cos(b) * Math.sin(p), z - Math.cos(p)));
       update();
-      renderer.render(scene, camera);
+      aim(x, y, eye.z ?? 0);
+      if (post) post.render(scene, camera);
+      else renderer.render(scene, camera);
     }
     frame = requestAnimationFrame(tick);
   };
@@ -760,6 +835,7 @@ export function mountStationView(canvas: HTMLCanvasElement, m: StationModel, tra
     ro.disconnect();
     scene.remove(group);
     disposeGroup(group);
+    post?.dispose();
     renderer.dispose();
   };
 }

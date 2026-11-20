@@ -40,3 +40,36 @@ for (const size of SIZES) {
     await expectLayout(page);
   });
 }
+
+/**
+ * The view below the street has two ways of drawing (#264): with shadows and the post pass, or plainly
+ * at one device pixel per CSS pixel (eco mode, a browser that draws on the CPU, a device that falls behind). Either way it must draw without a shader failing to
+ * build, which the browser reports on the console and not as a page error, and the layout bar must hold.
+ */
+for (const eco of [false, true]) {
+  test(`the station draws ${eco ? "plainly in eco mode" : "with its light and finish"}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockNetwork(page);
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (m) => { if (/THREE\.WebGL|shader|GL_INVALID|Framebuffer/i.test(m.text()) && m.type() !== "log") errors.push(m.text()); });
+    // Test browsers draw on the CPU, where the station keeps to its plain look; this asks for all of it, so every shader is built.
+    if (!eco) await page.addInitScript(() => Object.assign(window, { __stationLook: "full" }));
+    await page.goto(eco ? "/?eco=1" : "/");
+    await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
+    await expect.poll(() => page.evaluate(() => typeof (window as unknown as { __walk?: unknown }).__walk), { timeout: slow(15_000) }).toBe("function");
+    await page.evaluate((at) => (window as unknown as { __walk: (a: unknown) => void }).__walk(at), FULTON_STAIR);
+    await expect.poll(async () => (await eye(page))?.z, { timeout: slow(20_000) }).toBe(0);
+    await page.keyboard.down("w");
+    await expect.poll(async () => (await eye(page))?.z ?? 0, { timeout: slow(20_000) }).toBeLessThan(-1.5);
+    await page.keyboard.up("w");
+    const inside = page.getByTestId("station-inside");
+    await expect(inside).toBeVisible();
+    await page.waitForTimeout(500);
+    // Eco mode draws one device pixel per CSS pixel, whatever the screen's own ratio.
+    const ratio = await inside.evaluate((c) => (c as HTMLCanvasElement).width / (c as HTMLCanvasElement).clientWidth);
+    if (eco) expect(ratio).toBe(1);
+    expect(errors).toEqual([]);
+    await expectLayout(page);
+  });
+}
