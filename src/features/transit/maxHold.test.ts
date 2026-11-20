@@ -9,7 +9,7 @@ const sys: StaticSystem = {
   shapes: { G: { c: [[-73.95, 40.7], [-73.95, 40.72]], m: [0, 2226], g: ["underground", "underground"] } },
   stopM: { G: { A: 0, B: 1113, C: 2226 } },
 };
-// The timetable has the train leaving B (arrives 200, leaves about 230) and reaching C at 300.
+// The timetable has the train leaving B (arrives 200, leaves at 210: the 1113 m run needs the rest) and reaching C at 300.
 // The vehicle feed still says "stopped at B" as of `vt`.
 const trip = (vt: number): LiveTrip => ({ id: "t1", route: "G", dir: 0, stops: [["BN", 200], ["CN", 300]], at: "BN", st: 1, vt });
 const NOW = 270;
@@ -33,7 +33,7 @@ describe("how long the vehicle report holds a train at a station", () => {
   });
 
   it("does not change a train the timetable already has at the station", () => {
-    const v = estimateTrain(sys, trip(NOW - 300), 210)!;
+    const v = estimateTrain(sys, trip(NOW - 300), 205)!;
     expect(v.stopped?.kind).toBe("at");
   });
 });

@@ -1,6 +1,6 @@
 import type { NamedLine } from "@/lib/map/streetPos";
 import { stairDescent } from "@/lib/map/stairs";
-import { defaultDwell, motionAt } from "./dwell";
+import { defaultDwell, motionAt, typicalRun } from "./dwell";
 import type { ProgressTracker } from "./monotonic";
 import { blendStops, type SegmentLookup } from "./history";
 
@@ -118,7 +118,7 @@ export function estimateTrain(sys: StaticSystem, trip: LiveTrip, now: number, tr
   let mo = motionAt(pts, now, (p) => {
     const st = stationOf(sys.system, p.id);
     return sys.system === "subway" ? defaultDwell(st, names.get(st)) : 45;
-  }, { origin: trip.origin });
+  }, { origin: trip.origin, runOf: sys.system === "subway" ? (a, b) => typicalRun(Math.abs(b.m - a.m)) : undefined });
   if (!mo) return null; // finished
   // The feed has not cleared the stop the vehicle reports: never draw the train past it.
   const atI = trip.at ? pts.findIndex((p) => p.id === trip.at) : -1;
