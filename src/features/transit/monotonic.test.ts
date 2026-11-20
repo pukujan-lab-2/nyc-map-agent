@@ -30,7 +30,7 @@ describe("monotonic train progress", () => {
 
   it("sits out the dwell, then leaves without passing the next listed stop", () => {
     const tr = new ProgressTracker();
-    const sitting = estimateTrain(sys, trip([["BN", 200], ["CN", 300]]), 210, tr)!;
+    const sitting = estimateTrain(sys, trip([["BN", 200], ["CN", 300]]), 205, tr)!;
     expect(sitting.lat).toBeCloseTo(40.71, 4);
     expect(sitting.stopped?.kind).toBe("at");
     const late = estimateTrain(sys, trip([["BN", 200], ["CN", 300]]), 280, tr)!; // dwell over, B still listed

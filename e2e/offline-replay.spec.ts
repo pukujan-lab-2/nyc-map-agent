@@ -86,7 +86,10 @@ test("in Spanish, the steps the card translated still read in Spanish with the n
   await expect(page.getByRole("button", { name: "Play trip preview" })).toBeVisible({ timeout: slow(20_000) });
   // The card asked for its steps, and for the walk through the station once that was in.
   await expect.poll(() => asked, { timeout: slow(30_000) }).toBeGreaterThanOrEqual(2);
-  await page.waitForTimeout(1000);
+  // Then wait until it has stopped asking. On a busy machine a later batch can arrive after any
+  // fixed pause, and a line still untranslated when the network goes reads in English below.
+  let last = -1;
+  await expect.poll(() => { const quiet = asked === last; last = asked; return quiet; }, { intervals: [2000], timeout: slow(30_000) }).toBe(true);
 
   // From here a translation request can only fail.
   await context.unroute("**/api/agent/translate");
