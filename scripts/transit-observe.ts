@@ -23,6 +23,8 @@ import { nyHourOfWeek } from "../server/features/transit/segments";
 import { SegmentObserver, type SegmentObs } from "../server/features/transit/observe";
 import { BusScorer, sample, SubwayScorer, type BusSegRow, type Score, type Tally } from "../server/features/transit/score";
 import { noticeRoutes, trafficNear, wetness, type SpeedLink } from "../server/features/transit/conditions";
+import { MotionScorer, type MotionRow } from "../server/features/transit/motionScore";
+import type { StaticSystem } from "../src/features/transit/model";
 import type { SegmentRow } from "../src/features/transit/history";
 import type { RouteGeom } from "../src/features/transit/busEstimate";
 import { foldSpeeds, speedsUrl, type SocrataRow } from "../server/features/transit/busSpeeds";
@@ -87,6 +89,27 @@ async function subwayScorer(routes: string[], runEnd: number): Promise<SubwaySco
   const list = [...new Set(routes)].filter((r) => /^[A-Za-z0-9]{1,4}$/.test(r)).sort().slice(0, 50);
   const body = await site<{ routes: Record<string, SegmentRow[]> }>(`/api/transit-segments/all?${new URLSearchParams({ routes: list.join(","), dow: String(dow), hour: String(hour) })}`);
   return new SubwayScorer(body.routes, runEnd);
+}
+
+/** Scores how trains are drawn, with the same static lines and learned times the app's clients load. */
+async function motionScorer(routes: string[], notices?: Set<string>): Promise<MotionScorer> {
+  const { dow, hour } = nyHourOfWeek(new Date());
+  const list = [...new Set(routes)].filter((r) => /^[A-Za-z0-9]{1,4}$/.test(r)).sort().slice(0, 50);
+  const [sys, body] = await Promise.all([
+    site<StaticSystem>("/transit/subway.json"),
+    site<{ routes: Record<string, SegmentRow[]> }>(`/api/transit-segments/all?${new URLSearchParams({ routes: list.join(","), dow: String(dow), hour: String(hour) })}`),
+  ]);
+  return new MotionScorer(sys, body.routes, notices);
+}
+
+async function writeMotion(runAt: Date, rows: MotionRow[]) {
+  for (const r of rows) {
+    await octoQuery(
+      "INSERT INTO raw.transit_motion_runs (run_at, notice, snapshots, trains, parked, legs, racing, tight) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING",
+      [runAt.toISOString(), r.notice, r.snapshots, r.trains, r.parked, r.legs, r.racing, r.tight],
+    );
+  }
+  await octoQuery(`DELETE FROM raw.transit_motion_runs WHERE run_at < now() - interval '${SCORE_DAYS} days'`);
 }
 
 async function busScorer(routes: string[], runEnd: number, slot: number): Promise<BusScorer> {
@@ -221,6 +244,7 @@ async function main() {
   const end = Date.now() + minutes * 60_000;
   // Learned times are read once, at the first poll, so nothing this run observes can leak into its own score.
   let subScore: SubwayScorer | undefined, busScore: BusScorer | undefined;
+  let motion: MotionScorer | undefined;
   let subTried = process.env.SCORE_OFF === "1", busTried = subTried;
   const scores: Score[] = [];
   let feedRoutes: string[] = [];
@@ -235,7 +259,9 @@ async function main() {
       if (!subTried) {
         subTried = true;
         subScore = await subwayScorer(trips.map((t) => t.route), end / 1000).catch(logged("score: subway off this run"));
+        motion = await motionScorer(trips.map((t) => t.route), ctx.notices).catch(logged("score: train motion off this run"));
       }
+      motion?.ingest(trips, at);
       if (subScore) scores.push(...subScore.ingest(trips, at));
     } catch (err) {
       console.error(`poll failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -269,6 +295,14 @@ async function main() {
     if (tallies.length) {
       const stored = await writeScores(started, scores, tallies, ctx, busScore);
       console.log(`score: ${tallies.map(([s, t]) => `${s} ${t.resolved} of ${t.opened} predictions resolved, ${t.unresolved} unresolved`).join("; ")}; stored ${stored}`);
+    }
+    if (motion) {
+      const rows = motion.finish();
+      // Its own try: the table comes with a later migration than the scores above.
+      await writeMotion(started, rows).then(
+        () => console.log(`motion: ${rows.map((r) => `notice ${r.notice}: ${r.parked} of ${r.trains} trains parked, ${r.racing} of ${r.legs} stretches racing`).join("; ") || "no trains drawn"}`),
+        logged("motion: not stored"),
+      );
     }
     for (const view of ["marts.transit_prediction_summary", "marts.transit_prediction_thin", "marts.transit_prediction_stops", "marts.transit_coverage", "marts.transit_coverage_hourly"]) await refresh(view);
   } catch (err) {
