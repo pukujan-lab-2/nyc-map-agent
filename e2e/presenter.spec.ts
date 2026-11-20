@@ -21,6 +21,26 @@ for (const size of SIZES) {
   });
 }
 
+// The "View this stop" choices sit under the stage, so a visitor switches view without the Route drawer.
+for (const size of SIZES) {
+  test(`the view choices sit on stage at the ${size.name}`, async ({ page }) => {
+    await page.setViewportSize(size);
+    await page.goto("/present");
+    await page.getByRole("button", { name: "Route" }).click();
+    await page.getByRole("button", { name: "Mezzanine", exact: true }).click();
+    await expect(page.locator("#presenter")).toHaveAttribute("data-scene", /\d+/);
+    const choices = page.locator("#presenter main #viewGroup");
+    const walk = choices.getByRole("button", { name: "Original walk" });
+    await expect(walk).toBeVisible();
+    await expect(page.locator("#menu #viewGroup")).toHaveCount(0);
+    await expectLayout(page);
+    await walk.click();
+    await expect(page.locator("#presenter")).toHaveAttribute("data-mode", "walk");
+    await expect(choices.getByRole("button", { name: "Station frame" })).toBeVisible();
+    await expectLayout(page);
+  });
+}
+
 test("Moon uses the visible route controls and resumes from the original clip time", async ({ page }) => {
   await page.goto("/present");
   const ask = page.getByRole("textbox", { name: "Ask Design Baker" });
