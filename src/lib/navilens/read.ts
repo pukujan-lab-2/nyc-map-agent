@@ -92,7 +92,9 @@ function patch(px: Pixels, at: (u: number, v: number) => Pt, u: number, v: numbe
 /**
  * The 25 cells of the code whose black square has these corners, row by row
  * from the top left, or null when the quad is not a code: its border must be
- * black all round, the frame outside it white, and some cells coloured.
+ * black all round, the frame outside it white, and its cells must hold at
+ * least two of the three inks. A dark sign with one bright stripe passes the
+ * first two tests; a real code is never one colour.
  */
 function readCells(px: Pixels, corners: Quad, white = whiteLevel(px, Math.max(1, Math.round(Math.max(px.width, px.height) / SEARCH_PX)))): string | null {
   const at = mapper(corners);
@@ -113,15 +115,16 @@ function readCells(px: Pixels, corners: Quad, white = whiteLevel(px, Math.max(1,
     }
   }
   if (ringOk < ring * 0.9 || frameOk < frame * 0.75) return null;
-  let out = "", coloured = 0;
+  let out = "";
+  const inks = new Set<Cell>();
   for (let row = 0; row < SIDE; row++) for (let col = 0; col < SIDE; col++) {
     const c = patch(px, at, (1.5 + col) * unit, (1.5 + row) * unit, unit * 0.2);
     if (!c) return null;
     const cell = classify(c[0], c[1], c[2], white);
-    if (cell !== "K") coloured++;
+    if (cell !== "K") inks.add(cell);
     out += cell;
   }
-  return coloured >= 3 ? out : null;
+  return inks.size >= 2 ? out : null;
 }
 
 /**

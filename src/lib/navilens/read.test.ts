@@ -54,8 +54,8 @@ describe("reading a code from a photo", () => {
   it("reads twenty different codes, each as itself", () => {
     for (let seed = 1; seed <= 20; seed++) {
       const p = randomPattern(seed);
-      // A code with almost no colour in it is not one the reader accepts; skip the rare made-up one.
-      if ([...p].filter((c) => c !== "K").length < 3) continue;
+      // A code in one colour is not one the reader accepts; skip the rare made-up one.
+      if (new Set([...p].filter((c) => c !== "K")).size < 2) continue;
       expect(readCode(shoot(p, { size: 200, seed }))?.pattern, `pattern ${p}`).toBe(p);
     }
   });
@@ -81,6 +81,11 @@ describe("reading a code from a photo", () => {
     for (const shot of [{ size: 160 }, { size: 300 }, { size: 220, light: 0.7 }, { size: 220, cx: 200, cy: 300 }, { size: 220, turnDeg: 10, noise: 8 }]) {
       expect(readCode(shoot(pattern, shot))?.pattern).toBe(base);
     }
+  });
+
+  it("does not take a dark sign with one yellow stripe for a code", () => {
+    // What the reader once found in our own film of the Cortlandt St passage, at 28.5 seconds.
+    expect(readCode(shoot("YKKKKYKKKKYKKKKYKKKKKKKKK", { size: 220 }))).toBeNull();
   });
 
   it("finds nothing on a blank wall, in a framed square that is all black, or in a square whose frame is not white", () => {

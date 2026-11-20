@@ -17,7 +17,7 @@ The layout it expects (a white frame, a black border one cell wide, five by five
 
 ## How good it is
 
-A first, close-range reader. In the tests it reads made-up codes straight on, small and off centre, tilted up to 25 degrees, squashed to 60% width as if seen from the side, and in dim, speckled pictures. It has never been pointed at a real code in a station. One known weakness: "white" is judged against the brightest thing in the picture, so a dark box with coloured squares on a plain pale wall can pass for a code. The table lookup is exact, so such a misread matches no checkpoint. NaviLens's own app reads from much further away and while moving; this does not.
+A first, close-range reader. In the tests it reads made-up codes straight on, small and off centre, tilted up to 25 degrees, squashed to 60% width as if seen from the side, and in dim, speckled pictures. It has never been pointed at a real code in a station. Run over our own films of the walk (413 frames from eight clips, 2026-11-20) it found no codes, and one false alarm, a dark sign with a yellow stripe, which it now rejects because a code must hold at least two inks. One known weakness: "white" is judged against the brightest thing in the picture, so a dark box with coloured squares on a plain pale wall can pass for a code. The table lookup is exact, so such a misread matches no checkpoint. NaviLens's own app reads from much further away and while moving; this does not.
 
 ## What is in the table
 
