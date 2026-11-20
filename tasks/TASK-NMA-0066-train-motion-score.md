@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-20 17:21:12 UTC — claude-code
+
+<!-- continuity:checkpoint {"agent":"claude-code","blocked":["the pull request waits for #258 to merge, so its diff holds only this change"],"changed":["server/features/transit/motionScore.ts and its test, health.ts, scripts/transit-observe.ts, a migration, TrackerHealthPage.tsx, e2e/tracker-health.spec.ts, model.ts, dwell.ts, openapi.json"],"completed":["Built the score for how subway trains are drawn: counts in the observer job, a table, the totals in the accuracy endpoint and a card on the tracker health page"],"decisions":["the score imports the map's own motion code so it cannot drift from what is drawn; lines with a service notice are counted apart"],"evidence":["nothing this change touches fails (2,274 unit tests pass; type check and lint clean); the card's browser test has not run, because the test browser would not install locally; on one live snapshot the score reads 223 of 509 trains standing at a station and 14 of 1,663 stretches faster than a subway car can go"],"evidence_class":"observed","next_action":"open the pull request for #260 once #258 merges, and read CI's browser test result for the new card","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0066","timestamp":"2026-11-20T17:21:12Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1bc6e53290dc2d4a6fe247451ff4760006c24bdb082768ecd46462c6a378d1a6","request_id":"b1cfff31ae154433821d91f4cb1bc616","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0066"} -->
+
+Completed:
+- Built the score for how subway trains are drawn: counts in the observer job, a table, the totals in the accuracy endpoint and a card on the tracker health page
+
+Evidence:
+- nothing this change touches fails (2,274 unit tests pass; type check and lint clean); the card's browser test has not run, because the test browser would not install locally; on one live snapshot the score reads 223 of 509 trains standing at a station and 14 of 1,663 stretches faster than a subway car can go
+
+Decisions:
+- the score imports the map's own motion code so it cannot drift from what is drawn; lines with a service notice are counted apart
+
+Changed:
+- server/features/transit/motionScore.ts and its test, health.ts, scripts/transit-observe.ts, a migration, TrackerHealthPage.tsx, e2e/tracker-health.spec.ts, model.ts, dwell.ts, openapi.json
+
+Blocked/uncertain:
+- the pull request waits for #258 to merge, so its diff holds only this change
+
+Next:
+- open the pull request for #260 once #258 merges, and read CI's browser test result for the new card
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
