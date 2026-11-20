@@ -41,6 +41,15 @@ for (const size of SIZES) {
     await expect(page.getByTestId("walk-togo")).toHaveText("About 85 steps to the elevator");
     await expect(sheet).toContainText("You should see");
 
+    // A rider who takes more steps than the guide counted: confirming the next sign teaches the guide
+    // their pace, and the steps to go are then counted in their steps (125 for the guide's 89 is 1.4).
+    await hook(page, "pick", "us-corridor");
+    await expect(page.getByTestId("walk-togo")).toHaveText("About 190 steps to the elevator");
+    await hook(page, "walk", 125);
+    await hook(page, "pick", "us-yellow");
+    await expect(page.getByTestId("walk-togo")).toHaveText("About 140 steps to the elevator");
+    await expectLayout(page);
+
     // A sign off the route says so and points back to it.
     await hook(page, "pick", "us-west-exit");
     await expect(page.getByTestId("walk-wrong")).toContainText("west side");

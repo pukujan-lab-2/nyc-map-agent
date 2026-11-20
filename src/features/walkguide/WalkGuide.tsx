@@ -6,7 +6,7 @@ import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
 import { onMapInstance } from "@/lib/map/mapInstance";
 import { say } from "@/lib/voice/say";
-import { countStep, dueAtNext, facingAt, initialSteps, legPath, nearbyFirst, nextStop, placeAt, placeForSign, simTick, stepsToNextStop, type Place } from "./progress";
+import { arrive, countStep, dueAtNext, facingAt, initialSteps, legPath, legShare, nearbyFirst, nextStop, placeAt, placeForSign, simTick, stepsToNextStop, type Place } from "./progress";
 import { SignScan } from "./SignScan";
 import { SIGN_WORDS } from "./signWords";
 import { photoUrl, WALK, WRONG_WAYS, type Checkpoint } from "./walks";
@@ -37,7 +37,7 @@ function features(p: Place): GeoJSON.FeatureCollection {
   const ahead = here.filter((x) => x.j > p.i).flatMap((x) => (x.j === here[here.length - 1].j ? [x.c.at] : legPath(WALK, x.j).slice(0, -1)));
   // Corners of this leg the rider has not reached yet stay ahead of the dot.
   const leg = legPath(WALK, p.i);
-  const share = WALK[p.i].steps > 0 ? Math.min(1, p.walked / WALK[p.i].steps) : 0;
+  const share = legShare(WALK, p);
   const mid = leg.slice(1, -1);
   const passed = mid.slice(0, Math.floor(share * (mid.length + 1)));
   const toCome = mid.slice(passed.length);
@@ -198,7 +198,7 @@ export default function WalkGuide() {
   };
 
   const pick = (id: string) => {
-    const found = placeForSign(WALK, WRONG_WAYS, id);
+    const found = placeForSign(WALK, WRONG_WAYS, id, place);
     if (!found) return;
     setStarted(true);
     setWrong(found.wrong ? found.wrong.say : null);
@@ -282,8 +282,8 @@ export default function WalkGuide() {
             <track kind="captions" src="/walks/trip.vtt" srcLang="en" label="English" />
           </video> : null}
           <div className="flex gap-2">
-            <button type="button" aria-label="Previous sign" className="task-action min-h-11 px-3" disabled={place.i === 0} onClick={() => { setWrong(null); go({ i: place.i - 1, walked: 0 }); }}><ArrowLeft size={18} /></button>
-            <button type="button" className="task-action min-h-11 flex-1 px-3" disabled={!next} onClick={() => { setWrong(null); setStarted(true); go({ i: place.i + 1, walked: 0 }); }}>
+            <button type="button" aria-label="Previous sign" className="task-action min-h-11 px-3" disabled={place.i === 0} onClick={() => { setWrong(null); go(arrive(WALK, place, place.i - 1)); }}><ArrowLeft size={18} /></button>
+            <button type="button" className="task-action min-h-11 flex-1 px-3" disabled={!next} onClick={() => { setWrong(null); setStarted(true); go(arrive(WALK, place, place.i + 1)); }}>
               <span className="inline-flex items-center gap-1.5">{here.by === "elevator" ? "I rode it" : here.by === "train" ? "I got off at 14 St" : "I'm at the next sign"}<ArrowRight size={16} aria-hidden /></span>
             </button>
             <button type="button" className="task-action min-h-11 px-3" onClick={() => setLost(true)}>
