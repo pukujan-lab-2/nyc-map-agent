@@ -12,7 +12,7 @@ const sys: StaticSystem = {
 
 describe("transit model", () => {
   it("is half way between stops mid-way through the travel time after its dwell", () => {
-    const v = estimateTrain(sys, { id: "t", route: "G", dir: 0, stops: [["AN", 100], ["BN", 200]] }, 165)!;
+    const v = estimateTrain(sys, { id: "t", route: "G", dir: 0, stops: [["AN", 100], ["BN", 200]] }, 155)!; // stops 10 s (the 1113 m run needs the rest), so the run is 110 to 200
     expect(v.lat).toBeCloseTo(40.705, 4);
     expect(v.bearing).toBeCloseTo(0, 0);
     expect(v.grade).toBe("underground");
