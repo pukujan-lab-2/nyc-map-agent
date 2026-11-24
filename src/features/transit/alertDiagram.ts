@@ -1,6 +1,6 @@
 import { formatStationName, formatStreetText } from "@/lib/streetName";
 import { sameStation, towardEnd } from "@/lib/transit/serviceChanges";
-import { namedStations, routeEnds, skippedStations } from "./alertFocus";
+import { namedStations, noticeSkips, routeEnds, skippedStations } from "./alertFocus";
 import type { TransitAlert } from "./hooks";
 import { stationOf, type StaticSystem } from "./model";
 
@@ -126,21 +126,26 @@ const withArticle = (s: string) => `${/^[aeiou]/i.test(s) ? "an" : "a"} ${s}`;
  *  - "For service to these stations, take the A to 125 St and transfer to a downtown A or D."
  *  - "Transfer between 1 and shuttle buses at Dyckman St or between A and shuttle buses at Inwood-207 St."
  */
-function transfers(text: string, multi: boolean): Transfer[] {
+function transfers(text: string, affected: string): Transfer[] {
   const out: Transfer[] = [];
   const bus: Transfer["at"] = [];
-  const these = multi ? "these stops" : "this stop";
   for (const line of cleanAlertText(text).split(/\n/).map((l) => l.trim())) {
     const svc = /^For service (to|from) (?:these|this) stations?,? take (?:the |an? )?(.+?) to (.+?) and transfer to (?:an? |the )?(.+?)\.?$/i.exec(line);
+    const explicit = /^For service (to|from) (.+?), transfer at (.+?) to (.+?)\.?$/i.exec(line);
     if (svc) {
       const [, way, ride, at, to] = svc;
       // "59 St or Grand Central-42 St", "Queens Plaza or the F to 21 St-Queensbridge"
       const names = at.split(/\s+or\s+(?:the [A-Z0-9] to )?|,\s*/).map(trimName).filter(Boolean);
       const where = orWords(names.map(said));
-      const text = way.toLowerCase() === "to"
-        ? `Going to ${these}: ride to ${where} and change to ${withArticle(to)}.`
-        : `Starting at ${these}: take the ${ride} to ${where} and change to ${withArticle(to)}.`;
+      const trip = `take the ${ride} to ${where} and change to ${withArticle(to.replace(/\b([1-7])(?:,| and) \1X\b/g, "$1 or $1X"))}`;
+      const text = way.toLowerCase() === "to" ? `To reach ${affected}, ${trip}.` : `Starting at ${affected}, ${trip}.`;
       out.push({ text, at: names.map((name) => ({ name, lines: [] })) });
+    } else if (explicit) {
+      const [, way, goal, at, train] = explicit;
+      const destination = goal.replace(/and\/or transfer to (.+?) ((?:[A-Z0-9](?:, | and ))+[A-Z0-9])$/, (_, station: string, routes: string) =>
+        `or to transfer to the ${orWords(bulletList(routes))} at ${station}`);
+      const lead = way.toLowerCase() === "to" ? "To reach" : "From";
+      out.push({ text: said(`${lead} ${destination}, change at ${at} to ${train}.`), at: [{ name: trimName(at), lines: [] }] });
     } else if (/^Transfer between/i.test(line)) {
       for (const p of line.matchAll(/between ([A-Z0-9][A-Z0-9, ]*?(?: or [A-Z0-9])?) and shuttle(?: bus(?:es)?)? at ([^.]+?)(?= or between|\.|$)/gi)) bus.push({ name: trimName(p[2]), lines: bulletList(p[1]) });
     }
@@ -471,7 +476,7 @@ function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: stri
   const busSpan = bus ? between(sys, seq, onLine, bus[0], bus[1]) : null;
   const shuttle = Boolean(bus) || (a.replacement?.length ?? 0) > 0;
   const onBus = (i: number) => shuttle && (!busSpan || (i >= busSpan[0] && i <= busSpan[1]));
-  const changes = transfers(all, true);
+  const changes = transfers(all, `the affected stops between ${said(ends[0])} and ${said(ends[1])}`);
   const changeIds = new Set(changes.flatMap((t) => t.at).map((t) => findStation(sys, t.name, onLine, t.lines)?.properties.id).filter((id): id is string => Boolean(id && seq.includes(id))));
   const state = new Map<string, StopState>();
   const closed: string[] = [];
@@ -583,27 +588,37 @@ function skipDirection(all: string): string | null {
 
 function skipStops(a: TransitAlert, sys: StaticSystem, route: string, all: string): AlertDiagram | null {
   // The words, not just the server's skip names: those also catch "No [M] between …" in a note.
-  const skipsHere = a.changes?.some((c) => c.kind === "skip" && c.route === route) || /\bskips?\b/i.test(all);
-  if (!skipsHere) return null;
+  const [change] = noticeSkips(a, route);
+  if (!change && !/\bskips?\b/i.test(all)) return null;
   const onLine = sys.stopM[route];
   const skipped = skippedStations(a, sys, route);
   if (!skipped.length) return null;
   const { seq } = trackOrder(sys, route, []);
-  const change = a.changes?.find((c) => c.kind === "skip" && c.route === route);
   const dir = change ? change.toward : skipDirection(all);
   const state = new Map<string, StopState>(skipped.map((id) => [id, "skip"]));
-  const changes = transfers(all, skipped.length > 1);
+  const reverse = drawReversed(sys, route, dir);
+  const names = seq.filter((id) => skipped.includes(id)).map((id) => nameOf(sys, id));
+  if (reverse) names.reverse();
+  const changes = transfers(all, names.length > 3 ? `the stops from ${said(names[0])} to ${said(names.at(-1)!)}` : stationWords(names));
   const changeIds = changes.map((t) => idsOf(sys, t, onLine));
   for (const id of changeIds.flat()) if (id in onLine && !state.has(id)) state.set(id, "transfer");
   const idx = [...state.keys()].map((id) => seq.indexOf(id)).filter((i) => i >= 0);
   const pad = changeIds.flat().some((id) => id in onLine) ? 0 : 1;
   const lo = Math.max(0, Math.min(...idx) - pad), hi = Math.min(seq.length - 1, Math.max(...idx) + pad);
-  const names = seq.filter((id) => skipped.includes(id)).map((id) => nameOf(sys, id));
-  if (drawReversed(sys, route, dir)) names.reverse();
-  const who = dir ? `${/-bound$|^(?:Uptown|Downtown)$/.test(dir) || dir.split(" ").length > 1 ? dir : `${dir}-bound`} ${route} trains` : `${route} trains`;
+  const service = change?.route.endsWith("X") ? `${change.route} express` : route;
+  const who = dir ? `${/-bound$|^(?:Uptown|Downtown)$/.test(dir) || dir.split(" ").length > 1 ? dir : `${dir}-bound`} ${service} trains` : `${service} trains`;
   const steps: DiagramStep[] = [{ text: `${who} skip ${stationWords(names)}${dir ? "" : " in both directions"}.`, ids: skipped }];
-  changes.forEach((t, i) => steps.push({ text: t.text, ids: changeIds[i] }));
-  return { kind: "skip", heading: dir ? `${who.replace(/ trains$/, "")}` : `${route}, both ways`, rows: rowsFor(seq, lo, hi, state, sys, drawReversed(sys, route, dir)), steps };
+  if (change?.route.endsWith("X")) {
+    const stillStops = cleanAlertText(bulletRuns(all)).split(/\n|(?<=\.) +/).map((l) => l.trim())
+      .filter((l) => /\b(?:will continue to stop|(?:all .+?)?trains stop) at\b/i.test(l)
+        && names.some((name) => sameStation(name, l.replace(/^.*?\bstop at /i, "").replace(/\.$/, ""))));
+    steps.push(...stillStops.map((text) => ({
+      text: sentence(said(text.replace(/\b([1-7])(?:,| and) \1X local\/express\b/g, "$1 local and $1X express"))),
+      ids: skipped,
+    })));
+  }
+  changes.forEach((t, i) => steps.push({ text: t.text, ids: [...new Set([...changeIds[i], ...skipped])] }));
+  return { kind: "skip", heading: dir ? who.replace(/ trains$/, "") : `${service}, both ways`, rows: rowsFor(seq, lo, hi, state, sys, reverse), steps };
 }
 
 function local(a: TransitAlert, sys: StaticSystem, route: string, all: string): AlertDiagram | null {

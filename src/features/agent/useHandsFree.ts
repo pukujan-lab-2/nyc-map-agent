@@ -6,8 +6,6 @@ export interface HandsFreeState {
   listening: boolean;
   busy: boolean;
   speaking: boolean;
-  /** Hands-free is holding the spoken language question, so the next turn answers that. */
-  asking?: boolean;
   /** Bumped once that question is answered: open the mic again for the real question. */
   languagePicked?: number;
 }
@@ -24,23 +22,15 @@ export const FATAL_MIC = /blocked|no microphone|could not start|isn't available/
 export const QUIET_OFF_MS = 900;
 
 /**
- * Hands-free loop: listen → send → speak → listen. It only runs after the user
- * taps the toggle on. The mic opens again only after a question was sent; a
- * listen that hears nothing ends hands-free instead of reopening the mic
- * forever (owner report, 2026-10-25). Transcripts go straight to `send`;
- * nothing is stored or logged here.
+ * Open the mic for one question. If a spoken language was selected first, open it
+ * once more to take the question. A quiet or failed turn closes hands-free.
  */
 export function useHandsFree(s: HandsFreeState & { error: string | null; start: () => void; stop: () => void; turnOff: () => void }) {
   const listen = shouldListen(s);
   const { start, stop, turnOff, error, on, speaking, listening, busy } = s;
-  // Armed: allowed to open the mic once. Turning on arms it; sending a question re-arms it for the reply.
+  // Each arm allows one listen.
   const armed = useRef(false);
   useEffect(() => { armed.current = on; }, [on]);
-  // While the language question plays, or the rider is answering it, hands-free keeps its arm: the
-  // answer to "which language?" is one turn and the real question is the next (#42). Re-arming has to
-  // happen after the language turn's listen is consumed, so it keys on `asking` still being true once
-  // the confirmation speech has finished, not only on the flip.
-  const asking = !!s.asking;
   const picked = s.languagePicked ?? 0;
   useEffect(() => {
     if (!picked) return;
@@ -60,11 +50,9 @@ export function useHandsFree(s: HandsFreeState & { error: string | null; start: 
     const ended = wasListening.current && !listening;
     wasListening.current = listening;
     if (!ended || !on) return;
-    // The answer to the language question does not send anything, so it would look like silence and
-    // end hands-free before the rider ever asks their question (#42). Stay on while asking.
-    const t = window.setTimeout(() => { if (!armed.current && !asking) turnOff(); }, QUIET_OFF_MS);
+    const t = window.setTimeout(() => { if (!armed.current) turnOff(); }, QUIET_OFF_MS);
     return () => window.clearTimeout(t);
-  }, [listening, on, turnOff, asking]);
+  }, [listening, on, turnOff]);
   useEffect(() => {
     if (on && speaking && listening) stop();
   }, [on, speaking, listening, stop]);

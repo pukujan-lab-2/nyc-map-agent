@@ -71,9 +71,9 @@ export interface UseSpeechResult {
   clearError: () => void;
   startListening: () => void;
   stopListening: () => void;
-  speak: (text: string, opts?: { bargeIn?: boolean; lang?: string; keep?: boolean }) => void;
+  speak: (text: string, opts?: { bargeIn?: boolean; lang?: string; keep?: boolean; force?: boolean }) => void;
   /** Speak several utterances in a row, each in its own language's voice (the language question). */
-  speakSequence: (items: Array<{ text: string; lang: string }>) => void;
+  speakSequence: (items: Array<{ text: string; lang: string }>, force?: boolean) => void;
   stopSpeaking: () => void;
   speaking: boolean;
   muted: boolean;
@@ -91,6 +91,7 @@ export function useSpeech({
   // Phones too: their recognizer only hears the app's language, so someone speaking another one got nonsense (2026-10-25).
   const serverModeRef = useRef(serverSttAvailable() && (isBrave() || isPhone() || getRecognitionCtor() === null));
   const recordingRef = useRef<Recording | null>(null);
+  const serverTurn = useRef<AbortController | null>(null);
   const retryOnServerRef = useRef(false);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
@@ -108,32 +109,46 @@ export function useSpeech({
   callbackRef.current = onFinalTranscript;
 
   const startServerTurn = useCallback(() => {
-    if (recordingRef.current) return;
+    if (serverTurn.current) return;
+    const turn = new AbortController();
+    serverTurn.current = turn;
     setError(null);
     setInterim("");
     setListening(true);
-    recordTurn(END_OF_TURN_MS).then((rec) => {
-      recordingRef.current = rec;
-      void rec.done.then(async ({ blob, reason }) => {
+    void (async () => {
+      try {
+        const rec = await recordTurn(END_OF_TURN_MS);
+        if (turn.signal.aborted) { rec.stop(); return; }
+        recordingRef.current = rec;
+        const { blob } = await rec.done;
+        if (turn.signal.aborted) return;
         recordingRef.current = null;
         if (!blob) {
-          setListening(false);
-          if (reason === "no-speech") setError("I didn't catch that. Try again, a little closer to the mic.");
+          setError("I didn't catch that. Try again, a little closer to the mic.");
           return;
         }
         setInterim("…");
-        const out = await transcribeTurn(blob, detectLang ? null : lang);
-        setListening(false);
-        setInterim("");
-        if ("text" in out) { if (out.text) callbackRef.current(out.text, out.lang); return; }
-        setError(out.error === "unavailable" ? "Voice isn't set up on this server yet. Type your question instead."
-          : out.error === "busy" ? "Too many voice requests just now. Try again in a minute."
+        let out = await transcribeTurn(blob, detectLang ? null : lang, turn.signal);
+        // Automatic language detection can return an empty transcript even for clear speech.
+        if (detectLang && !turn.signal.aborted && ("text" in out ? !out.text : out.error === "failed")) {
+          out = await transcribeTurn(blob, lang, turn.signal);
+        }
+        if (turn.signal.aborted) return;
+        if ("text" in out && out.text) { callbackRef.current(out.text, out.lang); return; }
+        const error = "error" in out ? out.error : "failed";
+        setError(error === "unavailable" ? "Voice isn't set up on this server yet. Type your question instead."
+          : error === "busy" ? "Too many voice requests just now. Try again in a minute."
           : "I couldn't make that out. Try again, or type it.");
-      });
-    }).catch(() => {
-      setListening(false);
-      setError("Microphone access is blocked. Type your question instead.");
-    });
+      } catch {
+        if (!turn.signal.aborted) setError("Microphone access is blocked. Type your question instead.");
+      } finally {
+        if (serverTurn.current === turn) {
+          serverTurn.current = null;
+          setListening(false);
+          setInterim("");
+        }
+      }
+    })();
   }, [lang, detectLang]);
 
   const startListening = useCallback(() => {
@@ -217,8 +232,21 @@ export function useSpeech({
   }, [lang, startServerTurn]);
 
   const stopListening = useCallback(() => {
-    recognitionRef.current?.stop();
+    const recognition = recognitionRef.current;
+    if (recognition) {
+      recognitionRef.current = null;
+      recognition.onend = recognition.onstart = recognition.onerror = recognition.onresult = null;
+      recognition.abort();
+    }
+    if (silenceRef.current) clearTimeout(silenceRef.current);
+    serverTurn.current?.abort();
+    serverTurn.current = null;
     recordingRef.current?.stop();
+    recordingRef.current = null;
+    finalRef.current = "";
+    interimRef.current = "";
+    setInterim("");
+    setListening(false);
   }, []);
 
   const stopSpeaking = useCallback(() => {
@@ -231,9 +259,9 @@ export function useSpeech({
   }, []);
 
   const speak = useCallback(
-    (text: string, opts?: { bargeIn?: boolean; lang?: string; keep?: boolean }) => {
-      if (muted) return;
-      if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    (text: string, opts?: { bargeIn?: boolean; lang?: string; keep?: boolean; force?: boolean }) => {
+      if (muted && !opts?.force) return;
+      if (typeof window === "undefined") return;
       stopSpeaking();
       // Never let the recognizer hear our own voice (and drop anything half-heard).
       finalRef.current = "";
@@ -248,9 +276,9 @@ export function useSpeech({
       };
       let inner: () => void = () => undefined;
       const cancel = () => inner();
-      inner = say(text, opts?.lang ?? lang, end, opts?.keep);
       cancelSpeechRef.current = cancel;
-      if (opts?.bargeIn) {
+      inner = say(text, opts?.lang ?? lang, end, opts?.keep);
+      if (opts?.bargeIn && cancelSpeechRef.current === cancel) {
         // Only in hands-free (tap-started): an echo-cancelled detector so talking over the answer stops it.
         void startBargeIn(() => { if (cancelSpeechRef.current === cancel) stopSpeaking(); }).then((stop) => {
           if (cancelSpeechRef.current === cancel) stopBargeRef.current = stop;
@@ -264,8 +292,8 @@ export function useSpeech({
   // The language question says each name in that language's own voice, one after another, so the
   // rider hears what each voice sounds like before picking. Silence between names keeps them apart.
   const speakSequence = useCallback(
-    (items: Array<{ text: string; lang: string }>) => {
-      if (muted) return;
+    (items: Array<{ text: string; lang: string }>, force = false) => {
+      if (muted && !force) return;
       if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
       stopSpeaking();
       finalRef.current = "";
@@ -299,6 +327,8 @@ export function useSpeech({
   useEffect(() => {
     return () => {
       recognitionRef.current?.abort();
+      serverTurn.current?.abort();
+      serverTurn.current = null;
       recordingRef.current?.stop();
       if (silenceRef.current) clearTimeout(silenceRef.current);
       stopBargeRef.current?.();

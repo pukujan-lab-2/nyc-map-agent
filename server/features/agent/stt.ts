@@ -91,8 +91,10 @@ export async function transcribe(form: FormData, headers: Headers, fetchImpl: ty
     const d = (await r.json()) as { text?: string; language?: string; segments?: unknown; confidence?: unknown };
     const heard = auto ? detectedLang(d.language) : null;
     const confidence = typeof d.confidence === "number" && Number.isFinite(d.confidence) ? Math.round(d.confidence * 100) / 100 : whisperConfidence(d.segments);
-    span(true, (d.text ?? "").trim());
-    return json({ text: (d.text ?? "").trim(), ...(heard ? { lang: heard } : {}), ...(confidence !== null ? { confidence } : {}) });
+    const text = (d.text ?? "").trim();
+    const transcript = /[\p{L}\p{N}]/u.test(text) ? text : "";
+    span(true, transcript);
+    return json({ text: transcript, ...(heard ? { lang: heard } : {}), ...(confidence !== null ? { confidence } : {}) });
   } catch {
     span(false);
     return json({ error: "stt_failed" }, 502);

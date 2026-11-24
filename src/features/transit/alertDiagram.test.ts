@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { alertDiagram, causeOf, cleanAlertText, hasMore, isGap, laterSteps, periodWords, plainSteps, shortNotice, shuttleCorners, travelTips, type AlertDiagram, type DiagramStop } from "./alertDiagram";
 import { shuttleFeatures } from "./alertFocus";
+import { lineNotices } from "./lineNotices";
 import type { TransitAlert } from "./hooks";
 import type { StaticSystem } from "./model";
 
@@ -25,11 +26,41 @@ describe("alertDiagram", () => {
     ]);
     expect(d.steps.map((s) => s.text)).toEqual([
       "Uptown A trains skip 7 stops, 72 Street to 116 Street.",
-      "Going to these stops: ride to 125 Street and change to a downtown A or D.",
-      "Starting at these stops: take the A or D to 59 Street-Columbus Circle and change to an uptown A.",
+      "To reach the stops from 72 Street to 116 Street, take the A to 125 Street and change to a downtown A or D.",
+      "Starting at the stops from 72 Street to 116 Street, take the A or D to 59 Street-Columbus Circle and change to an uptown A.",
     ]);
-    expect(d.steps[1].ids).toEqual(["A15"]);
-    expect(d.steps[2].ids).toEqual(["A24"]);
+    expect(d.steps[1].ids).toEqual(["A15", ...d.steps[0].ids]);
+    expect(d.steps[2].ids).toEqual(["A24", ...d.steps[0].ids]);
+  });
+
+  it("shows both transfers to 74 St-Broadway and only marks the Flushing-bound express as skipped", () => {
+    const a: TransitAlert = {
+      id: "seven-express", kind: "planned", type: "Planned - Stops Skipped", reroute: true, agency: "MTASBWY", routes: ["7", "7X"],
+      text: "In Queens, all Manhattan-bound [7][7X] local/express trains stop at 74 St-Broadway",
+      description: [
+        "Flushing-bound [7X] express trains skip 74 St-Broadway.",
+        "Flushing-bound [7] local trains will continue to stop at 74 St-Broadway.",
+        "",
+        "For service to 74 St-Broadway and/or transfer to Jackson Hts-Roosevelt Av [E][F][M][R], transfer at Woodside-61 St to a Flushing-bound [7] local.",
+        "",
+        "Additional travel alternatives:",
+        "For service to this station, take the [7X] to Junction Blvd and transfer to a Manhattan-bound [7][7X].",
+      ].join("\n"),
+      changes: [], skipNames: ["74 St-Broadway"], stops: ["710"],
+    };
+    const d = alertDiagram(a, sys, "7")!;
+    expect(d.steps.map((s) => s.text)).toEqual([
+      "Flushing-bound 7X express trains skip 74 Street-Broadway.",
+      "In Queens, all Manhattan-bound 7 local and 7X express trains stop at 74 Street-Broadway.",
+      "Flushing-bound 7 local trains will continue to stop at 74 Street-Broadway.",
+      "To reach 74 Street-Broadway or to transfer to the E, F, M or R at Jackson Heights-Roosevelt Avenue, change at Woodside-61 Street to a Flushing-bound 7 local.",
+      "To reach 74 Street-Broadway, take the 7X to Junction Boulevard and change to a Manhattan-bound 7 or 7X.",
+    ]);
+    const stationNames = new Map(stops(d).map((row) => [row.id, row.name]));
+    expect(d.steps[3].ids.map((id) => stationNames.get(id))).toEqual(["61 St-Woodside", "74 St-Broadway"]);
+    expect(d.steps[4].ids.map((id) => stationNames.get(id))).toEqual(["Junction Blvd", "74 St-Broadway"]);
+    expect(stops(d).filter((r) => r.state === "transfer").map((r) => r.name)).toEqual(["61 St-Woodside", "Junction Blvd"]);
+    expect(lineNotices("7", [a], [], sys, 200)[0].stations[0].label).toBe("74 St-Broadway · Flushing-bound 7X express skipped");
   });
 
   it("draws a run-local notice on the track that has the local stops", () => {

@@ -1,8 +1,11 @@
 import { useEffect, useRef } from "react";
+import { isBrave } from "@/lib/voice/serverStt";
 
 type Rec = {
   continuous: boolean; interimResults: boolean; lang: string;
-  start: () => void; stop: () => void;
+  start: () => void;
+  abort: () => void;
+  onerror: ((e: { error: string }) => void) | null;
   onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
   onend: (() => void) | null;
 };
@@ -21,13 +24,15 @@ export function afterWake(text: string): string | null {
  * finals containing the phrase. Off unless enabled; paused while `paused`.
  * `lang` is the recognizer's language (the app language's speech tag).
  */
-export function useWakePhrase(enabled: boolean, paused: boolean, onCommand: (text: string) => void, lang = "en-US") {
+export function useWakePhrase(enabled: boolean, paused: boolean, onCommand: (text: string) => void, onUnavailable: (message: string) => void, lang = "en-US") {
   const cb = useRef(onCommand);
   cb.current = onCommand;
   useEffect(() => {
     const W = window as unknown as { SpeechRecognition?: new () => Rec; webkitSpeechRecognition?: new () => Rec };
     const Ctor = W.SpeechRecognition ?? W.webkitSpeechRecognition;
-    if (!enabled || paused || !Ctor) return;
+    if (!enabled || paused) return;
+    const unavailable = "“Hey map” needs browser speech recognition. Tap the waveform button to ask by voice.";
+    if (!Ctor || isBrave()) { onUnavailable(unavailable); return; }
     const rec = new Ctor();
     rec.continuous = true;
     rec.interimResults = false;
@@ -38,11 +43,23 @@ export function useWakePhrase(enabled: boolean, paused: boolean, onCommand: (tex
         const r = e.results[i];
         if (!r.isFinal) continue;
         const rest = afterWake(r[0].transcript);
-        if (rest) cb.current(rest);
+        if (rest !== null) {
+          alive = false;
+          cb.current(rest);
+          return;
+        }
       }
     };
-    rec.onend = () => { if (alive) try { rec.start(); } catch { /* already started */ } };
-    try { rec.start(); } catch { /* mic denied */ }
-    return () => { alive = false; rec.onend = null; rec.stop(); };
-  }, [enabled, paused, lang]);
+    const start = () => {
+      try { rec.start(); } catch { onUnavailable(unavailable); }
+    };
+    rec.onerror = ({ error }) => {
+      if (error === "aborted" || error === "no-speech") return;
+      alive = false;
+      onUnavailable(unavailable);
+    };
+    rec.onend = () => { if (alive) start(); };
+    start();
+    return () => { alive = false; rec.onend = rec.onerror = rec.onresult = null; rec.abort(); };
+  }, [enabled, paused, lang, onUnavailable]);
 }

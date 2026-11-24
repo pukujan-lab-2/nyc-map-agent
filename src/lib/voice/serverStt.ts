@@ -138,14 +138,14 @@ async function toWav16k(blob: Blob): Promise<Blob | null> {
 export type SttOutcome = { text: string; lang?: string } | { error: "unavailable" | "failed" | "busy" };
 
 /** Send one recording to /api/stt. `lang` null: the server detects the language and returns it. */
-export async function transcribeTurn(blob: Blob, lang: string | null): Promise<SttOutcome> {
+export async function transcribeTurn(blob: Blob, lang: string | null, signal?: AbortSignal): Promise<SttOutcome> {
   const form = new FormData();
   const wav = await toWav16k(blob);
   if (wav) form.set("audio", wav, "turn.wav");
   else form.set("audio", blob, blob.type.includes("mp4") ? "turn.m4a" : "turn.webm");
   form.set("lang", lang ?? "auto");
   try {
-    const r = await fetch(`${API_BASE}/api/stt`, { method: "POST", headers: { "x-session-id": SESSION_ID }, body: form });
+    const r = await fetch(`${API_BASE}/api/stt`, { method: "POST", headers: { "x-session-id": SESSION_ID }, body: form, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(65_000)]) : AbortSignal.timeout(65_000) });
     if (r.status === 503) return { error: "unavailable" };
     if (r.status === 429) return { error: "busy" };
     if (!r.ok) return { error: "failed" };
