@@ -118,6 +118,7 @@ for (const size of SIZES) {
     // Downtown, top to bottom: 14 St, the two skipped stops, Canal St.
     await expect(diagram.locator("[data-stop]")).toHaveText([/14 Street/, /Christopher Street-Stonewall.*Skipped/, /Houston Street.*Skipped/, /Canal Street/]);
     await expect(panel.getByTestId("notice-step").first()).toHaveText("Downtown 2 trains skip Christopher Street-Stonewall and Houston Street.");
+    await expect(panel.getByTestId("notice-step").nth(1)).toHaveText("To reach Christopher Street-Stonewall and Houston Street, take the 2 to Canal Street and change to an uptown 1.");
     // The tap started the walk: the first step's stations are lit, and Stop ends it.
     const walk = panel.getByTestId("notice-walk");
     await expect(walk).toHaveAttribute("data-step", "0");

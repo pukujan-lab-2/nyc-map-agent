@@ -170,24 +170,25 @@ export function AnswerCard(p: AnswerCardProps) {
   );
 }
 
-/** The hands-free voice orb from the owner's mockup; tap it to stop. Still under prefers-reduced-motion. */
-function VoiceOrb({ transcript, onStop }: { transcript: string; onStop: () => void }) {
+function VoiceOrb({ listening, transcript, onStop }: { listening: boolean; transcript: string; onStop: () => void }) {
   const t = useT();
+  const transcribing = transcript === "…";
+  const active = listening && !transcribing;
   return (
-    <section aria-label={t("listening")} data-testid="voice-listening" className="flex min-h-[236px] flex-col items-center justify-end gap-5 pt-3">
-      <button type="button" aria-label={t("stopListening")} onClick={onStop} className="relative h-28 w-28 shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
-        <span className="absolute -inset-3.5 animate-orb-glow rounded-full bg-[radial-gradient(circle,rgba(96,165,250,0.35)_0%,rgba(139,92,246,0.18)_45%,rgba(14,23,38,0)_70%)] motion-reduce:animate-none" />
-        <span className="absolute inset-0 animate-orb-pulse overflow-hidden rounded-full bg-[radial-gradient(circle_at_35%_30%,#a5d8ff_0%,#3b82f6_38%,#6d28d9_78%,#1e1b4b_100%)] shadow-[inset_0_-10px_24px_rgba(30,27,75,0.55),inset_0_8px_18px_rgba(255,255,255,0.25)] motion-reduce:animate-none">
-          <svg width="112" height="112" viewBox="0 0 112 112" aria-hidden="true" className="absolute inset-0">
-            <path className="animate-orb-wave-1 motion-reduce:animate-none" d="M8 58 C 26 40, 40 76, 56 56 S 86 38, 104 56" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-            <path className="animate-orb-wave-2 motion-reduce:animate-none" d="M8 60 C 28 74, 42 42, 58 60 S 88 72, 104 58" stroke="rgba(186,230,253,0.6)" strokeWidth="2" fill="none" strokeLinecap="round" />
-            <path className="animate-orb-wave-3 motion-reduce:animate-none" d="M12 56 C 30 50, 44 66, 60 54 S 86 50, 100 56" stroke="rgba(221,214,254,0.45)" strokeWidth="1.6" fill="none" strokeLinecap="round" />
-          </svg>
+    <section aria-label="Hands-free" data-testid="voice-listening" className="flex flex-col items-center gap-2 px-2 py-2 text-center">
+      <button type="button" aria-label={t("stopListening")} onClick={onStop}
+        className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-blue-300/50 bg-blue-950 text-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300">
+        <span aria-hidden="true" className="flex h-6 items-center gap-[3px]">
+          {[8, 15, 23, 15, 8].map((height, i) => (
+            <span key={i} className={cn("w-[3px] rounded-full bg-current", active && "animate-voice-wave motion-reduce:animate-none")}
+              style={{ height, animationDelay: `${i * -120}ms` }} />
+          ))}
         </span>
       </button>
-      <p className="m-0 min-h-[30px] w-full text-[22px] font-semibold leading-snug text-slate-50" aria-live="polite">
-        {transcript ? `“${transcript}”` : ""}
+      <p role="status" className="m-0 text-sm font-semibold text-slate-50">
+        {transcribing ? "Transcribing…" : listening ? t("listening") : "Opening microphone…"}
       </p>
+      {transcript && !transcribing ? <p className="m-0 max-h-16 w-full overflow-y-auto break-words text-sm text-slate-200">“{transcript}”</p> : null}
     </section>
   );
 }
@@ -205,7 +206,7 @@ interface AgentHomeProps {
   dictation: { supported: boolean; on: boolean; toggle: () => void };
   handsFree: { on: boolean; toggle: () => void };
   /** The orb: hands-free is listening. */
-  orb: { show: boolean; transcript: string; stop: () => void };
+  orb: { show: boolean; listening: boolean; transcript: string; stop: () => void };
   /** A message by the bar (voice unsupported, mic blocked). */
   notice: string | null;
   answerOpen: boolean;
@@ -403,7 +404,7 @@ export function AgentHome(p: AgentHomeProps) {
   const content = (
     <>
       {orb.show ? (
-        <VoiceOrb transcript={orb.transcript} onStop={orb.stop} />
+        <VoiceOrb listening={orb.listening} transcript={orb.transcript} onStop={orb.stop} />
       ) : answerOpen ? (
         <section aria-label="Assistant answer" data-testid="agent-answers" className="relative flex min-h-0 flex-col">
           {column ? null : (

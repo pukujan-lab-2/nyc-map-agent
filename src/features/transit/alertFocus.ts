@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { stationOf, type StaticSystem } from "./model";
 import type { TransitAlert } from "./hooks";
-import { otherDirection, sameStation, towardEnd } from "@/lib/transit/serviceChanges";
+import { otherDirection, sameStation, serviceChanges, towardEnd } from "@/lib/transit/serviceChanges";
 
 /**
  * Alert focus (#253): which service alert the map is showing, and the pure
@@ -101,10 +101,21 @@ function nearestIndex(c: Pos[], p: Pos, from = 0, to = c.length - 1): number {
 }
 const slice = (c: Pos[], i: number, j: number): Pos[] => c.slice(Math.min(i, j), Math.max(i, j) + 1);
 
+/** Find the skip for the line being shown, including an express variant named in the body. */
+export function noticeSkips(a: TransitAlert, route: string) {
+  const matches = (changes: ReturnType<typeof serviceChanges>) =>
+    changes.filter((c) => c.kind === "skip" && c.route.replace(/X$/, "") === route.replace(/X$/, ""));
+  const header = matches(a.changes ?? serviceChanges(a));
+  if (header.length) return header;
+  // Some feeds spell out train IDs in prose instead of using bracketed bullets.
+  const text = (a.description ?? "").replace(/(\b[A-Za-z][\w.' -]*-bound )([A-Z]|[1-7]X?)(?= (?:local |express )?trains? (?:will )?skips?\b)/g, "$1[$2]");
+  return matches(serviceChanges({ ...a, text }));
+}
+
 /** Station ids the alert takes out: names from "skips …" / "No service at …" first, else informed stop ids. */
 export function skippedStations(a: TransitAlert, sys: StaticSystem, route: string): string[] {
   const onRoute = sys.stopM[route] ?? {};
-  const names = [...(a.changes ?? []).filter((c) => c.kind === "skip" && c.route === route).flatMap((c) => c.names), ...(a.skipNames ?? [])];
+  const names = [...(noticeSkips(a, route).flatMap((c) => c.names)), ...(a.skipNames ?? [])];
   if (names.length) {
     const hit = sys.stations.features.filter((f) => f.properties.id in onRoute && names.some((n) => sameStation(n, f.properties.name))).map((f) => f.properties.id);
     if (hit.length) return hit;

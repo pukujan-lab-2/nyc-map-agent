@@ -6,7 +6,13 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Current projection
 
-*Updated 2026-11-20. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-11-24. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+
+## Completed recently
+
+- The 74 Street-Broadway graph walk left out the Woodside transfer and made the local 7 look like it skipped the station. The fix names the destination in both alternatives, highlights the transfer stations, and marks the Flushing-bound 7X express as the service that skips it.
+- The map's hands-free button used the first spoken turn to pick a language and could discard a question. It now takes the question directly and shows whether the mic is opening, listening, or transcribing. A live English test clip came back as punctuation with automatic language detection and transcribed correctly when sent as English. The app retries an empty or failed automatic transcript in the app language. The notice and hands-free layout checks passed at all four required sizes, and a browser test verified that the retry submits the question.
+- The Spanish offline trip preview lost its screen when a map module failed to download. The app now keeps the open page while offline. The browser test waits for the specific translation it checks and passed locally with a delayed response.
 
 ## In flight
 
@@ -14,9 +20,9 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 **The Walk Guide counted in its own steps, so a rider who steps shorter was told "you should see the sign" too early: on our Union Sq recording the rider took 296 steps where the guide counts 212 (rider-walks loop, #186, branch `feat/186-rider-step-pace`).** The guide now learns a rider's pace when they confirm the next sign and counts their steps at that pace (`src/features/walkguide/progress.ts`, tests in `pace.test.ts`). Replaying that rider's counts, the prompt comes 95 steps too early in total without it and 50 with it; the split of steps between the mezzanine signs is an estimate, the totals are measured. Checked in the built app by hand: the steps to go change from 190 to the rider's own count after one confirmed leg. Not run here: the browser test at the four sizes, because this Mac has no Playwright browser; CI runs it. Also found: the MTA's 2021 draft station data still matches today's elevator list (all 308 of its elevators are in the live feed; the live feed has 122 more). Not built: a reset from an elevator ride, because a web page cannot read the barometer; that waits for the native app.
 
-**One browser test failed about three runs in seven on 2026-11-20 and blocked pull requests that had nothing to do with it (branch `test/offline-replay-settle`).** `e2e/offline-replay.spec.ts`, the Spanish trip card with the network off, paused a fixed second after the card's second translation request before going offline; on the busy CI machine a later request was still on its way, so a line read in English ("Walk to Grand Central-42 St"). The test now waits until two seconds pass with no new request. Not run locally: this Mac has no Playwright browser, so CI's `e2e` job is its first run. If it still fails, the cause is in the card and not the pause.
-
 ## Next
+
+- After the voice and notice fixes deploy, test the waveform button in Brave with a real microphone and open the 74 Street-Broadway notice while it is in effect.
 
 - **The station guide's dot ends about 63 metres off on our one Union Sq recording when GPS is withheld, and there was no written plan for fixing that (owner, 2026-11-20; rider-walks loop, #186).** `docs/PLAN-underground-guidance.md` is that plan, a proposal. The Walk Guide already keeps its dot on the route and resets it at a confirmed sign; the plan adds learning the rider's step (this rider took 40% more steps than the guide counts on the mezzanine) and two more ways to reset: an elevator ride and a NaviLens code. It also says how each step is checked: specifications with tests first, replay, metamorphic tests, a holdout kept out of the repository, and AI agents as test riders. Station data goes in PostGIS, in its own database beside the app because Octo has none (container `nyc-map-postgis`, pull request 255). First moves: the metamorphic tests on pull request 256, confirm that container is healthy on the VPS, open the MTA's draft station-interior dataset for our three stations, and send NaviLens two requests.
 - **Seed the presenter's reviewed Q&A and cite it (NMA-0064 follow-up).** The app's Octo key reads but does not write documents, so `scripts/presenter-seed.ts` stopped at the first upsert. Mint a write-scope workspace key, run the seed, add the eight document ids to `server/features/presenter/sources.json`, and check a live question cites one of the new topics. The Haiku working key on the VPS was renewed 2026-11-18 and expires 2026-11-20 18:57 UTC; renew it again before then.

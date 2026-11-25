@@ -71,11 +71,14 @@ test("in Spanish, the steps the card translated still read in Spanish with the n
     }),
   );
   // The model's part, stood in for: every line comes back marked.
+  const firstStep = "Walk to Grand Central-42 St";
   let asked = 0;
+  let firstStepReceived = false;
   await context.route("**/api/agent/translate", async (r) => {
     asked++;
     const { lines } = r.request().postDataJSON() as { lines: string[] };
     await r.fulfill({ contentType: "application/json", body: JSON.stringify({ lines: lines.map((l) => `ES ${l}`) }) });
+    if (lines.includes(firstStep)) firstStepReceived = true;
   });
 
   await page.goto("/?flags=-agentHome");
@@ -86,17 +89,15 @@ test("in Spanish, the steps the card translated still read in Spanish with the n
   await expect(page.getByRole("button", { name: "Play trip preview" })).toBeVisible({ timeout: slow(20_000) });
   // The card asked for its steps, and for the walk through the station once that was in.
   await expect.poll(() => asked, { timeout: slow(30_000) }).toBeGreaterThanOrEqual(2);
-  // Then wait until it has stopped asking. On a busy machine a later batch can arrive after any
-  // fixed pause, and a line still untranslated when the network goes reads in English below.
-  let last = -1;
-  await expect.poll(() => { const quiet = asked === last; last = asked; return quiet; }, { intervals: [2000], timeout: slow(30_000) }).toBe(true);
+  // Wait for the translation of the instruction the playback assertion checks.
+  await expect.poll(() => firstStepReceived, { timeout: slow(30_000) }).toBe(true);
 
   // From here a translation request can only fail.
   await context.unroute("**/api/agent/translate");
   await context.setOffline(true);
-  await page.getByRole("group", { name: "Preview speed" }).getByRole("button", { name: "30x" }).click();
+  await page.getByRole("group", { name: "Preview speed" }).getByRole("button", { name: "2x" }).click();
   await page.getByRole("button", { name: "Play trip preview" }).click();
-  await expect(page.getByRole("region", { name: "Trip preview" }).locator("[aria-live=polite]")).toHaveText(/^ES /, { timeout: slow(20_000) });
+  await expect(page.getByRole("region", { name: "Trip preview" }).locator("[aria-live=polite]")).toHaveText(`ES ${firstStep}`, { timeout: slow(20_000) });
   await context.setOffline(false);
 });
 });

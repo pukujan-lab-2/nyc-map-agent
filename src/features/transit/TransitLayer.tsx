@@ -51,7 +51,7 @@ import { FollowCard, SkipDetails, StationDetails, stopName } from "./TransitCard
 import { FollowMiniMap } from "./FollowMiniMap";
 import { busNextName } from "./followInfo";
 import { TransitStatusDetails } from "./TransitStatus";
-import { alertGeometry, endLabel, setAlertFocus, shuttleFeatures, stationChanges, useAlertFocus, useShuttleFocus, useWalkFocus } from "./alertFocus";
+import { alertGeometry, endLabel, noticeSkips, setAlertFocus, shuttleFeatures, stationChanges, useAlertFocus, useShuttleFocus, useWalkFocus } from "./alertFocus";
 import { LinesDrawer } from "./LinesDrawer";
 import { BusStopDetails } from "./BusStopDetails";
 import { busStopAt } from "@/lib/map/busStops";
@@ -648,12 +648,14 @@ export default function TransitLayer() {
   }, [alertFocus, staticKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const alertFc = useMemo(() => {
     const fc = (features: GeoJSON.Feature[]): GeoJSON.FeatureCollection => ({ type: "FeatureCollection", features });
-    const oneWay = alertFocus?.changes?.find((c) => c.kind === "skip" && c.toward)?.toward ?? null;
+    const change = alertFocus?.routes.flatMap((route) => noticeSkips(alertFocus, route)).find((c) => c.toward);
+    const oneWay = change?.toward;
+    const variant = change?.route.endsWith("X") ? ` ${change.route} express` : "";
     const line = (coords: GeoJSON.Position[], route: string): GeoJSON.Feature => ({ type: "Feature", properties: { route, color: lineColorOf(route) }, geometry: { type: "LineString", coordinates: coords } });
     return {
       affected: fc((alertGeo?.affected ?? []).map((x) => line(x.coords, x.route))),
       reroute: fc((alertGeo?.reroute ?? []).map((x) => line(x.coords, alertFocus?.routes[0] ?? x.route))),
-      skipped: fc((alertGeo?.skipped ?? []).map((x) => ({ type: "Feature", properties: { id: x.id, name: oneWay ? `${x.name} · ${oneWay}-bound skipped` : x.name, icon: oneWay ? "transit-skip-half" : "transit-skip-x" }, geometry: { type: "Point", coordinates: x.coord } }))),
+      skipped: fc((alertGeo?.skipped ?? []).map((x) => ({ type: "Feature", properties: { id: x.id, name: oneWay ? `${x.name} · ${oneWay}-bound${variant} skipped` : x.name, icon: oneWay ? "transit-skip-half" : "transit-skip-x" }, geometry: { type: "Point", coordinates: x.coord } }))),
       // Where a suspension ends: take the shuttle from here, or at least know the trains stop here.
       ends: fc((alertGeo?.ends ?? []).map((x) => {
         const bus = alertFocus?.replacement ?? [];

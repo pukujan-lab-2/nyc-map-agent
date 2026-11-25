@@ -51,6 +51,13 @@ describe("server speech-to-text", () => {
     expect((seen!.init.headers as Record<string, string>)["x-speech-project"]).toBe("nyc-map-staging");
   });
 
+  it("treats punctuation-only speech output as an empty transcript", async () => {
+    vi.stubEnv("STT_BASE_URL", "http://stt.test/v1");
+    const fake = (() => Promise.resolve(Response.json({ text: "!!!!!!!!" }))) as typeof fetch;
+    const r = await transcribe(form(100, "en-US"), new Headers({ "cf-connecting-ip": "203.0.113.40" }), fake);
+    expect(await r.json()).toEqual({ text: "" });
+  });
+
   it("with lang=auto lets Whisper detect the language and returns it", async () => {
     vi.stubEnv("STT_BASE_URL", "http://stt.test/v1");
     let sent: FormData | null = null;

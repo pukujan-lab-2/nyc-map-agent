@@ -16,6 +16,7 @@ export function reloadOnce(
   now = Date.now(),
   reload: () => void = () => window.location.reload(),
 ): boolean {
+  if (globalThis.navigator?.onLine === false) return false;
   const last = Number(storage?.getItem(KEY) ?? 0);
   if (last && now - last < 60_000) return false;
   try {

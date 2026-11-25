@@ -248,14 +248,10 @@ export default function AgentOverlay() {
           // A `languagePicked` tick tells the hands-free loop to open the mic once more for the real
           // question, now that the language round is over (#42).
           setLanguagePicked((n) => n + 1);
-          speech.speak(languageList([picked]), { lang: speechTag(picked, lang) });
+          speech.speak(languageList([picked]), { lang: speechTag(picked, lang), force: true });
           return;
         }
-        // Heard no language it knows, or two: read the guess back and ask again.
-        const guess = parseLang(heard) ?? appLang;
-        setAskedLang(guess);
-        speech.speak(`${languageList([guess])}?`, { lang: speechTag(guess, lang) });
-        return;
+
       }
       heardLangRef.current = parseLang(heard);
       voiceTurn.current = true;
@@ -424,6 +420,7 @@ export default function AgentOverlay() {
     const askLang = heard ?? lang;
     if (!q) return;
     // The one filmed trip: open its film and map instead of asking the model, which has no tool for it.
+    if (byVoice && handsFree) setHandsFree(false);
     if (asksForStationWalk(q)) { window.location.assign(STATION_WALK_URL); return; }
     setNotice(null);
     setInput("");
@@ -447,7 +444,7 @@ export default function AgentOverlay() {
       pendingQuestion.current = q;
       const reply: Msg = { id: crypto.randomUUID(), role: "assistant", content: ORIGIN_PROMPT, offerLocation: true };
       setMessages([...history, reply]);
-      speech.speak(spokenSummary(reply.content), { bargeIn: handsFree });
+      speech.speak(spokenSummary(reply.content), { bargeIn: handsFree, force: byVoice });
       return;
     }
     pendingQuestion.current = null;
@@ -473,7 +470,7 @@ export default function AgentOverlay() {
     const asked = heard ?? detectLang(q);
     if (asked) setAskedLang(asked);
     else leaveAskedScript(q);
-    const statusTimer = home && byVoice ? window.setTimeout(() => speech.speak(statusLine(stepsRef.current, sayIn), { lang: speechTag(sayIn, lang) }), STATUS_AFTER_MS) : undefined;
+    const statusTimer = home && byVoice ? window.setTimeout(() => speech.speak(statusLine(stepsRef.current, sayIn), { lang: speechTag(sayIn, lang), force: true }), STATUS_AFTER_MS) : undefined;
     try {
       const memory = home ? memorySummary() : null;
       const underNow = getUndergroundNow();
@@ -497,11 +494,15 @@ export default function AgentOverlay() {
         } else if (ev.type === "sources") {
           setMessages((m) => m.map((x) => (x.id === reply.id ? { ...x, sources: ev } : x)));
         } else if (ev.type === "error") {
+          if (!spoken) spoken = ev.message;
           setMessages((m) => m.map((x) => (x.id === reply.id ? { ...x, content: x.content || ev.message } : x)));
         }
       }
     } catch {
-      if (!ctl.signal.aborted) setMessages((m) => m.map((x) => (x.id === reply.id ? { ...x, content: x.content || "The assistant is unavailable right now." } : x)));
+      if (!ctl.signal.aborted) {
+        spoken ||= "The assistant is unavailable right now.";
+        setMessages((m) => m.map((x) => (x.id === reply.id ? { ...x, content: x.content || spoken } : x)));
+      }
     } finally {
       window.clearTimeout(statusTimer);
       // A newer question owns busy; a closed one already let go of it.
@@ -520,7 +521,7 @@ export default function AgentOverlay() {
     }
     // Short spoken answer; the full detail stays on screen. In hands-free the
     // person can talk over it to interrupt.
-    if (spoken) speech.speak(spokenSummary(nameLocationButton(nameRemindButton(spoken, replyActions, tr(getAppLang(), "remindMe")), offersLocation, tr(getAppLang(), "useMyLocation"))), { bargeIn: handsFree, lang: heard ?? speechTag(getAppLang(), lang) });
+    if (spoken) speech.speak(spokenSummary(nameLocationButton(nameRemindButton(spoken, replyActions, tr(getAppLang(), "remindMe")), offersLocation, tr(getAppLang(), "useMyLocation"))), { bargeIn: handsFree, force: byVoice, lang: heard ?? speechTag(getAppLang(), lang) });
   }, [mode, setChatOpen, speech, askReq, handsFree, closeAll, home, lang, stopPlayer]);
 
   /** Exit: the answer stops where it is. No more text, map moves, trip or speech from it (owner, 2026-10-27). */
@@ -558,8 +559,7 @@ export default function AgentOverlay() {
   }, [chatSeed, clearSeed, send]);
 
   const turnOffHandsFree = useCallback(() => setHandsFree(false), []);
-  // `asking` keeps the hands-free loop armed while the spoken language question and its answer play (#42).
-  useHandsFree({ on: handsFree, supported: speech.sttSupported, listening: speech.listening, busy, speaking: speech.speaking, error: speech.error, asking: langAsked, languagePicked, start: speech.startListening, stop: speech.stopListening, turnOff: turnOffHandsFree });
+  useHandsFree({ on: handsFree, supported: speech.sttSupported, listening: speech.listening, busy, speaking: speech.speaking, error: speech.error, languagePicked, start: speech.startListening, stop: speech.stopListening, turnOff: turnOffHandsFree });
   // A trip preview or a followed route starting takes over the screen: hands-free ends instead of
   // leaving the orb listening over it (owner report, 2026-10-24). Only the start counts, so you can
   // still turn hands-free on during one, and street-level Ask keeps it. The spoken answer still finishes.
@@ -575,23 +575,30 @@ export default function AgentOverlay() {
   }, [taskOn, handsFree, stopMic]);
   const sheetUp = usePullSheetUp();
   const hasAnswer = home && chatOpen && messages.length > 0;
-  const orbShown = home && handsFree && speech.listening && !dictating;
+  const orbShown = home && handsFree && !dictating;
   useEffect(() => sendScreen({ type: "ANSWER", on: hasAnswer }), [hasAnswer]);
   useEffect(() => sendScreen({ type: "VOICE", on: orbShown }), [orbShown]);
   useEffect(() => () => { sendScreen({ type: "ANSWER", on: false }); sendScreen({ type: "VOICE", on: false }); sendScreen({ type: "TASK", on: false }); }, []);
   const toggleHandsFree = () => {
     if (handsFree) { setHandsFree(false); setLangAsked(false); speech.stopListening(); speech.stopSpeaking(); return; }
-    speech.setMuted(false);
     speech.clearError();
     setHandsFree(true);
-    // A hands-free conversation is answer-in-one-language for its whole length, and the only signal
-    // used to be Whisper's guess at the first thing said. Ask out loud first, every time hands-free
-    // starts, so a handed-over phone or a misheard word cannot fix the wrong language for a session.
-    setLangAsked(true);
-    speech.speakSequence(languagePrompt(appLang));
+    // The main mic can already use the app language or detect it from the question.
+    setLangAsked(compact);
+    if (compact) speech.speakSequence(languagePrompt(appLang), true);
   };
 
-  useWakePhrase(wake && speech.sttSupported, speech.listening || busy || speech.speaking, (t) => { voiceTurn.current = true; void send(t); }, speechTag(appLang, lang));
+  useWakePhrase(wake, handsFree || speech.listening || busy || speech.speaking, (t) => {
+    setNotice(null);
+    speech.clearError();
+    if (!t) {
+      setLangAsked(false);
+      setHandsFree(true);
+      return;
+    }
+    voiceTurn.current = true;
+    void send(t);
+  }, setNotice, speechTag(appLang, lang));
   useEffect(() => () => abort.current?.abort(), []);
   // Other features (underground help) prepare for the trip on screen through core.
   useEffect(() => { publishActiveTrip(trip); if (trip) noteTrip(trip); }, [trip]);
@@ -857,7 +864,7 @@ export default function AgentOverlay() {
       setNotice(null);
       toggleHandsFree();
     };
-    const stopOrb = () => { setHandsFree(false); speech.stopListening(); speech.stopSpeaking(); };
+    const stopOrb = toggleHandsFree;
 
     // The last exchange is the answer card; earlier turns stay in the history sent to the agent.
     const lastUser = [...messages].reverse().find((m) => m.role === "user") ?? null;
@@ -997,7 +1004,7 @@ export default function AgentOverlay() {
           interim={speech.interim}
           dictation={{ supported: speech.sttSupported, on: dictating && speech.listening, toggle: toggleDictation }}
           handsFree={{ on: handsFree, toggle: toggleVoice }}
-          orb={{ show: handsFree && speech.listening && !dictating, transcript: speech.interim, stop: stopOrb }}
+          orb={{ show: orbShown, listening: speech.listening, transcript: speech.interim, stop: stopOrb }}
           notice={notice ?? speech.error}
           answerOpen={answerOpen}
           onCloseAnswer={() => { stopAnswer(); setChatOpen(false); clearAnswerMarks(); }}

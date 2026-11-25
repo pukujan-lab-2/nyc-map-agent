@@ -1,7 +1,7 @@
 import type { HeldTrain } from "@/lib/transit/holds";
 import { lineOf } from "@/lib/transit/selectedLine";
 import { plainAlertText, stationsNamedIn, type TroubleStation } from "@/lib/transit/trouble";
-import { alertGeometry } from "./alertFocus";
+import { alertGeometry, noticeSkips } from "./alertFocus";
 import { alertTrouble, byRank, RANK, type Trouble } from "./noticeRank";
 import type { Outage, TransitAlert } from "./hooks";
 import { stationOf, type StaticSystem } from "./model";
@@ -74,15 +74,14 @@ function alertStations(a: TransitAlert, sys: StaticSystem, route: string, tone: 
     // Where the problem is, only when the headline names a station (the trouble reader's rule).
     return stationsNamedIn(a.text, stations, [route]).map((s) => ({ id: s.gtfsId, name: s.name, coord: [s.at[0], s.at[1]], label: "Delays" }));
   }
-  const skips = a.changes?.some((c) => c.kind === "skip") || (a.skipNames?.length ?? 0) > 0;
+  const [change] = noticeSkips(a, route);
+  const skips = Boolean(change) || (a.skipNames?.length ?? 0) > 0;
   const geo = alertGeometry({ ...a, routes: a.routes.filter((r) => lineOf(r) === route) }, sys);
   // Skips say which way on the map itself: "52 St · Flushing-bound skipped" (owner, 2026-10-27).
-  // The direction from the parsed change, else the headline's own words ("Downtown [A] skips…"); unknown stays plain "Skipped".
-  // A parsed skip with no direction is both ways (src/lib/transit/serviceChanges.ts).
-  const change = a.changes?.find((c) => c.kind === "skip");
-  const said = /\b(Uptown|Downtown|[A-Z][\w.' -]*?-bound)\b/.exec(a.text)?.[1];
-  const way = change ? (change.toward ? `${change.toward}-bound` : "Both ways") : said;
-  const what = skips ? (way ? `${way} skipped` : "Skipped") : a.kind === "planned" ? "Work" : "Affected";
+  // The direction belongs to the skip sentence. The headline can name trains that still stop.
+  const variant = change && change.route !== route ? ` ${change.route} express` : "";
+  const way = change?.toward ? (/^(uptown|downtown)$/i.test(change.toward) ? change.toward : `${change.toward}-bound`) : "";
+  const what = skips ? (way ? `${way}${variant} skipped` : "Skipped") : a.kind === "planned" ? "Work" : "Affected";
   return geo.skipped.map((s) => ({ ...s, label: skips ? `${s.name} · ${what}` : what }));
 }
 

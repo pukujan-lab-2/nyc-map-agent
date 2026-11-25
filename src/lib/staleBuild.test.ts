@@ -12,6 +12,17 @@ describe("stale build", () => {
     expect(isChunkError(new TypeError("Importing a module script failed."))).toBe(true);
     expect(isChunkError(new TypeError("Cannot read properties of undefined (reading 'at')"))).toBe(false);
   });
+  it("keeps the open page if a chunk fails while offline", () => {
+    const reload = vi.fn();
+    vi.stubGlobal("navigator", { onLine: false });
+    try {
+      expect(reloadOnce(store(), 1_000, reload)).toBe(false);
+      expect(reload).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("reloads once a minute at most", () => {
     const s = store();
     const reload = vi.fn();
