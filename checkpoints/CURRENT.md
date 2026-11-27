@@ -6,13 +6,14 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Current projection
 
-*Updated 2026-11-24. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-11-25. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
 
 ## Completed recently
 
 - The 74 Street-Broadway graph walk left out the Woodside transfer and made the local 7 look like it skipped the station. The fix names the destination in both alternatives, highlights the transfer stations, and marks the Flushing-bound 7X express as the service that skips it.
 - The map's hands-free button used the first spoken turn to pick a language and could discard a question. It now takes the question directly and shows whether the mic is opening, listening, or transcribing. A live English test clip came back as punctuation with automatic language detection and transcribed correctly when sent as English. The app retries an empty or failed automatic transcript in the app language. The notice and hands-free layout checks passed at all four required sizes, and a browser test verified that the retry submits the question.
 - The Spanish offline trip preview lost its screen when a map module failed to download. The app now keeps the open page while offline. The browser test waits for the specific translation it checks and passed locally with a delayed response.
+- The graph walk still omits useful dates, directions and elevator connections. A November 25 feed audit exercised the graph model on 215 subway notices. Forty-three fell back to text on their first mapped line, including a C reroute that lost the reverse direction and transfer advice from its spoken steps. The 74 Street-Broadway notice supplies 227 time windows, while the graph walk reads only “Through Spring 2027.” The elevator feed supplied 75 upcoming outages and two distinct Yankee Stadium detours. The current app drops upcoming elevator outages and combines the two active detours into one text card. The subway schedule files also show no 7X departures at Woodside during the sampled Thanksgiving and Saturday rush-hour windows.
 
 ## In flight
 
@@ -21,6 +22,8 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 **The Walk Guide counted in its own steps, so a rider who steps shorter was told "you should see the sign" too early: on our Union Sq recording the rider took 296 steps where the guide counts 212 (rider-walks loop, #186, branch `feat/186-rider-step-pace`).** The guide now learns a rider's pace when they confirm the next sign and counts their steps at that pace (`src/features/walkguide/progress.ts`, tests in `pace.test.ts`). Replaying that rider's counts, the prompt comes 95 steps too early in total without it and 50 with it; the split of steps between the mezzanine signs is an estimate, the totals are measured. Checked in the built app by hand: the steps to go change from 190 to the rider's own count after one confirmed leg. Not run here: the browser test at the four sizes, because this Mac has no Playwright browser; CI runs it. Also found: the MTA's 2021 draft station data still matches today's elevator list (all 308 of its elevators are in the live feed; the live feed has 122 more). Not built: a reset from an elevator ride, because a web page cannot read the barometer; that waits for the native app.
 
 ## Next
+
+- Keep each service-change window and its affected trains, directions and stations together. Use the selected date and time to combine scheduled service, current predictions and alerts. For elevator walks, keep detours attached to the affected equipment and connection, and verify that the entire alternative is step-free before labeling it accessible.
 
 - After the voice and notice fixes deploy, test the waveform button in Brave with a real microphone and open the 74 Street-Broadway notice while it is in effect.
 
