@@ -1,6 +1,6 @@
 import type { NamedLine } from "@/lib/map/streetPos";
 import { stairDescent } from "@/lib/map/stairs";
-import { defaultDwell, motionAt, typicalRun } from "./dwell";
+import { defaultDwell, departureOf, motionAt, typicalRun, type MotionStop } from "./dwell";
 import type { ProgressTracker } from "./monotonic";
 import { blendStops, type SegmentLookup } from "./history";
 
@@ -103,22 +103,45 @@ function bearingOf(a: [number, number], b: [number, number]) {
  */
 export const MAX_PIN_S = 60;
 
-export function estimateTrain(sys: StaticSystem, trip: LiveTrip, now: number, tracker?: ProgressTracker, hist?: SegmentLookup, opts: { troubled?: boolean } = {}): Vehicle | null {
-  const shape = sys.shapes[trip.route];
+/** The stops, stop lengths and run times a drawn train is built from: one source for the map and for the motion score. */
+function motionInputs(sys: StaticSystem, trip: LiveTrip, now: number, hist?: SegmentLookup) {
   const sm = sys.stopM[trip.route];
-  if (!shape || !sm) return null;
+  if (!sys.shapes[trip.route] || !sm) return null;
   const livePts = trip.stops
     .map(([id, arr, dep]) => ({ id, arr, dep, m: sm[stationOf(sys.system, id)] }))
     .filter((p): p is { id: string; arr: number; dep: number | undefined; m: number } => p.m !== undefined);
   // Blend historical segment times with live ETAs (motion only; shown ETAs stay live).
   const pts = blendStops(livePts, now, trip.route, trip.dir, hist);
-  if (!pts.length) return null;
-  if (pts[0].arr - now > 30 * 60) return null; // not running yet
   const names = stationNames(sys);
-  let mo = motionAt(pts, now, (p) => {
+  const dwellOf = (p: MotionStop) => {
     const st = stationOf(sys.system, p.id);
     return sys.system === "subway" ? defaultDwell(st, names.get(st)) : 45;
-  }, { origin: trip.origin, runOf: sys.system === "subway" ? (a, b) => typicalRun(Math.abs(b.m - a.m)) : undefined });
+  };
+  const runOf = sys.system === "subway" ? (a: MotionStop, b: MotionStop) => typicalRun(Math.abs(b.m - a.m)) : undefined;
+  return { livePts, pts, dwellOf, runOf };
+}
+
+/** One stop-to-stop stretch as the map draws it: how long the train stops at `from`, then how long it runs to `to`. */
+export type DrawnLeg = { from: string; to: string; metres: number; stop: number; /** When the train leaves `from` (unix s). */ leaves: number; run: number; /** The feed gave the departure, so the stop is not ours. */ fromFeed: boolean };
+/** Every remaining stretch of a trip as `estimateTrain` would draw it now. */
+export function drawnLegs(sys: StaticSystem, trip: LiveTrip, now: number, hist?: SegmentLookup): DrawnLeg[] {
+  const inp = motionInputs(sys, trip, now, hist);
+  if (!inp) return [];
+  const { pts, dwellOf, runOf } = inp;
+  return pts.slice(0, -1).map((a, i) => {
+    const dep = departureOf(pts, i, dwellOf, runOf), b = pts[i + 1];
+    return { from: a.id, to: b.id, metres: Math.abs(b.m - a.m), stop: dep - a.arr, leaves: dep, run: b.arr - dep, fromFeed: a.dep !== undefined && a.dep >= a.arr };
+  });
+}
+
+export function estimateTrain(sys: StaticSystem, trip: LiveTrip, now: number, tracker?: ProgressTracker, hist?: SegmentLookup, opts: { troubled?: boolean } = {}): Vehicle | null {
+  const shape = sys.shapes[trip.route];
+  const inp = motionInputs(sys, trip, now, hist);
+  if (!shape || !inp) return null;
+  const { livePts, pts, dwellOf, runOf } = inp;
+  if (!pts.length) return null;
+  if (pts[0].arr - now > 30 * 60) return null; // not running yet
+  let mo = motionAt(pts, now, dwellOf, { origin: trip.origin, runOf });
   if (!mo) return null; // finished
   // The feed has not cleared the stop the vehicle reports: never draw the train past it.
   const atI = trip.at ? pts.findIndex((p) => p.id === trip.at) : -1;

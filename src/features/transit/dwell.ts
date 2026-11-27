@@ -81,6 +81,20 @@ export type Motion =
   | { phase: "terminal"; i: number; m: number; arrived: number };
 
 /**
+ * When the drawn train leaves stop `i`: the feed's departure when it gives one, else the arrival plus
+ * the stop the gap to the next arrival leaves (see `motionAt`). The last stop has no departure.
+ */
+export function departureOf(stops: MotionStop[], i: number, dwellOf: (s: MotionStop) => number, runOf?: (from: MotionStop, to: MotionStop) => number): number {
+  const s = stops[i];
+  if (s.dep !== undefined && s.dep >= s.arr) return s.dep;
+  if (i === stops.length - 1) return s.arr;
+  const gap = Math.max(0, stops[i + 1].arr - s.arr);
+  const most = Math.min(dwellOf(s), gap * MAX_DWELL_SHARE);
+  if (!runOf) return s.arr + most;
+  return s.arr + Math.min(most, Math.max(DWELL_MIN, gap - runOf(s, stops[i + 1])));
+}
+
+/**
  * Where along the shape (metres) the train is at `now`.
  * - `dep` given by the feed wins; otherwise dep = arr + dwell, capped so the
  *   next arrival time still holds. With `runOf`, the run to the next stop is
@@ -99,15 +113,7 @@ export function motionAt(
 ): Motion | null {
   const n = stops.length;
   if (!n) return null;
-  const depOf = (i: number) => {
-    const s = stops[i];
-    if (s.dep !== undefined && s.dep >= s.arr) return s.dep;
-    if (i === n - 1) return s.arr;
-    const gap = Math.max(0, stops[i + 1].arr - s.arr);
-    const most = Math.min(dwellOf(s), gap * MAX_DWELL_SHARE);
-    if (!opts.runOf) return s.arr + most;
-    return s.arr + Math.min(most, Math.max(DWELL_MIN, gap - opts.runOf(s, stops[i + 1])));
-  };
+  const depOf = (i: number) => departureOf(stops, i, dwellOf, opts.runOf);
   const first = stops[0];
   if (now < first.arr || (opts.origin && now < depOf(0))) {
     if (opts.origin) return { phase: "origin", i: 0, m: first.m, departs: n > 1 ? depOf(0) : first.arr };

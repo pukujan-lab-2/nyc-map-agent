@@ -58,7 +58,13 @@ const RunTotals = z.object({ system: System, runs: z.number().int(), opened: z.n
 const StopRow = z.object({ system: System, route: z.string(), stop: z.string(), n: z.number().int(), maeModel: z.number(), maeBase: z.number(), w60Model: z.number() });
 /** Error split by the conditions at the time: `dim` is "rush", "notice", "weather" or "traffic". A list of its own, so `rows` keeps its groups. */
 const ConditionRow = z.object({ system: System, dim: z.string(), key: z.string(), ...Stats, learned: z.object(Stats) });
-export const AccuracyResponse = z.object({ ready: z.boolean(), rows: z.array(AccuracyRow), thin: z.array(ThinRow), runs: z.array(RunTotals), stops: z.array(StopRow), conditions: z.array(ConditionRow) });
+/**
+ * How subway trains are drawn (motionScore.ts), summed over the stored runs: `parked` of `trains` stand at a
+ * station, `racing` of `legs` are run faster than a subway car can go and `tight` within a quarter of that.
+ * One row for lines with a notice in effect ("yes"), one for lines without ("no"), one where it was not known.
+ */
+const MotionRow = z.object({ notice: z.enum(["yes", "no", "unknown"]), runs: z.number().int(), trains: z.number().int(), parked: z.number().int(), legs: z.number().int(), racing: z.number().int(), tight: z.number().int(), first: z.string().nullable(), last: z.string().nullable() });
+export const AccuracyResponse = z.object({ ready: z.boolean(), rows: z.array(AccuracyRow), thin: z.array(ThinRow), runs: z.array(RunTotals), stops: z.array(StopRow), conditions: z.array(ConditionRow), motion: z.array(MotionRow) });
 export type AccuracyResponse = z.infer<typeof AccuracyResponse>;
 
 const BASE_DIMS = new Set(["all", "route", "band", "lead", "samples"]);
@@ -104,6 +110,10 @@ export async function GET_ACCURACY(): Promise<Response> {
     const stops = await octoQuery<{ system: "subway" | "bus"; route: string; to_stop: string; n: number; mae_model: number; mae_base: number; w60_model: number }>(
       "(SELECT * FROM marts.transit_prediction_stops WHERE system = 'subway' ORDER BY mae_model DESC LIMIT 40) UNION ALL (SELECT * FROM marts.transit_prediction_stops WHERE system = 'bus' ORDER BY mae_model DESC LIMIT 40)",
     ).catch((err) => { if (missing(err)) return { rows: [] }; throw err; });
+    // The motion table came later still: none until its migration has run.
+    const motion = await octoQuery<{ notice: "yes" | "no" | "unknown"; runs: number; trains: number; parked: number; legs: number; racing: number; tight: number; first: string | null; last: string | null }>(
+      "SELECT notice, count(*)::int AS runs, sum(trains)::int AS trains, sum(parked)::int AS parked, sum(legs)::int AS legs, sum(racing)::int AS racing, sum(tight)::int AS tight, min(run_at) AS first, max(run_at) AS last FROM raw.transit_motion_runs GROUP BY notice ORDER BY notice",
+    ).catch((err) => { if (missing(err)) return { rows: [] }; throw err; });
     const all = summary.rows.map((r) => ({
       system: r.system, dim: r.dim, key: r.key,
       n: Number(r.n), maeModel: num(r.mae_model), maeBase: num(r.mae_base), w60Model: num(r.w60_model), w60Base: num(r.w60_base),
@@ -115,11 +125,12 @@ export async function GET_ACCURACY(): Promise<Response> {
       rows: all.filter((r) => BASE_DIMS.has(r.dim)) as AccuracyResponse["rows"],
       conditions: all.filter((r) => !BASE_DIMS.has(r.dim)),
       thin: thin.rows.map((r) => ({ system: r.system, route: r.route, dir: Number(r.dir), from: r.from_stop, to: r.to_stop, n: Number(r.n), learnedN: Number(r.learned_n), maeModel: Number(r.mae_model), maeBase: Number(r.mae_base) })),
+      motion: motion.rows.map((r) => ({ notice: r.notice, runs: Number(r.runs), trains: Number(r.trains), parked: Number(r.parked), legs: Number(r.legs), racing: Number(r.racing), tight: Number(r.tight), first: r.first ? new Date(r.first).toISOString() : null, last: r.last ? new Date(r.last).toISOString() : null })),
       runs: runs.rows.map((r) => ({ system: r.system, runs: Number(r.runs), opened: Number(r.opened), resolved: Number(r.resolved), unresolved: Number(r.unresolved), stored: Number(r.stored), first: r.first ? new Date(r.first).toISOString() : null, last: r.last ? new Date(r.last).toISOString() : null })),
     };
     return json(body, { maxAge: 300, browserMaxAge: 120 });
   } catch (err) {
-    if (missing(err)) return json({ ready: false, rows: [], thin: [], runs: [], stops: [], conditions: [] } satisfies AccuracyResponse, { maxAge: 60, browserMaxAge: 30 });
+    if (missing(err)) return json({ ready: false, rows: [], thin: [], runs: [], stops: [], conditions: [], motion: [] } satisfies AccuracyResponse, { maxAge: 60, browserMaxAge: 30 });
     return fail(err);
   }
 }

@@ -49,6 +49,10 @@ const accuracy = {
   ],
   thin: [{ system: "subway", route: "A", dir: 0, from: "A03N", to: "A05N", n: 4, learnedN: 3, maeModel: 61, maeBase: 30 }],
   runs: [{ system: "subway", runs: 12, opened: 9000, resolved: 8100, unresolved: 900, stored: 4200, first: "2026-11-15T02:00:00.000Z", last: "2026-11-15T05:00:00.000Z" }],
+  motion: [
+    { notice: "no", runs: 12, trains: 1234567, parked: 345678, legs: 4321098, racing: 21605, tight: 216054, first: "2026-11-20T02:00:00.000Z", last: "2026-11-20T05:00:00.000Z" },
+    { notice: "yes", runs: 12, trains: 80000, parked: 36000, legs: 250000, racing: 0, tight: 9000, first: "2026-11-20T02:00:00.000Z", last: "2026-11-20T05:00:00.000Z" },
+  ],
 };
 
 async function mock(page: Page, withAccuracy: boolean) {
@@ -96,6 +100,12 @@ for (const size of SIZES) {
       await expect(page.getByTestId("accuracy-weather")).toContainText("rain");
       await expect(page.getByTestId("accuracy-traffic")).toHaveCount(0);
       await expect(page.getByTestId("accuracy-stops")).toContainText("A 175 St");
+      // How trains are drawn: lines without a notice first, then lines with one; shares with their counts.
+      await expect(page.getByTestId("motion-row")).toHaveCount(2);
+      await expect(page.getByTestId("motion-row").first()).toHaveAttribute("data-notice", "no");
+      await expect(page.getByTestId("motion-row").first()).toContainText("28% · 345,678 of 1,234,567");
+      await expect(page.getByTestId("motion-row").first()).toContainText("0.5% · 21,605 of 4,321,098");
+      await expect(page.getByTestId("motion-waiting")).toHaveCount(0);
       // Per-hour counts: 24 cells for each of the three schedules.
       await expect(page.getByTestId("hour-cell")).toHaveCount(72);
       await expect(page.getByTestId("mta-compare")).toHaveCount(0);
@@ -142,6 +152,7 @@ for (const size of SIZES) {
       await mock(page, false);
       await page.goto("/tracker-health");
       await expect(page.getByTestId("accuracy-waiting")).toContainText("Not enough data yet · 37 scored predictions · 1 runs", { timeout: slow(15_000) });
+      await expect(page.getByTestId("motion-waiting")).toHaveText("Not scored yet");
       await expectLayout(page);
     });
 

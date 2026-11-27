@@ -2213,6 +2213,18 @@ export interface paths {
                                 w60Base: number | null;
                                 w60Model: number | null;
                             }[];
+                            motion: {
+                                first: string | null;
+                                last: string | null;
+                                legs: number;
+                                /** @enum {string} */
+                                notice: "yes" | "no" | "unknown";
+                                parked: number;
+                                racing: number;
+                                runs: number;
+                                tight: number;
+                                trains: number;
+                            }[];
                             ready: boolean;
                             rows: {
                                 /** @enum {string} */
@@ -5000,6 +5012,18 @@ export interface paths {
                                 system: "subway" | "bus";
                                 w60Base: number | null;
                                 w60Model: number | null;
+                            }[];
+                            motion: {
+                                first: string | null;
+                                last: string | null;
+                                legs: number;
+                                /** @enum {string} */
+                                notice: "yes" | "no" | "unknown";
+                                parked: number;
+                                racing: number;
+                                runs: number;
+                                tight: number;
+                                trains: number;
                             }[];
                             ready: boolean;
                             rows: {
