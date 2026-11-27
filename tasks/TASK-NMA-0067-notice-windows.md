@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - Let pull request 279 merge, then start step 2 of docs/PLAN-notice-walks.md, notice facts.
 
+### 2026-11-27 07:59:00 UTC — agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6","blocked":[],"changed":["none"],"completed":["Merged main (with the Partner Bathrooms page) into step 1 to clear the CURRENT.md conflict, keeping both Completed lines."],"decisions":["no new decisions"],"evidence":["Only checkpoints/CURRENT.md conflicted; both entries kept."],"evidence_class":"observed","next_action":"Let pull request 279 rerun its checks and merge, then start step 2 of docs/PLAN-notice-walks.md, notice facts.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0067","timestamp":"2026-11-27T07:59:00Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"41aa354aa9b70589dfebe4001b279768570a5c3a4fe14bbfc2e52b355a91652d","request_id":"ac0103756e86452fa66cb9ec54dbb6f4","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0067"} -->
+
+Completed:
+- Merged main (with the Partner Bathrooms page) into step 1 to clear the CURRENT.md conflict, keeping both Completed lines.
+
+Evidence:
+- Only checkpoints/CURRENT.md conflicted; both entries kept.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 279 rerun its checks and merge, then start step 2 of docs/PLAN-notice-walks.md, notice facts.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
