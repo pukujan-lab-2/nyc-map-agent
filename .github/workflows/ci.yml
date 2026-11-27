@@ -70,8 +70,17 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - name: ESLint (type-aware; baseline in eslint-suppressions.json)
-        run: pnpm lint
+      # Type-aware ESLint over the whole repo peaked at 3.07 GB and was killed at the runners' 3 GiB cap (#33).
+      # Three parts in turn each peak near 1.8 GB, and together they cover exactly what `pnpm lint` covers.
+      - name: ESLint, app features (type-aware; baseline in eslint-suppressions.json)
+        run: pnpm exec eslint src/features $LINT_FLAGS
+        env: { LINT_FLAGS: "--max-warnings=0 --suppressions-location eslint-suppressions.json --pass-on-unpruned-suppressions" }
+      - name: ESLint, rest of the app
+        run: pnpm exec eslint src --ignore-pattern 'src/features/**' $LINT_FLAGS
+        env: { LINT_FLAGS: "--max-warnings=0 --suppressions-location eslint-suppressions.json --pass-on-unpruned-suppressions" }
+      - name: ESLint, server, scripts, tests and the rest
+        run: pnpm exec eslint . --ignore-pattern 'src/**' $LINT_FLAGS
+        env: { LINT_FLAGS: "--max-warnings=0 --suppressions-location eslint-suppressions.json --pass-on-unpruned-suppressions" }
       - name: Clean workspace (persistent runner)
         if: always()
         run: find "$GITHUB_WORKSPACE" -mindepth 1 -delete || true
