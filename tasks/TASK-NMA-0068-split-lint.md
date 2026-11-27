@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-27 20:07:26 UTC — agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6","blocked":[],"changed":["none"],"completed":["CI lint runs in three parts, each near 1.8 GB, covering the same 973 files as the full lint."],"decisions":["no new decisions"],"evidence":["Measured on a Mac: full lint 3.07 GB; features 1.79, rest of app 1.81, everything outside src 1.83; file lists compared, none missing or doubled."],"evidence_class":"observed","next_action":"Open the pull request for issue 33 and confirm lint passes on main after it merges.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0068","timestamp":"2026-11-27T20:07:26Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"12c81316573cffef501df10b04907a918d7a6709794bf1204bc58e548f8f9084","request_id":"45bb56124f4547faa1986323c7f22f46","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0068"} -->
+
+Completed:
+- CI lint runs in three parts, each near 1.8 GB, covering the same 973 files as the full lint.
+
+Evidence:
+- Measured on a Mac: full lint 3.07 GB; features 1.79, rest of app 1.81, everything outside src 1.83; file lists compared, none missing or doubled.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request for issue 33 and confirm lint passes on main after it merges.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
