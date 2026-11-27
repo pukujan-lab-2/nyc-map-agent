@@ -58,7 +58,7 @@ function fitToSize(cam: MediaStream): NonNullable<Live["fit"]> {
   };
 }
 
-const MARK_LABEL: Record<MarkKind, string> = { sign: "Sign", stairs: "Stairs", elevator: "Elevator" };
+const MARK_LABEL: Record<MarkKind, string> = { sign: "Sign", stairs: "Stairs", elevator: "Elevator", turnstile: "Turnstile" };
 
 /** How long to wait for a first motion row before saying the device sends none. */
 const MOTION_WAIT_MS = 1500;
@@ -262,9 +262,9 @@ export default function RecordPage() {
       {phase === "done" && take && <Review take={take} onDelete={discard} />}
       {phase !== "done" && <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
         {phase === "recording" && (
-          <div className="flex w-full max-w-md justify-center gap-2 px-3">
+          <div className="flex w-full max-w-md justify-center gap-1.5 px-2">
             {MARK_KINDS.map((kind) => (
-              <button key={kind} type="button" data-testid={`mark-${kind}`} onClick={() => mark(kind)} className="min-h-12 min-w-0 flex-1 rounded-full bg-black/60 px-2 text-sm font-semibold backdrop-blur active:bg-white active:text-black">
+              <button key={kind} type="button" data-testid={`mark-${kind}`} onClick={() => mark(kind)} className="min-h-12 min-w-0 flex-1 rounded-full bg-black/60 px-1.5 text-xs font-semibold backdrop-blur active:bg-white active:text-black sm:px-2 sm:text-sm">
                 {MARK_LABEL[kind]}
               </button>
             ))}

@@ -67,16 +67,17 @@ for (const size of SIZES) {
     await page.getByTestId("mark-sign").click();
     await page.getByTestId("mark-stairs").click();
     await page.getByTestId("mark-elevator").click();
-    await expect(page.getByTestId("record-marks")).toHaveText("3 marks");
+    await page.getByTestId("mark-turnstile").click();
+    await expect(page.getByTestId("record-marks")).toHaveText("4 marks");
     await expect(page.getByTestId("record-timer")).not.toHaveText("0:00", { timeout: slow(5_000) });
     await expectLayout(page);
 
     await page.getByRole("button", { name: "Stop" }).click();
     await expect(page.getByTestId("record-review")).toBeVisible({ timeout: slow(10_000) });
     await expect(page.getByTestId("review-video")).toBeVisible();
-    await expect(page.getByTestId("count-marks")).toHaveText("3");
+    await expect(page.getByTestId("count-marks")).toHaveText("4");
     await expect(page.getByTestId("count-motion")).toHaveText("0");
-    await expect(page.getByTestId("review-marks").locator("li")).toHaveText([/Sign/, /Stairs/, /Elevator/]);
+    await expect(page.getByTestId("review-marks").locator("li")).toHaveText([/Sign/, /Stairs/, /Elevator/, /Turnstile/]);
     await expect(page.getByTestId("review-path")).toContainText("No location in this recording");
     await expectLayout(page);
     expect(errors).toEqual([]);

@@ -59,6 +59,13 @@ describe("parseRecording", () => {
     expect(errorsOf({ ...good(), steps: [[1, Number.NaN]] })[0]).toMatch(/"steps" row 1/);
   });
 
+  it("accepts a turnstile mark (#231)", () => {
+    const rec = { ...good(), marks: [{ t: 1794607524359, kind: "turnstile" as const }] };
+    const r = parseRecording(rec);
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.recording.marks).toEqual([{ t: 1794607524359, kind: "turnstile" }]);
+  });
+
   it("rejects a mark with an unknown kind", () => {
     const e = errorsOf({ ...good(), marks: [{ t: 1, kind: "escalator" }] });
     expect(e[0]).toMatch(/"marks" item 1/);
