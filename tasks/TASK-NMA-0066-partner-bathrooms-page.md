@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - Merge the pull request for issue 276, then open /partners/ on the live site at phone size.
 
+### 2026-11-27 06:56:39 UTC — agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6","blocked":[],"changed":["none"],"completed":["The Partner Bathrooms page is in pull request 277 with auto-merge and Auto-fix on; the checkpoint file records it."],"decisions":["no new decisions"],"evidence":["Pull request 277 opened; its description passes continuity pr-check."],"evidence_class":"observed","next_action":"Let pull request 277 merge after its checks, then open /partners/ on the live site at phone size.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0066","timestamp":"2026-11-27T06:56:39Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"470f6710b264e521784655de070c765f40e65649092e700e0c865841a5c036c8","request_id":"5b6b134fbec9449ea8dd1673398d4fd0","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0066"} -->
+
+Completed:
+- The Partner Bathrooms page is in pull request 277 with auto-merge and Auto-fix on; the checkpoint file records it.
+
+Evidence:
+- Pull request 277 opened; its description passes continuity pr-check.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 277 merge after its checks, then open /partners/ on the live site at phone size.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
