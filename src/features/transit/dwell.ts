@@ -14,10 +14,12 @@ import holds from "./holds.json";
 
 /** Seconds a train sits at an ordinary stop. */
 export const DWELL_DEFAULT = 30;
-/** Major transfer complexes (crowded platforms). */
-export const DWELL_COMPLEX = 50;
-/** Express/local transfer points where trains wait for cross-platform transfers. */
-export const DWELL_EXPRESS_LOCAL = 60;
+/**
+ * The longest ordinary stop: at a major complex (crowded platforms), or at a transfer station while a
+ * connecting train is pulling in across the platform. The owner, who rides these lines, puts a normal
+ * stop at 20 to 40 s and never longer (2026-11-20); the earlier 50 s and 60 s defaults were guesses.
+ */
+export const DWELL_LONG = 40;
 /** How long a train stays visible at its terminal before it leaves the map. */
 export const DWELL_TERMINAL = 60;
 /** Never let a default dwell take more than this share of the gap to the next arrival. */
@@ -62,10 +64,26 @@ export const MAJOR_COMPLEXES = [
 /** Parent station ids derived from GTFS (scripts/build-transit-holds.ts) plus overrides. */
 export const EXPRESS_LOCAL_STATIONS: ReadonlySet<string> = new Set([...holds.derived, ...holds.add].filter((s) => !holds.remove.includes(s)));
 
-/** Default dwell in seconds for a parent station id / name. */
-export function defaultDwell(stationId: string, name?: string): number {
-  if (EXPRESS_LOCAL_STATIONS.has(stationId)) return DWELL_EXPRESS_LOCAL;
-  if (name && MAJOR_COMPLEXES.includes(name)) return DWELL_COMPLEX;
+/**
+ * Two parent stations that share platforms, so a train at one connects with a train at the other:
+ * Queensboro Plaza, where the 7 and the N/W stop on either side of the same platform on each level.
+ */
+const SHARED_PLATFORMS: Record<string, string> = { R09: "718" };
+/** The platform a train stops at, for matching it with trains across that platform: station and direction. */
+export const platformKey = (stopId: string) => {
+  const dir = /[NS]$/.test(stopId) ? stopId.slice(-1) : "";
+  const station = dir ? stopId.slice(0, -1) : stopId;
+  return `${SHARED_PLATFORMS[station] ?? station}${dir}`;
+};
+
+/**
+ * The longest a train stops at a parent station id / name, in seconds. A transfer station gets the
+ * long stop only while `connecting` says a train of another service is pulling in across the platform;
+ * with nobody to wait for it is an ordinary stop.
+ */
+export function defaultDwell(stationId: string, name?: string, connecting = false): number {
+  if (connecting && EXPRESS_LOCAL_STATIONS.has(stationId)) return DWELL_LONG;
+  if (name && MAJOR_COMPLEXES.includes(name)) return DWELL_LONG;
   return DWELL_DEFAULT;
 }
 
