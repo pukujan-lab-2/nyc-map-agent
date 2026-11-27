@@ -6,10 +6,11 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Current projection
 
-*Updated 2026-11-25. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-11-27. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
 
 ## Completed recently
 
+- The partner bathroom idea had no page anyone could open. The proposal is now a static page at `/partners/` (issue 276), with a 37-second demo narrated in the owner's own voice that starts with sound on load; browsers that block sound get it muted with a Tap for sound button.
 - The 74 Street-Broadway graph walk left out the Woodside transfer and made the local 7 look like it skipped the station. The fix names the destination in both alternatives, highlights the transfer stations, and marks the Flushing-bound 7X express as the service that skips it.
 - The map's hands-free button used the first spoken turn to pick a language and could discard a question. It now takes the question directly and shows whether the mic is opening, listening, or transcribing. A live English test clip came back as punctuation with automatic language detection and transcribed correctly when sent as English. The app retries an empty or failed automatic transcript in the app language. The notice and hands-free layout checks passed at all four required sizes, and a browser test verified that the retry submits the question.
 - The Spanish offline trip preview lost its screen when a map module failed to download. The app now keeps the open page while offline. The browser test waits for the specific translation it checks and passed locally with a delayed response.
