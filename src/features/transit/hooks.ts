@@ -341,12 +341,18 @@ export type TransitAlert = {
   id: string; kind: "planned" | "delay" | "notice"; type: string; reroute: boolean; text: string; agency: string; routes: string[]; stops: string[];
   /** Added in #253; optional so older cached payloads still parse. */
   description?: string; start?: number; end?: number; period?: string; direction?: string; directionIds?: number[]; via?: string[]; skipNames?: string[]; changes?: ServiceChange[];
+  /** Every window from now to three weeks ahead, for a notice with more than one: [start, end], end 0 = open-ended. */
+  windows?: Array<[number, number]>;
   /** Bus routes standing in for this train, when the alert names a shuttle. */
   replacement?: string[];
   /** The MTA's note for each affected station, usually where its shuttle bus stops (#55). */
   alternatives?: Array<{ stop: string; notes: string }>;
 };
-export type Outage = { id: string; station: string; routes: string[]; stops: string[]; equipment: "Elevator" | "Escalator"; serving: string; reason: string; since: string; back: string; ada: "yes" | "no" | "not-ada"; alternative: string };
+export type Outage = {
+  id: string; station: string; routes: string[]; stops: string[]; equipment: "Elevator" | "Escalator"; serving: string; reason: string; since: string; back: string; ada: "yes" | "no" | "not-ada"; alternative: string;
+  /** The window in epoch seconds (to 0 = no return time given), and whether it is a planned outage not started yet. Optional for older cached payloads. */
+  from?: number; to?: number; upcoming?: boolean;
+};
 type AlertsBody = { at: number; alerts: TransitAlert[]; outages: Outage[] };
 /** Service alerts and outages, carried in the batched live request (same poll as live rail). */
 export function useAlerts(enabled: boolean): { data: AlertsBody | undefined } {
