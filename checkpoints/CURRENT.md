@@ -23,6 +23,8 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Next
 
+- The app has too many buttons and screens that do the same job: `docs/design/screen-inventory/index.html` (2026-11-27) shows 104 screens at phone and desktop size from main, 27 reviewed with numbered defects, and the five changes that would fix the most screens. The owner set it aside for later; start a UI makeover from it.
+
 - Riders hear a notice's reason but not always what to do: the 7's walk dropped this weekend's 74 St skip. `docs/PLAN-notice-walks.md` (a proposal, 2026-11-27) is the build plan the owner asked for after approving the preview in `docs/design/notice-walks-preview.html`: keep every time window, turn notices into facts, build walks from fixed sentence patterns, and show every named place on the map. Its first piece keeps every service-change window and the upcoming elevator outages. Three decisions wait for the owner (listed in the plan).
 
 - After the voice and notice fixes deploy, test the waveform button in Brave with a real microphone and open the 74 Street-Broadway notice while it is in effect.
