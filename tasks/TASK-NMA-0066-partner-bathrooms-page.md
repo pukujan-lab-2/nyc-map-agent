@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - Let pull request 277 merge after its checks, then open /partners/ on the live site at phone size.
 
+### 2026-11-27 07:12:56 UTC — agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6","blocked":[],"changed":["none"],"completed":["Merged main into the page branch to clear the conflict in CURRENT.md; the lint failure did not reproduce locally (full eslint passes)."],"decisions":["no new decisions"],"evidence":["Local eslint over the whole repo passed with no findings; merge kept both Completed lines."],"evidence_class":"observed","next_action":"Let pull request 277 rerun its checks and merge, then open /partners/ on the live site at phone size.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0066","timestamp":"2026-11-27T07:12:56Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"c8da4567bb29845dae33a39a9c99666d32571380e1c53ba799b81e9104563da1","request_id":"dadb014ec4d04086a406df31ffbc333b","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0066"} -->
+
+Completed:
+- Merged main into the page branch to clear the conflict in CURRENT.md; the lint failure did not reproduce locally (full eslint passes).
+
+Evidence:
+- Local eslint over the whole repo passed with no findings; merge kept both Completed lines.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 277 rerun its checks and merge, then open /partners/ on the live site at phone size.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
