@@ -20,6 +20,7 @@ import { json } from "../../../api/_lib/http";
 import { busCatalog, filterBuses, parseBusRoutes } from "./busLines";
 import { conflate, loadCenterlines } from "./conflate";
 import { slimAlert, type MercuryAlert, type SlimAlert } from "./alerts";
+import { outagesBetween, slimOutages } from "./outages";
 
 const { FeedMessage } = GtfsRealtimeBindings.transit_realtime;
 const MTA = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/";
@@ -174,13 +175,22 @@ export async function loadBuses(key: string) {
 const getMta = (path: string) => fetch(`${MTA}${path}`, { signal: AbortSignal.timeout(10_000) }).then((r) => r.json());
 
 /**
- * Service alerts in effect at any time from → to (epoch s): "this weekend" on a Tuesday (owner, 2026-10-27:
- * the 7's weekend work was invisible on the map until it started). Outages are a right-now thing, so none.
+ * Service alerts and elevator outages in effect at any time from → to (epoch s): "this weekend" on a Tuesday (owner,
+ * 2026-10-27: the 7's weekend work was invisible on the map until it started). Outages include the MTA's planned
+ * ones that have not started yet, so an elevator due to be out this weekend shows up on the weekend buttons.
  */
 export async function loadAlertsBetween(from: number, to: number) {
-  const feed = await cached("alerts-feed", () => getMta("camsys%2Fall-alerts.json"), 5 * 60_000) as { entity?: MercuryAlert[] };
-  const alerts = (feed.entity ?? []).flatMap((e) => slimAlert(e, from, to) ?? []);
-  return { at: Math.round(Date.now() / 1000), from, to, alerts, outages: [] };
+  const [feed, ene, upcoming, equipment] = await Promise.allSettled([
+    cached("alerts-feed", () => getMta("camsys%2Fall-alerts.json"), 5 * 60_000),
+    cached("ene-feed", () => getMta("nyct%2Fnyct_ene.json"), 5 * 60_000),
+    cached("ene-upcoming", () => getMta("nyct%2Fnyct_ene_upcoming.json"), 30 * 60_000),
+    cached("equipment", () => getMta("nyct%2Fnyct_ene_equipments.json")),
+  ]);
+  if (feed.status === "rejected") throw feed.reason;
+  const alerts = ((feed.value as { entity?: MercuryAlert[] }).entity ?? []).flatMap((e) => slimAlert(e, from, to) ?? []);
+  const rows = (r: PromiseSettledResult<unknown>) => (r.status === "fulfilled" && Array.isArray(r.value) ? (r.value as Array<Record<string, string>>) : []);
+  const outages = outagesBetween(slimOutages(rows(ene), rows(equipment), rows(upcoming)), from, to);
+  return { at: Math.round(Date.now() / 1000), from, to, alerts, outages };
 }
 
 export async function loadAlerts() {
@@ -198,36 +208,9 @@ export async function loadAlerts() {
       if (a) alerts.push(a);
     }
   }
-  // Elevator / escalator outages, placed by the equipment list's GTFS stop ids.
-  type Row = Record<string, string>;
-  const equipment = new Map<string, Row>();
-  if (equipRes.status === "fulfilled" && Array.isArray(equipRes.value)) {
-    for (const q of equipRes.value as Row[]) equipment.set(q.equipmentno, q);
-  }
-  const current = eneRes.status === "fulfilled" && Array.isArray(eneRes.value) ? (eneRes.value as Row[]).filter((o) => o.isupcomingoutage !== "Y") : [];
-  const outNow = new Set(current.map((o) => o.equipment));
-  const stopsOf = (q?: Row) => (q?.elevatorsgtfsstopid ?? "").split(/[/,; ]+/).filter(Boolean);
-  const outages = current.map((o) => {
-    const q = equipment.get(o.equipment);
-    const stops = stopsOf(q);
-    const isElevator = o.equipmenttype === "EL";
-    // Still accessible if another active ADA elevator serves the same stop and is not out, or the unit is redundant.
-    const adaStation = [...equipment.values()].some((x) => x.ADA === "Y" && stopsOf(x).some((s) => stops.includes(s)));
-    const backup = [...equipment.values()].some((x) => x.equipmentno !== o.equipment && x.equipmenttype === "EL" && x.ADA === "Y" && x.isactive === "Y" && !outNow.has(x.equipmentno) && stopsOf(x).some((s) => stops.includes(s)));
-    return {
-      id: o.equipment,
-      station: o.station,
-      routes: (o.trainno ?? "").split("/").filter(Boolean),
-      stops,
-      equipment: isElevator ? "Elevator" : "Escalator",
-      serving: o.serving,
-      reason: o.reason,
-      since: o.outagedate,
-      back: o.estimatedreturntoservice,
-      ada: adaStation ? (!isElevator || backup || Number(q?.redundant) === 1 ? "yes" : "no") : "not-ada",
-      alternative: q?.alternativeroute ?? "",
-    };
-  });
+  // Elevator / escalator outages out right now, placed by the equipment list's GTFS stop ids.
+  const rows = (r: PromiseSettledResult<unknown>) => (r.status === "fulfilled" && Array.isArray(r.value) ? (r.value as Array<Record<string, string>>) : []);
+  const outages = slimOutages(rows(eneRes), rows(equipRes));
   return { at: Math.round(now), alerts, outages };
 }
 

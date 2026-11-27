@@ -38,6 +38,12 @@ export type SlimAlert = {
   /** Current active window, unix seconds; end 0 = open-ended. */
   start: number;
   end: number;
+  /**
+   * Every window of a notice with more than one, from now to WINDOW_DAYS ahead, in order: [start, end], end 0 =
+   * open-ended. The 74 St-Broadway notice runs only at rush hours (224 windows), and the 52 St skip pauses while a
+   * bigger weekend skip runs; `start`/`end` alone showed one window and read as "always" (2026-11-27 audit).
+   */
+  windows?: Array<[number, number]>;
   /** Mercury's own wording, e.g. "Oct 19 - 23, Mon to Fri, 9:30 PM to 5:00 AM". */
   period: string;
   /** "Manhattan-bound", "Coney Island-bound", "Both directions" or "". */
@@ -98,11 +104,25 @@ export function parseProse(text: string, route: string | undefined): Pick<SlimAl
   return { direction, via: uniq(via), skipNames: uniq(skipNames) };
 }
 
+/** How far ahead a notice's windows are kept: long enough for next weekend and the week after. */
+const WINDOW_DAYS = 21;
+
+/** A notice's windows from `now` to WINDOW_DAYS ahead, sorted; only when it has more than one. Pure. */
+export function windowsAhead(periods: Array<{ start?: number; end?: number }>, now: number): Array<[number, number]> | undefined {
+  const horizon = now + WINDOW_DAYS * 86_400;
+  const out = periods
+    .filter((p) => (!p.end || p.end >= now) && (p.start ?? 0) <= horizon)
+    .map((p): [number, number] => [p.start ?? 0, p.end ?? 0])
+    .sort((x, y) => x[0] - y[0]);
+  return out.length > 1 ? out : undefined;
+}
+
 /** The alert as of `now`, or, given `until`, its first period that overlaps now…until (planned work for a chosen day). */
 export function slimAlert(e: MercuryAlert, now: number, until = now): SlimAlert | null {
   const a = e.alert;
   const period = (a.active_period ?? []).find((p) => (p.start ?? 0) <= until && (!p.end || p.end >= now));
   if (!period) return null;
+  const windows = windowsAhead(a.active_period ?? [], now);
   const merc = a["transit_realtime.mercury_alert"];
   const type = merc?.alert_type ?? "";
   const text = en(a.header_text);
@@ -128,6 +148,7 @@ export function slimAlert(e: MercuryAlert, now: number, until = now): SlimAlert 
     stops: uniq(ents.map((x) => x.stop_id)),
     start: period.start ?? 0,
     end: period.end ?? 0,
+    ...(windows ? { windows } : {}),
     period: en(merc?.human_readable_active_period),
     directionIds: uniq(affected.map((x) => x.direction_id)),
     ...parseProse(all, routes[0]),

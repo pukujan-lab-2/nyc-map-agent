@@ -1,0 +1,265 @@
+[
+ {
+  "id": "lmm:planned_work:36304",
+  "alert": {
+   "active_period": [
+    {
+     "start": 1795866300,
+     "end": 1795986000
+    },
+    {
+     "start": 1796471100,
+     "end": 1796590800
+    }
+   ],
+   "informed_entity": [
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "705",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "706",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "707",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "708",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "709",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "710",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    }
+   ],
+   "header_text": {
+    "translation": [
+     {
+      "text": "In Queens, Flushing-bound [7] skips 52 St, 69 St, 74 St-Broadway, 82 St, 90 St, 103 St and 111 St",
+      "language": "en"
+     },
+     {
+      "text": "<p>In Queens, Flushing-bound [7] skips <strong>52 St</strong>, <strong>69 St</strong>, <strong>\u200c</strong><strong>74 St-Broadway</strong>, <strong>82 St</strong>, <strong>90 St</strong>, <strong>103 St</strong> and <strong>111 St</strong></p>",
+      "language": "en-html"
+     }
+    ]
+   },
+   "transit_realtime.mercury_alert": {
+    "alert_type": "Planned - Stops Skipped",
+    "human_readable_active_period": {
+     "translation": [
+      {
+       "text": "Nov 28 - 29 and Dec 5 - 6, Sat 6:45 AM to Sun 4:00 PM",
+       "language": "en"
+      }
+     ]
+    }
+   }
+  }
+ },
+ {
+  "id": "lmm:planned_work:31871",
+  "alert": {
+   "active_period": [
+    {
+     "start": 1795173300,
+     "end": 1795186800
+    },
+    {
+     "start": 1795204800,
+     "end": 1795230000
+    },
+    {
+     "start": 1795432500,
+     "end": 1795446000
+    },
+    {
+     "start": 1795464000,
+     "end": 1795489200
+    },
+    {
+     "start": 1795518900,
+     "end": 1795532400
+    },
+    {
+     "start": 1795550400,
+     "end": 1795575600
+    },
+    {
+     "start": 1795605300,
+     "end": 1795618800
+    },
+    {
+     "start": 1795636800,
+     "end": 1795662000
+    },
+    {
+     "start": 1795778100,
+     "end": 1795791600
+    },
+    {
+     "start": 1795809600,
+     "end": 1795834800
+    },
+    {
+     "start": 1796037300,
+     "end": 1796050800
+    },
+    {
+     "start": 1796068800,
+     "end": 1796094000
+    }
+   ],
+   "informed_entity": [
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "710",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:14"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7X",
+     "stop_id": "710",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7X:14"
+     }
+    }
+   ],
+   "header_text": {
+    "translation": [
+     {
+      "text": "In Queens, all Manhattan-bound [7][7X] local/express trains stop at 74 St-Broadway",
+      "language": "en"
+     },
+     {
+      "text": "<p>In Queens, all Manhattan-bound \u200c[7][7X] local/express trains stop at <strong>74 St-Broadway</strong></p>",
+      "language": "en-html"
+     }
+    ]
+   },
+   "transit_realtime.mercury_alert": {
+    "alert_type": "Planned - Express to Local",
+    "human_readable_active_period": {
+     "translation": [
+      {
+       "text": "Through Spring 2027",
+       "language": "en"
+      }
+     ]
+    }
+   }
+  }
+ },
+ {
+  "id": "lmm:planned_work:31498",
+  "alert": {
+   "active_period": [
+    {
+     "start": 1779719400,
+     "end": 1795866300
+    },
+    {
+     "start": 1795986000,
+     "end": 1796471100
+    },
+    {
+     "start": 1796590800,
+     "end": 1821671940
+    }
+   ],
+   "informed_entity": [
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "713",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "712",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    },
+    {
+     "agency_id": "MTASBWY",
+     "route_id": "7",
+     "stop_id": "711",
+     "direction_id": 0,
+     "transit_realtime.mercury_entity_selector": {
+      "sort_order": "MTASBWY:7:16"
+     }
+    }
+   ],
+   "header_text": {
+    "translation": [
+     {
+      "text": "In Queens, Flushing-bound [7] skips 52 St and 69 St\nAll trains at Woodside-61 St board from the Manhattan-bound platform",
+      "language": "en"
+     },
+     {
+      "text": "<p>In Queens, Flushing-bound [7] skips <strong>52 St</strong> and <strong>69 St</strong></p><p>All trains at <strong>Woodside-61 St</strong> board from the Manhattan-bound platform</p>",
+      "language": "en-html"
+     }
+    ]
+   },
+   "transit_realtime.mercury_alert": {
+    "alert_type": "Planned - Stops Skipped",
+    "human_readable_active_period": {
+     "translation": [
+      {
+       "text": "Through Spring 2027",
+       "language": "en"
+      }
+     ]
+    }
+   }
+  }
+ }
+]
