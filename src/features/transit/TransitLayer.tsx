@@ -34,6 +34,7 @@ import { publishSubway } from "@/lib/agent/streetContext";
 import { busesInFocus, busesToShow, clearStopWatch, holdShuttle, watchStopBuses, registerBusToggle, setShuttleBuses, shownVehicles, useBusPins } from "@/lib/transit/busReveal";
 import { publishLiveDots } from "@/lib/transit/liveVehicles";
 import { heldTrains } from "@/lib/transit/holds";
+import { troubledStations, troubledTrips } from "./troubledTrains";
 import { setLinesControl } from "@/lib/transit/linesControl";
 import { lineOf, setSelectedLine, useSelectedLine } from "@/lib/transit/selectedLine";
 import { useActiveTrip } from "@/lib/transit/activeTrip";
@@ -335,6 +336,7 @@ export default function TransitLayer() {
   const alerts = useAlerts(rail.length > 0 || panelOpen);
   // Routes with an active delay or detour: their trains may really be held, so the vehicle report is trusted there.
   const troubleRoutes = useMemo(() => alertedRoutes(alerts.data?.alerts), [alerts.data]);
+  const troubleStations = useMemo(() => troubledStations(alerts.data?.alerts), [alerts.data]);
   const stars = useStarred();
   // The panel owns what is open; a vehicle stays "selected" while its panel is up.
   const selectedKey = content?.id.startsWith("transit:vehicle:") ? content.id.slice(16) : undefined;
@@ -799,8 +801,10 @@ export default function TransitLayer() {
         const st = data[s]?.stat, lv = data[s]?.live;
         if (!st || !lv) continue;
         const held = s === "subway" ? heldTrains(lv) : undefined;
+        // Subway: also the trains about to queue behind a held one, or about to reach a station a delay notice names.
+        const inTrouble = held ? troubledTrips(lv.trips, troubleRoutes, held, troubleStations) : undefined;
         for (const trip of lv.trips) {
-          const est = estimateTrain(st, trip, now, liveProgress, s === "subway" ? history : undefined, { troubled: troubleRoutes.has(trip.route) || !!held?.has(trip.id) });
+          const est = estimateTrain(st, trip, now, liveProgress, s === "subway" ? history : undefined, { troubled: inTrouble ? inTrouble.has(trip.id) : troubleRoutes.has(trip.route) });
           const h = held?.get(trip.id);
           const v = est && s !== "subway" ? { ...est, grade: "grade" as const } : est && h ? { ...est, held: { since: h.since, stop: h.stop, stopped: h.stopped } } : est;
           if (v && (inView(v) || v.key === selectedKey || v.key === followedKey)) out.push(v);
@@ -817,7 +821,7 @@ export default function TransitLayer() {
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [map, rail.join(","), data, buses.data, selectedKey, followedKey, history, walking, show.routes, troubleRoutes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [map, rail.join(","), data, buses.data, selectedKey, followedKey, history, walking, show.routes, troubleRoutes, troubleStations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // What the draw loop needs from the latest render; assigned on every render below.
   const frame = useRef<FrameInputs | null>(null);
