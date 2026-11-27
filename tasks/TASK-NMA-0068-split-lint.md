@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - Open the pull request for issue 33 and confirm lint passes on main after it merges.
 
+### 2026-11-27 20:08:16 UTC — agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6","blocked":[],"changed":["none"],"completed":["The lint split is in pull request 280 with auto-merge and Auto-fix on; CURRENT.md lists it in flight."],"decisions":["no new decisions"],"evidence":["Pull request 280 opened; its description passes continuity pr-check."],"evidence_class":"observed","next_action":"Let pull request 280 merge, then confirm lint passes on main without a memory kill.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0068","timestamp":"2026-11-27T20:08:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"8ce5bb776f035d93153ec43bffe6ae270cb52a6bacf083acf46dc005eaf16779","request_id":"7671bbf4a81c496dac0f03e8614bac02","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0068"} -->
+
+Completed:
+- The lint split is in pull request 280 with auto-merge and Auto-fix on; CURRENT.md lists it in flight.
+
+Evidence:
+- Pull request 280 opened; its description passes continuity pr-check.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 280 merge, then confirm lint passes on main without a memory kill.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
