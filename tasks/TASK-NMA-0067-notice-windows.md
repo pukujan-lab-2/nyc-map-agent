@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - Open the step 1 pull request; then step 2 of docs/PLAN-notice-walks.md, notice facts.
 
+### 2026-11-27 07:11:12 UTC — agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6","blocked":[],"changed":["none"],"completed":["Step 1 is in pull request 279 with auto-merge and Auto-fix on, rebased onto main after the plan merged."],"decisions":["no new decisions"],"evidence":["Pull request 279 opened; its description passes continuity pr-check."],"evidence_class":"observed","next_action":"Let pull request 279 merge, then start step 2 of docs/PLAN-notice-walks.md, notice facts.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0067","timestamp":"2026-11-27T07:11:12Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"70b5c5c94d8baa2cb58690846d4a15a175ec90fbd37e5a13f4a2c449e9525119","request_id":"5eb3d771a3054ef99c8890771e2f1b60","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0067"} -->
+
+Completed:
+- Step 1 is in pull request 279 with auto-merge and Auto-fix on, rebased onto main after the plan merged.
+
+Evidence:
+- Pull request 279 opened; its description passes continuity pr-check.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 279 merge, then start step 2 of docs/PLAN-notice-walks.md, notice facts.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
