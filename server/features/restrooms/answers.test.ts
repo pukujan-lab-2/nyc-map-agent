@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const octoQuery = vi.fn();
-vi.mock("../../../api/_lib/octo", () => ({ octoQuery: (...a: unknown[]) => octoQuery(...a) }));
+const octoQuery = vi.fn<(sql: string, params?: unknown[]) => Promise<{ rows: unknown[] }>>();
+vi.mock("../../../api/_lib/octo", () => ({ octoQuery: (sql: string, params?: unknown[]) => octoQuery(sql, params) }));
 const { GET, POST, summarize } = await import("./answers");
 
 const now = new Date("2026-11-28T18:00:00Z");

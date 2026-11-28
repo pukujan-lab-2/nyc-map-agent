@@ -216,6 +216,16 @@
               "type": "string"
             },
             "description": "City fields that were empty and were filled from the matched OSM toilet"
+          },
+          "fetchedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When we last fetched the record from its source (ISO); over 30 days old reads as Hours may have changed"
+          },
+          "open": {
+            "$ref": "#/components/schemas/OpenState"
           }
         },
         "required": [
@@ -233,7 +243,117 @@
           "unisex",
           "osmId",
           "osmUrl",
-          "filledFromOsm"
+          "filledFromOsm",
+          "fetchedAt",
+          "open"
+        ]
+      },
+      "OpenState": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "closed",
+              "unknown"
+            ]
+          },
+          "until": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When open: when it closes (ISO); null when open around the clock"
+          },
+          "opensAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When closed: the next opening within a week (ISO), or null"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "missing",
+              "stale",
+              "unclear",
+              null
+            ],
+            "description": "Why the status is unknown: no hours, our copy is over 30 days old, or hours the parser cannot read"
+          }
+        },
+        "required": [
+          "status",
+          "until",
+          "opensAt",
+          "reason"
+        ]
+      },
+      "RestroomAnswerSummaries": {
+        "type": "object",
+        "properties": {
+          "answers": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RestroomAnswerSummary"
+            }
+          }
+        },
+        "required": [
+          "answers"
+        ]
+      },
+      "RestroomAnswerSummary": {
+        "type": "object",
+        "properties": {
+          "confirmedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The latest Yes in the last 30 days (ISO)"
+          },
+          "free": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "That Yes said nothing had to be paid or bought (false: it did; null: skipped)"
+          },
+          "recentNo": {
+            "type": "integer",
+            "description": "No answers in the last 14 days since that Yes"
+          },
+          "warn": {
+            "type": "boolean",
+            "description": "Several recent No answers: the card warns"
+          },
+          "problem": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "closed",
+              "customers_only",
+              "out_of_order",
+              "not_found",
+              null
+            ],
+            "description": "What the latest of those No answers said happened"
+          }
+        },
+        "required": [
+          "confirmedAt",
+          "free",
+          "recentNo",
+          "warn",
+          "problem"
         ]
       },
       "EventsResponse": {
@@ -512,6 +632,56 @@
           },
           "url": {
             "type": "string"
+          },
+          "openingHours": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OSM opening_hours, as tagged"
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "address": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "120 Fulton St"
+          },
+          "brandWikidata": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "brand:wikidata; the storefront logo comes from /api/v1/storefronts/logo?qid="
+          },
+          "checkDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "OSM check_date:opening_hours or check_date: when a mapper last confirmed it"
+          },
+          "fetchedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "When we last fetched it from OpenStreetMap (ISO)"
+          },
+          "open": {
+            "$ref": "#/components/schemas/OpenState"
           }
         },
         "required": [
@@ -524,7 +694,15 @@
           "changingTable",
           "fee",
           "source",
-          "url"
+          "url",
+          "openingHours",
+          "phone",
+          "website",
+          "address",
+          "brandWikidata",
+          "checkDate",
+          "fetchedAt",
+          "open"
         ]
       },
       "AgentRateLimited": {
@@ -677,6 +855,58 @@
         },
         "required": [
           "text"
+        ]
+      },
+      "RestroomAnswer": {
+        "type": "object",
+        "properties": {
+          "restroomId": {
+            "type": "string",
+            "maxLength": 160,
+            "pattern": "^(osm:(node|way|relation)\\/\\d+|nyc:.+)$",
+            "example": "osm:node/123"
+          },
+          "available": {
+            "type": "boolean"
+          },
+          "paid": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Had to pay or buy something"
+          },
+          "customersOnly": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "codeNeeded": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Needed a code or key"
+          },
+          "problem": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "closed",
+              "customers_only",
+              "out_of_order",
+              "not_found",
+              null
+            ],
+            "description": "After No: what happened"
+          }
+        },
+        "required": [
+          "restroomId",
+          "available"
         ]
       }
     },
@@ -1553,6 +1783,184 @@
           },
           "400": {
             "description": "Invalid query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream (Octo / R2) error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/restroom-answers": {
+      "get": {
+        "summary": "Recent rider answers for up to 100 restrooms, summarised: the latest confirmation in 30 days, whether it was free, and No answers since",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 8000,
+              "description": "Comma-separated restroom ids, at most 100"
+            },
+            "required": true,
+            "description": "Comma-separated restroom ids, at most 100",
+            "name": "ids",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestroomAnswerSummaries"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream (Octo / R2) error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Store one anonymous answer to Was the restroom available to use? (restroom id, answers and a timestamp; no account, device or position)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestroomAnswer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Stored"
+          },
+          "400": {
+            "description": "Not a restroom id, or an answer of the wrong kind",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream (Octo / R2) error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/restroom-answers": {
+      "get": {
+        "summary": "Recent rider answers for up to 100 restrooms, summarised: the latest confirmation in 30 days, whether it was free, and No answers since (alias of /api/v1/restroom-answers)",
+        "deprecated": true,
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 8000,
+              "description": "Comma-separated restroom ids, at most 100"
+            },
+            "required": true,
+            "description": "Comma-separated restroom ids, at most 100",
+            "name": "ids",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RestroomAnswerSummaries"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream (Octo / R2) error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Store one anonymous answer to Was the restroom available to use? (restroom id, answers and a timestamp; no account, device or position) (alias of /api/v1/restroom-answers)",
+        "deprecated": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RestroomAnswer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Stored"
+          },
+          "400": {
+            "description": "Not a restroom id, or an answer of the wrong kind",
             "content": {
               "application/json": {
                 "schema": {

@@ -7,6 +7,7 @@ import { startSharing } from "@/lib/geo/sharedLocation";
 import { useDataView } from "@/lib/store/DataViewContext";
 import type { RestroomInfo } from "./layers";
 import { RestroomPhoto } from "@/components/RestroomPhoto";
+import { hoursLabel, stateAt } from "@/lib/openHours";
 import { restroomRows, restroomSourceLine } from "./source";
 
 /** A clicked public restroom's details, shown in the map panel. */
@@ -35,8 +36,15 @@ export function RestroomDetails({ restroom, distanceLabel }: { restroom: Restroo
     })();
   };
 
+  const open = stateAt(restroom.open, new Date());
   return (
     <div>
+      {/* Public · free and its hours, as the restroom pick says them (#249). */}
+      <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px] font-medium">
+        {/* A card built without the server's open-now (a 3D kiosk tap) shows the hours row below instead. */}
+        {restroom.open !== undefined ? <span className={open.status === "open" ? "rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-900" : "rounded-full bg-stone-200 px-2 py-0.5 text-stone-800"}>{hoursLabel(open, new Date())}</span> : null}
+        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-900">{restroom.fee === true ? "Public · fee" : "Public · free"}</span>
+      </div>
       {distanceLabel ? <p className="mb-2 text-xs text-foreground">{distanceLabel}</p> : null}
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
         {rows

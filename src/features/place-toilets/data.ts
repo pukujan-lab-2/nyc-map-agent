@@ -1,4 +1,5 @@
 import { api } from "@/lib/api/client";
+import type { OpenState } from "@/lib/openHours";
 
 /** One place as /api/v1/place-toilets serves it (server/features/place-toilets/schema.ts). */
 export interface PlaceToiletProps {
@@ -12,6 +13,15 @@ export interface PlaceToiletProps {
   fee: boolean | null;
   source: "openstreetmap";
   url: string;
+  openingHours?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  address?: string | null;
+  brandWikidata?: string | null;
+  checkDate?: string | null;
+  fetchedAt?: string | null;
+  /** Open now, worked out by the server in New York time (server/lib/openingHours.ts). */
+  open?: OpenState;
 }
 export type PlaceToiletFeature = GeoJSON.Feature<GeoJSON.Point, PlaceToiletProps>;
 
@@ -28,6 +38,9 @@ export const KIND_LABEL: Record<string, string> = {
   pub: "Pub",
   shop: "Shop",
 };
+
+/** Every business says this: the app cannot know who may use its restroom (owner, 2026-11-27). */
+export const CUSTOMERS_LINE = "May be customers only";
 
 /** Minimum zoom for these markers: public restrooms stay primary below it. */
 export const MIN_ZOOM = 15;

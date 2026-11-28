@@ -10,9 +10,9 @@ import OpeningHours from "opening_hours";
  * fetched more than {@link STALE_DAYS} days ago are all "unknown", which the
  * card shows as "Hours may have changed".
  */
-export const NYC_TZ = "America/New_York";
+const NYC_TZ = "America/New_York";
 /** Our copy is older than this: the hours may have changed since. */
-export const STALE_DAYS = 30;
+const STALE_DAYS = 30;
 const DAY_MS = 86_400_000;
 /** Lower Manhattan, for sunset and New York's public holidays. */
 const NOMINATIM = { lat: 40.71, lon: -74.0, address: { country_code: "us", state: "New York" } };
@@ -94,7 +94,7 @@ function parse(value: string): OpeningHours | null {
 }
 
 /** True when the OSM value parses. */
-export function isReadableHours(value: string): boolean {
+function isReadableHours(value: string): boolean {
   return parse(value) !== null;
 }
 

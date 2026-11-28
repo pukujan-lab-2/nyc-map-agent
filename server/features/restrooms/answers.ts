@@ -8,13 +8,13 @@ import { fail, json } from "../../../api/_lib/http";
  * holds the restroom id, the answers and a timestamp, nothing about who or
  * where. The phone checks it is near the restroom before it asks.
  */
-export const RestroomId = z
+const RestroomId = z
   .string()
   .max(160)
   .regex(/^(osm:(node|way|relation)\/\d+|nyc:.+)$/)
   .openapi({ example: "osm:node/123" });
 
-export const Problem = z.enum(["closed", "customers_only", "out_of_order", "not_found"]);
+const Problem = z.enum(["closed", "customers_only", "out_of_order", "not_found"]);
 
 export const AnswerBody = z
   .object({
@@ -54,11 +54,11 @@ export interface StoredAnswer {
 
 const DAY = 86_400_000;
 /** A Yes counts as a confirmation this long. */
-export const CONFIRM_DAYS = 30;
+const CONFIRM_DAYS = 30;
 /** A No counts towards the warning this long. */
-export const NO_DAYS = 14;
+const NO_DAYS = 14;
 /** This many recent No answers, with no Yes after them, show a warning. */
-export const WARN_AT = 2;
+const WARN_AT = 2;
 
 /** One restroom's recent answers, newest first or in any order, as the card reads them. */
 export function summarize(answers: StoredAnswer[], now: Date): AnswerSummary | null {
