@@ -150,6 +150,29 @@ Blocked/uncertain:
 Next:
 - Rebase onto main once pull request 284 merges
 
+### 2026-11-28 06:21:50 UTC — agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f","blocked":["none"],"changed":["rebase only; checkpoints/CURRENT.md"],"completed":["Rebased the walk builder onto main after pull request 284 merged; e2e/mocks.ts is main's"],"decisions":["no new decisions"],"evidence":["After the rebase the full unit suite passes (2,307 tests, 15 skipped); lint on the changed files, knip, import boundaries and size-limit pass"],"evidence_class":"observed","next_action":"Let pull request 287 merge","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0081","timestamp":"2026-11-28T06:21:50Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"dc576684bd406d31b42e6913e939a10b5ab3fcd14f3506c25c08771c91ea068a","request_id":"249a39198256491da1680ccafa54abc4","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0081"} -->
+
+Completed:
+- Rebased the walk builder onto main after pull request 284 merged; e2e/mocks.ts is main's
+
+Evidence:
+- After the rebase the full unit suite passes (2,307 tests, 15 skipped); lint on the changed files, knip, import boundaries and size-limit pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- rebase only; checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 287 merge
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
