@@ -1,0 +1,8 @@
+# The browser specs CI runs for a change that is not confined to one feature folder.
+# scripts/ci/e2e-select.sh reads this. CI runs them at two sizes (smallest phone, desktop);
+# run every spec at all four sizes locally with `pnpm e2e` before pushing a screen change.
+# One spec file per line.
+smoke.spec.ts
+responsive.spec.ts
+task-screens.spec.ts
+panel-slot.spec.ts

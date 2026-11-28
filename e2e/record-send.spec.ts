@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectLayout, SIZES } from "./layout";
+import { expectLayout, SIZES, TALL_PHONE } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
@@ -78,7 +78,7 @@ async function stubServer(page: Page, chunk = 20_000): Promise<Stub> {
 
 /** Opens the recorder with the stub in place and returns the stub, so a test can set it to refuse. */
 const open = async (page: Page): Promise<Stub> => {
-  await page.setViewportSize({ width: SIZES[2].width, height: SIZES[2].height });
+  await page.setViewportSize({ width: TALL_PHONE.width, height: TALL_PHONE.height });
   await mockNetwork(page);
   const stub = await stubServer(page);
   await fakeCamera(page);
