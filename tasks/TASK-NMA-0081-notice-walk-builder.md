@@ -81,6 +81,29 @@ Blocked/uncertain:
 Next:
 - Rebase onto main once pull request 284 merges
 
+### 2026-11-28 04:02:56 UTC — agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f","blocked":["Built on pull request 284, which is not merged yet"],"changed":["src/features/transit/walkPatterns.ts, noticeWalk.ts, noticeWalk.test.ts, NoticeDiagram.tsx, walkMap.ts, alertFocus.ts, e2e/mocks.ts, e2e/line-notices.spec.ts"],"completed":["Each walk step has a spoken text (short forms in full, ordinals, a pause between a name's parts); entrances in the step map can carry their place; every shuttle and temporary bus in a walk lists its stops"],"decisions":["e2e/mocks.ts speech stub copied byte for byte from the time-buttons branch so the branches merge cleanly"],"evidence":["No spoken step on the saved feed has St., Av. or a double period, and the same facts give the same words; the map audit finds no shuttle without stops; transit unit tests pass (217) and the 21 notice browser tests pass at all four sizes"],"evidence_class":"observed","next_action":"Rebase onto main once pull request 284 merges","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0081","timestamp":"2026-11-28T04:02:56Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"eb31f00d6147c57a03f7007dc07b6e1f507e212df1a36b35ba54b610733d5b7a","request_id":"bc0086823b94421f8910099703a6528f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0081"} -->
+
+Completed:
+- Each walk step has a spoken text (short forms in full, ordinals, a pause between a name's parts); entrances in the step map can carry their place; every shuttle and temporary bus in a walk lists its stops
+
+Evidence:
+- No spoken step on the saved feed has St., Av. or a double period, and the same facts give the same words; the map audit finds no shuttle without stops; transit unit tests pass (217) and the 21 notice browser tests pass at all four sizes
+
+Decisions:
+- e2e/mocks.ts speech stub copied byte for byte from the time-buttons branch so the branches merge cleanly
+
+Changed:
+- src/features/transit/walkPatterns.ts, noticeWalk.ts, noticeWalk.test.ts, NoticeDiagram.tsx, walkMap.ts, alertFocus.ts, e2e/mocks.ts, e2e/line-notices.spec.ts
+
+Blocked/uncertain:
+- Built on pull request 284, which is not merged yet
+
+Next:
+- Rebase onto main once pull request 284 merges
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
