@@ -3,6 +3,7 @@ import { ArrowDown, Bus, Info, Play, Square, Volume2, VolumeX } from "lucide-rea
 import { useSharedLocation } from "@/lib/geo/sharedLocation";
 import { useAppLang } from "@/lib/i18n/appLang";
 import { formatStationName } from "@/lib/streetName";
+import { useStepClips } from "@/lib/voice/clips";
 import { say } from "@/lib/voice/say";
 import { alertDiagram, isGap, type AlertDiagram, type Corner, type StopState } from "./alertDiagram";
 import { mtaWords, noticeWalk, type TripMode, type WalkStep } from "./noticeWalk";
@@ -20,7 +21,7 @@ const readMuted = () => { try { return localStorage.getItem(MUTE_KEY) === "off";
  * voice and does graph walk for me"): each step is said aloud while its stations light up, then the
  * next. Muted, the steps still walk, paced for reading. Each step stays up at least a moment.
  */
-function useNoticeWalk(steps: WalkStep[], auto: boolean, lang: string) {
+function useNoticeWalk(steps: Array<WalkStep & { clip?: string | null }>, auto: boolean, lang: string) {
   const [step, setStep] = useState<number | null>(null);
   const [muted, setMutedState] = useState(readMuted);
   const cancel = useRef<(() => void) | null>(null);
@@ -41,7 +42,7 @@ function useNoticeWalk(steps: WalkStep[], auto: boolean, lang: string) {
       let spoke = muted, dwelt = false;
       const next = () => { if (spoke && dwelt) go(i + 1); };
       timer = setTimeout(() => { dwelt = true; next(); }, muted ? 1500 + steps[i].text.length * 45 : 900);
-      if (!muted) hush = say(steps[i].say, lang, () => { spoke = true; next(); });
+      if (!muted) hush = say(steps[i].say, lang, () => { spoke = true; next(); }, false, undefined, steps[i].clip);
     };
     cancel.current = () => { alive = false; clearTimeout(timer); hush(); };
     go(0);
@@ -194,7 +195,10 @@ export default function NoticeDiagram({ alert, sys, route, color, auto, stop }: 
   const said = useNoticeLines(words, lang);
   // English is said in its spoken form ("74th Street, Broadway"); another language is said as translated.
   const spokenEnglish = lang === "en" || said.failed;
-  const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i], say: spokenEnglish ? s.say : said.lines[i] })), [english, said.lines, spokenEnglish]);
+  const sayings = useMemo(() => english.map((s, i) => (spokenEnglish ? s.say : said.lines[i] ?? s.text)), [english, said.lines, spokenEnglish]);
+  // Each step names its sound made ahead on the server (noticeClips.ts); one not made yet is spoken live.
+  const clips = useStepClips(sayings, spokenEnglish ? "en" : lang);
+  const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i], say: sayings[i], clip: clips.clips[i] })), [english, said.lines, sayings, clips.clips]);
   const labels = useMemo(() => {
     const t = said.lines.slice(english.length);
     return { ...Object.fromEntries(TAG_KEYS.map((k, i) => [k, t[i]])), transfer: t[TAG_KEYS.length], heading: diagram?.heading ? t[TAG_KEYS.length + 1] : "", noted: t[TAG_KEYS.length + 2] } as Record<StopState, string> & { heading: string };
@@ -203,7 +207,7 @@ export default function NoticeDiagram({ alert, sys, route, color, auto, stop }: 
     const t = said.lines.slice(english.length + TAG_KEYS.length + 3);
     return { stop: t[0], trip: t[1], off: t[2], on: t[3], mta: t[4] };
   }, [said.lines, english.length]);
-  const walk = useNoticeWalk(steps, auto && said.ready, lang === "en" || said.failed ? "en-US" : lang);
+  const walk = useNoticeWalk(steps, auto && said.ready && clips.ready, spokenEnglish ? "en-US" : lang);
   // Picking another stop or way plays that walk from the top.
   const replay = useRef(false);
   const choose = (next: { stop?: string; mode?: TripMode }) => {
@@ -211,7 +215,7 @@ export default function NoticeDiagram({ alert, sys, route, color, auto, stop }: 
     if (next.stop) setPicked(next.stop);
     if (next.mode) setMode(next.mode);
   };
-  useEffect(() => { if (replay.current && said.ready) { replay.current = false; walk.play(); } }, [plan, said.ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (replay.current && said.ready && clips.ready) { replay.current = false; walk.play(); } }, [plan, said.ready, clips.ready]); // eslint-disable-line react-hooks/exhaustive-deps
   const [info, setInfo] = useState(false);
   const current = walk.step === null ? null : english[walk.step];
   const lit = current?.map.stations.length ? new Set(current.map.stations) : null;

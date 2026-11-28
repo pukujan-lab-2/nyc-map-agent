@@ -90,6 +90,29 @@ export const TTS_ROUTE = createRoute({
   },
 });
 
+/** GET /api/tts/clip/{key}: a notice walk's step made ahead (server/features/agent/noticeClips.ts). */
+export const TTS_CLIP_ROUTE = createRoute({
+  method: "get",
+  path: "/api/tts/clip/{key}",
+  summary: "A notice walk's spoken step, made ahead and kept (16-bit mono PCM); the key names the words, language and voice, so it never changes",
+  request: { params: z.object({ key: z.string().regex(/^[0-9a-f]{64}$/).openapi({ param: { name: "key", in: "path" }, example: "0".repeat(64) }) }) },
+  responses: {
+    200: { description: "The clip; the sample rate is in X-Sample-Rate. Cached for a year", content: { "audio/L16": { schema: z.string().openapi({ format: "binary" }) } } },
+    400: { description: "Not a clip key", content: { "application/json": { schema: ApiError } } },
+    404: { description: "Not made yet: speak the line with POST /api/tts", content: { "application/json": { schema: ApiError } } },
+  },
+});
+
+/** GET /api/tts/voice: what the phone needs to compute a clip's key. */
+export const TTS_VOICE_ROUTE = createRoute({
+  method: "get",
+  path: "/api/tts/voice",
+  summary: "The voice notice-walk clips are made with, and the languages they are made in (empty when clips are off)",
+  responses: {
+    200: { description: "The voice and languages", content: { "application/json": { schema: z.object({ voice: z.string(), langs: z.array(z.string()) }) } } },
+  },
+});
+
 export const TRANSLATE_ROUTE = createRoute({
   method: "post",
   path: "/api/agent/translate",

@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { speak, ttsConfig, ttsLang, warmVoice } from "./tts";
+import { liveSpeechCount, speak, ttsConfig, ttsLang, voiceTag, warmVoice } from "./tts";
 
 const ENV = { STT_PROTOCOL: "speech", STT_BASE_URL: "http://gateway.test:18800", STT_STACK: "multilingual" } as unknown as NodeJS.ProcessEnv;
 const post = (body: unknown) => new Request("http://app/api/tts", { method: "POST", body: JSON.stringify(body), headers: { "x-forwarded-for": "9.9.9.9" } });
 
 describe("POST /api/tts", () => {
   it("uses the speech server that speech-to-text already names", () => {
-    expect(ttsConfig(ENV)).toEqual({ base: "http://gateway.test:18800", stack: "multilingual", project: "nyc-map" });
+    expect(ttsConfig(ENV)).toEqual({ base: "http://gateway.test:18800", stack: "multilingual", project: "nyc-map", modelVersion: "kokoro-1" });
     expect(ttsConfig({} as NodeJS.ProcessEnv).base).toBe("");
   });
 
@@ -23,6 +23,23 @@ describe("POST /api/tts", () => {
     expect(f).toHaveBeenCalledWith("http://gateway.test:18800/tts", expect.objectContaining({ body: JSON.stringify({ text: "Take the 4 train.", stack: "multilingual", lang: "en" }) }));
     const sent = (f.mock.calls[0] as unknown as [string, RequestInit])[1];
     expect((sent.headers as Record<string, string>)["x-speech-project"]).toBe("nyc-map");
+  });
+
+  it("counts a rider's speech as in flight until its stream ends, so the clip maker waits", async () => {
+    const f = vi.fn(() => Promise.resolve(new Response(new Uint8Array([1, 2, 3, 4]), { headers: { "x-sample-rate": "24000" } })));
+    const before = liveSpeechCount();
+    const res = await speak(post({ text: "Take the 4 train.", lang: "en" }), f as unknown as typeof fetch, ENV);
+    expect(liveSpeechCount()).toBe(before + 1);
+    expect([...new Uint8Array(await res.arrayBuffer())]).toEqual([1, 2, 3, 4]);
+    expect(liveSpeechCount()).toBe(before);
+    const down = vi.fn(() => Promise.resolve(new Response("", { status: 500 })));
+    await speak(post({ text: "hi", lang: "en" }), down as unknown as typeof fetch, ENV);
+    expect(liveSpeechCount()).toBe(before);
+  });
+
+  it("names the clip voice by stack and model version", () => {
+    expect(voiceTag(ENV)).toBe("multilingual:kokoro-1");
+    expect(voiceTag({ ...ENV, TTS_MODEL_VERSION: "kokoro-2" })).toBe("multilingual:kokoro-2");
   });
 
   it("answers 503 with no server, 400 for no text, 415 for Russian, 502 when the server fails", async () => {

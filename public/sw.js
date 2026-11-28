@@ -9,8 +9,9 @@
  * x-ray station data and the Fulton St station model the trip preview walks),
  * and the trip steps' words and voice: the answers to the two POSTs the page
  * marks with `x-keep` (/api/agent/translate and /api/tts), kept by what was
- * asked and given back from here when the same thing is asked again. What it
- * never keeps: the rest of
+ * asked and given back from here when the same thing is asked again; and the
+ * notice walks' clips made ahead on the server (GET /api/tts/clip/<key>), so a
+ * walk the rider heard once plays again with no signal. What it never keeps: the rest of
  * /api/* (the assistant, live arrivals, alerts) and anything on another
  * origin (basemap tiles, live feeds). Live data is never served from here as
  * if it were fresh; the page labels anything it saved itself with its age.
@@ -31,6 +32,11 @@ const KEPT_CACHE = "nyc-map-kept-v1";
 const KEPT_MAX = 120;
 /** The POSTs a page may mark `x-keep`. */
 const KEPT_PATHS = ["/api/tts", "/api/agent/translate"];
+/** Notice-walk clips (GET /api/tts/clip/<key>): a key never changes what it says, so the saved copy always answers. */
+const CLIP_CACHE = "nyc-map-clips-v1";
+/** Clips kept, oldest saved out first; a step is about 200 KB, so a few dozen walks. */
+const CLIP_MAX = 200;
+const CLIP_PATH = /^\/api\/(?:v1\/)?tts\/clip\/[0-9a-f]{64}$/;
 /** Built files older than this are dropped when a new worker starts; one a page still asks for is fetched again. */
 const ASSET_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
 
@@ -42,6 +48,7 @@ const ASSET_MAX_AGE_MS = 30 * 24 * 3600 * 1000;
 function strategyFor(url, req) {
   if (req.keep && req.method === "POST" && url.origin === req.origin && KEPT_PATHS.includes(url.pathname)) return "kept";
   if ((req.method ?? "GET") !== "GET") return "bypass";
+  if (url.origin === req.origin && CLIP_PATH.test(url.pathname)) return "clip";
   // Other hosts (basemap tiles, fonts): always the network; only when that fails, a copy
   // the underground helper saved for a station area. This worker never saves them itself.
   if (url.origin !== req.origin) return "network-then-tiles";
@@ -74,7 +81,7 @@ function keptKey(path, body, origin) {
   return `${origin}/__kept/v1${path}?${encodeURIComponent(body)}`;
 }
 
-self.UW = { VERSION, CACHE, TILE_CACHE, KEPT_CACHE, PRECACHE, strategyFor, staleAsset, keptKey };
+self.UW = { VERSION, CACHE, TILE_CACHE, KEPT_CACHE, CLIP_CACHE, PRECACHE, strategyFor, staleAsset, keptKey };
 
 async function put(req, res) {
   if (!res || !res.ok || res.type === "opaque") return res;
@@ -131,6 +138,24 @@ async function kept(event) {
   return res;
 }
 
+/** A clip: the saved one, else the server's, saved once it has all arrived. A 404 (not made yet) is never saved. */
+async function clip(event) {
+  const cache = await caches.open(CLIP_CACHE);
+  const hit = await cache.match(event.request.url);
+  if (hit) return hit;
+  const res = await fetch(event.request);
+  if (res.status === 200) {
+    event.waitUntil(
+      cache
+        .put(event.request.url, res.clone())
+        .then(() => cache.keys())
+        .then((keys) => Promise.all(keys.slice(0, Math.max(0, keys.length - CLIP_MAX)).map((k) => cache.delete(k))))
+        .catch(() => undefined),
+    );
+  }
+  return res;
+}
+
 async function cacheFirst(request) {
   const hit = await caches.match(request);
   if (hit) return hit;
@@ -162,6 +187,7 @@ self.addEventListener("fetch", (event) => {
   const how = strategyFor(url, { mode: req.mode, method: req.method, origin: self.location.origin, keep: req.headers.get("x-keep") === "1" });
   if (how === "bypass") return;
   if (how === "kept") return event.respondWith(kept(event));
+  if (how === "clip") return event.respondWith(clip(event));
   if (how === "network-then-tiles") {
     event.respondWith(
       fetch(req).catch(async (err) => {

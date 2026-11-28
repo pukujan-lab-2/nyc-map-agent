@@ -6731,6 +6731,172 @@
         }
       }
     },
+    "/api/v1/tts/clip/{key}": {
+      "get": {
+        "summary": "A notice walk's spoken step, made ahead and kept (16-bit mono PCM); the key names the words, language and voice, so it never changes",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "example": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The clip; the sample rate is in X-Sample-Rate. Cached for a year",
+            "content": {
+              "audio/L16": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a clip key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not made yet: speak the line with POST /api/tts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tts/clip/{key}": {
+      "get": {
+        "summary": "A notice walk's spoken step, made ahead and kept (16-bit mono PCM); the key names the words, language and voice, so it never changes (alias of /api/v1/tts/clip/{key})",
+        "deprecated": true,
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$",
+              "example": "0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "required": true,
+            "name": "key",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The clip; the sample rate is in X-Sample-Rate. Cached for a year",
+            "content": {
+              "audio/L16": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a clip key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not made yet: speak the line with POST /api/tts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tts/voice": {
+      "get": {
+        "summary": "The voice notice-walk clips are made with, and the languages they are made in (empty when clips are off)",
+        "responses": {
+          "200": {
+            "description": "The voice and languages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "voice": {
+                      "type": "string"
+                    },
+                    "langs": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "voice",
+                    "langs"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tts/voice": {
+      "get": {
+        "summary": "The voice notice-walk clips are made with, and the languages they are made in (empty when clips are off) (alias of /api/v1/tts/voice)",
+        "deprecated": true,
+        "responses": {
+          "200": {
+            "description": "The voice and languages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "voice": {
+                      "type": "string"
+                    },
+                    "langs": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "voice",
+                    "langs"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/translate": {
       "post": {
         "summary": "A service notice's short steps in the rider's language; station, street and line names stay as written",

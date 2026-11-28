@@ -6,6 +6,8 @@ import { mainScript } from "./tts";
  * caller speaks with the browser voice instead; a server that failed is not asked again for a minute.
  * A `keep` line (the trip preview's steps, #132) is marked for the offline worker (public/sw.js), which
  * saves its sound and plays it back from the phone when the same line is asked for again.
+ * A notice walk's step names its `clip`, made ahead on the server: that is fetched first, and only a clip that is
+ * not ready (or can't be reached) falls back to POST /api/tts, then to the browser voice.
  */
 
 /** The app's languages Kokoro has a voice for (the server's TTS_LANGS). */
@@ -33,8 +35,21 @@ export function pcm16ToFloat(b: Uint8Array): Float32Array {
   return out;
 }
 
+/**
+ * The speech for one line: the pre-made clip when there is one and it is ready, else the line made now.
+ * Throws when the network is gone and no saved copy answers. Exported for tests.
+ */
+export async function openSpeech(text: string, lang: string, keep: boolean, clip: string | null | undefined, signal: AbortSignal, f: typeof fetch = fetch): Promise<Response> {
+  const base = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
+  if (clip) {
+    const res = await f(`${base}/api/tts/clip/${clip}`, { signal }).catch((e: unknown) => { if (signal.aborted) throw e; return null; });
+    if (res?.ok && res.body) return res;
+  }
+  return f(`${base}/api/tts`, { method: "POST", headers: { "content-type": "application/json", ...(keep ? { "x-keep": "1" } : {}) }, body: JSON.stringify({ text, lang }), signal });
+}
+
 /** Speaks `text`; returns cancel. `onEnd` fires once (after the last sound, on cancel, or on a failure after sound began). `onFail` fires instead if nothing played. */
-export function speakKokoro(text: string, lang: string, onEnd: () => void, onFail: () => void, keep = false): () => void {
+export function speakKokoro(text: string, lang: string, onEnd: () => void, onFail: () => void, keep = false, clip?: string | null): () => void {
   const ctrl = new AbortController();
   const sources: AudioBufferSourceNode[] = [];
   let ctx: AudioContext | null = null;
@@ -59,8 +74,8 @@ export function speakKokoro(text: string, lang: string, onEnd: () => void, onFai
   };
   void (async () => {
     try {
-      const base = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
-      const res = await fetch(`${base}/api/tts`, { method: "POST", headers: { "content-type": "application/json", ...(keep ? { "x-keep": "1" } : {}) }, body: JSON.stringify({ text, lang }), signal: ctrl.signal });
+      const res = await openSpeech(text, lang, keep, clip, ctrl.signal);
+      if (done) return;
       // A 415 or 429 says this text can't be read now, not that the server is down: the browser voice takes it.
       if (!res.ok || !res.body) {
         if (res.status === 415 || res.status === 429) { done = true; onFail(); return; }

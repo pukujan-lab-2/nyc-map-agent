@@ -34,6 +34,11 @@ services:
       # The VPS's one Sablier (server-management komodo/resources/platform.toml): the app wakes
       # otp and valhalla through it, and they sleep after 10 idle minutes (#44).
       SABLIER_URL: http://sablier:10000
+      # Notice-walk speech made ahead (server/features/agent/noticeClips.ts). The folder can be deleted at any
+      # time: each clip is made again on the next sync, and its database row is dropped when the server starts.
+      SPEECH_CACHE_DIR: /var/lib/nyc-map/speech-clips
+    volumes:
+      - ${SPEECH_CLIPS_ROOT:-/home/ubuntu/apps/nyc-map-speech-clips}:/var/lib/nyc-map/speech-clips
     extra_hosts:
       - host.docker.internal:host-gateway
     ports:

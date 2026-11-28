@@ -57,6 +57,12 @@ STT_STACK=multilingual
 
 Nothing goes to an outside service. Which machine takes a language, and what happens when every machine is full, is decided in the gateway's `demo/live-site/speech/gateway/routes.toml` in `voice-agent-research` (its `docs/speech-gateway.md`), not here. For `nyc-map` a full gateway answers 503 at once and the mic says voice is unavailable while typing keeps working; there is no cloud speech fallback. Check it from the VPS with `curl -s http://127.0.0.1:18800/health`, and `curl -s http://127.0.0.1:18800/routes` for the live routes.
 
+### Spoken notice steps made ahead
+
+Riders used to wait for every step of a notice walk to be spoken on the spot. Now the server makes each step's speech when the notice arrives and keeps it in `SPEECH_CACHE_DIR`, which the compose file mounts from `/home/ubuntu/apps/nyc-map-speech-clips` (`SPEECH_CLIPS_ROOT` moves it). Each clip has a row in `core.speech_clips`. A clip that no live notice uses and no one has played for 7 days is deleted every hour. The same sentence is one file for every notice, so the folder holds roughly 1,000 English sentences, about 200 MB, with the notices of 2026-11-27.
+
+The maker asks the same speech gateway as `/api/tts`, one line at a time, and waits while a rider's own speech is in flight. When the gateway is full or down it pauses, longer each time, up to 10 minutes. The folder can be deleted at any time; everything in it is made again. `GET /api/agent/health` reports the store under `clips` (count, bytes, unused, still to make). Raise `TTS_MODEL_VERSION` (default `kokoro-1`) when the gateway's Kokoro model or voices change, so no old sound plays.
+
 ### Public route
 
 Cloudflare tunnel A (the `octo-cloudflared` container) reaches the app as
