@@ -57,6 +57,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-28 02:42:10 UTC — agent:claude-code/0d7cd701-09d9-4f61-81ad-2bb1dadc8b79
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/0d7cd701-09d9-4f61-81ad-2bb1dadc8b79","blocked":[],"changed":["server/features/transit/noticeHelper.ts, noticeRoutes.ts, noticeHelper.test.ts; translate.ts; app.ts, node.ts, openapi.ts; scripts/notice-facts-coverage.ts"],"completed":["Model fallback with a checker and a per-notice cache, translated MTA text for notices we cannot walk, and a nightly coverage report"],"decisions":["The server runs the nightly report itself (CI runners have had no schedules since the move to the VPS, and the report needs the server's model)"],"evidence":["21 new tests pass, including refusals for an unknown station, a station off the line, a direction the line does not run and a direction other than the headline's; full unit suite passes (2,330 tests, 15 skipped); on the 2026-11-27 feed the report shows 214 of 214 notices read by the rules"],"evidence_class":"observed","next_action":"Let the pull request merge after 284; the walk builder (step 3) calls /api/transit-notices for notices with no rule facts","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0083","timestamp":"2026-11-28T02:42:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"91adda161a28eac3f1bb7d8bbe367042b3307441a53c00d07f040aa6fdd3d269","request_id":"ad4ba99465234614a6def4f6c1a34045","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0083"} -->
+
+Completed:
+- Model fallback with a checker and a per-notice cache, translated MTA text for notices we cannot walk, and a nightly coverage report
+
+Evidence:
+- 21 new tests pass, including refusals for an unknown station, a station off the line, a direction the line does not run and a direction other than the headline's; full unit suite passes (2,330 tests, 15 skipped); on the 2026-11-27 feed the report shows 214 of 214 notices read by the rules
+
+Decisions:
+- The server runs the nightly report itself (CI runners have had no schedules since the move to the VPS, and the report needs the server's model)
+
+Changed:
+- server/features/transit/noticeHelper.ts, noticeRoutes.ts, noticeHelper.test.ts; translate.ts; app.ts, node.ts, openapi.ts; scripts/notice-facts-coverage.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let the pull request merge after 284; the walk builder (step 3) calls /api/transit-notices for notices with no rule facts
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
