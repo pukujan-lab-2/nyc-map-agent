@@ -51,6 +51,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-28 10:32:33 UTC — agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/bf69a9d6-00a8-40c8-a53f-fa55af80f5e6","blocked":[],"changed":[".github/workflows/ci.yml, checkpoints/CURRENT.md"],"completed":["A full browser-test run in .github/workflows/ci.yml is split three ways across runners, with an e2e summary job that keeps the required check's name"],"decisions":["no new decisions"],"evidence":["Per-spec times from pull request 283's run put the three parts at about 16, 14 and 22 minutes, against 52 on one runner"],"evidence_class":"inferred","next_action":"Confirm pull request 297's own split run passes in about 25 minutes, then rebase 285, 287, 288 and 289 onto main","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0092","timestamp":"2026-11-28T10:32:33Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"5722d5a6bfdbc41df0a2badd96159db9f39a2aedd48c0911aabc8a82862814d9","request_id":"fa544ab44e6e47a59a139faccbdc255c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0092"} -->
+
+Completed:
+- A full browser-test run in .github/workflows/ci.yml is split three ways across runners, with an e2e summary job that keeps the required check's name
+
+Evidence:
+- Per-spec times from pull request 283's run put the three parts at about 16, 14 and 22 minutes, against 52 on one runner
+
+Decisions:
+- no new decisions
+
+Changed:
+- .github/workflows/ci.yml, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Confirm pull request 297's own split run passes in about 25 minutes, then rebase 285, 287, 288 and 289 onto main
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
