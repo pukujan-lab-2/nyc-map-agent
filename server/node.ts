@@ -6,7 +6,8 @@
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
-import { app as api } from "./app";
+import { app as api, noticeDeps } from "./app";
+import { startNoticeReport } from "./features/transit/noticeRoutes";
 
 /** Exported so tests can exercise routing without binding a port. */
 export function createRoot(): Hono {
@@ -36,4 +37,6 @@ export function createRoot(): Hono {
 if (process.env.NODE_ENV !== "test") {
   const port = Number(process.env.PORT ?? 8080);
   serve({ fetch: createRoot().fetch, port }, () => console.log(`nyc-map-agent on :${port}`));
+  // The nightly notice coverage report (docs/PLAN-notice-walks.md step 8), read at /api/transit-health/notices.
+  startNoticeReport(noticeDeps);
 }

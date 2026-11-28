@@ -892,3 +892,17 @@ export function noticeFacts(alert: SlimAlert, idx: StationIndex): NoticeFacts {
 
 /** Does a notice carry enough facts for a walk: at least one change, and every station it names found in our data. */
 export const hasFacts = (f: NoticeFacts) => f.changes.length > 0 && f.unresolved.length === 0;
+
+/**
+ * Find one station by name the way the parser does, for facts that came from somewhere else (the model helper in
+ * `./noticeHelper`). `lines` are the lines the name was given with, `stops` the notice's own stop ids. `found` is
+ * false when nothing in our data matched; a borough or part of town gives id null with `found` true.
+ */
+export function findStation(idx: StationIndex, name: string, lines: string[] = [], stops: string[] = []): StationRef & { found: boolean } {
+  const ctx: Ctx = { idx, lines, stops: new Set(stops), unresolved: new Set() };
+  const ref = resolve(ctx, name, lines);
+  return { ...ref, found: ctx.unresolved.size === 0 };
+}
+
+/** The direction a notice's headline names ("Flushing" from "Flushing-bound [7] trains…"), or null. */
+export const headlineToward = (alert: Pick<SlimAlert, "text">): Toward => dirOf(alert.text.split("\n")[0] ?? "");
