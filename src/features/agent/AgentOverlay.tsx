@@ -176,6 +176,7 @@ export default function AgentOverlay() {
   const driveOn = useFlag("agentDrive");
   // The station replay fills the left column or the top of a phone: the task row has no room beside it.
   const replayOn = useFlag("stationReplay");
+  const restroomsOn = useFlag("restrooms");
   const [messages, setMessages] = useState<Msg[]>([]);
   // Who gets the screen is decided in one place (src/lib/screen/screenSpace.ts); this reports what is open.
   const openMenu = useOpenMenu();
@@ -956,7 +957,7 @@ export default function AgentOverlay() {
     const tasks = {
       settings: () => setSettingsOpen(true),
       // The restroom pick (#249); the agent answers only when the restrooms feature is off.
-      restroom: () => { if (!requestRestroomPick()) void send(tr(appLang, "askRestroom")); },
+      restroom: () => { if (!requestRestroomPick(restroomsOn)) void send(tr(appLang, "askRestroom")); },
       train: () => {
         if (trainRoute) void send(tr(appLang, "askLine").replace("{r}", trainRoute));
         else if (openLines) openLines();
