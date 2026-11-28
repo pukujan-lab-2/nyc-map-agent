@@ -128,6 +128,29 @@ Blocked/uncertain:
 Next:
 - let pull request 288 merge after 287; then check clips in /api/agent/health on the server
 
+### 2026-11-28 07:25:52 UTC — agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f","blocked":[],"changed":["none"],"completed":["Pull request 288 is rebased onto main after 284, 281 and 282 merged: the clip reaches Kokoro through the rider's Voice setting, and the size budgets are set from measurements on main."],"decisions":["no new decisions"],"evidence":["Typecheck, openapi, full lint and size pass; 2,359 unit tests pass, plus the 59 voice tests after the say() fix; the 4 other failures are timeouts in the 3D station sims, which this branch leaves as on main."],"next_action":"let pull request 288 merge after 287; then check clips in /api/agent/health on the server","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0084","timestamp":"2026-11-28T07:25:52Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"60d929ce952cf5a5970a134125f7407a5a80554331b7150199c29875683c4075","request_id":"2d29ed9f0ec14b10aa6ee311ae101a17","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0084"} -->
+
+Completed:
+- Pull request 288 is rebased onto main after 284, 281 and 282 merged: the clip reaches Kokoro through the rider's Voice setting, and the size budgets are set from measurements on main.
+
+Evidence:
+- Typecheck, openapi, full lint and size pass; 2,359 unit tests pass, plus the 59 voice tests after the say() fix; the 4 other failures are timeouts in the 3D station sims, which this branch leaves as on main.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- let pull request 288 merge after 287; then check clips in /api/agent/health on the server
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
