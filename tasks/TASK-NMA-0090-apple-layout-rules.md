@@ -80,3 +80,26 @@ Blocked/uncertain:
 
 Next:
 - Merge pull request 293 once CI passes, tell the station-walk session that /info/ is live, then delete the scratch clone.
+
+### 2026-11-28 11:46:00 UTC — agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9","blocked":[],"changed":[".size-limit.json, checkpoints/CURRENT.md"],"completed":["Pull request 293 is rebased onto main after #298 and force-pushed with lease; it is mergeable with auto-merge armed."],"decisions":["Three size budgets rise slightly (line panel 7.2 kB, notice map layers 6.4 kB, all JS 1299.3 kB) because removing the menu row moved a few shared modules between chunks."],"evidence":["Typecheck, knip, module boundaries and size pass; 2,382 unit tests pass, and the only 5 failures are timeouts in the Fulton St 3D walk simulations, which this branch does not touch, run while other test runs shared the CPU."],"evidence_class":"observed","next_action":"Let CI's fast set pass and the pull request merge, finish the full local e2e run, tell the station-walk session that /info/ is live, then delete the scratch clone.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0090","timestamp":"2026-11-28T11:46:00Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"49e262924d021243557b6600daa6e0cf41a824e9f225e8a8c4e24d24828310a4","request_id":"b60e82ff6d554caca2c285af7f48e11f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0090"} -->
+
+Completed:
+- Pull request 293 is rebased onto main after #298 and force-pushed with lease; it is mergeable with auto-merge armed.
+
+Evidence:
+- Typecheck, knip, module boundaries and size pass; 2,382 unit tests pass, and the only 5 failures are timeouts in the Fulton St 3D walk simulations, which this branch does not touch, run while other test runs shared the CPU.
+
+Decisions:
+- Three size budgets rise slightly (line panel 7.2 kB, notice map layers 6.4 kB, all JS 1299.3 kB) because removing the menu row moved a few shared modules between chunks.
+
+Changed:
+- .size-limit.json, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let CI's fast set pass and the pull request merge, finish the full local e2e run, tell the station-walk session that /info/ is live, then delete the scratch clone.

@@ -28,6 +28,7 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 **On Thursday night the 7's line panel had only Now and This weekend, so a rider could not tell Saturday daytime work from Saturday-night-only skips (step 5 of `docs/PLAN-notice-walks.md`, branch `feat/notice-time-buttons`, task NMA-0079).** The panel now has four buttons on one row, Day, Night, Weekend day and Weekend night, with the one for the New York time already picked and the period's dates on a line under them. The current one shows the live notices and held trains as Now did; another asks for its next occurrence and keeps only the notices whose windows fall in its hours, and the outages out then. `src/lib/transit/periods.ts` holds the period maths. It also fixes a one-hour slip in `nyEpoch`: 6 AM on the March clock-change Sunday came out as 7 AM. Not built: listing next weekend as well, which waits for the owner (decision 1 in the plan).
 
+
 ## Next
 
 - **Hands-free voice takes one turn at a time, and nobody has measured how long a turn takes (owner, 2026-11-28; issue 299, task NMA-0096).** `docs/PLAN-livekit-hands-free.md` plans a live LiveKit call behind a `liveCall` flag, reusing design-bakery's worker and the speech gateway's existing `nyc-map` route, with no routing change and no cloud speech. First move: measure today's hands-free turn end to end. Two questions wait for the owner: where the worker lives, and whose LiveKit server it uses.
