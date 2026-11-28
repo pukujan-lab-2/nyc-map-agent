@@ -103,3 +103,26 @@ Blocked/uncertain:
 
 Next:
 - Let CI's fast set pass and the pull request merge, finish the full local e2e run, tell the station-walk session that /info/ is live, then delete the scratch clone.
+
+### 2026-11-28 12:37:31 UTC — agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9","blocked":[],"changed":["src/pages/Index.tsx, src/pages/CityData.tsx"],"completed":["A neighbourhood picked from search on the map now opens City data, which fixes the smoke and panel-slot browser tests that failed in CI on pull request 293; the branch is rebased onto main with /underground/."],"decisions":["no new decisions"],"evidence":["CI's e2e failed on exactly those 5 tests (93 passed); typecheck and lint pass with the fix."],"evidence_class":"observed","next_action":"Confirm CI's e2e passes on pull request 293 so auto-merge lands it, then tell the station-walk session that /info/ is live and delete the scratch clone.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0090","timestamp":"2026-11-28T12:37:31Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"fd1958649479ebd90d2c432196c2992e8225d64113d35d5a91cf97563f3f3a6d","request_id":"842afed1adcc42f68aefe1cdf4b5df52","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0090"} -->
+
+Completed:
+- A neighbourhood picked from search on the map now opens City data, which fixes the smoke and panel-slot browser tests that failed in CI on pull request 293; the branch is rebased onto main with /underground/.
+
+Evidence:
+- CI's e2e failed on exactly those 5 tests (93 passed); typecheck and lint pass with the fix.
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/pages/Index.tsx, src/pages/CityData.tsx
+
+Blocked/uncertain:
+- none
+
+Next:
+- Confirm CI's e2e passes on pull request 293 so auto-merge lands it, then tell the station-walk session that /info/ is live and delete the scratch clone.
