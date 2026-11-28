@@ -80,6 +80,29 @@ Blocked/uncertain:
 Next:
 - Open the pull request with auto-merge armed and let CI run the full browser suite
 
+### 2026-11-28 13:16:51 UTC — agent:claude-code/ab72443d-36a4-416d-83f5-519c594e9127
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/ab72443d-36a4-416d-83f5-519c594e9127","blocked":[],"changed":["none"],"completed":["Fixed the desktop CI failure where an answer's own line covered the answer (the open-under is keyed by the line's tag, not one second), made the J/M/Z chooser test tap only once the camera has stopped, rebased onto main and moved the task to its own number."],"decisions":["no new decisions"],"evidence":["The 8 cases that failed on CI pass at 1280x800 with one worker on Chromium 1223; pullSheet unit tests pass. The skip-notice test at 1280 also fails on #287's CI run, which has none of these changes."],"evidence_class":"observed","next_action":"Let CI rerun on #295 with auto-merge armed; if a line-notices test fails at 1280 again, compare it with main's run","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0098","timestamp":"2026-11-28T13:16:51Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"d457ab54c01f002913b306eeecd8473a52d59418263106e68632c112f8238d66","request_id":"7dd2a55e06ca4fa181d5517805993beb","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0098"} -->
+
+Completed:
+- Fixed the desktop CI failure where an answer's own line covered the answer (the open-under is keyed by the line's tag, not one second), made the J/M/Z chooser test tap only once the camera has stopped, rebased onto main and moved the task to its own number.
+
+Evidence:
+- The 8 cases that failed on CI pass at 1280x800 with one worker on Chromium 1223; pullSheet unit tests pass. The skip-notice test at 1280 also fails on #287's CI run, which has none of these changes.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let CI rerun on #295 with auto-merge armed; if a line-notices test fails at 1280 again, compare it with main's run
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
