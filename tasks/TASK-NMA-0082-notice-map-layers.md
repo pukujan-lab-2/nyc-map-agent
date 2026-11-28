@@ -63,3 +63,26 @@ Blocked/uncertain:
 
 Next:
 - Let pull request 289 merge once CI passes; if its e2e run is cancelled at the 45-minute cap, ask the lead session to rerun it.
+
+### 2026-11-28 10:07:14 UTC — agent:claude-code/f59eafb3-fdfd-40b2-bfef-be4f646ba311
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/f59eafb3-fdfd-40b2-bfef-be4f646ba311","blocked":[],"changed":["none"],"completed":["Rebased pull request 289 onto main after pull requests 283 and 296 merged, and set the all-JS budget to its measured size."],"decisions":["no new decisions"],"evidence":["Typecheck and the size check pass on the rebased branch (all JS 1,298,263 bytes, notice map chunk 6,293 bytes)."],"next_action":"Let pull request 289 merge once CI passes under the 75-minute e2e limit; if a run is cut off, ask the lead session to rerun it.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0082","timestamp":"2026-11-28T10:07:14Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a14c2901c60d0eddd99849d346f1bdd3faa3270c0838f876a0f792ced8ba79ef","request_id":"2f373a409cf54269898e83affe141233","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0082"} -->
+
+Completed:
+- Rebased pull request 289 onto main after pull requests 283 and 296 merged, and set the all-JS budget to its measured size.
+
+Evidence:
+- Typecheck and the size check pass on the rebased branch (all JS 1,298,263 bytes, notice map chunk 6,293 bytes).
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 289 merge once CI passes under the 75-minute e2e limit; if a run is cut off, ask the lead session to rerun it.
