@@ -74,6 +74,29 @@ Blocked/uncertain:
 Next:
 - let pull request 294 merge, then walk to a café restroom with a phone and answer the question
 
+### 2026-11-28 12:42:55 UTC — agent:claude-code/94ef3e28-8d0f-4048-93f6-0adc43bf4845
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/94ef3e28-8d0f-4048-93f6-0adc43bf4845","blocked":[],"changed":["src/lib/store/restroomPick.ts, src/features/agent/AgentOverlay.tsx, .size-limit.json"],"completed":["Rebased onto main after the fast browser test set landed; resolved the checkpoint and size-limit conflicts; a Restroom tap before the pick's lazy code loads now waits for it instead of asking the agent"],"decisions":["no new decisions"],"evidence":["the restroom pick passes alone at desktop after the rebase; restroomPick unit tests pass; size budgets fit"],"evidence_class":"observed","next_action":"finish the local rerun of the failing browser specs one at a time; re-arm auto-merge on pull request 294 when they pass","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0080","timestamp":"2026-11-28T12:42:55Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"af7817d27e789b29a46de9faf27cfd2c343428369d12b68df4f990b006a79528","request_id":"ab09e4dd4232402eb9afc7a69cdc41c9","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0080"} -->
+
+Completed:
+- Rebased onto main after the fast browser test set landed; resolved the checkpoint and size-limit conflicts; a Restroom tap before the pick's lazy code loads now waits for it instead of asking the agent
+
+Evidence:
+- the restroom pick passes alone at desktop after the rebase; restroomPick unit tests pass; size budgets fit
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/lib/store/restroomPick.ts, src/features/agent/AgentOverlay.tsx, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- finish the local rerun of the failing browser specs one at a time; re-arm auto-merge on pull request 294 when they pass
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
