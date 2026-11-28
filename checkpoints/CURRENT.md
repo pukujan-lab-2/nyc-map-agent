@@ -24,4 +24,5 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Next
 
+- **Hands-free voice takes one turn at a time, and nobody has measured how long a turn takes (owner, 2026-11-28; issue 299, task NMA-0096).** `docs/PLAN-livekit-hands-free.md` plans a live LiveKit call behind a `liveCall` flag, reusing design-bakery's worker and the speech gateway's existing `nyc-map` route, with no routing change and no cloud speech. First move: measure today's hands-free turn end to end. Two questions wait for the owner: where the worker lives, and whose LiveKit server it uses.
 - The app has too many buttons and screens that do the same job: `docs/design/screen-inventory/index.html` (2026-11-27) shows 104 screens at phone and desktop size from main, 27 reviewed with numbered defects, and the five changes that would fix the most screens. The owner set it aside for later; start a UI makeover from it.
