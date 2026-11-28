@@ -21,6 +21,13 @@ const STYLE = JSON.stringify({
  * catch-all here would answer the Send first and the spec's stub would never be asked.
  */
 export async function mockNetwork(page: Page | BrowserContext): Promise<void> {
+  // Tests never make sound on the owner's machine: speech is a silent stub that still reports "done".
+  await page.addInitScript(() => {
+    const synth = { speaking: false, pending: false, paused: false, getVoices: () => [], cancel() {}, pause() {}, resume() {},
+      speak(u: SpeechSynthesisUtterance) { setTimeout(() => { u.onstart?.(new Event("start") as SpeechSynthesisEvent); u.onend?.(new Event("end") as SpeechSynthesisEvent); }, 0); },
+      addEventListener() {}, removeEventListener() {}, onvoiceschanged: null };
+    try { Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true }); } catch {}
+  });
   await page.route("**/*", async (route) => {
     const url = new URL(route.request().url());
     const local = url.hostname === "localhost";
