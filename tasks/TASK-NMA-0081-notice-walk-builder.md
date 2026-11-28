@@ -173,6 +173,29 @@ Blocked/uncertain:
 Next:
 - Let pull request 287 merge
 
+### 2026-11-28 10:48:33 UTC — agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f","blocked":[],"changed":["none"],"completed":["Rebased onto main after pull requests 283 and 296 merged; kept the time-button layout cases beside the walk cases and moved the time buttons' checkpoint entry to history"],"decisions":["no new decisions"],"evidence":["Type check, size budgets and the e2e build pass; the muted line-notices and responsive specs pass locally (143 passed, 3 skipped)"],"evidence_class":"observed","next_action":"Let pull request 287 merge","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0081","timestamp":"2026-11-28T10:48:33Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"a196aff3721bbda91b9bff34a8743ffc57abf4e876b5cafb5abe1fd5a86207a1","request_id":"5c4caaca03b74dd887a0cfc97faa580f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0081"} -->
+
+Completed:
+- Rebased onto main after pull requests 283 and 296 merged; kept the time-button layout cases beside the walk cases and moved the time buttons' checkpoint entry to history
+
+Evidence:
+- Type check, size budgets and the e2e build pass; the muted line-notices and responsive specs pass locally (143 passed, 3 skipped)
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 287 merge
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
