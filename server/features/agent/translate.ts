@@ -47,31 +47,48 @@ export async function translate(req: Request, model?: () => LanguageModel): Prom
   if (!lang || lang === "en" || !Array.isArray(lines) || !lines.length || lines.length > MAX_LINES || !lines.every((l) => typeof l === "string" && l.length <= MAX_LINE)) {
     return json({ error: "lang must be one of the app's other languages; lines 1-24 strings of up to 400 characters" }, 400);
   }
+  const asked = lines as string[];
+  if (!cache.has(cacheKey(lang, asked)) && !limiter.take(clientIp(req.headers)).ok) return json({ error: "too many" }, 429);
+  const out = await translateLines(lang, asked, { model, signal: req.signal, session: sessionFrom(req.headers) });
+  return "lines" in out ? json({ lines: out.lines }, 200) : json({ error: out.error }, 502);
+}
+
+const cacheKey = (lang: AppLang, lines: string[]) => `${lang}\u0000${lines.join("\u0000")}`;
+
+/**
+ * The same lines in another app language, from the memory or one call to the agent's model. The route above and the
+ * notice helper (`server/features/transit/noticeHelper.ts`, for MTA text we cannot turn into a walk) both come here,
+ * so a notice translated for one is not translated again for the other. No rate limit here: callers limit.
+ */
+export async function translateLines(
+  lang: AppLang,
+  lines: string[],
+  opts: { model?: () => LanguageModel; signal?: AbortSignal; session?: string | null } = {},
+): Promise<{ lines: string[]; cached: boolean } | { error: string }> {
   const started = Date.now();
   // One trace per translation (#126), so a language check can see what was asked and what came back.
   const span = (out: { ok: boolean; text: string; cached?: boolean; model?: string }) => exportTrace({
     name: "translate", kind: "CHAIN", start: started, end: Date.now(), error: !out.ok,
     attributes: { "input.value": JSON.stringify(lines), "output.value": out.text, "translate.lang": lang, "translate.cached": out.cached ? "yes" : "no", ...(out.model ? { "llm.model_name": out.model } : {}) },
-  }, sessionFrom(req.headers));
-  const key = `${lang}\u0000${lines.join("\u0000")}`;
+  }, opts.session ?? undefined);
+  const key = cacheKey(lang, lines);
   const hit = cache.get(key);
-  if (hit) { span({ ok: true, text: JSON.stringify(hit), cached: true }); return json({ lines: hit }, 200); }
-  if (!limiter.take(clientIp(req.headers)).ok) return json({ error: "too many" }, 429);
+  if (hit) { span({ ok: true, text: JSON.stringify(hit), cached: true }); return { lines: hit, cached: true }; }
   let modelName: string | undefined;
   try {
     // Imported here so the route file stays light for tests that pass their own model.
-    const m = model?.() ?? (await import("./routes")).defaultModel(undefined, undefined, pickProfile(undefined));
+    const m = opts.model?.() ?? (await import("./routes")).defaultModel(undefined, undefined, pickProfile(undefined));
     modelName = typeof m === "string" ? m : m.modelId;
-    const { text } = await generateText({ model: m, system: translatePrompt(lang), prompt: JSON.stringify(lines), maxOutputTokens: 2000, abortSignal: req.signal });
+    const { text } = await generateText({ model: m, system: translatePrompt(lang), prompt: JSON.stringify(lines), maxOutputTokens: 2000, abortSignal: opts.signal });
     const out = parseLines(text, lines.length);
-    if (!out) { span({ ok: false, text, model: modelName }); return json({ error: "the model did not answer with the lines" }, 502); }
+    if (!out) { span({ ok: false, text, model: modelName }); return { error: "the model did not answer with the lines" }; }
     if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
     cache.set(key, out);
     span({ ok: true, text: JSON.stringify(out), model: modelName });
-    return json({ lines: out }, 200);
+    return { lines: out, cached: false };
   } catch (e) {
     console.warn(`translate: ${(e as Error).message}`);
     span({ ok: false, text: `error: ${(e as Error).message}`, model: modelName });
-    return json({ error: "translation failed" }, 502);
+    return { error: "translation failed" };
   }
 }

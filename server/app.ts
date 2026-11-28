@@ -28,7 +28,8 @@ import * as parking from "./features/parking/routes";
 import * as agent from "./features/agent/routes";
 import { transcribe } from "./features/agent/stt";
 import { speak, startVoiceKeeper } from "./features/agent/tts";
-import { translate } from "./features/agent/translate";
+import { translate, translateLines } from "./features/agent/translate";
+import { pickProfile } from "./features/agent/providers";
 import { seeSign } from "./features/agent/seeSign";
 import * as transit from "./features/transit/routes";
 import * as transitSegments from "./features/transit/segments";
@@ -36,6 +37,8 @@ import * as transitLive from "./features/transit/live";
 import * as transitBusSegments from "./features/transit/busSegments";
 import * as transitHealth from "./features/transit/health";
 import * as transitBusSpeeds from "./features/transit/busSpeeds";
+import * as transitNotices from "./features/transit/noticeRoutes";
+import type { NoticeDeps } from "./features/transit/noticeHelper";
 import * as events from "./features/events/routes";
 import * as placeToilets from "./features/place-toilets/routes";
 import * as storefronts from "./features/storefronts/routes";
@@ -43,6 +46,15 @@ import * as recording from "./features/recordings/upload";
 import * as live from "./features/live/routes";
 
 type Handler = { GET: (request: Request) => Promise<Response> };
+
+/**
+ * The notice helper (step 8 of docs/PLAN-notice-walks.md) borrows the agent's model and translate path. One server
+ * feature may not import another, so they meet here.
+ */
+export const noticeDeps: NoticeDeps = {
+  model: () => agent.defaultModel(undefined, undefined, pickProfile(undefined)),
+  translate: (lang, lines, opts) => translateLines(lang, lines, opts),
+};
 
 const routes: Array<[string, Handler]> = [
   ["/api/aggregate", aggregate],
@@ -72,6 +84,8 @@ const routes: Array<[string, Handler]> = [
   ["/api/transit-health/accuracy", { GET: transitHealth.GET_ACCURACY }],
   ["/api/transit-health/hours", { GET: transitHealth.GET_HOURS }],
   ["/api/transit-health/bus-speeds", transitBusSpeeds],
+  ["/api/transit-health/notices", { GET: transitNotices.GET_REPORT }],
+  ["/api/transit-notices", { GET: (r) => transitNotices.GET_FACTS(r, noticeDeps) }],
   ["/api/agent/health", agent.health],
   ["/api/agent/warm", agent.warm],
   ["/api/transit", transit],

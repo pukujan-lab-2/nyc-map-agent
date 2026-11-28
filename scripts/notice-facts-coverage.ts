@@ -1,17 +1,22 @@
 /**
- * npx tsx scripts/notice-facts-coverage.ts [feed.json] [--live] [--all]
+ * npx tsx scripts/notice-facts-coverage.ts [feed.json] [--live] [--all] [--report out.md]
  *
  * Runs the notice-facts parser (server/features/transit/noticeFacts.ts) over a saved snapshot of the MTA subway
  * alerts feed and prints how many notices became facts, then lists the rest with what was missing. With --live it
  * reads the feed from the MTA instead. --all also lists guidance sentences the rules did not understand in notices
  * that did become facts.
  *
+ * --report writes the same short report the server makes each night (server/features/transit/noticeRoutes.ts, read at
+ * /api/transit-health/notices): how many notices became facts, which fell back to the MTA text and why. The script
+ * asks no model, so every notice the rules miss is listed as a fallback.
+ *
  * Default snapshot: server/features/transit/__fixtures__/subway-alerts-2026-11-27.json (the live feed on
  * 2026-11-27, English text only). Exits 1 when fewer than 95% of notices become facts.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { slimAlert, type MercuryAlert } from "../server/features/transit/alerts";
 import { hasFacts, noticeFacts, stationIndex, type Station } from "../server/features/transit/noticeFacts";
+import { coverageReport, rulesOnly, subwayData } from "../server/features/transit/noticeHelper";
 
 const FEED = "https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/camsys%2Fsubway-alerts.json";
 const SNAPSHOT = "server/features/transit/__fixtures__/subway-alerts-2026-11-27.json";
@@ -20,7 +25,9 @@ const BAR = 0.95;
 const args = process.argv.slice(2);
 const live = args.includes("--live");
 const all = args.includes("--all");
-const path = args.find((a) => !a.startsWith("--")) ?? SNAPSHOT;
+const reportAt = args.indexOf("--report");
+const reportPath = reportAt >= 0 ? args[reportAt + 1] : null;
+const path = args.find((a, i) => !a.startsWith("--") && i !== reportAt + 1) ?? SNAPSHOT;
 
 type Feed = { header?: { timestamp?: number | string }; entity?: MercuryAlert[] };
 const feed = (live ? await (await fetch(FEED, { signal: AbortSignal.timeout(15_000) })).json() : JSON.parse(readFileSync(path, "utf8"))) as Feed;
@@ -50,5 +57,11 @@ if (all) {
   const left = good.filter((x) => x.f.leftover.length);
   if (left.length) console.log(`\nGuidance left as MTA text in ${left.length} notices:`);
   for (const { a, f } of left) console.log(`- ${a.id} [${a.routes.join(" ")}]\n${f.leftover.map((s) => `    · ${s}`).join("\n")}`);
+}
+if (reportPath) {
+  const data = subwayData(subway);
+  const report = await coverageReport(alerts, rulesOnly(data), new Date(at * 1000));
+  writeFileSync(reportPath, report.markdown);
+  console.log(`\nReport written to ${reportPath}.`);
 }
 process.exit(good.length / Math.max(1, facts.length) >= BAR ? 0 : 1);

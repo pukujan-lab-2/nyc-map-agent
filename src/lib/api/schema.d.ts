@@ -2522,6 +2522,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/transit-health/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The nightly notice coverage report: how many live subway notices became walk facts (by our rules, or by the model with every station, line and direction checked), which fell back to the MTA text and why; format=text gives it as plain text (alias of /api/v1/transit-health/notices)
+         * @deprecated
+         */
+        get: {
+            parameters: {
+                query?: {
+                    format?: "text";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Json"];
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/transit-live": {
         parameters: {
             query?: never;
@@ -2560,6 +2619,66 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transit-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One live subway notice as walk facts ({ id, source: rules | model | text, facts, flags }); a notice no rule or checked model answer reads also carries mta, the MTA text in lang (alias of /api/v1/transit-notices)
+         * @deprecated
+         */
+        get: {
+            parameters: {
+                query: {
+                    id: string;
+                    lang?: "en" | "es" | "zh" | "ru" | "bn" | "ht" | "fr" | "ko";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Json"];
+                    };
                 };
                 /** @description Invalid query */
                 400: {
@@ -5301,6 +5420,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/transit-health/notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The nightly notice coverage report: how many live subway notices became walk facts (by our rules, or by the model with every station, line and direction checked), which fell back to the MTA text and why; format=text gives it as plain text */
+        get: {
+            parameters: {
+                query?: {
+                    format?: "text";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Json"];
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/transit-live": {
         parameters: {
             query?: never;
@@ -5336,6 +5511,63 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transit-notices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One live subway notice as walk facts ({ id, source: rules | model | text, facts, flags }); a notice no rule or checked model answer reads also carries mta, the MTA text in lang */
+        get: {
+            parameters: {
+                query: {
+                    id: string;
+                    lang?: "en" | "es" | "zh" | "ru" | "bn" | "ht" | "fr" | "ko";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Json"];
+                    };
                 };
                 /** @description Invalid query */
                 400: {

@@ -5,6 +5,7 @@
  */
 import { createRoute, z } from "@hono/zod-openapi";
 import pkg from "../package.json";
+import { APP_LANGS } from "../src/lib/voice/langPref";
 import { Query as AggregateQuery } from "../api/aggregate";
 import { Query as AreasQuery } from "../api/areas";
 import { Query as BlocksQuery } from "../api/blocks";
@@ -351,6 +352,16 @@ export const ROUTES = {
     request: { query: HealthBusSpeedsQuery },
     responses: { 200: { description: "OK (ready: false until the route has been imported)", content: { "application/json": { schema: HealthBusSpeedsResponse } } }, ...errors },
   }),
+  "/api/transit-health/notices": jsonRoute(
+    "/api/transit-health/notices",
+    "The nightly notice coverage report: how many live subway notices became walk facts (by our rules, or by the model with every station, line and direction checked), which fell back to the MTA text and why; format=text gives it as plain text",
+    z.object({ format: z.enum(["text"]).optional() }),
+  ),
+  "/api/transit-notices": jsonRoute(
+    "/api/transit-notices",
+    "One live subway notice as walk facts ({ id, source: rules | model | text, facts, flags }); a notice no rule or checked model answer reads also carries mta, the MTA text in lang",
+    z.object({ id: z.string().max(80), lang: z.enum(APP_LANGS).optional() }),
+  ),
   "/api/transit-live": createRoute({
     method: "get",
     path: "/api/transit-live",
