@@ -47,3 +47,26 @@ Nothing on screen changes. The next person who asks "why did that panel close?" 
 ## Checkpoint log
 
 No checkpoints yet.
+
+### 2026-11-28 12:51:16 UTC — agent:claude-code/4f939b4e-2272-4c90-93d5-7bfcf30a4d72
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/4f939b4e-2272-4c90-93d5-7bfcf30a4d72","blocked":[],"changed":["src/lib/sheet/**, PanelContext, PullSheet, RouteGuide and FollowSheet banners, import lines in 15 callers, .size-limit.json, docs/PDD.md, docs/DESIGN_RULES.md"],"completed":["What the sheet or left card shows is decided by one XState machine in src/lib/sheet/sheetMachine.ts; the five old stores are gone and their hooks keep their names."],"decisions":["XState now loads with the boot chunk; its budget rises from 298 to 311 kB and the lazy screen-space budget is removed."],"evidence":["Typecheck, lint, knip and dependency boundaries pass; 333 sheet, transit and component unit tests pass; the full suite passes except the Fulton St walk simulation, which timed out at 240 s beside lint. Panel and layout browser specs pass here (one-sheet, panel-slot, screen-space, responsive, line-chooser, line-notices, minimap, tap-priority, walk-guide, task-screens, menu-row) once a server that died mid-run was restarted."],"next_action":"Keep the draft pull request rebased on #295; once #295 merges, rebase onto main, mark it ready and arm auto-merge","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0097","timestamp":"2026-11-28T12:51:16Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4c0b5c844cedbe1e41fe46de70fcc68ab63f537d1dfa2565b7641684f5b7f051","request_id":"5c802070b2c247d781a17896c57cb6ef","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0097"} -->
+
+Completed:
+- What the sheet or left card shows is decided by one XState machine in src/lib/sheet/sheetMachine.ts; the five old stores are gone and their hooks keep their names.
+
+Evidence:
+- Typecheck, lint, knip and dependency boundaries pass; 333 sheet, transit and component unit tests pass; the full suite passes except the Fulton St walk simulation, which timed out at 240 s beside lint. Panel and layout browser specs pass here (one-sheet, panel-slot, screen-space, responsive, line-chooser, line-notices, minimap, tap-priority, walk-guide, task-screens, menu-row) once a server that died mid-run was restarted.
+
+Decisions:
+- XState now loads with the boot chunk; its budget rises from 298 to 311 kB and the lazy screen-space budget is removed.
+
+Changed:
+- src/lib/sheet/**, PanelContext, PullSheet, RouteGuide and FollowSheet banners, import lines in 15 callers, .size-limit.json, docs/PDD.md, docs/DESIGN_RULES.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- Keep the draft pull request rebased on #295; once #295 merges, rebase onto main, mark it ready and arm auto-merge
