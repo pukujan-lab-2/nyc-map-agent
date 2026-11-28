@@ -80,6 +80,29 @@ Blocked/uncertain:
 Next:
 - Let the pull request merge after 284; the walk builder (step 3) calls /api/transit-notices for notices with no rule facts
 
+### 2026-11-28 03:18:27 UTC — agent:claude-code/0d7cd701-09d9-4f61-81ad-2bb1dadc8b79
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/0d7cd701-09d9-4f61-81ad-2bb1dadc8b79","blocked":[],"changed":["e2e/mocks.ts"],"completed":["Took the silent speech stub fix from pull request 283 so lint and the line-notice e2e specs stop failing on this branch"],"decisions":["no new decisions"],"evidence":["ESLint passes on e2e/mocks.ts; the change is the same as on pull request 283, whose lint and e2e pass; the e2e specs were not run here because this Mac lacks the Playwright browser build they need"],"evidence_class":"observed","next_action":"Let pull request 285 merge; rebase onto main once 284 merges","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0083","timestamp":"2026-11-28T03:18:27Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3337c65e060f249537b9a4dff0c15915db69d7204a855cc1189b7f43a8243894","request_id":"27b589d51d6949c39500273197937ecd","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0083"} -->
+
+Completed:
+- Took the silent speech stub fix from pull request 283 so lint and the line-notice e2e specs stop failing on this branch
+
+Evidence:
+- ESLint passes on e2e/mocks.ts; the change is the same as on pull request 283, whose lint and e2e pass; the e2e specs were not run here because this Mac lacks the Playwright browser build they need
+
+Decisions:
+- no new decisions
+
+Changed:
+- e2e/mocks.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 285 merge; rebase onto main once 284 merges
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
