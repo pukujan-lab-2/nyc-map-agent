@@ -79,6 +79,29 @@ Blocked/uncertain:
 Next:
 - Open the step 5 pull request with auto-merge; whether Weekend also lists next weekend waits for the owner.
 
+### 2026-11-28 01:38:17 UTC — agent:claude-code/615f0a6f-de1a-43d6-8a53-65d4b47bc4b5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/615f0a6f-de1a-43d6-8a53-65d4b47bc4b5","blocked":[],"changed":["src/features/transit/LinePanel.tsx, src/lib/transit/periods.ts, src/lib/transit/weekend.ts"],"completed":["The line panel had only Now and This weekend, so Saturday daytime work and Saturday-night skips showed together; it now has Day, Night, Weekend day and Weekend night, each listing only the notices and outages in effect in its hours (pull request 283)."],"decisions":["An answer about this weekend opens on Weekend day, the period that shares the most hours with it."],"evidence":["All 2324 unit tests pass, 35 of them new for the period maths, the window filter and the New York clock changes (the earlier checkpoint said 18, which was wrong); the line panel's layout cases pass at 320, 375, 390 and 1280 wide."],"evidence_class":"observed","next_action":"Pull request 283 merges on green checks; whether Weekend also lists next weekend waits for the owner.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","supersedes":"7ac1604c326748929219a06a11721029","task_id":"NMA-0079","timestamp":"2026-11-28T01:38:17Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"7bc585df8e1d0d55a654c6589938c28f8d91f4244282be6a7df5c73cdc7e8e7d","request_id":"78d4baf09c044c028e687f83d2bf7160","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0079"} -->
+
+Completed:
+- The line panel had only Now and This weekend, so Saturday daytime work and Saturday-night skips showed together; it now has Day, Night, Weekend day and Weekend night, each listing only the notices and outages in effect in its hours (pull request 283).
+
+Evidence:
+- All 2324 unit tests pass, 35 of them new for the period maths, the window filter and the New York clock changes (the earlier checkpoint said 18, which was wrong); the line panel's layout cases pass at 320, 375, 390 and 1280 wide.
+
+Decisions:
+- An answer about this weekend opens on Weekend day, the period that shares the most hours with it.
+
+Changed:
+- src/features/transit/LinePanel.tsx, src/lib/transit/periods.ts, src/lib/transit/weekend.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Pull request 283 merges on green checks; whether Weekend also lists next weekend waits for the owner.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
