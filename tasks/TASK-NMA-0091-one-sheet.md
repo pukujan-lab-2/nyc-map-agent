@@ -57,6 +57,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-28 08:04:23 UTC — agent:claude-code/ab72443d-36a4-416d-83f5-519c594e9127
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/ab72443d-36a4-416d-83f5-519c594e9127","blocked":[],"changed":["PullSheet, pullSheet store, AgentHome card, MapChrome, MapPanel, LayersDrawer, RouteGuide, FollowSheet, LineChooser, the other cards' placement, e2e specs"],"completed":["Every map panel opens in one place: the phone's bottom sheet or, from 640 px, one left card with the chat bar at its foot; walking and following keep a top banner; the top right is Apple's map-style and locate pair."],"decisions":["no new decisions"],"evidence":["Unit tests pass (295 files). 20 new layout cases pass at 320x568, 375x667, 390x844, 1280x800 and 768x1024; presenter, recorder and trip-station specs fail on this Mac on main as well."],"evidence_class":"observed","next_action":"Open the pull request with auto-merge armed and let CI run the full browser suite","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0091","timestamp":"2026-11-28T08:04:23Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"00e8d2cda9f7626bb1260698d81ba4c24680a036dfee19b9ec64de77a43e031b","request_id":"b24a7e9127fd4e1e9deeab31d41f299e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0091"} -->
+
+Completed:
+- Every map panel opens in one place: the phone's bottom sheet or, from 640 px, one left card with the chat bar at its foot; walking and following keep a top banner; the top right is Apple's map-style and locate pair.
+
+Evidence:
+- Unit tests pass (295 files). 20 new layout cases pass at 320x568, 375x667, 390x844, 1280x800 and 768x1024; presenter, recorder and trip-station specs fail on this Mac on main as well.
+
+Decisions:
+- no new decisions
+
+Changed:
+- PullSheet, pullSheet store, AgentHome card, MapChrome, MapPanel, LayersDrawer, RouteGuide, FollowSheet, LineChooser, the other cards' placement, e2e specs
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request with auto-merge armed and let CI run the full browser suite
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
