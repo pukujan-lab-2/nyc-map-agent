@@ -70,3 +70,26 @@ Blocked/uncertain:
 
 Next:
 - Merge the plan; then measure today's hands-free turn (plan step 1); owner still to pick the LiveKit server
+
+### 2026-11-28 11:11:25 UTC — agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9","blocked":[],"changed":["none"],"completed":["Owner chose: the pilot shares design-bakery's LiveKit server"],"decisions":["Owner 2026-11-28: share design-bakery's LiveKit server; worker in this repository"],"evidence":["docs/PLAN-livekit-hands-free.md"],"evidence_class":"observed","next_action":"Merge the plan; then measure today's hands-free turn (plan step 1)","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0096","timestamp":"2026-11-28T11:11:25Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"11bcdc3112843b263cb2e0301edd640ef2390aca3ff79219e8424b3744b61838","request_id":"f9074d3c3e64414fa354b351c28f385e","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0096"} -->
+
+Completed:
+- Owner chose: the pilot shares design-bakery's LiveKit server
+
+Evidence:
+- docs/PLAN-livekit-hands-free.md
+
+Decisions:
+- Owner 2026-11-28: share design-bakery's LiveKit server; worker in this repository
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the plan; then measure today's hands-free turn (plan step 1)
