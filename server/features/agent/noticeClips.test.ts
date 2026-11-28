@@ -6,7 +6,7 @@ import { mkdtemp, readdir, readFile, rm, utimes } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { slimAlert, type MercuryAlert, type SlimAlert } from "../transit/alerts";
 import { noticeWalk } from "../../../src/features/transit/noticeWalk";
 import type { StaticSystem } from "../../../src/features/transit/model";
@@ -240,10 +240,13 @@ describe("the real walks", () => {
   const sys = JSON.parse(readFileSync("public/transit/subway.json", "utf8")) as StaticSystem;
   const at = Number(feed.header?.timestamp);
   const alerts = (feed.entity ?? []).flatMap((e) => slimAlert(e, at, at + 8 * 86_400) ?? []);
+  // Every walk of every saved notice, built once: about 4 s here, longer on CI's shared runners.
+  const lines = new Map<string, string[]>();
+  beforeAll(() => { for (const a of alerts) lines.set(a.id, walkLines(a, sys, "en")); }, 60_000);
 
   it("the phone names each step of a walk with a key the server made", async () => {
     const a = alerts.find((x) => x.routes.includes("7") && noticeWalk(x as never, sys, "7", null).stops.length > 1)!;
-    const server = new Set(await Promise.all(walkLines(a, sys, "en").map((t) => clipKey(t, "en", VOICE))));
+    const server = new Set(await Promise.all(lines.get(a.id)!.map((t) => clipKey(t, "en", VOICE))));
     const w = noticeWalk(a as never, sys, "7", null);
     for (const trip of [null, { stop: w.stops[0], mode: "off" as const }, { stop: w.stops.at(-1)!, mode: "on" as const }]) {
       const steps = noticeWalk(a as never, sys, "7", trip).steps;
@@ -254,7 +257,7 @@ describe("the real walks", () => {
   });
 
   it("lists every sentence a notice's walks can say, once each, and only in English for now", () => {
-    const per = alerts.map((a) => walkLines(a, sys, "en"));
+    const per = [...lines.values()];
     for (const lines of per) expect(new Set(lines).size).toBe(lines.length);
     expect(new Set(per.flat()).size).toBeGreaterThan(100);
     // English only until plan step 7 ships the other languages' sentences.

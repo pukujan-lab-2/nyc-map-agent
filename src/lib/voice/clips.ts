@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { clipKey, spokenText } from "./clipKey";
 
 /**
@@ -9,30 +9,16 @@ import { clipKey, spokenText } from "./clipKey";
 interface VoiceInfo { voice: string; langs: string[] }
 
 const KEY = "nma.voice.clips";
-let asked: Promise<VoiceInfo | null> | null = null;
+let asked: Promise<VoiceInfo | null> | undefined;
 
-const valid = (v: unknown): v is VoiceInfo =>
-  !!v && typeof (v as VoiceInfo).voice === "string" && Array.isArray((v as VoiceInfo).langs) && (v as VoiceInfo).langs.every((l) => typeof l === "string");
-
-function saved(): VoiceInfo | null {
-  try { const v: unknown = JSON.parse(localStorage.getItem(KEY) ?? "null"); return valid(v) ? v : null; } catch { return null; }
-}
+const saved = (): VoiceInfo | null => { try { return JSON.parse(localStorage.getItem(KEY) ?? "null") as VoiceInfo | null; } catch { return null; } };
 
 /** The server's clip voice, asked once a visit; the last answer this phone saved when the server can't be reached. */
-function voiceInfo(f: typeof fetch = fetch): Promise<VoiceInfo | null> {
-  return (asked ??= (async () => {
-    try {
-      const base = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
-      const res = await f(`${base}/api/tts/voice`, { signal: AbortSignal.timeout(3000) });
-      const v: unknown = res.ok ? await res.json() : null;
-      if (!valid(v)) return saved();
-      try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* private window: this visit only */ }
-      return v;
-    } catch {
-      return saved();
-    }
-  })());
-}
+const voiceInfo = (): Promise<VoiceInfo | null> =>
+  (asked ??= fetch(`${(import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "")}/api/tts/voice`, { signal: AbortSignal.timeout(3000) })
+    .then((r) => r.json() as Promise<VoiceInfo>)
+    .then((v) => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* private window */ } return v; })
+    .catch(saved));
 
 /** Each line's clip key in `lang`, or null where the server makes no clips (another language, clips off). */
 export async function stepClips(texts: string[], lang: string, info: VoiceInfo | null): Promise<Array<string | null>> {
@@ -40,20 +26,18 @@ export async function stepClips(texts: string[], lang: string, info: VoiceInfo |
   return Promise.all(texts.map((t) => clipKey(spokenText(t), lang, info.voice)));
 }
 
-/** `stepClips` for a component: `ready` once the keys are known (nulls when there are none). */
+const NONE: Array<string | null> = [];
+
+/** `stepClips` for a component: `ready` once the keys are known (none when there are none). */
 export function useStepClips(texts: string[], lang: string): { clips: Array<string | null>; ready: boolean } {
-  const joined = texts.join("\u0000");
-  const [got, setGot] = useState<{ for: string; clips: Array<string | null> } | null>(null);
+  const id = [lang, ...texts].join("\u0000");
+  const [got, setGot] = useState<[string, Array<string | null>]>();
   useEffect(() => {
     let alive = true;
-    const lines = joined ? joined.split("\u0000") : [];
-    void voiceInfo()
-      .then((info) => stepClips(lines, lang, info))
-      .catch(() => lines.map(() => null))
-      .then((clips) => { if (alive) setGot({ for: `${lang}\u0001${joined}`, clips }); });
+    const [l, ...lines] = id.split("\u0000");
+    void voiceInfo().then((v) => stepClips(lines, l, v)).catch(() => NONE).then((c) => { if (alive) setGot([id, c]); });
     return () => { alive = false; };
-  }, [joined, lang]);
-  const none = useMemo(() => (joined ? joined.split("\u0000") : []).map(() => null), [joined]);
-  const ready = got?.for === `${lang}\u0001${joined}`;
-  return { clips: ready ? got.clips : none, ready };
+  }, [id]);
+  const ready = got?.[0] === id;
+  return { clips: ready ? got[1] : NONE, ready };
 }

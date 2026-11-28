@@ -80,9 +80,9 @@
     "limit": "6.6 kB"
   },
   {
-    "name": "feature: notice diagram (lazy, opens with the first notice; reads the notice's facts on the phone)",
+    "name": "feature: notice diagram (lazy, opens with the first notice; reads the notice's facts on the phone; names each step's pre-made clip)",
     "path": ".size-build/assets/NoticeDiagram-*.js",
-    "limit": "24.3 kB"
+    "limit": "24.43 kB"
   },
   {
     "name": "shared 3D layer: threeLayer + three (vehicles, hydrants, street signs, storefronts, street furniture, overpasses; lazy)",
