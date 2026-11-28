@@ -102,6 +102,29 @@ Blocked/uncertain:
 Next:
 - Let #282 merge when CI passes; then the elevator walk screen uses this data.
 
+### 2026-11-28 03:16:55 UTC — agent:claude-code/b525f1c1-5adf-4746-8520-2cc2f4859686
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/b525f1c1-5adf-4746-8520-2cc2f4859686","blocked":[],"changed":["e2e/mocks.ts"],"completed":["CI failed on #282 because the silent speech stub replaced the specs' own recording voice and lint refused its empty catch; the stub now steps aside for a spec's own voice, as on #283."],"decisions":["no new decisions"],"evidence":["Lint and type checks pass locally on e2e/mocks.ts and playwright.config.ts; both files match the time-buttons branch, whose e2e passes."],"evidence_class":"observed","next_action":"Let #282 merge when CI passes; then the elevator walk screen uses this data.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0077","timestamp":"2026-11-28T03:16:55Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"72a47420dfda65b1646e89fd9ef50cba422d05787777009602a99cf723ccc844","request_id":"048a9c90dc4947b48b40a1fde2e75291","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0077"} -->
+
+Completed:
+- CI failed on #282 because the silent speech stub replaced the specs' own recording voice and lint refused its empty catch; the stub now steps aside for a spec's own voice, as on #283.
+
+Evidence:
+- Lint and type checks pass locally on e2e/mocks.ts and playwright.config.ts; both files match the time-buttons branch, whose e2e passes.
+
+Decisions:
+- no new decisions
+
+Changed:
+- e2e/mocks.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let #282 merge when CI passes; then the elevator walk screen uses this data.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
