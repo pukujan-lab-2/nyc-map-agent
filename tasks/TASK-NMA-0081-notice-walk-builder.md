@@ -127,6 +127,29 @@ Blocked/uncertain:
 Next:
 - Rebase onto main once pull request 284 merges
 
+### 2026-11-28 04:37:30 UTC — agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f","blocked":["Built on pull request 284, which is not merged yet"],"changed":[".size-limit.json"],"completed":["Notice panel chunk budget raised to 24.3 kB to hold the spoken text and facts cache"],"decisions":["no new decisions"],"evidence":["size-limit passes; the chunk measures 24.22 kB brotlied"],"evidence_class":"observed","next_action":"Rebase onto main once pull request 284 merges","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0081","timestamp":"2026-11-28T04:37:30Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"45284379f751d0198cc4374c099e206378e62a9390a98b6a6704dbd3d84e6dcf","request_id":"a9ba3b2370f54a7b8a884132da092149","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0081"} -->
+
+Completed:
+- Notice panel chunk budget raised to 24.3 kB to hold the spoken text and facts cache
+
+Evidence:
+- size-limit passes; the chunk measures 24.22 kB brotlied
+
+Decisions:
+- no new decisions
+
+Changed:
+- .size-limit.json
+
+Blocked/uncertain:
+- Built on pull request 284, which is not merged yet
+
+Next:
+- Rebase onto main once pull request 284 merges
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
