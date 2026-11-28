@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { chunkText, pickVoice, speakQueued, spokenSummary, voiceFor } from "./tts";
+import { chunkText, pickVoice, speakQueued, spokenSummary, voiceFor, voiceRank } from "./tts";
 import { isSpeech } from "./bargeIn";
 
 describe("chunkText", () => {
@@ -39,6 +39,71 @@ describe("pickVoice", () => {
     expect(pickVoice(v, "es-MX")?.name).toBe("Paulina");
     expect(pickVoice(v, "es-US")?.name).toBe("Monica");
     expect(pickVoice(v, "zh-CN")).toBeUndefined();
+  });
+});
+
+describe("pickVoice on real phones and browsers (owner, 2026-11-27)", () => {
+  const voice = (name: string, lang: string, localService = true, voiceURI = name) => ({ name, lang, localService, voiceURI, default: false }) as SpeechSynthesisVoice;
+  // iOS Safari: compact voices come first; Enhanced and Premium ones appear once downloaded; Eloquence's novelty voices are local too.
+  const ios = [
+    voice("Eddy (Spanish (Spain))", "es-ES", true, "com.apple.eloquence.es-ES.Eddy"),
+    voice("Mónica", "es-ES", true, "com.apple.voice.compact.es-ES.Monica"),
+    voice("Paulina", "es-MX", true, "com.apple.voice.compact.es-MX.Paulina"),
+    voice("Marisol (Enhanced)", "es-ES", true, "com.apple.voice.enhanced.es-ES.Marisol"),
+    voice("Sinji", "zh-HK", true, "com.apple.voice.premium.zh-HK.Sinji"),
+    voice("Tingting", "zh-CN", true, "com.apple.voice.compact.zh-CN.Tingting"),
+    voice("Lilian (Premium)", "zh-CN", true, "com.apple.voice.premium.zh-CN.Lilian"),
+    voice("Grandma (French (France))", "fr-FR", true, "com.apple.eloquence.fr-FR.Grandma"),
+    voice("Thomas", "fr-FR", true, "com.apple.voice.compact.fr-FR.Thomas"),
+    voice("Samantha", "en-US", true, "com.apple.voice.compact.en-US.Samantha"),
+    voice("Ava (Premium)", "en-US", true, "com.apple.voice.premium.en-US.Ava"),
+  ];
+  // Android Chrome: older builds report "es_US"; the network voices stop underground.
+  const android = [
+    voice("es-us-x-sfb-network", "es_US", false),
+    voice("es-us-x-esc-local", "es_US", true),
+    voice("ko-kr-x-kob-network", "ko-KR", false),
+    voice("ko-kr-x-ism-local", "ko-KR", true),
+    voice("ru-ru-x-ruc-local", "ru-RU", true),
+  ];
+  // Chrome on a desktop: Google's voices are online only, the system's are on the machine.
+  const chrome = [voice("Google español", "es-ES", false), voice("Microsoft Helena - Spanish (Spain)", "es-ES", true), voice("Google 한국의", "ko-KR", false)];
+  // Edge: the Natural voices are online; the old system ones are local and robotic.
+  const edge = [
+    voice("Microsoft Helena - Spanish (Spain)", "es-ES", true),
+    voice("Microsoft Dalia Online (Natural) - Spanish (Mexico)", "es-MX", false),
+    voice("Microsoft Denise Online (Natural) - French (France)", "fr-FR", false),
+    voice("Microsoft Hortense - French (France)", "fr-FR", true),
+  ];
+  it("iOS: an Enhanced or Premium voice over the compact one listed first, and never a novelty voice", () => {
+    expect(pickVoice(ios, "es")?.name).toBe("Marisol (Enhanced)");
+    expect(pickVoice(ios, "fr")?.name).toBe("Thomas");
+    expect(pickVoice(ios, "zh")?.name).toBe("Lilian (Premium)");
+  });
+  it("iOS: the region asked for still comes first, and Mandarin is never read by the Cantonese voice", () => {
+    expect(pickVoice(ios, "es-MX")?.name).toBe("Paulina");
+    expect(pickVoice(ios.filter((v) => v.name !== "Lilian (Premium)"), "zh")?.name).toBe("Tingting");
+  });
+  it("iOS: English keeps its preferred voice", () => expect(pickVoice(ios, "en")?.name).toBe("Samantha"));
+  it("Android: the voice on the phone over the network one, whatever the tag's spelling", () => {
+    expect(pickVoice(android, "es")?.name).toBe("es-us-x-esc-local");
+    expect(pickVoice(android, "es-US")?.name).toBe("es-us-x-esc-local");
+    expect(pickVoice(android, "ko")?.name).toBe("ko-kr-x-ism-local");
+    expect(pickVoice(android, "ht")).toBeUndefined();
+  });
+  it("Chrome desktop: the voice on the machine first, an online Google voice when it is the only one", () => {
+    expect(pickVoice(chrome, "es")?.name).toBe("Microsoft Helena - Spanish (Spain)");
+    expect(pickVoice(chrome, "ko")?.name).toBe("Google 한국의");
+  });
+  it("Edge: a Natural voice over the old system voice", () => {
+    expect(pickVoice(edge, "es")?.name).toBe("Microsoft Dalia Online (Natural) - Spanish (Mexico)");
+    expect(pickVoice(edge, "fr")?.name).toBe("Microsoft Denise Online (Natural) - French (France)");
+  });
+  it("ranks voices: Premium, Enhanced or Natural, then on the phone, then online, novelty last", () => {
+    expect(voiceRank(ios[6])).toBeLessThan(voiceRank(ios[3]));
+    expect(voiceRank(ios[3])).toBeLessThan(voiceRank(ios[1]));
+    expect(voiceRank(android[1])).toBeLessThan(voiceRank(android[0]));
+    expect(voiceRank(ios[0])).toBeGreaterThan(voiceRank(chrome[0]));
   });
 });
 
@@ -83,6 +148,27 @@ describe("speakQueued", () => {
     await vi.advanceTimersByTimeAsync(100);
     expect(said).toEqual(["One.", "Two.", "Three."]);
     expect(onEnd).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+  it("says nothing and reports the language when the phone has no voice for it", () => {
+    const said: string[] = [];
+    const synth = { speaking: false, paused: false, cancel: vi.fn(), pause() {}, resume() {}, getVoices: () => [{ lang: "en-US", name: "Samantha" }, { lang: "fr-FR", name: "Thomas" }], speak: (u: { text: string }) => said.push(u.text) } as unknown as SpeechSynthesis;
+    const onEnd = vi.fn();
+    const onNoVoice = vi.fn();
+    speakQueued(synth, "Pran tren A a.", onEnd, "ht", onNoVoice);
+    expect(said).toEqual([]);
+    expect(onNoVoice).toHaveBeenCalledWith("ht");
+    expect(onEnd).not.toHaveBeenCalled();
+  });
+  it("still speaks when the phone lists no voices yet, or the language is English", async () => {
+    vi.useFakeTimers();
+    const said: string[] = [];
+    const synth = { speaking: false, paused: false, cancel: vi.fn(), pause() {}, resume() {}, getVoices: () => [], speak: (u: { text: string }) => said.push(u.text) } as unknown as SpeechSynthesis;
+    const onNoVoice = vi.fn();
+    speakQueued(synth, "Pran tren A a.", () => {}, "ht", onNoVoice);
+    await vi.advanceTimersByTimeAsync(1600);
+    expect(said).toEqual(["Pran tren A a."]);
+    expect(onNoVoice).not.toHaveBeenCalled();
     vi.useRealTimers();
   });
   it("cancel stops the queue", async () => {

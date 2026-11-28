@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type Reac
 import {
   BarChart3, BusFront, Building2, CalendarDays, ChevronRight, CircleDot, Database, Ear, History, House, Info, Languages, Layers,
   Leaf, Lightbulb, Cpu, LocateFixed, Lock, MessageSquare, Box, Palette, Settings, Shield, Signpost, SlidersHorizontal, Sun, TrainFront, Trash2, Volume2, Gauge, CloudSun, type LucideIcon,
-  Accessibility,
+  Accessibility, AudioLines,
 } from "lucide-react";
 import { LiveLayerRows, SwitchRow } from "@/components/LiveLayerRows";
 import { TrackerHealthLink } from "@/components/TrackerHealthLink";
@@ -24,6 +24,7 @@ import { useFollowed } from "@/lib/transit/follow";
 import { useSelectedLine } from "@/lib/transit/selectedLine";
 import { APP_LANGS, LANG_LABELS, setLangPref, useLangPref, type AppLang } from "@/lib/voice/langPref";
 import { setVoicePrefs, useVoicePrefs } from "@/lib/voice/voicePrefs";
+import { setVoiceChoice, useVoiceChoice, type VoiceChoice } from "@/lib/voice/voiceChoice";
 import { useMenuT, type MenuKey } from "@/lib/i18n/menuText";
 import { setStepFreePref, useStepFreePref } from "@/lib/stepFreePref";
 import { setProfilePref, useProfilePref, useSmartHealth, healthLine } from "@/lib/modelProfile";
@@ -238,6 +239,7 @@ function ModelChoice() {
 function SettingsBody() {
   const [advanced, setAdvanced] = useAdvancedMode();
   const voice = useVoicePrefs();
+  const voiceChoice = useVoiceChoice();
   const lang = useLangPref();
   const flags = useFlags();
   const ambient = useAmbient();
@@ -251,6 +253,8 @@ function SettingsBody() {
         onChange={(v) => setLangPref(v === "" ? null : v)}
         options={[["", t("thisPhone")], ...APP_LANGS.map((code): [AppLang, string] => [code, LANG_LABELS[code]])]} />
       <SwitchRow icon={<Volume2 className={ICON} aria-hidden />} label={t("speakAnswers")} on={voice.speak} onChange={(v) => setVoicePrefs({ speak: v })} />
+      <Choice icon={<AudioLines className={ICON} aria-hidden />} label={t("voice")} value={voiceChoice} onChange={setVoiceChoice}
+        options={[["app", t("appVoice")], ["phone", t("phoneVoice")]] as Array<[VoiceChoice, string]>} />
       <SwitchRow icon={<Ear className={ICON} aria-hidden />} label={t("listenHeyMap")} on={voice.wake} onChange={(v) => setVoicePrefs({ wake: v })} />
       <Divider />
       <Choice icon={<Palette className={ICON} aria-hidden />} label={t("theme")} value={theme} onChange={setTheme}

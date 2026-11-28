@@ -5,11 +5,13 @@ import { useMenuT } from "@/lib/i18n/menuText";
 import { setStepFreePref, useStepFreePref } from "@/lib/stepFreePref";
 import { healthLine, setProfilePref, useProfilePref, useSmartHealth } from "@/lib/modelProfile";
 import { APP_LANGS, LANG_LABELS, setLangPref, useLangPref, type AppLang } from "@/lib/voice/langPref";
+import { parseVoiceChoice, setVoiceChoice, useVoiceChoice } from "@/lib/voice/voiceChoice";
 
-/** Language, Elevators only (#133), the model (#35) and the app's QR code: what a phone's sheets keep behind the chat. */
+/** Language, Voice (the app's or the phone's), Elevators only (#133), the model (#35) and the app's QR code: what a phone's sheets keep behind the chat. */
 export function SettingsBody() {
   const t = useMenuT();
   const lang = useLangPref();
+  const voice = useVoiceChoice();
   const profile = useProfilePref();
   const line = healthLine(useSmartHealth());
   const stepFree = useStepFreePref();
@@ -21,6 +23,14 @@ export function SettingsBody() {
           className="min-h-11 rounded-full border border-slate-400/30 bg-slate-900 px-3 text-sm font-medium text-slate-100">
           <option value="">{t("thisPhone")}</option>
           {APP_LANGS.map((code) => <option key={code} value={code}>{LANG_LABELS[code]}</option>)}
+        </select>
+      </label>
+      <label className="flex min-h-11 items-center justify-between gap-3 px-1 text-sm font-semibold">
+        {t("voice")}
+        <select value={voice} aria-label={t("voice")} onChange={(e) => setVoiceChoice(parseVoiceChoice(e.target.value))}
+          className="min-h-11 rounded-full border border-slate-400/30 bg-slate-900 px-3 text-sm font-medium text-slate-100">
+          <option value="app">{t("appVoice")}</option>
+          <option value="phone">{t("phoneVoice")}</option>
         </select>
       </label>
       <div className="flex min-h-11 items-center justify-between gap-3 px-1 text-sm font-semibold">

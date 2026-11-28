@@ -273,6 +273,25 @@ for (const size of SIZES) {
       expect(await page.evaluate(() => localStorage.getItem("nma.stepFree"))).toBe("1");
     });
 
+    // Settings → Voice: the app's voice (Kokoro) or the phone's own, kept on the phone (plan step 7).
+    test("the Voice choice in Settings", async ({ page }) => {
+      await open(page);
+      const phone = size.width < 640;
+      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
+      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
+      if (phone) await panel.getByTestId("sheet-grip").click();
+      const choice = panel.getByLabel("Voice", { exact: true });
+      await expect(choice).toHaveValue("app");
+      await expectLayout(page);
+      await choice.selectOption("phone");
+      await expect(choice).toHaveValue("phone");
+      expect(await page.evaluate(() => localStorage.getItem("nma.voice"))).toBe("phone");
+      await expectLayout(page);
+      await page.reload();
+      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
+      await expect(page.getByTestId(phone ? "settings-sheet" : "settings-panel").getByLabel("Voice", { exact: true })).toHaveValue("phone");
+    });
+
     // Settings → Meet Design Baker (NMA-0064): the guided presentation opens from the menu on every size.
     test("the presentation link in Settings", async ({ page }) => {
       await open(page);
