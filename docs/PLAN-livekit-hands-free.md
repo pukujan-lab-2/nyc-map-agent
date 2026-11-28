@@ -52,6 +52,5 @@ Hands-free keeps working as it does now for everyone unless the flag is on. Type
 
 ## Decided, and still open
 
-- The worker lives in this repository, in `voice-agent/` (owner, 2026-11-28).
-
-- Should the pilot use design-bakery's LiveKit server, or one of its own on the VPS?
+- Decided: the worker lives in this repository, in `voice-agent/` (owner, 2026-11-28).
+- Open: should the pilot use design-bakery's LiveKit server, or one of its own on the VPS?
