@@ -21,7 +21,7 @@ We do not need to build a voice stack. Two sibling projects already run one:
 
 The same split as design-bakery: a worker that hears and speaks, and our page that decides.
 
-1. **A worker for this app.** Copy design-bakery's worker as `nyc-map-voice`, using the gateway's `nyc-map` route. It joins only rooms whose token names it. No routing change and no cloud speech.
+1. **A worker for this app, in this repository** (owner, 2026-11-28). Copy design-bakery's worker into `voice-agent/` here as `nyc-map-voice`, so this app's calls can be tuned on their own, using the gateway's `nyc-map` route. It joins only rooms whose token names it. No routing change and no cloud speech.
 2. **A token endpoint.** Generalise pull request 243's `voiceToken.ts` into one endpoint the map and the presenter share, behind a new `liveCall` flag that is off by default.
 3. **The page decides.** With the flag on, hands-free opens a call instead of recording one turn. Each line the worker hears goes to our existing agent (`/api/agent`), with the same tools and the same map actions as a typed question. The page sends back the line to say, and starts speaking on the first sentence.
 4. **Always a way back.** Mute and End call sit in the sheet. If the call drops, which it will in stations without signal, the app falls back to today's turn-based mode by itself and says so in one line.
@@ -50,7 +50,8 @@ Audio is handled as it is today: heard, answered and dropped, never stored.
 
 Hands-free keeps working as it does now for everyone unless the flag is on. Typed questions, the agent's tools and its answers do not change. Speech routing changes only in `voice-agent-research`, and only when the owner asks; cloud speech stays off.
 
-## Questions for the owner
+## Decided, and still open
 
-- Should the worker live in this repository, as design-bakery's does, or in `voice-agent-research`?
+- The worker lives in this repository, in `voice-agent/` (owner, 2026-11-28).
+
 - Should the pilot use design-bakery's LiveKit server, or one of its own on the VPS?
