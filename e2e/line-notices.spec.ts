@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { expectLayout, SIZES } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
-import { PERIOD_KEYS, occurrence, periodAt } from "../src/lib/transit/periods";
+import { PERIODS, occurrence, periodAt } from "../src/lib/transit/periods";
 
 // The 2 line with one elevator outage at Times Sq-42 St (captured from /api/transit-live, trimmed).
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/transit-live-2-line.json", import.meta.url), "utf8")) as {
@@ -415,7 +415,7 @@ for (const [width, height] of [[375, 667], [1280, 800]]) {
     const current = periodAt(now);
     await expect(days.locator(`[data-period="${current}"]`)).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("line-period")).toHaveText(occurrence(current, now).label);
-    const other = PERIOD_KEYS.find((k) => k !== current)!;
+    const other = PERIODS.map(([k]) => k).find((k) => k !== current)!;
     await days.locator(`[data-period="${other}"]`).click();
     await expect(days.locator(`[data-period="${other}"]`)).toHaveAttribute("aria-pressed", "true");
     await expect(days.locator(`[data-period="${current}"]`)).toHaveAttribute("aria-pressed", "false");

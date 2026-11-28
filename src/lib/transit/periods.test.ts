@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alertInEffect, occurrence, outageInEffect, periodAt, periodFor, type PeriodKey, type Span } from "./periods";
+import { PERIODS, inEffect, occurrence, periodAt, periodFor, type PeriodKey, type Span } from "./periods";
 import { dayWindow, nyEpoch, weekendWindow } from "./weekend";
 
 const at = (iso: string) => Date.parse(iso);
@@ -34,9 +34,9 @@ describe("which button the New York time picks", () => {
 describe("each button's next occurrence", () => {
   // Thursday Nov 26, 10:10 PM: the clock the approved preview plays.
   const thu = at("2026-11-26T22:10:00-05:00");
-  it("Night under way runs to Friday 6 AM", () => {
+  it("Night under way runs from this hour to Friday 6 AM", () => {
     const o = occurrence("night", thu);
-    expect(wall(o.spans)).toEqual(["Thu Nov 26 21 → Fri Nov 27 06"]);
+    expect(wall(o.spans)).toEqual(["Thu Nov 26 22 → Fri Nov 27 06"]);
     expect(o.label).toBe("Now, until Fri 6 AM");
   });
   it("Day is Friday", () => {
@@ -73,12 +73,14 @@ describe("each button's next occurrence", () => {
   it("a weeknight at 9 AM names its night and morning", () => {
     expect(occurrence("night", at("2026-12-01T09:00:00-05:00")).label).toBe("Tue Dec 1, 9 PM to Wed 6 AM");
   });
-  it("every occurrence fits the server's four-day window", () => {
-    for (const key of ["day", "night", "weekendDay", "weekendNight"] as const) {
-      for (let h = 0; h < 7 * 24; h++) {
-        const o = occurrence(key, at("2026-11-23T00:00:00-05:00") + h * 3_600_000);
+  it("every occurrence fits the server's four-day window and has not ended", () => {
+    // Every five hours across a week lands on each weekday's mornings, days and nights.
+    for (const [key] of PERIODS) {
+      for (let h = 0; h < 7 * 24; h += 5) {
+        const now = at("2026-11-23T00:30:00-05:00") + h * 3_600_000;
+        const o = occurrence(key, now);
         expect(o.to - o.from).toBeLessThanOrEqual(4 * 86_400);
-        expect(o.to).toBeGreaterThan(at("2026-11-23T00:00:00-05:00") / 1000 + h * 3600);
+        expect(o.to * 1000).toBeGreaterThan(now);
       }
     }
   });
@@ -112,6 +114,10 @@ describe("New York clock changes", () => {
     expect(periodAt(at("2027-03-14T06:00:00-04:00"))).toBe("weekendDay");
   });
 });
+
+/** The line panel's own use of inEffect: a notice's windows, else its start and end; an outage's from and to. */
+const alertInEffect = (a: { windows?: Array<[number, number]>; start?: number; end?: number }, spans: Span[]) => inEffect(a.windows?.length ? a.windows : [[a.start ?? 0, a.end ?? 0]], spans);
+const outageInEffect = (o: { from?: number; to?: number }, spans: Span[]) => inEffect([[o.from ?? 0, o.to ?? 0]], spans);
 
 describe("only notices in effect in the period", () => {
   const weekendDay = occurrence("weekendDay", at("2026-11-26T22:10:00-05:00")).spans;

@@ -15,7 +15,7 @@ import { heldTrains } from "@/lib/transit/holds";
 import { setAlertFocus, useShuttleFocus } from "./alertFocus";
 import { useAlerts, useAlertsBetween, useNow, useTransitData } from "./hooks";
 import { setLineDay, useLineDay } from "@/lib/transit/lineDay";
-import { PERIOD_KEYS, PERIOD_LABEL, alertInEffect, occurrence, outageInEffect, periodAt, periodFor, type PeriodKey } from "@/lib/transit/periods";
+import { PERIODS, inEffect, occurrence, periodAt, periodFor, type PeriodKey } from "@/lib/transit/periods";
 import { boardingArrivals, minutesUntil } from "./model";
 import { TONE, allLineNotices, type LineNotice } from "./lineNotices";
 import { NoticeIcon, noticeKind } from "./noticeKind";
@@ -139,7 +139,7 @@ export function LinePanel({ map, route, onFollow, trains = () => [] }: { map: Ma
     const list = alerts?.alerts ?? [], outs = alerts?.outages ?? [];
     return isNow
       ? allLineNotices(route, heldTrains(live).values(), list, outs, sys)
-      : allLineNotices(route, [], list.filter((a) => alertInEffect(a, occ.spans)), outs.filter((o) => outageInEffect(o, occ.spans)), sys);
+      : allLineNotices(route, [], list.filter((a) => inEffect(a.windows?.length ? a.windows : [[a.start ?? 0, a.end ?? 0]], occ.spans)), outs.filter((o) => inEffect([[o.from ?? 0, o.to ?? 0]], occ.spans)), sys);
   }, [route, alerts, sys, live, isNow, occ]);
   // The day goes with the line: closing it (or another line) starts again from now.
   useEffect(() => () => setLineDay(null), []);
@@ -253,13 +253,13 @@ export function LinePanel({ map, route, onFollow, trains = () => [] }: { map: Ma
   // Four small buttons on one row, as the approved preview draws them (docs/design/notice-walks-preview.html).
   const dayEl = (
     <div className="flex flex-col gap-1">
-      <div role="group" aria-label="Show notices for" data-testid="line-day" className="grid grid-cols-[auto_auto_minmax(0,auto)_minmax(0,auto)] justify-start gap-1">
-        {PERIOD_KEYS.map((k) => (
+      <div role="group" aria-label="Show notices for" data-testid="line-day" className="flex gap-1">
+        {PERIODS.map(([k, name]) => (
           <button key={k} type="button" aria-pressed={k === period} data-period={k}
             onClick={() => { setChosen(k === current ? null : k); setLineDay(null); setPicked(null); setTapped(null); }}
-            className={`min-h-7 rounded-[8px] border px-[7px] py-[3px] text-[11.5px] font-semibold leading-[1.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa] ${k === period ? "border-transparent bg-slate-50 text-slate-900" : "border-[rgba(148,163,184,0.3)] text-[#f1f5f9]"}`}>
-            {k === current ? <span aria-hidden className="mr-[5px] inline-block h-1.5 w-1.5 rounded-full bg-[#22c55e] align-[1px]" /> : null}
-            {PERIOD_LABEL[k]}
+            className={`min-h-7 rounded-lg border px-2 text-[12px] font-semibold leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa] ${k === period ? "border-transparent bg-slate-50 text-slate-900" : "border-[rgba(148,163,184,0.3)] text-[#f1f5f9]"}`}>
+            {k === current ? <span aria-hidden className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-green-500 align-[1px]" /> : null}
+            {name}
           </button>
         ))}
       </div>
