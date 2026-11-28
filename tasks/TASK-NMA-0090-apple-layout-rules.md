@@ -57,3 +57,26 @@ Blocked/uncertain:
 
 Next:
 - Merge this; the map-cleanup, one-sheet and restrooms pull requests build to it
+
+### 2026-11-28 07:32:57 UTC — agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9","blocked":[],"changed":["src/pages/Index.tsx, src/pages/CityData.tsx, src/components/SettingsSheet.tsx, src/components/SettingsBody.tsx, src/components/QrSheet.tsx, src/components/MapChrome.tsx, src/features/agent/AgentHome.tsx, public/info/index.html, .size-limit.json"],"completed":["The map page now holds only getting-around controls: the menu row, My day, the Record and QR buttons and the language chip moved behind a person button on the chat bar, the 311, noise and crash analytics moved to /city-data, and /info/ links the project's other pages (pull request 293)."],"decisions":["With nothing saved the app follows the phone's language, so issue 10's first-open case works without the chip; the person button's label is translated."],"evidence":["Unit tests passed before the rebase (2,302 tests in 295 files) and the 48 affected test files pass after it; typecheck, knip, module boundaries and size pass; layout cases for the idle map, the You card and /city-data passed at all four sizes before the rebase."],"evidence_class":"observed","next_action":"Merge pull request 293 once CI passes, tell the station-walk session that /info/ is live, then delete the scratch clone.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0090","timestamp":"2026-11-28T07:32:57Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"7db0023becac4535796beb7ec7b399645f28f43c1746792032a6dcf2e597988e","request_id":"e44419cd9b834d3fbc4f9ff97ea810c7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0090"} -->
+
+Completed:
+- The map page now holds only getting-around controls: the menu row, My day, the Record and QR buttons and the language chip moved behind a person button on the chat bar, the 311, noise and crash analytics moved to /city-data, and /info/ links the project's other pages (pull request 293).
+
+Evidence:
+- Unit tests passed before the rebase (2,302 tests in 295 files) and the 48 affected test files pass after it; typecheck, knip, module boundaries and size pass; layout cases for the idle map, the You card and /city-data passed at all four sizes before the rebase.
+
+Decisions:
+- With nothing saved the app follows the phone's language, so issue 10's first-open case works without the chip; the person button's label is translated.
+
+Changed:
+- src/pages/Index.tsx, src/pages/CityData.tsx, src/components/SettingsSheet.tsx, src/components/SettingsBody.tsx, src/components/QrSheet.tsx, src/components/MapChrome.tsx, src/features/agent/AgentHome.tsx, public/info/index.html, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge pull request 293 once CI passes, tell the station-walk session that /info/ is live, then delete the scratch clone.
