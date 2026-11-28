@@ -250,8 +250,7 @@ export function noticeMapFeatures(
   const entrances: Point[] = [];
   const ents = sys.entrances?.features ?? [];
   for (const e of map.entrances ?? []) {
-    const own = e as typeof e & { at?: Pos };
-    let p: Pos | undefined = own.at;
+    let p: Pos | undefined = e.at;
     let kind = "";
     if (!p && e.id && /^\d+$/.test(e.id)) {
       const f = ents[Number(e.id)];
