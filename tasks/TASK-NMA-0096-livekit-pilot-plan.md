@@ -47,3 +47,26 @@ Blocked/uncertain:
 
 Next:
 - Merge the plan; then measure today's hands-free turn (plan step 1)
+
+### 2026-11-28 11:06:10 UTC — agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9","blocked":[],"changed":["none"],"completed":["Owner chose: the hands-free voice worker lives in this repository (voice-agent/)"],"decisions":["Owner 2026-11-28: worker in this repository"],"evidence":["docs/PLAN-livekit-hands-free.md"],"evidence_class":"observed","next_action":"Merge the plan; then measure today's hands-free turn (plan step 1); owner still to pick the LiveKit server","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0096","timestamp":"2026-11-28T11:06:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"07254079f99051f2e1d188577fe060f89a375de1d5cc77f31a0439ac43f09c5c","request_id":"3ee27e1264874b91819612d07cadbc5c","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0096"} -->
+
+Completed:
+- Owner chose: the hands-free voice worker lives in this repository (voice-agent/)
+
+Evidence:
+- docs/PLAN-livekit-hands-free.md
+
+Decisions:
+- Owner 2026-11-28: worker in this repository
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the plan; then measure today's hands-free turn (plan step 1); owner still to pick the LiveKit server
