@@ -26,7 +26,7 @@ export async function mockNetwork(page: Page | BrowserContext): Promise<void> {
     const synth = { speaking: false, pending: false, paused: false, getVoices: () => [], cancel() {}, pause() {}, resume() {},
       speak(u: SpeechSynthesisUtterance) { setTimeout(() => { u.onstart?.(new Event("start") as SpeechSynthesisEvent); u.onend?.(new Event("end") as SpeechSynthesisEvent); }, 0); },
       addEventListener() {}, removeEventListener() {}, onvoiceschanged: null };
-    try { Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true }); } catch {}
+    try { Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true }); } catch { /* a browser that will not let it be replaced keeps its own, still muted */ }
   });
   await page.route("**/*", async (route) => {
     const url = new URL(route.request().url());
