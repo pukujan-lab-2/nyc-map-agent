@@ -102,6 +102,29 @@ Blocked/uncertain:
 Next:
 - Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
 
+### 2026-11-28 01:43:50 UTC — agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b","blocked":[],"changed":["e2e/mocks.ts, playwright.config.ts"],"completed":["Browser tests kept silent (--mute-audio and a silent speech stub) and added to pull request 284 at the starting session's request"],"decisions":["no new decisions"],"evidence":["Two test files changed; pull request description updated and passes pr-check"],"evidence_class":"observed","next_action":"Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0079","timestamp":"2026-11-28T01:43:50Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"07d94568e236f58395edb59a690fb02ec72d53f2687f61de603590b91e6513bf","request_id":"eb7cda7fbac34daab490ad34bb2cf29f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0079"} -->
+
+Completed:
+- Browser tests kept silent (--mute-audio and a silent speech stub) and added to pull request 284 at the starting session's request
+
+Evidence:
+- Two test files changed; pull request description updated and passes pr-check
+
+Decisions:
+- no new decisions
+
+Changed:
+- e2e/mocks.ts, playwright.config.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
