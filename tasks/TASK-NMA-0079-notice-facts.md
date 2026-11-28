@@ -125,6 +125,29 @@ Blocked/uncertain:
 Next:
 - Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
 
+### 2026-11-28 03:15:51 UTC — agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b","blocked":[],"changed":["e2e/mocks.ts"],"completed":["Silent speech stub now keeps a spec's own recording voice and its catch is commented, fixing lint and e2e on pull request 284"],"decisions":["no new decisions"],"evidence":["eslint passes on e2e/mocks.ts; block matches the one passing CI on pull request 283"],"evidence_class":"observed","next_action":"Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0079","timestamp":"2026-11-28T03:15:51Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"3100fe0329f8874760c6941d2ac9e202ad1c94b6a1075a2e562d6663487499f6","request_id":"b286d3b1577f4215a3be48dee8c849a2","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0079"} -->
+
+Completed:
+- Silent speech stub now keeps a spec's own recording voice and its catch is commented, fixing lint and e2e on pull request 284
+
+Evidence:
+- eslint passes on e2e/mocks.ts; block matches the one passing CI on pull request 283
+
+Decisions:
+- no new decisions
+
+Changed:
+- e2e/mocks.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
