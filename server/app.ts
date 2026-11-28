@@ -8,7 +8,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { compress } from "hono/compress";
 import { apiRateLimit } from "./lib/apiRateLimit";
-import { AGENT_ROUTE, FINISH_ROUTE, LIVE_STATE_ROUTE, LIVE_WATCH_ROUTE, PART_ROUTE, SEE_SIGN_ROUTE, START_ROUTE, STT_ROUTE, TRANSLATE_ROUTE, TTS_ROUTE, API_INFO, ROUTES, legacyAlias, toV1, toV1Route } from "./openapi";
+import { AGENT_ROUTE, FINISH_ROUTE, LIVE_STATE_ROUTE, LIVE_WATCH_ROUTE, PART_ROUTE, SEE_SIGN_ROUTE, START_ROUTE, STT_ROUTE, TRANSLATE_ROUTE, TTS_ROUTE, VOICE_TOKEN_ROUTE, API_INFO, ROUTES, legacyAlias, toV1, toV1Route } from "./openapi";
 import * as aggregate from "../api/aggregate";
 import * as area from "../api/area/[block]";
 import * as areas from "../api/areas";
@@ -28,6 +28,7 @@ import * as parking from "./features/parking/routes";
 import * as agent from "./features/agent/routes";
 import { transcribe } from "./features/agent/stt";
 import { speak, startVoiceKeeper } from "./features/agent/tts";
+import { voiceToken } from "./features/agent/voiceToken";
 import { translate, translateLines } from "./features/agent/translate";
 import { pickProfile } from "./features/agent/providers";
 import { seeSign } from "./features/agent/seeSign";
@@ -151,6 +152,10 @@ app.openapi(legacyAlias(STT_ROUTE), sttHandler as never);
 const ttsHandler = (c: Context) => speak(c.req.raw);
 app.openapi(toV1Route(TTS_ROUTE), ttsHandler as never);
 app.openapi(legacyAlias(TTS_ROUTE), ttsHandler as never);
+// A live voice call's token (#299): 503 until LIVEKIT_API_KEY and LIVEKIT_API_SECRET are set. The validator has read the body.
+const voiceTokenHandler = async (c: Context) => voiceToken(await c.req.json().catch(() => null), c.req.raw.headers);
+app.openapi(toV1Route(VOICE_TOKEN_ROUTE), voiceTokenHandler as never);
+app.openapi(legacyAlias(VOICE_TOKEN_ROUTE), voiceTokenHandler as never);
 // A notice's steps in the rider's language (#55). As for the agent, the validator has read the body already.
 const translateHandler = async (c: Context) => {
   const body: unknown = await c.req.json().catch(() => null);

@@ -60,6 +60,8 @@ import { sharedCoords, startSharing, stopSharing, useSharedLocation } from "@/li
 import { usePlayer, type Speed } from "./usePlayer";
 import { useWakePhrase } from "./useWakePhrase";
 import { useHandsFree } from "./useHandsFree";
+import { useLiveCall } from "./useLiveCall";
+import { LiveCallPanel } from "./LiveCallPanel";
 import { closeAsk, streetContextHere, useAskRequest } from "@/lib/agent/streetContext";
 import { AgentHome, AnswerCard, WorkingPanel } from "./AgentHome";
 import { DailyCard, TaskButtons } from "./HomeTasks";
@@ -175,6 +177,7 @@ export default function AgentOverlay() {
   const driveOn = useFlag("agentDrive");
   // The station replay fills the left column or the top of a phone: the task row has no room beside it.
   const replayOn = useFlag("stationReplay");
+  const liveCallOn = useFlag("liveCall");
   const [messages, setMessages] = useState<Msg[]>([]);
   // Who gets the screen is decided in one place (src/lib/screen/screenSpace.ts); this reports what is open.
   const openMenu = useOpenMenu();
@@ -407,7 +410,8 @@ export default function AgentOverlay() {
   };
 
   const stopPlayer = player.stop;
-  const send = useCallback(async (text: string) => {
+  // `say` is set for a line heard on a live call: the line to speak goes back to the call instead of this page's voice.
+  const send = useCallback(async (text: string, say?: (line: string) => void) => {
     closeAll();
     setSettingsOpen(false);
     sendScreen({ type: "SEND" });
@@ -444,7 +448,8 @@ export default function AgentOverlay() {
       pendingQuestion.current = q;
       const reply: Msg = { id: crypto.randomUUID(), role: "assistant", content: ORIGIN_PROMPT, offerLocation: true };
       setMessages([...history, reply]);
-      speech.speak(spokenSummary(reply.content), { bargeIn: handsFree, force: byVoice });
+      if (say) say(spokenSummary(reply.content));
+      else speech.speak(spokenSummary(reply.content), { bargeIn: handsFree, force: byVoice });
       return;
     }
     pendingQuestion.current = null;
@@ -470,7 +475,7 @@ export default function AgentOverlay() {
     const asked = heard ?? detectLang(q);
     if (asked) setAskedLang(asked);
     else leaveAskedScript(q);
-    const statusTimer = home && byVoice ? window.setTimeout(() => speech.speak(statusLine(stepsRef.current, sayIn), { lang: speechTag(sayIn, lang), force: true }), STATUS_AFTER_MS) : undefined;
+    const statusTimer = home && byVoice && !say ? window.setTimeout(() => speech.speak(statusLine(stepsRef.current, sayIn), { lang: speechTag(sayIn, lang), force: true }), STATUS_AFTER_MS) : undefined;
     try {
       const memory = home ? memorySummary() : null;
       const underNow = getUndergroundNow();
@@ -521,7 +526,9 @@ export default function AgentOverlay() {
     }
     // Short spoken answer; the full detail stays on screen. In hands-free the
     // person can talk over it to interrupt.
-    if (spoken) speech.speak(spokenSummary(nameLocationButton(nameRemindButton(spoken, replyActions, tr(getAppLang(), "remindMe")), offersLocation, tr(getAppLang(), "useMyLocation"))), { bargeIn: handsFree, force: byVoice, lang: heard ?? speechTag(getAppLang(), lang) });
+    const line = spoken ? spokenSummary(nameLocationButton(nameRemindButton(spoken, replyActions, tr(getAppLang(), "remindMe")), offersLocation, tr(getAppLang(), "useMyLocation"))) : "";
+    if (say) say(line);
+    else if (line) speech.speak(line, { bargeIn: handsFree, force: byVoice, lang: heard ?? speechTag(getAppLang(), lang) });
   }, [mode, setChatOpen, speech, askReq, handsFree, closeAll, home, lang, stopPlayer]);
 
   /** Exit: the answer stops where it is. No more text, map moves, trip or speech from it (owner, 2026-10-27). */
@@ -560,6 +567,11 @@ export default function AgentOverlay() {
 
   const turnOffHandsFree = useCallback(() => setHandsFree(false), []);
   useHandsFree({ on: handsFree, supported: speech.sttSupported, listening: speech.listening, busy, speaking: speech.speaking, error: speech.error, languagePicked, start: speech.startListening, stop: speech.stopListening, turnOff: turnOffHandsFree });
+  // The live call (pilot): each heard line is asked like a typed one; when the call fails or drops, one question at a time again.
+  const call = useLiveCall(
+    (heard) => new Promise<string>((resolve) => { voiceTurn.current = true; void send(heard, resolve).finally(() => resolve("")); }),
+    (line, turns) => { setNotice(line); if (turns) { speech.clearError(); setHandsFree(true); } },
+  );
   // A trip preview or a followed route starting takes over the screen: hands-free ends instead of
   // leaving the orb listening over it (owner report, 2026-10-24). Only the start counts, so you can
   // still turn hands-free on during one, and street-level Ask keeps it. The spoken answer still finishes.
@@ -575,7 +587,7 @@ export default function AgentOverlay() {
   }, [taskOn, handsFree, stopMic]);
   const sheetUp = usePullSheetUp();
   const hasAnswer = home && chatOpen && messages.length > 0;
-  const orbShown = home && handsFree && !dictating;
+  const orbShown = home && (handsFree || call.active) && !dictating;
   useEffect(() => sendScreen({ type: "ANSWER", on: hasAnswer }), [hasAnswer]);
   useEffect(() => sendScreen({ type: "VOICE", on: orbShown }), [orbShown]);
   useEffect(() => () => { sendScreen({ type: "ANSWER", on: false }); sendScreen({ type: "VOICE", on: false }); sendScreen({ type: "TASK", on: false }); }, []);
@@ -588,7 +600,7 @@ export default function AgentOverlay() {
     if (compact) speech.speakSequence(languagePrompt(appLang), true);
   };
 
-  useWakePhrase(wake, handsFree || speech.listening || busy || speech.speaking, (t) => {
+  useWakePhrase(wake, handsFree || call.active || speech.listening || busy || speech.speaking, (t) => {
     setNotice(null);
     speech.clearError();
     if (!t) {
@@ -850,6 +862,7 @@ export default function AgentOverlay() {
     const toggleDictation = () => {
       if (!speech.sttSupported) return voiceOff();
       if (dictating) { dictatingRef.current = false; setDictating(false); speech.stopListening(); return; }
+      if (call.active) call.end();
       if (handsFree) setHandsFree(false);
       speech.stopListening();
       setNotice(null);
@@ -862,9 +875,15 @@ export default function AgentOverlay() {
       if (!speech.sttSupported) return voiceOff();
       if (dictating) { dictatingRef.current = false; setDictating(false); speech.stopListening(); }
       setNotice(null);
+      // With the pilot on, the button opens a live call; a second tap ends it (or the turns it fell back to).
+      if (liveCallOn && !compact && !handsFree) {
+        if (call.active) call.end();
+        else { speech.stopSpeaking(); call.start(); }
+        return;
+      }
       toggleHandsFree();
     };
-    const stopOrb = toggleHandsFree;
+    const stopOrb = call.active ? call.end : toggleHandsFree;
 
     // The last exchange is the answer card; earlier turns stay in the history sent to the agent.
     const lastUser = [...messages].reverse().find((m) => m.role === "user") ?? null;
@@ -1004,7 +1023,8 @@ export default function AgentOverlay() {
           interim={speech.interim}
           dictation={{ supported: speech.sttSupported, on: dictating && speech.listening, toggle: toggleDictation }}
           handsFree={{ on: handsFree, toggle: toggleVoice }}
-          orb={{ show: orbShown, listening: speech.listening, transcript: speech.interim, stop: stopOrb }}
+          orb={{ show: orbShown, listening: speech.listening, transcript: speech.interim, stop: stopOrb,
+            call: call.active ? <LiveCallPanel status={call.status} muted={call.muted} onMute={(on) => void call.mute(on)} onEnd={call.end} /> : undefined }}
           notice={notice ?? speech.error}
           answerOpen={answerOpen}
           onCloseAnswer={() => { stopAnswer(); setChatOpen(false); clearAnswerMarks(); }}

@@ -91,6 +91,25 @@ export const TTS_ROUTE = createRoute({
   },
 });
 
+/** POST /api/voice/token: a LiveKit token for one live voice call, for the map's hands-free call or the presenter's (#299). */
+export const VOICE_TOKEN_ROUTE = createRoute({
+  method: "post",
+  path: "/api/voice/token",
+  summary: "A token for one live voice call in a new room, with the app's voice worker asked to join; no secret is returned",
+  request: {
+    body: { required: true, content: { "application/json": { schema: z.object({ use: z.enum(["map", "present"]) }) } } },
+  },
+  responses: {
+    200: {
+      description: "The LiveKit server, the new room and a token that joins only it",
+      content: { "application/json": { schema: z.object({ url: z.string(), room: z.string(), token: z.string() }).openapi("VoiceGrant") } },
+    },
+    400: { description: "No use, or not map or present", content: { "application/json": { schema: ApiError } } },
+    429: { description: "Too many requests", content: { "application/json": { schema: ApiError } } },
+    503: { description: "Live calls are not set up on this server", content: { "application/json": { schema: ApiError } } },
+  },
+});
+
 export const TRANSLATE_ROUTE = createRoute({
   method: "post",
   path: "/api/agent/translate",

@@ -25,6 +25,8 @@ export const FLAGS = {
   agentDrive: { tier: "basic", default: true, label: "Smart mode: driving trips", owner: "@Pukujan", expires: "2027-04-30" },
   // The main UI (#370): the owner approved the chat-first design, so it is on by default.
   agentHome: { tier: "basic", default: true, label: "Smart mode: chat bar, task buttons, voice orb and answer card", owner: "@Pukujan", expires: "2027-04-30" },
+  // The LiveKit live-call pilot (#299, docs/PLAN-livekit-hands-free.md): for the owner with ?flags=+liveCall until it is measured.
+  liveCall: { tier: "basic", default: false, label: "Hands-free: a live voice call instead of one question at a time (pilot)", owner: "@Pukujan", expires: "2027-03-31" },
   search: { tier: "basic", default: true, label: "Search", owner: "@Pukujan", expires: "2027-04-30" },
   directions: { tier: "basic", default: true, label: "Walking directions", owner: "@Pukujan", expires: "2027-04-30" },
   liveview: { tier: "basic", default: true, label: "Navigation arrows and Live View", owner: "@Pukujan", expires: "2027-04-30" },
