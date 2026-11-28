@@ -22,11 +22,13 @@ const STYLE = JSON.stringify({
  */
 export async function mockNetwork(page: Page | BrowserContext): Promise<void> {
   // Tests never make sound on the owner's machine: speech is a silent stub that still reports "done".
+  // A spec that installed its own recording voice first keeps it (init scripts run in the order added).
   await page.addInitScript(() => {
+    if (typeof SpeechSynthesis !== "undefined" && "speechSynthesis" in window && !(window.speechSynthesis instanceof SpeechSynthesis)) return;
     const synth = { speaking: false, pending: false, paused: false, getVoices: () => [], cancel() {}, pause() {}, resume() {},
       speak(u: SpeechSynthesisUtterance) { setTimeout(() => { u.onstart?.(new Event("start") as SpeechSynthesisEvent); u.onend?.(new Event("end") as SpeechSynthesisEvent); }, 0); },
       addEventListener() {}, removeEventListener() {}, onvoiceschanged: null };
-    try { Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true }); } catch {}
+    try { Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true }); } catch { /* a browser that will not let it be replaced is muted by --mute-audio */ }
   });
   await page.route("**/*", async (route) => {
     const url = new URL(route.request().url());
