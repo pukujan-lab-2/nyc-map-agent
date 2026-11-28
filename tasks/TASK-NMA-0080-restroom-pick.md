@@ -97,6 +97,29 @@ Blocked/uncertain:
 Next:
 - finish the local rerun of the failing browser specs one at a time; re-arm auto-merge on pull request 294 when they pass
 
+### 2026-11-28 13:01:59 UTC — agent:claude-code/94ef3e28-8d0f-4048-93f6-0adc43bf4845
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/94ef3e28-8d0f-4048-93f6-0adc43bf4845","blocked":[],"changed":["openapi.json, src/lib/api/schema.d.ts, checkpoints/CURRENT.md"],"completed":["Rebased onto main after pull request 285 added the transit-notices routes, so openapi.json no longer drops them and the API change is additive"],"decisions":["no new decisions"],"evidence":["every path and operation in main's openapi.json is in the branch's; openapi:check passes; 752 server and restroom unit tests pass"],"evidence_class":"observed","next_action":"let CI's api and e2e jobs pass on pull request 294 and auto-merge land it","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0080","timestamp":"2026-11-28T13:01:59Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"dc0df9b836a875992bfcdbb29b840bd9792fcfb3709927d550640de106e9d882","request_id":"965cc45d0db84609852aa82acfc38133","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0080"} -->
+
+Completed:
+- Rebased onto main after pull request 285 added the transit-notices routes, so openapi.json no longer drops them and the API change is additive
+
+Evidence:
+- every path and operation in main's openapi.json is in the branch's; openapi:check passes; 752 server and restroom unit tests pass
+
+Decisions:
+- no new decisions
+
+Changed:
+- openapi.json, src/lib/api/schema.d.ts, checkpoints/CURRENT.md
+
+Blocked/uncertain:
+- none
+
+Next:
+- let CI's api and e2e jobs pass on pull request 294 and auto-merge land it
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
