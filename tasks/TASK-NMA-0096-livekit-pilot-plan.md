@@ -24,3 +24,26 @@ Hands-free mode takes one turn at a time. The owner asked on 2026-11-28 for a Li
 
 - [x] The plan says what exists, the pilot's shape, what decides keeping it, and the steps.
 - [x] Issue 299 tracks the pilot.
+
+### 2026-11-28 11:04:17 UTC — agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9","blocked":[],"changed":["none"],"completed":["Wrote docs/PLAN-livekit-hands-free.md and filed issue 299"],"decisions":["Owner 2026-11-28: plan a LiveKit pilot for hands-free mode behind a flag; LangGraph not needed"],"evidence":["voice-agent-research decisions 0002 and 0013; design-bakery voice-agent README; draft pull request 243"],"evidence_class":"observed","next_action":"Merge the plan; then measure today's hands-free turn (plan step 1)","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0096","timestamp":"2026-11-28T11:04:17Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"0779d30447aa247c06ecbd5e2fb6c0f178330103b03b945fbdf2f1a4057f31af","request_id":"65d2e766da59474481f30e3ea690810f","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0096"} -->
+
+Completed:
+- Wrote docs/PLAN-livekit-hands-free.md and filed issue 299
+
+Evidence:
+- voice-agent-research decisions 0002 and 0013; design-bakery voice-agent README; draft pull request 243
+
+Decisions:
+- Owner 2026-11-28: plan a LiveKit pilot for hands-free mode behind a flag; LangGraph not needed
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Merge the plan; then measure today's hands-free turn (plan step 1)
