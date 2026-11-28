@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cityDataRedirect } from "./Index";
+import { cityDataRedirect, keepFlags } from "./Index";
 
 describe("old analytics links open City data", () => {
   it("sends ?view= and ?layer= to /city-data with the whole query", () => {
@@ -10,5 +10,12 @@ describe("old analytics links open City data", () => {
   it("leaves the getting-around map where it is", () => {
     expect(cityDataRedirect("")).toBeNull();
     expect(cityDataRedirect("?style=dark&restrooms=1")).toBeNull();
+  });
+});
+
+describe("the flags query survives the move between the map and City data", () => {
+  it("keeps flags and drops the rest", () => {
+    expect(keepFlags("?flags=-agentHome&view=noise")).toBe("?flags=-agentHome");
+    expect(keepFlags("?view=noise")).toBe("");
   });
 });

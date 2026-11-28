@@ -1,6 +1,7 @@
 import { useFlag, useFlags } from "@/lib/flags";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { keepFlags } from "@/pages/Index";
 import { ArrowLeft, BarChart3, Database, Info } from "lucide-react";
 import { CaveatsSheet } from "@/components/CaveatsSheet";
 import { DataSourcesDrawer } from "@/components/DataSourcesDrawer";
@@ -51,6 +52,7 @@ export default function CityData() {
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const flags = useFlags();
   const t = useMenuT();
+  const { search } = useLocation();
   const data = useMapData(windowId, true);
   // index.html draws a chat bar before the app loads; this page has no chat, so it goes now.
   useEffect(() => { removeShell(); }, []);
@@ -183,8 +185,8 @@ export default function CityData() {
     <div className="relative h-full w-full overflow-hidden bg-background">
       <MapView model={model} boundaries={data.boundaries} areas={areas} route={null} />
 
-      <nav aria-label={t("cityData")} data-testid="city-data-bar" className="pointer-events-none absolute left-3 z-40 flex max-w-[calc(100vw-80px)] flex-wrap gap-2" style={{ top: "calc(env(safe-area-inset-top) + 16px)" }}>
-        <Link to="/" data-testid="city-data-back" className={BTN}><ArrowLeft className="h-[18px] w-[18px]" aria-hidden />Map</Link>
+      <nav aria-label={t("cityData")} data-testid="city-data-bar" className="pointer-events-none absolute left-3 z-40 flex max-w-[calc(100vw-80px)] flex-wrap gap-2" style={{ top: "calc(env(safe-area-inset-top) + 16px + var(--topbar-h, 0px))" }}>
+        <Link to={`/${keepFlags(search)}`} data-testid="city-data-back" className={BTN}><ArrowLeft className="h-[18px] w-[18px]" aria-hidden />Map</Link>
         <button type="button" data-testid="open-dashboard" className={BTN} onClick={() => setControlsOpen(true)}><BarChart3 className="h-[18px] w-[18px]" aria-hidden />{t("crashes311")}</button>
         {flags.dataLayers ? <button type="button" className={BTN} onClick={() => setSourcesOpen(true)}><Database className="h-[18px] w-[18px]" aria-hidden />{t("dataLayers")}</button> : null}
         <button type="button" data-testid="open-caveats" className={BTN} onClick={() => setCaveatsOpen(true)}><Info className="h-[18px] w-[18px]" aria-hidden />{t("aboutData")}</button>

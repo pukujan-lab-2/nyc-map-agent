@@ -21,6 +21,12 @@ export function cityDataRedirect(search: string): string | null {
   return params.has("view") || params.has("layer") ? `/city-data?${params.toString()}` : null;
 }
 
+/** The `flags` query (for example `?flags=-agentHome`) kept across City data and the map, so a test or demo layout holds. */
+export function keepFlags(search: string): string {
+  const flags = new URLSearchParams(search).get("flags");
+  return flags ? `?${new URLSearchParams({ flags }).toString()}` : "";
+}
+
 /** The map page: getting around NYC, and nothing else (owner, 2026-11-27). Analytics live at /city-data. */
 export default function Index() {
   const { search } = useLocation();
@@ -31,10 +37,12 @@ export default function Index() {
 function GettingAround() {
   const { window: windowId, scale, selectedNtaCode, selectedBlockKey } = useMapState();
   const navigate = useNavigate();
+  const { search } = useLocation();
+  const cityData = `/city-data${keepFlags(search)}`;
   // A neighbourhood picked from search (the classic layout) opens its 311 and crash numbers on City data.
   useEffect(() => {
-    if (selectedNtaCode || selectedBlockKey) navigate("/city-data");
-  }, [selectedNtaCode, selectedBlockKey, navigate]);
+    if (selectedNtaCode || selectedBlockKey) navigate(cityData);
+  }, [selectedNtaCode, selectedBlockKey, navigate, cityData]);
   const chatReplaced = useChatReplaced();
   const { routeStart, routeEnd } = useDataView();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -48,7 +56,7 @@ function GettingAround() {
     [data.boundaries, scale, blockDensity],
   );
   const areas = useAreas(model, data.boundaries, scale);
-  const openCityData = () => navigate("/city-data");
+  const openCityData = () => navigate(cityData);
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-background">
