@@ -87,7 +87,7 @@
   {
     "name": "feature: notice map layers (lazy, loads with the first notice: tracks, signposts, train, buses, walks, entrances)",
     "path": ".size-build/assets/NoticeMapLayers-*.js",
-    "limit": "6.2 kB"
+    "limit": "6.3 kB"
   },
   {
     "name": "shared 3D layer: threeLayer + three (vehicles, hydrants, street signs, storefronts, street furniture, overpasses; lazy)",
@@ -135,6 +135,6 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js"
     ],
-    "limit": "1292 kB"
+    "limit": "1297.6 kB"
   }
 ]

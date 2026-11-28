@@ -212,23 +212,17 @@ export function noticeMapFeatures(
     const both = (l: string) => sys.stopM[l]?.[onLine(map.ride!.from, l)] !== undefined && sys.stopM[l]?.[onLine(map.ride!.to, l)] !== undefined;
     const track = [map.ride.line, ...routesAt(map.ride.from), ...routesAt(map.ride.to)].find(both) ?? map.ride.line;
     const r = { ...map.ride, track, from: onLine(map.ride.from, track), to: onLine(map.ride.to, track) }, sm = sys.stopM[track] ?? {};
-    const p = keep(at(r.from));
-    if (p && sm[r.from] !== undefined && sm[r.to] !== undefined) {
-      const up = sm[r.to] >= sm[r.from];
-      const h = headingAt(sys, r.track, sm[r.from], up);
-      const o = rightOf(h, LANE);
-      const toward = r.toward ?? sideNames(sys, r.track, null)[up ? 1 : 0];
+    const p = keep(at(r.from)), q = keep(at(r.to));
+    if (p && q) {
+      // On one line's track: the train on its own side, heading along the track. Over two lines (a reroute):
+      // at its start, pointing straight at where it is going.
+      const onTrack = sm[r.from] !== undefined && sm[r.to] !== undefined, up = sm[r.to] >= sm[r.from];
+      const k = Math.cos((p[1] * Math.PI) / 180), e = (q[0] - p[0]) * k, n = q[1] - p[1], L = Math.hypot(e, n) || 1;
+      const h: Pos = onTrack ? headingAt(sys, r.track, sm[r.from], up) : [e / L, n / L];
+      const o = onTrack ? rightOf(h, LANE) : [0, 0];
+      const toward = r.toward ?? (onTrack ? sideNames(sys, r.track, null)[up ? 1 : 0] : "");
       const color = opts.color(r.line);
       train.push(pt(p, { line: r.line, color, bullet: bulletId(r.line, color), bulletOffset: [round(o[0] / 0.8), round(o[1] / 0.8)], bearing: round(bearingOf(h)), tag: toward ? `to ${toward}` : "", tagOffset: [round(o[0] / 12), round(o[1] / 12 + 1.1)] }));
-      keep(at(r.to));
-    } else if (p && at(r.to)) {
-      // No one line runs from one end to the other (a reroute over two lines): the train at its start,
-      // pointing straight at where it is going.
-      const q = at(r.to)!, k = Math.cos((p[1] * Math.PI) / 180);
-      const e = (q[0] - p[0]) * k, n = q[1] - p[1], L = Math.hypot(e, n) || 1;
-      const color = opts.color(r.line);
-      train.push(pt(p, { line: r.line, color, bullet: bulletId(r.line, color), bulletOffset: [0, 0], bearing: round(bearingOf([e / L, n / L])), tag: r.toward ? `to ${r.toward}` : "", tagOffset: [0, 1.1] }));
-      keep(q);
     }
   }
 
