@@ -14,24 +14,25 @@ let nextId = 1;
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((f) => f());
 
-/** Until then, the next view to come up goes under the one showing instead of over it. */
-let underUntil = 0;
+/** The tag of a view that should open under the one showing, and until when that holds. */
+let under: { tag: string; until: number } | null = null;
 
 /**
- * The next view (within a second) opens under the one showing: an answer that opens its line by itself
- * keeps the answer in front, and closing the answer shows the line.
+ * The view with this tag (say "line:7"), when it next comes up, opens under the one showing instead of over
+ * it: an answer that opens its line by itself keeps the answer in front, and closing the answer shows the line.
+ * Keyed by tag, not by time alone, because a panel's code can take seconds to load on a slow phone.
  */
-export function openNextUnderTop(now = Date.now()): void {
-  underUntil = now + 1000;
+export function openNextUnderTop(tag: string, now = Date.now()): void {
+  under = { tag, until: now + 30_000 };
 }
 
 /** A sheet came up: it goes on top. Returns its id and the call that takes it off again. */
 export function pullSheetMounted(close: () => void, now = Date.now(), tag?: string): { id: number; release: () => void } {
   const id = nextId++;
-  const under = now < underUntil && stack.length > 0;
-  underUntil = 0;
+  const goesUnder = under !== null && Boolean(tag) && under.tag === tag && now < under.until && stack.length > 0;
+  if (goesUnder || (under && now >= under.until)) under = null;
   const entry: Entry = { id, close, tag };
-  stack = under ? [...stack.slice(0, -1), entry, stack.at(-1)!] : [...stack, entry];
+  stack = goesUnder ? [...stack.slice(0, -1), entry, stack.at(-1)!] : [...stack, entry];
   emit();
   return { id, release: () => { stack = stack.filter((e) => e.id !== id); emit(); } };
 }

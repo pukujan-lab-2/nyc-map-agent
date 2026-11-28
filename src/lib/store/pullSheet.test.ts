@@ -24,14 +24,17 @@ describe("the phone's one sheet", () => {
     expect(order).toEqual(["answer", "line"]);
   });
 
-  it("puts the next view under the one showing when asked, once and only for a second", () => {
+  it("puts the asked-for view under the one showing, however long it takes to come up, and only that view", () => {
     const order: string[] = [];
     const answer = pullSheetMounted(() => { order.push("answer"); answer.release(); });
-    openNextUnderTop(1000);
-    const line = pullSheetMounted(() => { order.push("line"); line.release(); }, 1500);
-    openNextUnderTop(1000);
-    const late = pullSheetMounted(() => { order.push("late"); late.release(); }, 2500);
+    openNextUnderTop("line:7", 1000);
+    // Another view first: it still goes on top.
+    const station = pullSheetMounted(() => { order.push("station"); station.release(); }, 1100, "map:station");
+    // The line's code took eight seconds to load: it still goes under.
+    const line = pullSheetMounted(() => { order.push("line"); line.release(); }, 9000, "line:7");
+    // Only once.
+    const again = pullSheetMounted(() => { order.push("again"); again.release(); }, 9500, "line:7");
     closeSheets();
-    expect(order).toEqual(["late", "answer", "line"]);
+    expect(order).toEqual(["again", "station", "line", "answer"]);
   });
 });

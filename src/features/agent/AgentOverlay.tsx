@@ -515,7 +515,7 @@ export default function AgentOverlay() {
     // the 7's weekend skips were only words until someone found the line (owner, 2026-10-27).
     const lineFirst = replyActions?.[0];
     // It opens under the answer in the one sheet, so the answer stays in front and closing it shows the line.
-    if (!sawTrip && lineFirst?.kind === "showLine" && window.matchMedia("(min-width: 1024px)").matches) { setLineDay(lineFirst.day ?? null); openNextUnderTop(); setSelectedLine(lineOf(lineFirst.route), null, undefined, true); }
+    if (!sawTrip && lineFirst?.kind === "showLine" && window.matchMedia("(min-width: 1024px)").matches) { setLineDay(lineFirst.day ?? null); openNextUnderTop(`line:${lineOf(lineFirst.route)}`); setSelectedLine(lineOf(lineFirst.route), null, undefined, true); }
     // The model still asked for a start: put the same button on its reply.
     const offersLocation = !street && !!spoken && !sharedCoords() && replyAsksForOrigin(spoken);
     if (offersLocation) {
