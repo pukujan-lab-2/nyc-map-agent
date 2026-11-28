@@ -128,6 +128,9 @@ importers:
       openapi-fetch:
         specifier: 0.15.0
         version: 0.15.0
+      opening_hours:
+        specifier: 3.15.0
+        version: 3.15.0(typescript@5.6.3)
       pmtiles:
         specifier: 4.3.0
         version: 4.3.0
@@ -3823,6 +3826,14 @@ packages:
   hysnappy@1.1.1:
     resolution: {integrity: sha512-/V9XcN2NtRyWjR4LYMfvnvasVVF8jbT/ej0eofBQjZel91E3D813FQ3mQC6gDSMMTCq/FJh28XHeyqr3I/oBRw==}
 
+  i18next@26.7.2:
+    resolution: {integrity: sha512-RsOY3BeaCDdkk52NeJSFAXELQ2rQXBO/tOub6L8ue2ICPfR/FRDWDOfEDg4xMPd1SqO5goVYQ6i72qWEUB/PPw==}
+    peerDependencies:
+      typescript: ^5 || ^6 || ^7
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
     engines: {node: '>=0.10.0'}
@@ -4538,6 +4549,10 @@ packages:
     resolution: {integrity: sha512-8AV/sCtuzUeTo8gQK5qDZzARrulB3egtLzFgteqB2tcT4Mw7B8Kt7JcDHmltjz6FOAHsvTevk70gZEbhM4ZS9Q==}
     hasBin: true
 
+  opening_hours@3.15.0:
+    resolution: {integrity: sha512-gSPN1YSLCcS4H4YL3Pc/0QRgoafuIhasQ44bM0U+62TABoEyIEeP9AuAIGSGHd9AWycq1eBwxbNfgkiCpx8bCQ==}
+    engines: {node: '>=14'}
+
   optionator@0.8.3:
     resolution: {integrity: sha512-+IW9pACdk3XWmmTXG8m3upGUJst5XRGzxMRjXzAuJ1XnIFNvfhjjIuYkDvysnPQ7qzqVzLt78BCruntqRhWQbA==}
     engines: {node: '>= 0.8.0'}
@@ -5240,6 +5255,9 @@ packages:
 
   suncalc@1.9.0:
     resolution: {integrity: sha512-vMJ8Byp1uIPoj+wb9c1AdK4jpkSKVAywgHX0lqY7zt6+EWRRC3Z+0Ucfjy/0yxTVO1hwwchZe4uoFNqrIC24+A==}
+
+  suncalc@2.1.4:
+    resolution: {integrity: sha512-V7oSdbSezigEpbqnNWKujDlZaE/QA/0w5IbP/vXX+eIF+EtiE8e9BkSapsOFZc84jJkI3QlklYTWtMqzj9tZQg==}
 
   supports-color@10.2.2:
     resolution: {integrity: sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g==}
@@ -9426,6 +9444,10 @@ snapshots:
 
   hysnappy@1.1.1: {}
 
+  i18next@26.7.2(typescript@5.6.3):
+    optionalDependencies:
+      typescript: 5.6.3
+
   iconv-lite@0.6.3:
     dependencies:
       safer-buffer: 2.1.2
@@ -10215,6 +10237,13 @@ snapshots:
       yaml: 2.9.1
 
   opencollective-postinstall@2.0.3: {}
+
+  opening_hours@3.15.0(typescript@5.6.3):
+    dependencies:
+      i18next: 26.7.2(typescript@5.6.3)
+      suncalc: 2.1.4
+    transitivePeerDependencies:
+      - typescript
 
   optionator@0.8.3:
     dependencies:
@@ -11025,6 +11054,8 @@ snapshots:
       ts-interface-checker: 0.1.13
 
   suncalc@1.9.0: {}
+
+  suncalc@2.1.4: {}
 
   supports-color@10.2.2: {}
 

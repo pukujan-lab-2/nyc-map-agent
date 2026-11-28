@@ -1,3 +1,4 @@
+import { cityOpenState, openState } from "../../lib/openingHours";
 import type { OsmToilet } from "./osm";
 import type { Restroom, RestroomsResponse } from "./schema";
 
@@ -15,6 +16,8 @@ export interface CityRestroom {
   changing_stations: string | null;
   /** The Socrata row's :updated_at (ISO), or when it was loaded. */
   updated_at: string | null;
+  /** When the nightly ingest last loaded the row (ISO). */
+  fetched_at?: string | null;
   lon: number;
   lat: number;
 }
@@ -72,7 +75,7 @@ const yesNoText = (v: string | null): boolean | null => {
   return s === "yes" ? true : s === "no" ? false : null;
 };
 
-function fromCity(c: CityRestroom, o: OsmToilet | undefined): Restroom {
+function fromCity(c: CityRestroom, o: OsmToilet | undefined, now: Date): Restroom {
   const filled: string[] = [];
   const fill = <T>(field: string, mine: T | null, theirs: T | null | undefined): T | null => {
     if (mine !== null && mine !== "") return mine;
@@ -80,13 +83,14 @@ function fromCity(c: CityRestroom, o: OsmToilet | undefined): Restroom {
     filled.push(field);
     return theirs;
   };
+  const hours = fill("hours", c.hours, o?.openingHours);
   return {
     id: `nyc:${c.name}`,
     name: c.name,
     source: "nyc-open-data",
     asOf: c.updated_at,
     status: c.status,
-    hours: fill("hours", c.hours, o?.openingHours),
+    hours,
     accessibility: fill("accessibility", c.accessibility, o?.wheelchair ? WHEELCHAIR[o.wheelchair] : null),
     operator: fill("operator", c.operator, o?.operator),
     location_type: c.location_type,
@@ -96,10 +100,13 @@ function fromCity(c: CityRestroom, o: OsmToilet | undefined): Restroom {
     osmId: o?.id ?? null,
     osmUrl: o?.url ?? null,
     filledFromOsm: filled,
+    fetchedAt: c.fetched_at ?? null,
+    // City hours are free text; hours filled from OSM are OSM syntax, which the converter passes through.
+    open: cityOpenState(hours, c.status, { now, fetchedAt: c.fetched_at ?? null }),
   };
 }
 
-function fromOsm(o: OsmToilet): Restroom {
+function fromOsm(o: OsmToilet, now: Date): Restroom {
   return {
     id: o.id,
     name: o.name ?? "Public toilet",
@@ -116,6 +123,8 @@ function fromOsm(o: OsmToilet): Restroom {
     osmId: o.id,
     osmUrl: o.url,
     filledFromOsm: [],
+    fetchedAt: o.fetchedAt ?? null,
+    open: openState(o.openingHours, { now, fetchedAt: o.fetchedAt ?? null }),
   };
 }
 
@@ -125,7 +134,7 @@ const latest = (xs: Array<string | null>): string | null => xs.reduce<string | n
  * The merged restroom list: every city restroom (with gaps filled from a
  * matched OSM toilet) plus the OSM toilets that match no city restroom.
  */
-export function mergeRestrooms(city: CityRestroom[], osm: OsmToilet[]): RestroomsResponse {
+export function mergeRestrooms(city: CityRestroom[], osm: OsmToilet[], now = new Date()): RestroomsResponse {
   const match = matchSamePlaces(city, osm);
   const used = new Set(match.values());
   const feature = (r: Restroom, lon: number, lat: number) => ({
@@ -137,9 +146,9 @@ export function mergeRestrooms(city: CityRestroom[], osm: OsmToilet[]): Restroom
   const features = [
     ...city.map((c, i) => {
       const j = match.get(i);
-      return feature(fromCity(c, j === undefined ? undefined : osm[j]), c.lon, c.lat);
+      return feature(fromCity(c, j === undefined ? undefined : osm[j], now), c.lon, c.lat);
     }),
-    ...osm.filter((_, j) => !used.has(j)).map((o) => feature(fromOsm(o), o.lon, o.lat)),
+    ...osm.filter((_, j) => !used.has(j)).map((o) => feature(fromOsm(o, now), o.lon, o.lat)),
   ];
   return {
     type: "FeatureCollection",

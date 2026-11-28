@@ -23,6 +23,7 @@ import { Query as HealthBusSpeedsQuery, Response_ as HealthBusSpeedsResponse } f
 import { EventsResponse, Query as EventsQuery } from "./features/events/schema";
 import { PlaceToiletsResponse } from "./features/place-toilets/schema";
 import { RestroomsResponse } from "./features/restrooms/schema";
+import { AnswerBody as RestroomAnswerBody, SummaryQuery as RestroomAnswerQuery, SummaryResponse as RestroomAnswerSummaries } from "./features/restrooms/answers";
 
 const Json = z.record(z.string(), z.unknown()).openapi("Json");
 const ApiError = z.object({ error: z.string(), issues: z.array(z.string()).optional() }).openapi("ApiError");
@@ -126,6 +127,19 @@ export const SEE_SIGN_ROUTE = createRoute({
     429: { description: "Too many requests", content: { "application/json": { schema: ApiError } } },
     502: { description: "The model failed", content: { "application/json": { schema: ApiError } } },
     503: { description: "No model that can look at a photo is set up", content: { "application/json": { schema: ApiError } } },
+  },
+});
+
+/** POST /api/restroom-answers: what a rider found when a walk ended at a restroom (#249). */
+export const RESTROOM_ANSWER_ROUTE = createRoute({
+  method: "post",
+  path: "/api/restroom-answers",
+  summary: "Store one anonymous answer to Was the restroom available to use? (restroom id, answers and a timestamp; no account, device or position)",
+  request: { body: { required: true, content: { "application/json": { schema: RestroomAnswerBody } } } },
+  responses: {
+    204: { description: "Stored" },
+    400: { description: "Not a restroom id, or an answer of the wrong kind", content: { "application/json": { schema: ApiError } } },
+    502: errors[502],
   },
 });
 
@@ -291,6 +305,13 @@ export const ROUTES = {
     path: "/api/restrooms",
     summary: "Public restrooms GeoJSON: NYC Open Data merged with OpenStreetMap public toilets (ODbL); places within ~40 m are one record, each with its source and asOf",
     responses: { 200: { description: "OK", content: { "application/json": { schema: RestroomsResponse } } }, ...errors },
+  }),
+  "/api/restroom-answers": createRoute({
+    method: "get",
+    path: "/api/restroom-answers",
+    summary: "Recent rider answers for up to 100 restrooms, summarised: the latest confirmation in 30 days, whether it was free, and No answers since",
+    request: { query: RestroomAnswerQuery },
+    responses: { 200: { description: "OK", content: { "application/json": { schema: RestroomAnswerSummaries } } }, ...errors },
   }),
   "/api/sources": jsonRoute("/api/sources", "Source registry metadata and freshness"),
   "/api/street": jsonRoute("/api/street", "Street noise / crash stats", StreetQuery),

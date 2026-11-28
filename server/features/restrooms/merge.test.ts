@@ -98,3 +98,25 @@ describe("mergeRestrooms", () => {
     expect(out.sources[1]).toEqual({ id: "openstreetmap", asOf: null, count: 0 });
   });
 });
+
+describe("mergeRestrooms: open now", () => {
+  const now = new Date("2026-11-28T18:00:00Z"); // Saturday 1 PM in New York
+  const fetched = "2026-11-28T06:00:00Z";
+  it("reads the city's hours and status, and OSM's hours, at the given time", () => {
+    const r = mergeRestrooms(
+      [
+        city("Open park", -73.9, 40.7, { hours: "8am-4pm, Open later seasonally", fetched_at: fetched }),
+        city("Shut park", -73.8, 40.7, { hours: "7am-10pm", status: "Not Operational", fetched_at: fetched }),
+      ],
+      [osm("osm:node/9", -73.7, 40.7, { openingHours: "Mo-Su 06:00-12:00", fetchedAt: fetched })],
+      now,
+    );
+    const by = Object.fromEntries(r.features.map((f) => [f.properties.name, f.properties.open.status]));
+    expect(by).toEqual({ "Open park": "open", "Shut park": "closed", "Public toilet": "closed" });
+    expect(r.features[0].properties.fetchedAt).toBe(fetched);
+  });
+  it("a city list we have not refreshed in 30 days says its hours may have changed", () => {
+    const r = mergeRestrooms([city("Old park", -73.9, 40.7, { hours: "7am-10pm", fetched_at: "2026-10-01T00:00:00Z" })], [], now);
+    expect(r.features[0].properties.open).toMatchObject({ status: "unknown", reason: "stale" });
+  });
+});

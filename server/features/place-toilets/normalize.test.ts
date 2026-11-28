@@ -24,6 +24,17 @@ describe("fromOsm", () => {
   });
 });
 
+describe("fromOsm: what the restroom card shows", () => {
+  it("keeps hours, phone, website, address, brand and the check date", () => {
+    const p = fromOsm(el({ toilets: "yes", amenity: "cafe", name: "Joe", opening_hours: "Mo-Fr 07:00-19:00", phone: "+1 212 555 0100", website: "https://joe.example", "addr:housenumber": "120", "addr:street": "Fulton Street", "brand:wikidata": "Q37158", check_date: "2026-05-01" }));
+    expect(p).toMatchObject({ openingHours: "Mo-Fr 07:00-19:00", phone: "+1 212 555 0100", website: "https://joe.example", address: "120 Fulton Street", brandWikidata: "Q37158", checkDate: "2026-05-01" });
+  });
+  it("prefers the toilets' own hours and check date, falls back to contact tags, and leaves the rest null", () => {
+    const p = fromOsm(el({ toilets: "yes", shop: "books", name: "B", opening_hours: "24/7", "toilets:opening_hours": "Mo-Su 10:00-18:00", "contact:phone": "+1 1", check_date: "2024-01-01", "check_date:opening_hours": "2026-01-01", "addr:street": "Pearl St" }));
+    expect(p).toMatchObject({ openingHours: "Mo-Su 10:00-18:00", phone: "+1 1", website: null, address: "Pearl St", brandWikidata: null, checkDate: "2026-01-01" });
+  });
+});
+
 describe("collectPlaceToilets", () => {
   it("parses an Overpass response and dedupes", async () => {
     const body = { elements: [el({ toilets: "yes", amenity: "cafe", name: "A" }), el({ toilets: "yes", amenity: "cafe", name: "A" })] };

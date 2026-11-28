@@ -34,10 +34,13 @@ export async function replacePlaceToilets(places: StoredPlaceToilet[], query: Qu
   await query("DELETE FROM core.place_toilets");
   for (let i = 0; i < places.length; i += 2000) {
     await query(
-      `INSERT INTO core.place_toilets (id, name, kind, access, access_tagged, wheelchair, changing_table, fee, lon, lat, source, url, refreshed_at)
-       SELECT id, name, kind, access, "accessTagged", wheelchair, "changingTable", fee, lon, lat, source, url, now()
+      `INSERT INTO core.place_toilets (id, name, kind, access, access_tagged, wheelchair, changing_table, fee, lon, lat, source, url,
+         opening_hours, phone, website, address, brand_wikidata, check_date, refreshed_at)
+       SELECT id, name, kind, access, "accessTagged", wheelchair, "changingTable", fee, lon, lat, source, url,
+         "openingHours", phone, website, address, "brandWikidata", "checkDate", now()
        FROM jsonb_to_recordset($1::jsonb) AS x(id text, name text, kind text, access text, "accessTagged" boolean, wheelchair boolean,
-         "changingTable" boolean, fee boolean, lon float8, lat float8, source text, url text)
+         "changingTable" boolean, fee boolean, lon float8, lat float8, source text, url text,
+         "openingHours" text, phone text, website text, address text, "brandWikidata" text, "checkDate" text)
        ON CONFLICT (id) DO NOTHING`,
       [JSON.stringify(places.slice(i, i + 2000))],
     );

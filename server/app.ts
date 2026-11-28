@@ -8,7 +8,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { compress } from "hono/compress";
 import { apiRateLimit } from "./lib/apiRateLimit";
-import { AGENT_ROUTE, FINISH_ROUTE, LIVE_STATE_ROUTE, LIVE_WATCH_ROUTE, PART_ROUTE, SEE_SIGN_ROUTE, START_ROUTE, STT_ROUTE, TRANSLATE_ROUTE, TTS_ROUTE, API_INFO, ROUTES, legacyAlias, toV1, toV1Route } from "./openapi";
+import { AGENT_ROUTE, FINISH_ROUTE, LIVE_STATE_ROUTE, LIVE_WATCH_ROUTE, PART_ROUTE, RESTROOM_ANSWER_ROUTE, SEE_SIGN_ROUTE, START_ROUTE, STT_ROUTE, TRANSLATE_ROUTE, TTS_ROUTE, API_INFO, ROUTES, legacyAlias, toV1, toV1Route } from "./openapi";
 import * as aggregate from "../api/aggregate";
 import * as area from "../api/area/[block]";
 import * as areas from "../api/areas";
@@ -41,6 +41,7 @@ import * as transitNotices from "./features/transit/noticeRoutes";
 import type { NoticeDeps } from "./features/transit/noticeHelper";
 import * as events from "./features/events/routes";
 import * as placeToilets from "./features/place-toilets/routes";
+import * as restroomAnswers from "./features/restrooms/answers";
 import * as storefronts from "./features/storefronts/routes";
 import * as recording from "./features/recordings/upload";
 import * as live from "./features/live/routes";
@@ -64,6 +65,7 @@ const routes: Array<[string, Handler]> = [
   ["/api/blocks", blocks],
   ["/api/city-tiles", cityTiles],
   ["/api/restrooms", restrooms],
+  ["/api/restroom-answers", restroomAnswers],
   ["/api/sources", sources],
   ["/api/street", street],
   ["/api/vehicle-models/:mode", vehicleModels],
@@ -169,6 +171,13 @@ app.get("/api/presenter/status", () => presenter.status());
 for (const kind of ["ask", "chat", "weather"] as const) {
   app.post(`/api/presenter/${kind}`, (c) => presenter.post(kind, c.req.raw, undefined, undefined, weather.GET));
 }
+// A rider's answer after a walk ends at a restroom (#249). The validator has read the body already.
+const restroomAnswerHandler = async (c: Context) => {
+  const body: unknown = await c.req.json().catch(() => null);
+  return restroomAnswers.POST(new Request(c.req.url, { method: "POST", headers: c.req.raw.headers, body: JSON.stringify(body) }));
+};
+app.openapi(toV1Route(RESTROOM_ANSWER_ROUTE), restroomAnswerHandler as never);
+app.openapi(legacyAlias(RESTROOM_ANSWER_ROUTE), restroomAnswerHandler as never);
 // The live phone demo (#186): a phone posts its state under a code, screens watch the code. A bad code is the handler's 400.
 const liveStateHandler = async (c: Context) => {
   const body: unknown = await c.req.json().catch(() => null);

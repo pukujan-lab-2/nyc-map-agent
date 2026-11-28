@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { OpenStateSchema } from "../../lib/openStateSchema";
 
 /**
  * Shapes for "shops & cafés with toilets": the Overpass element we read, the
@@ -31,11 +32,20 @@ export const PlaceToilet = z
     fee: z.boolean().nullable(),
     source: z.literal("openstreetmap"),
     url: z.string(),
+    openingHours: z.string().nullable().openapi({ description: "OSM opening_hours, as tagged" }),
+    phone: z.string().nullable(),
+    website: z.string().nullable(),
+    address: z.string().nullable().openapi({ example: "120 Fulton St" }),
+    brandWikidata: z.string().nullable().openapi({ description: "brand:wikidata; the storefront logo comes from /api/v1/storefronts/logo?qid=" }),
+    checkDate: z.string().nullable().openapi({ description: "OSM check_date:opening_hours or check_date: when a mapper last confirmed it" }),
+    fetchedAt: z.string().nullable().openapi({ description: "When we last fetched it from OpenStreetMap (ISO)" }),
+    open: OpenStateSchema,
   })
   .openapi("PlaceToilet");
 export type PlaceToilet = z.infer<typeof PlaceToilet>;
 
-export interface StoredPlaceToilet extends PlaceToilet {
+/** A place as the nightly ingest stores it: everything but what is worked out at request time. */
+export interface StoredPlaceToilet extends Omit<PlaceToilet, "fetchedAt" | "open"> {
   lon: number;
   lat: number;
 }

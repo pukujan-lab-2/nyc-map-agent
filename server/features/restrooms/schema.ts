@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi";
+import { OpenStateSchema } from "../../lib/openStateSchema";
 
 /**
  * /api/restrooms: the city's public restrooms (NYC Open Data i7jb-7jku) merged
@@ -25,6 +26,8 @@ export const Restroom = z
     osmId: z.string().nullable().openapi({ description: "The matched or source OpenStreetMap element" }),
     osmUrl: z.string().nullable(),
     filledFromOsm: z.array(z.string()).openapi({ description: "City fields that were empty and were filled from the matched OSM toilet" }),
+    fetchedAt: z.string().nullable().openapi({ description: "When we last fetched the record from its source (ISO); over 30 days old reads as Hours may have changed" }),
+    open: OpenStateSchema,
   })
   .openapi("Restroom");
 export type Restroom = z.infer<typeof Restroom>;

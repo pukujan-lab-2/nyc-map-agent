@@ -6,7 +6,8 @@ import type { OsmToilet } from "./osm";
 /**
  * GET /api/restrooms: public restrooms as one GeoJSON FeatureCollection. The
  * city list (core.restrooms) merged with OpenStreetMap public toilets
- * (core.osm_toilets); each record says its source and asOf. When the OSM table
+ * (core.osm_toilets); each record says its source, asOf and whether it is open
+ * now (New York time, at request time). When the OSM table
  * cannot be read, the city list is served alone.
  */
 type Raw<T> = { [K in keyof T]: T[K] | string | null };
@@ -23,8 +24,8 @@ const bool = (v: unknown): boolean | null => (typeof v === "boolean" ? v : v ===
 
 async function readOsm(): Promise<OsmToilet[]> {
   try {
-    const { rows } = await octoQuery<Raw<OsmToilet> & { opening_hours: unknown; changing_table: unknown; edited_at: unknown }>(
-      "SELECT id, name, access, fee, wheelchair, opening_hours, changing_table, unisex, operator, url, edited_at, lon, lat FROM core.osm_toilets ORDER BY id",
+    const { rows } = await octoQuery<Raw<OsmToilet> & { opening_hours: unknown; changing_table: unknown; edited_at: unknown; refreshed_at: unknown }>(
+      "SELECT id, name, access, fee, wheelchair, opening_hours, changing_table, unisex, operator, url, edited_at, refreshed_at, lon, lat FROM core.osm_toilets ORDER BY id",
       [],
       { rowLimit: 10000 },
     );
@@ -40,6 +41,7 @@ async function readOsm(): Promise<OsmToilet[]> {
       operator: text(r.operator),
       url: String(r.url),
       editedAt: iso(r.edited_at),
+      fetchedAt: iso(r.refreshed_at),
       lon: Number(r.lon),
       lat: Number(r.lat),
     }));
@@ -53,7 +55,7 @@ export async function GET(): Promise<Response> {
   try {
     const [{ rows }, osm] = await Promise.all([
       octoQuery<Raw<CityRestroom>>(
-        "SELECT name, status, hours, accessibility, operator, location_type, changing_stations, updated_at, lat, lon FROM core.restrooms ORDER BY name",
+        "SELECT name, status, hours, accessibility, operator, location_type, changing_stations, updated_at, fetched_at, lat, lon FROM core.restrooms ORDER BY name",
         [],
         { rowLimit: 5000 },
       ),
@@ -68,10 +70,12 @@ export async function GET(): Promise<Response> {
       location_type: text(r.location_type),
       changing_stations: text(r.changing_stations),
       updated_at: iso(r.updated_at),
+      fetched_at: iso(r.fetched_at),
       lon: Number(r.lon),
       lat: Number(r.lat),
     }));
-    return json(mergeRestrooms(city, osm), { maxAge: 3600 });
+    // Open now is read at request time, so the edge keeps it five minutes.
+    return json(mergeRestrooms(city, osm, new Date()), { maxAge: 300 });
   } catch (err) {
     return fail(err);
   }
