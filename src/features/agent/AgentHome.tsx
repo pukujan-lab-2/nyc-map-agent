@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowUp, AudioLines, Check, ChevronDown, Loader2, Mic, X } from "lucide-react";
+import { AlertCircle, ArrowUp, AudioLines, Check, ChevronDown, Loader2, Mic, UserRound, X } from "lucide-react";
 import { formatStationName } from "@/lib/streetName";
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
@@ -212,10 +212,12 @@ interface AgentHomeProps {
   answerOpen: boolean;
   onCloseAnswer: () => void;
   answer: ReactNode;
-  /** The idle home above the bar (Right now card, Home/Work pills, task buttons); null while anything else is open. */
+  /** The idle home above the bar (the task buttons); null while anything else is open. */
   idle: ReactNode;
   /** Only full-screen modes (street level, the trip preview) take the bottom of the screen. */
   hidden: boolean;
+  /** The person button at the bar's right end: settings, memory and the pages that left the map. */
+  onMe?: () => void;
   /** Extra space under the bar so the minimised place chip stays visible. */
   lift: boolean;
 }
@@ -230,7 +232,7 @@ const PHONE_ANSWER_H: Record<SheetLevel, string> = {
 
 /**
  * The agent-first home (#370), as the owner's mockups draw it: a light chat bar
- * that is always there ([text box][dictate][hands-free]), the task buttons above
+ * that is always there ([text box][dictate][hands-free][you]), the task buttons above
  * it when nothing is open, and the answer or the voice orb in a translucent
  * sheet that wraps the bar so the map shows through.
  *
@@ -398,6 +400,12 @@ export function AgentHome(p: AgentHomeProps) {
           <AudioLines className="!h-6 !w-6" strokeWidth={2.4} aria-hidden="true" />
         </Button>
       )}
+      {p.onMe ? (
+        <Button type="button" variant="ghost" aria-label={t("youAndMore")} data-testid="me-button" onClick={p.onMe}
+          className="h-11 w-11 shrink-0 rounded-full bg-slate-200 p-0 text-slate-800 hover:bg-slate-300 hover:text-slate-900">
+          <UserRound className="!h-[22px] !w-[22px]" aria-hidden="true" />
+        </Button>
+      ) : null}
     </form>
   );
 

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>About this project · NYC Map Agent</title>
+<meta name="description" content="The pages behind NYC Map Agent: station guidance without GPS, partner bathrooms, the presenter, the station-walk recorder and city data.">
+<style>
+:root{--ink:#141a24;--soft:#4a5363;--line:#141a24;--paper:#f4f6f9;--card:#fff;--blue:#2f6fec;--shadow:4px 4px 0 #141a24;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--ink:#f1f5f9;--soft:#a5b4cb;--line:#33476b;--paper:#0b1220;--card:#121b2d;--blue:#7aa7ff;--shadow:4px 4px 0 #000;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.45 "Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:880px;margin:0 auto;padding:16px 16px 48px}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-weight:700;font-size:15px;text-decoration:none}
+h1{font-size:clamp(32px,6vw,48px);line-height:1.05;letter-spacing:-.02em;margin:28px 0 24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:16px;margin:0;padding:0;list-style:none}
+.card{display:flex;gap:14px;align-items:flex-start;height:100%;min-height:72px;padding:16px;border:2px solid var(--line);border-radius:10px;background:var(--card);box-shadow:var(--shadow);color:var(--ink);text-decoration:none}
+.card:hover{transform:translate(-1px,-1px)}
+.card:focus-visible,.back:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.card svg{flex:none;width:26px;height:26px;color:var(--blue)}
+.card b{display:block;font-size:18px;line-height:1.25}
+.card span{display:block;margin-top:6px;font-size:15px;color:var(--soft)}
+.wide{grid-column:1/-1}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <a class="back" href="/" data-testid="info-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Map</a>
+  <h1>About this project</h1>
+  <ul class="grid">
+    <li class="wide"><a class="card" href="/underground/" data-testid="info-underground">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V9l8-6 8 6v12"/><path d="M9 21v-6h6v6"/><path d="M12 11v.01"/></svg>
+      <div><b>Getting a rider through a station without GPS</b><span>How we plan to guide riders through subway stations without GPS, and how you can help map stations.</span></div>
+    </a></li>
+    <li><a class="card" href="/partners/" data-testid="info-partners">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="5" r="2"/><circle cx="16" cy="5" r="2"/><path d="M6 21v-7H5l1-5h4l1 5h-1v7"/><path d="M14 9h4l1 12h-6z"/></svg>
+      <div><b>Partner Bathrooms</b></div>
+    </a></li>
+    <li><a class="card" href="/present" data-testid="info-present">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      <div><b>Meet Design Baker</b></div>
+    </a></li>
+    <li><a class="card" href="/record" data-testid="info-record">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>
+      <div><b>Record a station walk</b></div>
+    </a></li>
+    <li><a class="card" href="/coming-soon.html" data-testid="info-coming">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <div><b>What's coming</b></div>
+    </a></li>
+    <li><a class="card" href="/city-data" data-testid="info-city-data">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 16v-4M12 16V8M17 16v-7"/></svg>
+      <div><b>City data</b><span>311, noise, crashes</span></div>
+    </a></li>
+  </ul>
+</main>
+</body>
+</html>

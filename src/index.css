@@ -154,15 +154,6 @@
   }
 }
 
-/* Phones: a pull sheet at full height reaches the foot of the map's button rail, and the Record
-   button (the lowest in the rail) showed half under the sheet's Close button: a tap on it closed
-   the sheet. It steps aside while a sheet is fully up and comes back when the sheet is lowered. */
-@media (max-width: 639px) {
-  body:has(.pull-sheet[data-level="2"]) [data-testid="open-recorder"] {
-    display: none;
-  }
-}
-
 /* Phones: Center on my location owns the bottom right, so the map credits move
    to the left and ride above a pull sheet (--pull-sheet-h) like it does. */
 @media (max-width: 639px) {
@@ -365,6 +356,9 @@
   border-radius: 2px;
 }
 
-/* On a phone the quick bar has room for the Record button only on the plain home screen: once an answer, a sheet,
-   a walk or street view is up (the home task row is away), it would sit on that panel or on the locate button. */
-@media (max-width: 639px) { :root:not(:has([data-testid="home-tasks"])) [data-testid="open-recorder"] { display: none; } }
+/* Phones: a pull sheet at full height (the You card, a station) reaches the foot of the map's button
+   rail, where the Layers button would sit on the sheet's Close button. It steps aside until the sheet
+   is lowered. */
+@media (max-width: 639px) {
+  body:has(.pull-sheet[data-level="2"]) [data-testid="phone-layers-button"] { display: none; }
+}
