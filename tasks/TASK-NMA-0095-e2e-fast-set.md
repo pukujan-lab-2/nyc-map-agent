@@ -34,3 +34,26 @@ A pull request's browser tests finish in about 10 minutes instead of about 40, s
 - [x] Docs-only change: none (checked).
 - [x] Labelled full-e2e: all (checked with a sample event file).
 - [x] Local runs still use all four sizes (E2E_SIZES unset).
+
+### 2026-11-28 10:53:49 UTC — agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/a0ddded4-f8b2-47ac-8c96-8f125bb721f9","blocked":[],"changed":["none"],"completed":["CI runs a fast set of browser specs at two sizes; full set only with the full-e2e label"],"decisions":["Owner 2026-11-28: no full browser-test run in CI, not nightly and not before deploy; specs are run locally before pushing"],"evidence":["Picker checked on four kinds of change; typecheck and lint pass"],"evidence_class":"observed","next_action":"Let the pull request merge and confirm a pull request's e2e job finishes in about 10 minutes","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0095","timestamp":"2026-11-28T10:53:49Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9b70215c1ff7cc297891f255a1cddfc3fa111fe6ff1d78a69ebd9ad3380da9dc","request_id":"c905c98b564c42ebb610bffa1e4b6a23","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0095"} -->
+
+Completed:
+- CI runs a fast set of browser specs at two sizes; full set only with the full-e2e label
+
+Evidence:
+- Picker checked on four kinds of change; typecheck and lint pass
+
+Decisions:
+- Owner 2026-11-28: no full browser-test run in CI, not nightly and not before deploy; specs are run locally before pushing
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let the pull request merge and confirm a pull request's e2e job finishes in about 10 minutes
