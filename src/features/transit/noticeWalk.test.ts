@@ -30,8 +30,10 @@ function missing(s: WalkStep): string[] {
   for (const l of s.named.lines) if (!m.lines.includes(l)) out.push(`line ${l}`);
   for (const b of s.named.buses) if (!(m.bus ?? []).some((x) => x.route === b)) out.push(`bus ${b}`);
   for (const e of s.named.entrances) if (!(m.entrances ?? []).some((x) => x.station === e.station && x.id === e.id)) out.push(`entrance ${e.station}`);
+  // A shuttle or a temporary bus is in none of our bus data, so the map needs its stops to draw it.
+  for (const b of m.bus ?? []) if (b.shuttle && !b.stops.length) out.push(`stops for the ${b.route} bus`);
   // Every station the map draws is one of ours.
-  const drawn = [...m.stations, m.you, m.ride?.from, m.ride?.to, ...(m.tracks ?? []).flatMap((t) => [t.from, t.to, ...(t.skip ?? [])]), ...(m.change ?? []).map((c) => c.at), ...(m.walk ?? []).flatMap((w) => [w.from, w.to])];
+  const drawn = [...m.stations, m.you, ...(m.bus ?? []).flatMap((b) => b.stops.map((x) => x.station)), m.ride?.from, m.ride?.to, ...(m.tracks ?? []).flatMap((t) => [t.from, t.to, ...(t.skip ?? [])]), ...(m.change ?? []).map((c) => c.at), ...(m.walk ?? []).flatMap((w) => [w.from, w.to])];
   for (const id of drawn) if (id !== undefined && !stationIds.has(id)) out.push(`unknown station ${id}`);
   return out;
 }
