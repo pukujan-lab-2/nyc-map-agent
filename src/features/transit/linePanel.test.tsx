@@ -13,11 +13,12 @@ describe("line panel and the answer (docs/PDD.md, Screen space)", () => {
   beforeEach(() => sendScreen({ type: "LINE", on: true }));
   afterEach(() => { sendScreen({ type: "ANSWER", on: false }); sendScreen({ type: "LINE", on: false }); sendScreen({ type: "SIZE", size: "phone" }); });
 
-  it("folds to its pill on a phone while an answer is open", () => {
+  // One sheet (owner, 2026-11-27): the line is a view over the answer, not a pill folded beside it.
+  it("is a view of the one sheet while an answer is open", () => {
     sendScreen({ type: "ANSWER", on: true });
     const html = render();
-    expect(html).not.toContain('data-testid="line-body"');
-    expect(html).toContain('aria-label="Show the A line"');
+    expect(html).toMatch(/<section data-testid="line-panel"[^>]*class="task-panel pull-sheet"/);
+    expect(html).toContain('data-testid="line-body"');
   });
 
   it("opens as a sheet over the chat on a phone with no answer", () => {
@@ -27,12 +28,12 @@ describe("line panel and the answer (docs/PDD.md, Screen space)", () => {
     expect(html).toContain("Follow a train");
   });
 
-  it("stays open beside the answer from 640 px, docked to the side", () => {
+  it("never docks to the right from 640 px: it is the same sheet view, which PullSheet puts in the left card", () => {
     sendScreen({ type: "SIZE", size: "wide" });
     sendScreen({ type: "ANSWER", on: true });
     const html = render();
-    expect(html).toMatch(/data-testid="line-body" class="flex/);
-    expect(html).toContain("sm:left-auto");
+    expect(html).toMatch(/data-testid="line-body" class="pull-sheet-body/);
+    expect(html).not.toContain("sm:left-auto");
   });
 
   it("shows four time buttons with the one for the New York time now picked, and its dates under them", () => {

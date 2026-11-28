@@ -159,7 +159,7 @@ test("answer follow-ups ask the agent even when extra map actions exist", async 
 });
 
 for (const width of [390, 1280]) {
-  test(`walking checkpoints keep the overhead map and chat usable at ${width}px`, async ({ page }) => {
+  test(`walking guidance keeps its turn banner on top and its tray in the sheet at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await mockNetwork(page);
     const coords = [[-73.9875, 40.7557], [-73.986, 40.757], [-73.9851, 40.758]];
@@ -174,51 +174,44 @@ for (const width of [390, 1280]) {
     await tripDetails(page);
     await page.getByRole("button", { name: "Use this route", exact: true }).click();
     await expect(page.getByRole("region", { name: "Walking guidance", exact: true })).toBeVisible();
-    const checkpoint = page.getByRole("region", { name: "Landmark checkpoint" });
-    await expect(checkpoint).toBeVisible();
-    const panel = await checkpoint.boundingBox();
+    // The tray: time and distance left, the next landmark as a hint with its photo, and End.
+    const tray = page.getByTestId("walk-tray");
+    await expect(tray.getByTestId("walk-left")).toContainText("min ·");
+    await expect(tray.getByTestId("walk-hint")).toBeVisible();
+    await expect(tray.getByRole("button", { name: "Yes, I see it" })).toHaveCount(0);
+    const panel = await tray.boundingBox();
     const bar = await page.getByTestId("agent-bar").boundingBox();
-    expect(panel!.y + panel!.height).toBeLessThan(bar!.y);
-    await checkpoint.getByRole("button", { name: "Not yet" }).click();
-    await expect(checkpoint.getByRole("button", { name: "Not yet" })).toHaveAttribute("aria-expanded", "true");
-    await expect(checkpoint.getByRole("img", { name: /^Look for/ })).toBeVisible();
-    await page.getByLabel("Stop walking guidance").click();
-    await expect(checkpoint).toBeHidden();
+    expect(panel!.y + panel!.height).toBeLessThanOrEqual(bar!.y + 1);
+    await expectLayout(page);
+    await tray.getByRole("button", { name: "End walking guidance" }).click();
+    await expect(tray).toBeHidden();
     await expect(page.getByTestId("agent-bar")).toBeVisible();
   });
 }
 
-// On a walk, Where am I opens the where-am-I helper (#131) in place of I'm lost, which once re-sent its question
-// forever and froze the page: a question typed there must ask exactly once and leave the page answering.
-test("Where am I on a walk opens the helper, asks the agent once and the page stays responsive", async ({ page }) => {
+// Find exit opens the where-am-I helper (#131) in place of I'm lost, which once re-sent its question forever
+// and froze the page: a question typed there must ask exactly once and leave the page answering.
+// The walking tray no longer carries an always-on Where am I? (owner, 2026-11-27).
+test("the where-am-I helper asks the agent once and the page stays responsive", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   await mockNetwork(page);
-  const coords = [[-73.9875, 40.7557], [-73.986, 40.757], [-73.9851, 40.758]];
-  const walk = { ...trip, id: "walk-lost", mode: "walk", origin: { label: "7 Av", at: coords[0] }, destination: { label: "Times Square", at: coords[2] }, routes: [], alternatives: [], legs: [{ kind: "walk", label: "Walk to Times Square", coords, durationS: 360, distanceM: 450, turns: [] }] };
   const asks: Array<{ question: string; stage?: string }> = [];
   await page.route("**/api/agent", (r) => {
     const body = r.request().postDataJSON() as { messages?: Array<{ role: string; content: string }>; underground?: { stage: string } };
     asks.push({ question: body.messages?.filter((m) => m.role === "user").at(-1)?.content ?? "", stage: body.underground?.stage });
-    return r.fulfill({ contentType: "application/x-ndjson", body: stream(asks.length === 1 ? [
-      { type: "command", command: { type: "showRoute", trip: walk } },
-      { type: "command", command: { type: "openPanel", trip: walk } }, { type: "done" },
-    ] : [{ type: "text", text: "Look for the big red stairs on your left." }, { type: "done" }]) });
+    return r.fulfill({ contentType: "application/x-ndjson", body: stream([{ type: "text", text: "Look for the big red stairs on your left." }, { type: "done" }]) });
   });
-  await page.route("**/routed-foot/route/**", (r) => r.fulfill({ json: { code: "Ok", routes: [{ distance: 450, duration: 360, geometry: { type: "LineString", coordinates: coords }, legs: [{ steps: coords.map((location, i) => ({ distance: 150, name: "W 42 St", maneuver: { location, type: i === 2 ? "arrive" : "depart", bearing_after: 30 } })) }] }] } }));
   await page.goto("/");
-  await ask(page, "Walk from 7 Av to Times Square");
-  await tripDetails(page);
-  await page.getByRole("button", { name: "Use this route", exact: true }).click();
   await expect(page.getByRole("button", { name: "I'm lost", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Where am I?", exact: true }).first().click();
-  await expect(page.getByTestId("lost-thread")).toContainText("Times Square. Is that right?");
+  await page.getByRole("button", { name: "Find exit", exact: true }).click();
+  await expect(page.getByTestId("lost-thread")).toBeVisible();
   await ask(page, "I see a red staircase");
   await expect(page.getByTestId("lost-thread")).toContainText("big red stairs");
-  expect(asks).toHaveLength(2);
-  expect(asks[1]).toEqual({ question: "I see a red staircase", stage: "lost" });
-  // Still exactly two after a pause, and the page answers a script promptly.
+  expect(asks).toHaveLength(1);
+  expect(asks[0]).toEqual({ question: "I see a red staircase", stage: "lost" });
+  // Still exactly one after a pause, and the page answers a script promptly.
   await page.waitForTimeout(1500);
-  expect(asks.length).toBe(2);
+  expect(asks.length).toBe(1);
   const t0 = Date.now();
   await page.evaluate(() => 1);
   expect(Date.now() - t0).toBeLessThan(1000);
@@ -262,6 +255,7 @@ test("asking in street view keeps the camera at eye level", async ({ page }) => 
   ]) }));
   await page.goto("/");
   await page.waitForFunction(() => Boolean((window as unknown as { __map?: unknown }).__map), null, { timeout: slow(15_000) });
+  await page.getByTestId("map-style-button").click();
   await page.getByTestId("map-view-switch").getByRole("radio", { name: "Street", exact: true }).click();
   await expect(page.getByTestId("street-minimap")).toBeVisible({ timeout: slow(15_000) });
   const pitch = () => page.evaluate(() => (window as unknown as { __map: { getPitch(): number } }).__map.getPitch());
@@ -286,6 +280,7 @@ test("a question from the ask box in street view is asked from the street spot",
   });
   await page.goto("/");
   await page.waitForFunction(() => Boolean((window as unknown as { __map?: unknown }).__map), null, { timeout: slow(15_000) });
+  await page.getByTestId("map-style-button").click();
   await page.getByTestId("map-view-switch").getByRole("radio", { name: "Street", exact: true }).click();
   await expect(page.getByTestId("street-minimap")).toBeVisible({ timeout: slow(15_000) });
   await ask(page, "Where is the nearest restroom?");
@@ -303,6 +298,7 @@ test("street view draws station markers only near you", async ({ page }) => {
   await mockNetwork(page);
   await page.goto("/");
   await page.waitForFunction(() => Boolean((window as unknown as { __map?: unknown }).__map), null, { timeout: slow(15_000) });
+  await page.getByTestId("map-style-button").click();
   await page.getByTestId("map-view-switch").getByRole("radio", { name: "Street", exact: true }).click();
   await expect(page.getByTestId("street-minimap")).toBeVisible({ timeout: slow(15_000) });
   const near = (id: string) => page.evaluate((layer) => {
@@ -331,6 +327,7 @@ test("a restroom answer in street view on a tablet keeps the camera, pad and min
   ]) }));
   await page.goto("/");
   await page.waitForFunction(() => Boolean((window as unknown as { __map?: unknown }).__map), null, { timeout: slow(15_000) });
+  await page.getByTestId("map-style-button").click();
   await page.getByTestId("map-view-switch").getByRole("radio", { name: "Street", exact: true }).click();
   await expect(page.getByTestId("street-minimap")).toBeVisible({ timeout: slow(15_000) });
   const pitch = () => page.evaluate(() => (window as unknown as { __map: { getPitch(): number } }).__map.getPitch());

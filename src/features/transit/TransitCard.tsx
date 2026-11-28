@@ -460,7 +460,8 @@ export function FollowCard({ vehicle }: { vehicle: Vehicle }) {
     </button>);
     // The stops list starts with the next stop too, so it can be opened from the sheet; the trip's own times win.
     const stopRows = [...(headId && !stops.some((s) => s.id === headId) ? [{ id: headId, name: headName, eta: headEta }] : []), ...stops].slice(0, 6).map((s) => <button key={s.id} type="button" data-testid="follow-stop" onClick={() => openStop(s.id, s.name, s.eta)} className="flex min-h-9 items-center justify-between gap-2 text-left text-[13px] text-slate-300"><span className="truncate">{s.name}</span><span className="shrink-0">{s.eta ? `${minutesUntil(s.eta, now)} min` : "—"}</span></button>);
-    return chatOpen ? null : <FollowSheet
+    // The classic chat drawer covers it; with the agent home the one sheet decides which view shows.
+    return chatOpen && !home ? null : <FollowSheet
       route={vehicle.route}
       color={vehicle.color}
       bus={vehicle.system === "bus"}

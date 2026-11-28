@@ -5,7 +5,9 @@ import { setUndergroundNow } from "@/lib/underground/whereNow";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUpFromLine, MessageSquare, TrainFront, X } from "lucide-react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { PullSheet } from "@/components/PullSheet";
+import type { SheetLevel } from "@/components/sheetSwipe";
 import { Button } from "@/components/ui/button";
 import { startSharing, useSharedLocation } from "@/lib/geo/sharedLocation";
 import { getMapInstance, onMapInstance } from "@/lib/map/mapInstance";
@@ -36,7 +38,6 @@ import { whereYouAre } from "./where";
 import { dirStep, initialDir, justSurfaced, nextStationAhead, plannedExit, wrongDirectionLine, wrongExit } from "./wrongTrain";
 import { useDataView } from "@/lib/store/DataViewContext";
 import { speakQueued } from "@/lib/voice/tts";
-import { useCssHeight } from "@/lib/useCssHeight";
 import { useBasemapReady } from "@/lib/map/basemapReady";
 
 type Mode = "idle" | "ride" | "which" | "station" | "calibrate" | "stairs" | "landmark" | "corner" | "walk";
@@ -154,7 +155,18 @@ function exitName(e: PackExit, i: number, n: number): string {
   return signText(e.streets, e.corner) ?? `Exit ${i + 1} of ${n} (${exitKind(e.kind)}; street names were not saved)`;
 }
 
-const card = "task-panel task-bottom text-sm";
+/**
+ * An underground card is a view of the one sheet (owner, 2026-11-27): a phone's bottom sheet, the left card
+ * from 640 px. Each card brings its own heading and close button.
+ */
+function UgCard({ label, children }: { label: string; children: ReactNode }) {
+  const [level, setLevel] = useState<SheetLevel>(2);
+  return (
+    <PullSheet testId="underground-card" label={label} level={level} onLevel={(l) => setLevel(l || 1)} header={null}>
+      <div className="pull-sheet-body flex flex-col text-sm">{children}</div>
+    </PullSheet>
+  );
+}
 
 /**
  * Underground help: station exits and the ride there, from data saved on the
@@ -169,7 +181,7 @@ export default function Underground() {
   const followed = useFollowed();
   const center = useMapCenter();
   const shared = useSharedLocation();
-  const { seedChat, setChatOpen, chatOpen } = useMapState();
+  const { seedChat, setChatOpen } = useMapState();
   const [store, setStore] = useState<PackStore | null>(() => loadStore());
   const [mode, setModeRaw] = useState<Mode>(() => read<Mode>(MODE_KEY, "idle"));
   const setMode = (m: Mode) => {
@@ -270,7 +282,6 @@ export default function Underground() {
   const accuracies = useRef<Array<number | null>>([]);
   const [tripWarn, setTripWarn] = useState<string | null>(null);
   // The round map buttons step above the warning, as they do above other bottom cards.
-  const warnCard = useCssHeight("--task-bottom-h");
   useEffect(() => { dir.current = initialDir; accuracies.current = []; setTripWarn(null); }, [trip?.id]);
   useEffect(() => {
     const c = shared.status === "on" ? shared.coords : null;
@@ -753,18 +764,17 @@ export default function Underground() {
     setDescribe(null);
   };
 
-  if (home && chatOpen) return null;
 
   if (tripWarn) {
     return (
-      <section ref={warnCard} className={card} aria-label="Trip warning">
+      <UgCard label="Trip warning">
         <div className="flex items-start gap-2">
           <p className="min-w-0 flex-1 font-semibold" role="alert" data-testid="trip-warning">{tripWarn}</p>
           <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Dismiss" onClick={() => setTripWarn(null)}>
             <X className="h-4 w-4" />
           </Button>
         </div>
-      </section>
+      </UgCard>
     );
   }
 
@@ -772,7 +782,7 @@ export default function Underground() {
   if (mode === "idle") {
     if (surface === "open") {
       return (
-        <section className={card} aria-label="Fix my direction">
+        <UgCard label="Fix my direction">
           <SurfaceCalibration
             at={fix}
             lines={surfaceLines}
@@ -787,7 +797,7 @@ export default function Underground() {
             onShareLocation={() => void startSharing()}
             onClose={closeSurface}
           />
-        </section>
+        </UgCard>
       );
     }
     // Agent-first home: Find exit and Exit help open the station view; no extra chips over the task panels.
@@ -807,7 +817,7 @@ export default function Underground() {
     }
     if (ask) {
       return (
-        <section className={card} aria-label={t("inStation")}>
+        <UgCard label={t("inStation")}>
           <p className="mb-2 font-medium">{t("inStation")} ({ask.name})</p>
           <div className="flex gap-2">
             <Button type="button" size="sm" className="flex-1" onClick={() => enterStation(ask.at)}>
@@ -817,7 +827,7 @@ export default function Underground() {
               {t("no")}
             </Button>
           </div>
-        </section>
+        </UgCard>
       );
     }
     if (!nearby && !subwayTrip) return null;
@@ -871,7 +881,7 @@ export default function Underground() {
     const est = progress ? estimate(progress, now, online) : null;
     const choices = progress ? atChoices(progress) : stops.map((_, i) => i);
     return (
-      <section className={card} aria-label="Trip progress">
+      <UgCard label="Trip progress">
         {header(dest ? `To ${dest.label}` : "On the train")}
         {mode === "which" ? (
           <p className="mb-1 font-medium">Which station are you at?</p>
@@ -967,14 +977,14 @@ export default function Underground() {
           </>
         )}
         {describeBox}
-      </section>
+      </UgCard>
     );
   }
 
   // ---------- station and surfacing ----------
   if (!pack) {
     return (
-      <section className={card} aria-label="Station exits">
+      <UgCard label="Station exits">
         {header("Station exits")}
         <p>Exits for this station were not saved before the signal went.</p>
         <p className="mt-1 text-xs text-muted-foreground">Follow the station's exit signs. With a subway trip on screen, exits are saved ahead for every station you get off at.</p>
@@ -984,7 +994,7 @@ export default function Underground() {
           </Button>
         )}
         {describeBox}
-      </section>
+      </UgCard>
     );
   }
 
@@ -1023,7 +1033,7 @@ export default function Underground() {
   />;
 
   return (
-    <section className={`${card} max-h-[75vh] overflow-y-auto`} aria-label="Station exits">
+    <UgCard label="Station exits">
       {header(pack.station.name)}
       {canUndo(getOff, now) && (
         <p className="mb-2 flex items-center justify-between rounded-md border px-2 py-1 text-xs">
@@ -1182,6 +1192,6 @@ export default function Underground() {
           {describeBox}
         </div>
       )}
-    </section>
+    </UgCard>
   );
 }

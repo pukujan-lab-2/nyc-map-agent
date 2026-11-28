@@ -10,7 +10,7 @@ const SUBWAY = JSON.parse(readFileSync(new URL("../public/transit/subway.json", 
 };
 const MYRTLE = SUBWAY.stations.features.find((f) => f.properties.id === "M11")!.geometry.coordinates;
 
-type TestMap = { jumpTo(o: object): void; getCenter(): { lng: number; lat: number }; getZoom(): number; project(p: [number, number]): { x: number; y: number }; queryRenderedFeatures(b: [[number, number], [number, number]], o: { layers: string[] }): Array<{ properties?: Record<string, unknown>; geometry: unknown }>; loaded(): boolean; areTilesLoaded(): boolean; getLayer(id: string): unknown; getContainer(): HTMLElement };
+type TestMap = { jumpTo(o: object): void; isMoving(): boolean; getCenter(): { lng: number; lat: number }; getZoom(): number; project(p: [number, number]): { x: number; y: number }; queryRenderedFeatures(b: [[number, number], [number, number]], o: { layers: string[] }): Array<{ properties?: Record<string, unknown>; geometry: unknown }>; loaded(): boolean; areTilesLoaded(): boolean; getLayer(id: string): unknown; getContainer(): HTMLElement };
 
 async function tapMyrtle(page: Page) {
   await mockNetwork(page);
@@ -21,14 +21,20 @@ async function tapMyrtle(page: Page) {
   // Wait until the J and M are drawn around the station: tapping before they are lands on the dot instead.
   // (The Z runs at rush hour only, so a phone may not draw it.)
   // On a phone the app can still be settling its first view, so put the station back in the middle if it moved.
-  await expect.poll(() => page.evaluate((c) => {
+  // From 640 px the left card is a map cover, and the map eases its padding once the card is up: tap only once
+  // the camera has stopped, or the spot moves out from under the tap on a slow machine.
+  const settled = () => expect.poll(() => page.evaluate((c) => {
     const m = (window as unknown as { __map: TestMap }).__map;
+    if (m.isMoving()) return "moving";
     const at = m.getCenter();
     if (Math.abs(at.lng - c[0]) > 0.002 || Math.abs(at.lat - c[1]) > 0.002 || Math.abs(m.getZoom() - 13.5) > 0.2) m.jumpTo({ center: c, zoom: 13.5, bearing: 0, pitch: 0 });
     const p = m.project(c);
     const routes = new Set(m.queryRenderedFeatures([[p.x - 30, p.y - 30], [p.x + 30, p.y + 30]], { layers: ["transit-line"] }).map((f) => String(f.properties?.route)));
     return ["J", "M"].filter((r) => routes.has(r)).join(" ") || `none at ${at.lng.toFixed(4)},${at.lat.toFixed(4)} z${m.getZoom().toFixed(1)}`;
   }, MYRTLE), { timeout: slow(15_000) }).toBe("J M");
+  await settled();
+  await page.waitForTimeout(500);
+  await settled();
   // A tap on the white dot opens the station card as before; the chooser is for the shared track beside it,
   // so tap the J/M/Z line about 8 px from the dot.
   const at = await page.evaluate((c) => {
@@ -59,17 +65,19 @@ async function tapMyrtle(page: Page) {
   return at;
 }
 
-test("a tap where the J, M and Z meet asks which line, and a bullet opens that line", async ({ page }) => {
+test("a tap where the J, M and Z meet asks which line in the left card, and a bullet opens that line", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   const at = await tapMyrtle(page);
   const chooser = page.getByTestId("line-chooser");
   await expect(chooser).toBeVisible();
   await expect(chooser.locator("[data-line]")).toHaveText(["J", "M", "Z"]);
   await expect(chooser.getByRole("button", { name: "Myrtle Av station" })).toBeVisible();
-  // It sits just above the tapped spot.
+  // It is the top of the left card, above the ask box, not a bubble over the tapped spot.
   const b = (await chooser.boundingBox())!;
-  expect(b.y + b.height).toBeLessThanOrEqual(at.y + 1);
-  expect(Math.abs(b.x + b.width / 2 - at.x)).toBeLessThan(4);
+  const card = (await page.getByTestId("agent-card").boundingBox())!;
+  expect(b.x).toBeGreaterThanOrEqual(card.x);
+  expect(b.x + b.width).toBeLessThanOrEqual(card.x + card.width + 1);
+  expect(b.x + b.width).toBeLessThan(at.x);
   await chooser.getByRole("button", { name: "M line" }).click();
   await expect(chooser).toBeHidden();
   await expect(page.getByTestId("line-panel")).toContainText("M");

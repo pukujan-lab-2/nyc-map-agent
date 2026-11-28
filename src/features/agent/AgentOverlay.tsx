@@ -1,4 +1,5 @@
-import { usePullSheetUp } from "@/lib/store/pullSheet";
+import { openNextUnderTop, raiseTag, usePullSheetUp } from "@/lib/store/pullSheet";
+import { COLUMN_QUERY } from "@/lib/store/leftColumn";
 import { Bus, Car, ChevronUp, Compass, Footprints, Headphones, LocateFixed, Mic, MicOff, MoreVertical, Pause, Play, Send, SkipForward, X } from "lucide-react";
 import { legFocus } from "./legFocus";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -399,7 +400,8 @@ export default function AgentOverlay() {
     // The same switch as the Layers menu, so turning it off again is where people expect.
     showLayer: (layer) => { if (layer === "busStops") setOptions({ busStops: true }); else setQuickLayer(layer, true); },
     // From an answer, the line opens on its service change: skipped stations ringed and framed.
-    showLine: (route, day) => { setLineDay(day ?? null); setSelectedLine(lineOf(route), null, undefined, true); },
+    // Asked for again (it opened under the answer by itself), the line comes back to the top of the sheet.
+    showLine: (route, day) => { setLineDay(day ?? null); setSelectedLine(lineOf(route), null, undefined, true); raiseTag(`line:${lineOf(route)}`); },
   };
   const runAction = (a: MapAction) => {
     runMapAction(a, actionCtx, routeColor);
@@ -512,7 +514,8 @@ export default function AgentOverlay() {
     // On a wide screen an answer about a line's trouble shows it on the map by itself, beside the answer:
     // the 7's weekend skips were only words until someone found the line (owner, 2026-10-27).
     const lineFirst = replyActions?.[0];
-    if (!sawTrip && lineFirst?.kind === "showLine" && window.matchMedia("(min-width: 1024px)").matches) { setLineDay(lineFirst.day ?? null); setSelectedLine(lineOf(lineFirst.route), null, undefined, true); }
+    // It opens under the answer in the one sheet, so the answer stays in front and closing it shows the line.
+    if (!sawTrip && lineFirst?.kind === "showLine" && window.matchMedia("(min-width: 1024px)").matches) { setLineDay(lineFirst.day ?? null); openNextUnderTop(`line:${lineOf(lineFirst.route)}`); setSelectedLine(lineOf(lineFirst.route), null, undefined, true); }
     // The model still asked for a start: put the same button on its reply.
     const offersLocation = !street && !!spoken && !sharedCoords() && replyAsksForOrigin(spoken);
     if (offersLocation) {
@@ -973,7 +976,8 @@ export default function AgentOverlay() {
     };
     const panelUp = panelContent !== null && !panelMinimized;
     const answerOpen = hasAnswer && answerView === "open";
-    const showIdle = !lost && !selectedLine && !stationHelpVisible && !followingRoute && !player.state.active && !walking && !streetViewOpen && !answerOpen && !busy && !handsFree && !drawerOpen && !panelUp && followed === null && !replayOn;
+    // A menu dropdown is the single focus while open: the card's task buttons wait under it.
+    const showIdle = openMenu === null && !lost && !selectedLine && !stationHelpVisible && !followingRoute && !player.state.active && !walking && !streetViewOpen && !answerOpen && !busy && !handsFree && !drawerOpen && !panelUp && followed === null && !replayOn;
     const chip = hasAnswer && answerView === "chip" ? (
       <button type="button" aria-label={tr(appLang, "showAnswer")} data-testid="answer-chip" onClick={() => sendScreen({ type: "SHOW_ANSWER" })}
         className="pointer-events-auto flex h-11 max-w-full items-center gap-2 self-start rounded-full border border-[#263449] bg-[#0b1220]/85 px-4 text-sm font-semibold text-slate-100 shadow-lg backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
@@ -1012,7 +1016,7 @@ export default function AgentOverlay() {
           idle={idle}
           // Task controls sit above the persistent chat bar.
           hidden={false}
-          lift={!isDesktop && panelContent !== null && panelMinimized}
+          lift={!window.matchMedia(COLUMN_QUERY).matches && panelContent !== null && panelMinimized}
         />
         {settingsUp ? <Suspense fallback={null}><SettingsSheet onClose={() => setSettingsOpen(false)} /></Suspense> : null}
         {/* One card at a time: station help or a station card covers the same spot, so the trip waits under it (owner, 2026-10-27). */}
