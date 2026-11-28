@@ -59,6 +59,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-28 03:57:27 UTC — agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f","blocked":[],"changed":["none"],"completed":["Notice walks' spoken steps are made on the server when a notice arrives, kept as clips, served with immutable cache headers, kept offline by the worker, and deleted 7 days after no notice uses them; pull request 288 is open with auto-merge armed."],"decisions":["Files in SPEECH_CACHE_DIR with one row each in core.speech_clips; English only until plan step 7 ships sentence tables."],"evidence":["Silent unit tests pass (noticeClips, tts, voice, offline worker); a local run on the live feed made 946 English sentences for 292 notices (209 MB); live speech on the deployed site took 0.9 to 1.6 s to its first byte against about 0.3 s for a file from the same server."],"next_action":"let pull request 288 merge after 287; then check clips in /api/agent/health on the server","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0084","timestamp":"2026-11-28T03:57:27Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"21c9a944f345d39666d7b5729bb3448cea015e5b39cba796581bf354bd79bd82","request_id":"067f652eed434a94816059008fe01aa6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0084"} -->
+
+Completed:
+- Notice walks' spoken steps are made on the server when a notice arrives, kept as clips, served with immutable cache headers, kept offline by the worker, and deleted 7 days after no notice uses them; pull request 288 is open with auto-merge armed.
+
+Evidence:
+- Silent unit tests pass (noticeClips, tts, voice, offline worker); a local run on the live feed made 946 English sentences for 292 notices (209 MB); live speech on the deployed site took 0.9 to 1.6 s to its first byte against about 0.3 s for a file from the same server.
+
+Decisions:
+- Files in SPEECH_CACHE_DIR with one row each in core.speech_clips; English only until plan step 7 ships sentence tables.
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- let pull request 288 merge after 287; then check clips in /api/agent/health on the server
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
