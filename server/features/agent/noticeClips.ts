@@ -14,12 +14,18 @@
  */
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import type { SlimAlert } from "../transit/alerts";
 import { noticeWalk } from "../../../src/features/transit/noticeWalk";
 import type { StaticSystem } from "../../../src/features/transit/model";
 import { CLIP_LANGS, CLIP_RE, clipKey, spokenText } from "../../../src/lib/voice/clipKey";
 import { ClipStore, clipDb, clipDir, type ClipStats, type Want } from "./clipStore";
 import { MAX_CHARS, TTS_LANGS, liveSpeechBusy, ttsConfig, voiceTag } from "./tts";
+
+/**
+ * A notice as the transit feature's alert loader gives it (`SlimAlert` in server/features/transit/alerts.ts).
+ * Only the id and lines are read here; the walk builder reads the rest. Kept as its own type so this feature
+ * does not import another's (dependency-cruiser's no-cross-server-feature); server/app.ts passes the loader in.
+ */
+type Notice = { id: string; routes: string[] };
 
 /** Languages clips are made in: those with fixed walk sentences that Kokoro also speaks. */
 const clipLangs = (): string[] => CLIP_LANGS.filter((l) => TTS_LANGS.has(l));
@@ -28,7 +34,7 @@ const clipLangs = (): string[] => CLIP_LANGS.filter((l) => TTS_LANGS.has(l));
  * Every sentence the walks for one notice can say in `lang`, as spoken. English comes straight from the walk
  * builder; another language gets lines once plan step 7 ships its sentence table. Pure.
  */
-export function walkLines(a: SlimAlert, sys: StaticSystem, lang: string): string[] {
+export function walkLines(a: Notice, sys: StaticSystem, lang: string): string[] {
   if (lang !== "en" || !CLIP_LANGS.includes(lang)) return [];
   const out = new Set<string>();
   // `say` is the step's spoken form ("74th Street, Broadway"), which is what the phone hands the voice.
@@ -43,7 +49,7 @@ export function walkLines(a: SlimAlert, sys: StaticSystem, lang: string): string
 }
 
 /** Two copies of a notice with the same fingerprint make the same walks. Pure. */
-const fingerprint = (a: SlimAlert): string => createHash("sha256").update(JSON.stringify(a)).digest("hex");
+const fingerprint = (a: Notice): string => createHash("sha256").update(JSON.stringify(a)).digest("hex");
 
 const tick = () => new Promise<void>((r) => setImmediate(r));
 
@@ -55,7 +61,7 @@ export class NoticeClips {
   constructor(private store: ClipStore, private queue: ClipQueue, private sys: () => StaticSystem | null, private voice: string, private langs: string[] = clipLangs(), private lines: typeof walkLines = walkLines) {}
 
   /** One poll. `alerts` is null (or empty) when the feed could not be read: then no notice is taken for ended. */
-  async sync(alerts: SlimAlert[] | null): Promise<{ changed: number; ended: number; queued: number }> {
+  async sync(alerts: Notice[] | null): Promise<{ changed: number; ended: number; queued: number }> {
     const sys = this.sys();
     if (!alerts?.length || !sys) return { changed: 0, ended: 0, queued: 0 };
     const live = new Set<string>();
@@ -192,7 +198,7 @@ function loadSubway(): StaticSystem | null {
  * Start making, serving and cleaning clips. Only when SPEECH_CACHE_DIR and a speech server are both set; otherwise
  * every clip is "not ready" and the phone speaks live, as before.
  */
-export function startNoticeClips(loadAlerts: (from: number, to: number) => Promise<{ alerts: SlimAlert[] }>, env = process.env, log: (m: string) => void = console.warn): void {
+export function startNoticeClips(loadAlerts: (from: number, to: number) => Promise<{ alerts: Notice[] }>, env = process.env, log: (m: string) => void = console.warn): void {
   const dir = clipDir(env);
   if (active || !dir || !ttsConfig(env).base) return;
   const voice = voiceTag(env);
