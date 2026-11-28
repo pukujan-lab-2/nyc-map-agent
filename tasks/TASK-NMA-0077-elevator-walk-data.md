@@ -56,6 +56,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-28 01:36:10 UTC — agent:claude-code/b525f1c1-5adf-4746-8520-2cc2f4859686
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/b525f1c1-5adf-4746-8520-2cc2f4859686","blocked":[],"changed":["src/features/transit/elevatorWalk.ts, its test and fixtures, scripts/elevator-walk-report.ts"],"completed":["Elevator outages had no walk data; each outage now reads as street or inside, its elevator entrance (or unsure), the detour as journeys, and each detour station's elevator entrance or not in our data."],"decisions":["Corners come from a bearing to the MTA's intersection; when it lands near a quarter line, each corner gets the nearest entrance only if that pairing is clearly best."],"evidence":["15 new unit tests pass on the feeds saved 2026-11-27; on the 19 outages out that day, 4 of 11 street elevators match an entrance, none unsure, 7 at stations with no elevator entrance in our data, 18 detours read into journeys."],"evidence_class":"observed","next_action":"Open the pull request with auto-merge; then the elevator walk screen uses this data.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0077","timestamp":"2026-11-28T01:36:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"398f241bf8cc791f84c21994b5a75bd94d7ed2065bf3ddc487487b6a33bc80c8","request_id":"b4500ecce1964da1ae8c4262a90b0e80","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0077"} -->
+
+Completed:
+- Elevator outages had no walk data; each outage now reads as street or inside, its elevator entrance (or unsure), the detour as journeys, and each detour station's elevator entrance or not in our data.
+
+Evidence:
+- 15 new unit tests pass on the feeds saved 2026-11-27; on the 19 outages out that day, 4 of 11 street elevators match an entrance, none unsure, 7 at stations with no elevator entrance in our data, 18 detours read into journeys.
+
+Decisions:
+- Corners come from a bearing to the MTA's intersection; when it lands near a quarter line, each corner gets the nearest entrance only if that pairing is clearly best.
+
+Changed:
+- src/features/transit/elevatorWalk.ts, its test and fixtures, scripts/elevator-walk-report.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Open the pull request with auto-merge; then the elevator walk screen uses this data.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
