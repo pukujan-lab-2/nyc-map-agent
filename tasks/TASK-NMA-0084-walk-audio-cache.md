@@ -105,6 +105,29 @@ Blocked/uncertain:
 Next:
 - let pull request 288 merge after 287; then check clips in /api/agent/health on the server
 
+### 2026-11-28 04:36:59 UTC — agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f","blocked":[],"changed":["none"],"completed":["Pull request 288 is rebased onto the walk builder's build-once test fix and fits its size budgets: the whole app is back under 1,305 kB, and the notice panel's budget is 24.7 kB, 480 B for this change on top of the walk builder's 24,216 B."],"decisions":["no new decisions"],"evidence":["109 clip, voice, walk and offline-worker tests pass; size-limit measured on this branch and on the walk builder's branch alone."],"next_action":"let pull request 288 merge after 287; then check clips in /api/agent/health on the server","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0084","timestamp":"2026-11-28T04:36:59Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"ec745b4c84ef8a0e74e66ff8fadc44d383448215c4f62beb6aefecfc6f789651","request_id":"a9e33dfc1e8a4713a47664e89261fe5d","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0084"} -->
+
+Completed:
+- Pull request 288 is rebased onto the walk builder's build-once test fix and fits its size budgets: the whole app is back under 1,305 kB, and the notice panel's budget is 24.7 kB, 480 B for this change on top of the walk builder's 24,216 B.
+
+Evidence:
+- 109 clip, voice, walk and offline-worker tests pass; size-limit measured on this branch and on the walk builder's branch alone.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- let pull request 288 merge after 287; then check clips in /api/agent/health on the server
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
