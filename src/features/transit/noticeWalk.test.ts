@@ -64,7 +64,7 @@ describe("notice walks over every saved notice (plan step 3)", () => {
     expect(gaps).toEqual([]);
     // The preview's audit passed 952 steps over a hand-picked week; this covers every notice, stop and trip.
     expect(steps).toBeGreaterThan(952);
-  });
+  }, 60_000);
 
   it("gives guidance, not reasons, and leaves no slot empty", () => {
     for (const { a, route } of lines) {
@@ -75,7 +75,24 @@ describe("notice walks over every saved notice (plan step 3)", () => {
         }
       }
     }
-  });
+  }, 60_000);
+
+  it("says each step in whole sentences with short forms in full, the same way every time", () => {
+    for (const { a, route } of lines) {
+      for (const { trip, walk } of everyWalk(a, route)) {
+        const again = noticeWalk(a, sys, route, trip);
+        walk.steps.forEach((s, i) => {
+          expect(s.say, s.text).not.toMatch(/\b(?:St|Av|Sq|Pkwy|Blvd)\.|\.\./);
+          expect(s.text).not.toMatch(/\.\./);
+          expect(s.say).toMatch(/[.!?]$/);
+          expect(again.steps[i].text).toBe(s.text);
+          expect(again.steps[i].say).toBe(s.say);
+        });
+      }
+    }
+    const seven = noticeWalk(byText("Flushing-bound [7] skips 52 St, 69 St, 74 St-Broadway"), sys, "7", { stop: "710", mode: "off" });
+    expect(seven.steps.find((s) => s.say.startsWith("Getting off"))?.say).toBe("Getting off at 74th Street, Broadway: your train won't stop there. Stay on to Junction Boulevard.");
+  }, 60_000);
 
   it("plays only the rider's case, one action a step", () => {
     const seven = byText("Flushing-bound [7] skips 52 St, 69 St, 74 St-Broadway");

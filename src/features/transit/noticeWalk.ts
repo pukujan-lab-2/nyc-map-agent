@@ -6,7 +6,7 @@ import { routeEnds } from "./alertFocus";
 import type { TransitAlert } from "./hooks";
 import { stationOf, type StaticSystem } from "./model";
 import type { StepMap } from "./walkMap";
-import { fill, type PatternKey } from "./walkPatterns";
+import { fill, spoken, type PatternKey } from "./walkPatterns";
 
 /**
  * A notice walk (plan step 3, `docs/PLAN-notice-walks.md`): an MTA notice told as short steps that say what to do
@@ -22,7 +22,15 @@ export type Trip = { stop: string; mode: TripMode } | null;
 export type StepPart = { key: PatternKey; slots: Record<string, string> };
 /** What the step's words name, for the map audit: every one of these must be in `map`. */
 export type Named = { stations: string[]; lines: string[]; buses: string[]; entrances: Array<{ station: string; id: string | null }> };
-export interface WalkStep { parts: StepPart[]; text: string; named: Named; map: StepMap }
+export interface WalkStep {
+  parts: StepPart[];
+  /** What the panel shows. */
+  text: string;
+  /** What the voice says: the same words with short forms in full and numbered streets as ordinals (`spoken`). */
+  say: string;
+  named: Named;
+  map: StepMap;
+}
 export interface NoticeWalk {
   /** The stations a rider can pick as their stop, in track order; empty when the notice is for every trip. */
   stops: string[];
@@ -112,7 +120,8 @@ class Step {
   done(): WalkStep {
     const uniq = <T,>(xs: T[]) => [...new Set(xs)];
     this.named = { stations: uniq(this.named.stations), lines: uniq(this.named.lines), buses: uniq(this.named.buses), entrances: this.named.entrances };
-    return { parts: this.parts, text: this.parts.map((p) => fill(p.key, p.slots)).join(" "), named: this.named, map: this.map };
+    const text = this.parts.map((p) => fill(p.key, p.slots)).join(" ");
+    return { parts: this.parts, text, say: spoken(text), named: this.named, map: this.map };
   }
 }
 
@@ -762,12 +771,12 @@ function mtaSteps(a: TransitAlert): WalkStep[] {
     if (reason || /ADA accessible|^see a map\b|^(?:travel alternatives|transfer stations|note)s?:?$/i.test(l) || l.length < 4) continue;
     out.push(formatStationName(/[.!?]$/.test(l) ? l : `${l}.`));
   }
-  return out.slice(0, 6).map((t) => ({ parts: [{ key: "mta.headline" as const, slots: { text: t } }], text: t, named: { stations: [], lines: [], buses: [], entrances: [] }, map: { stations: [], lines: [...a.routes] } }));
+  return out.slice(0, 6).map((t) => ({ parts: [{ key: "mta.headline" as const, slots: { text: t } }], text: t, say: spoken(t), named: { stations: [], lines: [], buses: [], entrances: [] }, map: { stations: [], lines: [...a.routes] } }));
 }
 
 /** A notice our rules could not read: its headline, as the MTA wrote it. */
 function headlineStep(a: TransitAlert): WalkStep {
   const text = formatStationName(cleanAlertText(a.text).replace(/\s*\n+\s*/g, " ").trim());
   const t = /[.!?]$/.test(text) ? text : `${text}.`;
-  return { parts: [{ key: "mta.headline", slots: { text: t } }], text: fill("mta.headline", { text: t }), named: { stations: [], lines: [], buses: [], entrances: [] }, map: { stations: [], lines: [...a.routes] } };
+  return { parts: [{ key: "mta.headline", slots: { text: t } }], text: fill("mta.headline", { text: t }), say: spoken(fill("mta.headline", { text: t })), named: { stations: [], lines: [], buses: [], entrances: [] }, map: { stations: [], lines: [...a.routes] } };
 }

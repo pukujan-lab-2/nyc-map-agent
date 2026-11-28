@@ -41,7 +41,7 @@ function useNoticeWalk(steps: WalkStep[], auto: boolean, lang: string) {
       let spoke = muted, dwelt = false;
       const next = () => { if (spoke && dwelt) go(i + 1); };
       timer = setTimeout(() => { dwelt = true; next(); }, muted ? 1500 + steps[i].text.length * 45 : 900);
-      if (!muted) hush = say(steps[i].text, lang, () => { spoke = true; next(); });
+      if (!muted) hush = say(steps[i].say, lang, () => { spoke = true; next(); });
     };
     cancel.current = () => { alive = false; clearTimeout(timer); hush(); };
     go(0);
@@ -192,7 +192,9 @@ export default function NoticeDiagram({ alert, sys, route, color, auto, stop }: 
   const lang = useAppLang();
   const words = useMemo(() => [...english.map((s) => s.text), ...TAG_KEYS.map((k) => TAG[k]!.label), "Change here", diagram?.heading ?? "", diagram?.tag ?? "", ...TRIP_WORDS], [english, diagram]);
   const said = useNoticeLines(words, lang);
-  const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i] })), [english, said.lines]);
+  // English is said in its spoken form ("74th Street, Broadway"); another language is said as translated.
+  const spokenEnglish = lang === "en" || said.failed;
+  const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i], say: spokenEnglish ? s.say : said.lines[i] })), [english, said.lines, spokenEnglish]);
   const labels = useMemo(() => {
     const t = said.lines.slice(english.length);
     return { ...Object.fromEntries(TAG_KEYS.map((k, i) => [k, t[i]])), transfer: t[TAG_KEYS.length], heading: diagram?.heading ? t[TAG_KEYS.length + 1] : "", noted: t[TAG_KEYS.length + 2] } as Record<StopState, string> & { heading: string };
