@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ChatPanel } from "@/components/ChatPanel";
 import { ContextCleanChip } from "@/components/ContextCleanChip";
@@ -29,8 +29,12 @@ export default function Index() {
 }
 
 function GettingAround() {
-  const { window: windowId, scale } = useMapState();
+  const { window: windowId, scale, selectedNtaCode, selectedBlockKey } = useMapState();
   const navigate = useNavigate();
+  // A neighbourhood picked from search (the classic layout) opens its 311 and crash numbers on City data.
+  useEffect(() => {
+    if (selectedNtaCode || selectedBlockKey) navigate("/city-data");
+  }, [selectedNtaCode, selectedBlockKey, navigate]);
   const chatReplaced = useChatReplaced();
   const { routeStart, routeEnd } = useDataView();
   const isDesktop = useMediaQuery("(min-width: 1024px)");

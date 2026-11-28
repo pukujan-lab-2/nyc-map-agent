@@ -42,6 +42,7 @@ export default function CityData() {
     selectedNtaCode,
     selectedBlockKey,
     setCaveatsOpen,
+    selectNta,
   } = useMapState();
   const { snap, setSnap } = usePanel();
   const [controlsOpen, setControlsOpen] = useState(false);
@@ -53,6 +54,8 @@ export default function CityData() {
   const data = useMapData(windowId, true);
   // index.html draws a chat bar before the app loads; this page has no chat, so it goes now.
   useEffect(() => { removeShell(); }, []);
+  // The pick stays here: back on the map, a selection left over would send the rider straight back.
+  useEffect(() => () => selectNta(null), [selectNta]);
   const { label: windowLabel } = windowBounds(windowId);
   const crashWindowLabel = data.crashes
     ? windowBounds(data.crashes.windowId).label
