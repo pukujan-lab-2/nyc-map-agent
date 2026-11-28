@@ -18,6 +18,7 @@ import { useDataView } from "@/lib/store/DataViewContext";
 import { setTripStep, useTripStep } from "@/lib/store/tripStep";
 import { useCssHeight } from "@/lib/useCssHeight";
 import { PullSheet } from "@/components/PullSheet";
+import { useNavBanner } from "@/lib/sheet/sheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
 import { appGeo } from "@/lib/geo/devGeo";
 import { useMapState } from "@/lib/store/MapStateContext";
@@ -250,6 +251,7 @@ export default function RouteGuide() {
     if (!map || !homeWalk || !here) return;
     keepInView(map, [here.lon, here.lat]);
   }, [map, homeWalk, here?.lon, here?.lat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const bannerUp = useNavBanner("walk", home && active && !lost);
 
   if (!route) return null;
 
@@ -267,7 +269,7 @@ export default function RouteGuide() {
     const hint = checkpoint?.landmark.picture && !(tripStep && left < 150) ? checkpoint : null;
     return <>
       {/* The turn banner, as Apple Maps navigates: the next turn or landmark, at the top. */}
-      <section ref={banner} className="task-panel task-top flex items-center gap-3 px-3.5 py-3 min-[380px]:gap-3.5 min-[380px]:px-4 min-[380px]:py-3.5" aria-label="Walking guidance">
+      {bannerUp ? <section ref={banner} className="task-panel task-top flex items-center gap-3 px-3.5 py-3 min-[380px]:gap-3.5 min-[380px]:px-4 min-[380px]:py-3.5" aria-label="Walking guidance">
         <TurnIcon step={arrived ? { type: "arrive" } as RouteStep : progress?.next ?? null} />
         <div className="min-w-0 flex-1"><h2 className="text-base font-bold leading-tight min-[380px]:text-xl"><span className="line-clamp-2">{arrived ? (walkTo ? `You're at ${walkTo.split(",")[0]}` : "You're here") : checkpoint ? `Walk toward ${checkpoint.landmark.name}` : progress?.instruction ?? "Follow the walking route"}</span></h2>
           {away ? <p className="mt-0.5 truncate text-sm font-semibold text-amber-300" role="alert" data-testid="wrong-way">{turnAroundLine(awayFrom ?? "")}</p> : !arrived ? <p className="mt-0.5 truncate text-sm text-slate-300">{[progress && !checkpoint ? `In ${formatMetres(progress.metresToNext)}` : progress?.instruction, street].filter(Boolean).join(" · ")}</p> : null}</div>
@@ -285,7 +287,7 @@ export default function RouteGuide() {
             />
           </Suspense>
         ) : null}
-      </section>
+      </section> : null}
       {/* The rest is the sheet's: time and distance left, the next landmark as a hint, and End. */}
       <PullSheet testId="walk-tray" label="Walking" level={trayLevel} onLevel={(l) => setTrayLevel(l || 1)}
         header={<div className="flex min-h-11 items-center gap-2.5" data-testid="walk-left">

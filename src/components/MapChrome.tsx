@@ -6,7 +6,7 @@ import { useFlag } from "@/lib/flags";
 import { sharedCoords, startSharing, useSharedLocation } from "@/lib/geo/sharedLocation";
 import { nextYouCamera, setYouCamera, useYouCamera } from "@/lib/geo/youCamera";
 import { onMapInstance } from "@/lib/map/mapInstance";
-import { setOpenMenu, useOpenMenu } from "@/lib/store/openMenu";
+import { setOpenMenu, useOpenMenu } from "@/lib/sheet/sheet";
 import { setFollowMode, stopFollowing, useFollowMode, useFollowed, usePreviewing, type FollowMode } from "@/lib/transit/follow";
 import { useSelectedLine } from "@/lib/transit/selectedLine";
 import { useMenuT } from "@/lib/i18n/menuText";

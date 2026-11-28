@@ -5,7 +5,7 @@ import { onMapInstance } from "@/lib/map/mapInstance";
 import { metresBetween } from "@/lib/map/walk";
 import { backToStreet, setStreetSpot, showView, useStreetSpot, type ViewName } from "@/lib/map/viewChange";
 import { useMapState } from "@/lib/store/MapStateContext";
-import { useLeftChips } from "@/lib/store/leftColumn";
+import { useLeftChips } from "@/lib/sheet/sheet";
 
 /** Tilted past this, the map counts as 3D. */
 const TILTED_DEG = 20;

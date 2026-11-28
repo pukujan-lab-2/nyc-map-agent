@@ -1,4 +1,4 @@
-import { useLeftColumn } from "@/lib/store/leftColumn";
+import { useLeftColumn } from "@/lib/sheet/sheet";
 import { useFlag } from "@/lib/flags";
 import type { PointerEvent } from "react";
 import {

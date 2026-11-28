@@ -1,5 +1,4 @@
-import { openNextUnderTop, raiseTag, usePullSheetUp } from "@/lib/store/pullSheet";
-import { COLUMN_QUERY } from "@/lib/store/leftColumn";
+import { COLUMN_QUERY, openNextUnderTop, raiseTag, sendScreen, useOpenMenu, usePullSheetUp, useScreen } from "@/lib/sheet/sheet";
 import { Bus, Car, ChevronUp, Compass, Footprints, Headphones, LocateFixed, Mic, MicOff, MoreVertical, Pause, Play, Send, SkipForward, X } from "lucide-react";
 import { legFocus } from "./legFocus";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -85,8 +84,6 @@ import { getAppLang, leaveAskedScript, setAskedLang, tr, useAppLang } from "@/li
 import { languageList, languagePrompt, matchSpokenLanguage } from "@/lib/voice/languagePrompt";
 import { needsSharedOrigin, ORIGIN_PROMPT, replyAsksForOrigin } from "./needsOrigin";
 import { framePadding, frameRestrooms } from "@/lib/map/mapCover";
-import { useOpenMenu } from "@/lib/store/openMenu";
-import { sendScreen, useScreen } from "@/lib/screen/screenSpace";
 import { getUndergroundNow, useUndergroundNow } from "@/lib/underground/whereNow";
 import { removeShell } from "@/lib/shellDraft";
 
@@ -177,9 +174,9 @@ export default function AgentOverlay() {
   // The station replay fills the left column or the top of a phone: the task row has no room beside it.
   const replayOn = useFlag("stationReplay");
   const [messages, setMessages] = useState<Msg[]>([]);
-  // Who gets the screen is decided in one place (src/lib/screen/screenSpace.ts); this reports what is open.
+  // Who gets the screen is decided in one place (src/lib/sheet/sheetMachine.ts); this reports what is open.
+  // The open menu is the machine's own.
   const openMenu = useOpenMenu();
-  useEffect(() => sendScreen({ type: "MENU", on: openMenu !== null }), [openMenu]);
   // The exit card is a task too, so the answer and the follow card make room for it (#418).
   const atExit = useUndergroundNow()?.stage === "at-station";
   const onTask = followingRoute || walking || followed !== null || atExit;

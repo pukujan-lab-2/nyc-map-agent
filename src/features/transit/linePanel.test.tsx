@@ -5,7 +5,7 @@ vi.mock("@/lib/store/MapStateContext", () => ({ useMapState: () => ({ seedChat: 
 vi.mock("./hooks", () => ({ useTransitData: () => ({}), useAlerts: () => ({ data: undefined }), useAlertsBetween: () => ({ data: undefined, isLoading: false }), useNow: () => 0 }));
 
 const { LinePanel } = await import("./LinePanel");
-const { sendScreen } = await import("@/lib/screen/screenSpace");
+const { sendScreen } = await import("@/lib/sheet/sheet");
 const render = () => renderToStaticMarkup(<LinePanel map={undefined} route="A" onFollow={() => {}} />);
 
 describe("line panel and the answer (docs/PDD.md, Screen space)", () => {

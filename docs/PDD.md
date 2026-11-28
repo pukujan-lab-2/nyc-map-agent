@@ -130,15 +130,15 @@ Only one depth-1 surface is open at a time, except for the pairs listed under ea
 | 1 | An active task: following a train or bus, walking, the trip preview, find exit | Stays. It owns the screen until the person ends it. | Built |
 | 2 | The voice orb (hands-free, listening) | Ends when a task starts (`AgentOverlay.tsx`); the spoken answer still finishes | Built |
 | 3 | The answer card | Folds to its question chip when a task starts; reopens on tap | Built (#412) |
-| 4 | The line panel | A view of the one sheet like every other panel: opened over an answer it hides it, and Back brings the answer again (`src/lib/store/pullSheet.ts`, #180) | Built |
-| 5 | A menu dropdown or Change view | Closes. Opening one closes the other (`openMenu.ts`). The menu row is hidden while a line, a follow, a walk or street view is active (`MenuRow.tsx`). | Built |
+| 4 | The line panel | A view of the one sheet like every other panel: opened over an answer it hides it, and Back brings the answer again (`src/lib/sheet/sheetMachine.ts`, #180) | Built |
+| 5 | A menu dropdown or Change view | Closes. Opening one closes the other (the sheet machine's `menu`). The menu row is hidden while a line, a follow, a walk or street view is active (`MenuRow.tsx`). | Built |
 
-**One place decides** (built, #412): `src/lib/screen/screenSpace.ts` is an XState state machine. Each surface reports only whether it is open, and the machine decides what shows, what folds and which menu closes. `screenSpace.test.ts` opens every pair of surfaces in both orders at small-phone, phone and wide sizes against a hand-written table. A new surface that competes for space must report to it and get a row in that table.
+**One place decides** (built, #412; one machine for the whole sheet since #145): `src/lib/sheet/sheetMachine.ts` is an XState state machine. Each surface reports only whether it is open, and the machine decides what shows, what folds and which menu closes. `screenSpace.test.ts` opens every pair of surfaces in both orders at small-phone, phone and wide sizes against a hand-written table. A new surface that competes for space must report to it and get a row in that table.
 
 What closes what, besides the ranking:
 - **Sending a question** closes any drawer or details sheet (`closeAll`, built) and any open menu dropdown (built, #412).
 - **Starting a task** (Use this route, Follow a train, Walk me there) closes the answer down to its chip (built, #412) and ends hands-free (built).
-- **An empty-map tap** closes a details sheet and leaves the Layers drawer open (`panelSlot.ts`, built). It never closes an active task.
+- **An empty-map tap** closes a details sheet and leaves the Layers drawer open (the sheet machine's slot, built). It never closes an active task.
 - **Opening a menu dropdown while an answer is open** folds the answer to its chip (built, #412). The dropdown is the single focus until it closes, and then the answer comes back.
 
 ### By screen size

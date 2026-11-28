@@ -2,7 +2,7 @@ import "@/components/task-screens.css";
 import { useQuery } from "@tanstack/react-query";
 import { LocateOff, MapPin, WifiOff, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useColumnWide } from "@/lib/store/leftColumn";
+import { useColumnWide } from "@/lib/sheet/sheet";
 import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
 import { askAgent } from "../stream";

@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { useColumnWide } from "@/lib/store/leftColumn";
+import { useColumnWide, useNavBanner } from "@/lib/sheet/sheet";
 import { useCssHeight } from "@/lib/useCssHeight";
 import { X } from "lucide-react";
 import { PullSheet } from "@/components/PullSheet";
@@ -40,7 +40,8 @@ export function FollowSheet(p: FollowSheetProps) {
   const wide = useColumnWide();
   const open = wide ? 2 : level;
   const bannerRef = useCssHeight("--task-top-h", 12);
-  const banner = <section ref={bannerRef} className="task-panel task-top flex items-center gap-2.5 px-3.5 py-3" aria-label="Next stop" data-testid="follow-heading">
+  const bannerUp = useNavBanner("follow");
+  const banner = !bannerUp ? null : <section ref={bannerRef} className="task-panel task-top flex items-center gap-2.5 px-3.5 py-3" aria-label="Next stop" data-testid="follow-heading">
         <span className={`flex h-8 min-w-8 shrink-0 items-center justify-center px-2 text-[13px] font-extrabold ${p.bus ? "rounded-[10px]" : "rounded-full"}`} style={{ background: p.bus ? "#0ea5e9" : p.color }}>{p.route}</span>
         <span className="min-w-0 flex-1 truncate text-[17px] font-bold">{p.next ? `Next: ${p.next.name}` : "No upcoming stop reported"}</span>
         {p.next ? <span className="shrink-0 text-[17px] font-bold text-amber-200">{p.next.eta}</span> : null}

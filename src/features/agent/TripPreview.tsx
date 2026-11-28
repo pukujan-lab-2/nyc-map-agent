@@ -1,7 +1,7 @@
 import "@/components/task-screens.css";
 import { BellRing, ChevronDown, Clock, MapPin, Pause, PartyPopper, Play, SkipBack, SkipForward, TriangleAlert, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { useColumnWide } from "@/lib/store/leftColumn";
+import { useColumnWide } from "@/lib/sheet/sheet";
 import { toast } from "sonner";
 import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";

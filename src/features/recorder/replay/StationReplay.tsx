@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { onMapInstance } from "@/lib/map/mapInstance";
 import { framePadding, measureCover } from "@/lib/map/mapCover";
-import { useColumnWide, useLeftColumn } from "@/lib/store/leftColumn";
+import { useColumnWide, useLeftColumn } from "@/lib/sheet/sheet";
 import { FILM, FILM_S, frameOf, RIDE, tripAt, WALKED, type Part } from "./trip";
 
 const SRC = "station-replay";

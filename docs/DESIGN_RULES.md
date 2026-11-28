@@ -14,7 +14,7 @@
 ## The map is always there
 - The map stays visible on every screen. No full screens of text, and no full-screen lists.
 - **Every panel opens in one place** (owner, 2026-11-27, #180). On a phone that is the one bottom sheet; from 640 px wide it is one card docked on the left, with the chat bar at its foot. Tablet and desktop share that layout.
-- Opening something replaces what is in the sheet; Back returns to it and Close empties it. Two panels never stack (`src/lib/store/pullSheet.ts`). Nothing else floats on the map: no top-left cards, no right-docked panels, no bubbles at the tapped point.
+- Opening something replaces what is in the sheet; Back returns to it and Close empties it. Two panels never stack (`src/lib/sheet/sheetMachine.ts`). Nothing else floats on the map: no top-left cards, no right-docked panels, no bubbles at the tapped point.
 - Two exceptions, both copied from Apple's navigation screen: while walking or following a train, a banner at the top shows the next turn or the next stop; the rest of that screen (time left, camera views, End) sits in the sheet. The full-screen station walk and short toasts are the other exception.
 - Panels float, translucent with a blur, so the map shows through.
 - **Least first, deeper on each tap.** A casual user getting around never has to see sources, agent steps, data or options.

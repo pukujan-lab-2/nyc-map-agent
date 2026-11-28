@@ -7,7 +7,7 @@ import { setSelectedLine, useSelectedLine } from "@/lib/transit/selectedLine";
 import { useMapState } from "@/lib/store/MapStateContext";
 import { framePadding } from "@/lib/map/mapCover";
 import { showView } from "@/lib/map/viewChange";
-import { sendScreen, useScreen, useScreenSize } from "@/lib/screen/screenSpace";
+import { closeSheets, sendScreen, useScreen, useScreenSize } from "@/lib/sheet/sheet";
 import { heldTrains } from "@/lib/transit/holds";
 import { setAlertFocus, useShuttleFocus } from "./alertFocus";
 import { useAlerts, useAlertsBetween, useNow, useTransitData } from "./hooks";
@@ -17,7 +17,6 @@ import { boardingArrivals, minutesUntil } from "./model";
 import { TONE, allLineNotices, type LineNotice } from "./lineNotices";
 import { NoticeIcon, noticeKind } from "./noticeKind";
 import { PullSheet } from "@/components/PullSheet";
-import { closeSheets } from "@/lib/store/pullSheet";
 import { useLineKeys } from "./useLineKeys";
 import type { Vehicle } from "./model";
 import type { SheetLevel } from "@/components/sheetSwipe";
@@ -177,7 +176,7 @@ export function LinePanel({ map, route, onFollow, trains = () => [] }: { map: Ma
   const text = info?.text ?? "#ffffff";
   const count = notices.length;
   const name = info?.name && info.name !== route ? info.name : "";
-  // On a phone the open answer or orb wins: the panel folds to its pill, and tapping the pill opens it again (src/lib/screen/screenSpace.ts).
+  // On a phone the open answer or orb wins: the panel folds to its pill, and tapping the pill opens it again (src/lib/sheet/sheetMachine.ts).
   useEffect(() => { sendScreen({ type: "LINE", on: true }); return () => sendScreen({ type: "LINE", on: false }); }, []);
   // The classic layout (agentHome off) keeps the right-hand panel on wide screens, folding to its pill under an answer.
   const folded = useScreen((v) => v.line === "pill");

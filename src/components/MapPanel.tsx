@@ -2,8 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useFlag, useFlags } from "@/lib/flags";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useColumnWide, useLeftChips } from "@/lib/store/leftColumn";
-import { peekChipLabel } from "@/lib/store/panelSlot";
+import { peekChipLabel, useColumnWide, useLeftChips } from "@/lib/sheet/sheet";
 import { PullSheet } from "./PullSheet";
 import type { SheetLevel } from "./sheetSwipe";
 import { Button } from "@/components/ui/button";
@@ -247,7 +246,7 @@ export function MapPanel({
       {drawer}
       {chip}
       {/* The one sheet (owner, 2026-11-07): a line or a train opened from here comes up as the sheet's
-          next view, and Back brings this one back (src/lib/store/pullSheet.ts). From 640 px it is the left card. */}
+          next view, and Back brings this one back (src/lib/sheet/sheetMachine.ts). From 640 px it is the left card. */}
       {showSheet ? (
         <PullSheet testId="details-sheet" label={content?.title ?? "Place"} level={level} onLevel={(l) => setSnap(l === 0 ? "peek" : l === 1 ? "half" : "full")}
           onClose={content ? back : minimize} ownBack={Boolean(content)}

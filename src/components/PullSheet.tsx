@@ -2,8 +2,7 @@ import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, 
 import { createPortal } from "react-dom";
 import { ArrowLeft } from "lucide-react";
 import "@/components/task-screens.css";
-import { useColumnWide, useLeftColumn } from "@/lib/store/leftColumn";
-import { pullSheetMounted, useSheetPlace } from "@/lib/store/pullSheet";
+import { pullSheetMounted, setSheetLevel, sheetBack, useColumnWide, useLeftColumn, useSheetPlace } from "@/lib/sheet/sheet";
 import { nextLevel, swipeOf, type SheetLevel } from "./sheetSwipe";
 
 export interface PullSheetProps {
@@ -37,7 +36,7 @@ let heightOwner: object | null = null;
  * (owner, 2026-10-25).
  *
  * There is one sheet. A sheet opened over another becomes its top view: the
- * one under it draws nothing until Back takes the new one off (src/lib/store/pullSheet.ts).
+ * one under it draws nothing until Back takes the new one off (src/lib/sheet/sheetMachine.ts).
  * From 640 px the same view is the left card instead, above the ask box, always open
  * (owner, 2026-11-27: every panel in one place, as Apple Maps does on a Mac).
  */
@@ -56,6 +55,8 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
     setId(id);
     return release;
   }, [tag]);
+  // The sheet machine holds each view's height; the top view's is the sheet's.
+  useLayoutEffect(() => { if (id !== null) setSheetLevel(id, level); }, [id, level]);
   const { top, below } = useSheetPlace(id);
   const wide = useColumnWide();
   const slot = useLeftColumn((s) => s.slot);
@@ -93,14 +94,8 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
     };
   }, [top, wide, slot]);
   // Open on a phone, locate rides just above the sheet (owner, 2026-10-27: "there isn't even a button
-  // to zoom to my location"); only a full-height sheet leaves no room, so it steps aside then.
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    if (!top || wide) return;
-    if (level) root.dataset.pullSheet = level === 2 ? "full" : "open";
-    else delete root.dataset.pullSheet;
-    return () => { delete root.dataset.pullSheet; };
-  }, [level, top, wide]);
+  // to zoom to my location"); only a full-height sheet leaves no room. The sheet machine writes
+  // data-pull-sheet from the top view's height (src/lib/sheet/sheet.ts).
 
   const end = (e: PointerEvent) => {
     const s = start.current;
@@ -141,7 +136,7 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
   if (!top) return null;
   const head = below && onClose && !ownBack ? (
     <div className="flex items-center gap-1.5">
-      <button type="button" data-testid="sheet-back" aria-label="Back" onClick={onClose} className="task-action task-close shrink-0"><ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden /></button>
+      <button type="button" data-testid="sheet-back" aria-label="Back" onClick={sheetBack} className="task-action task-close shrink-0"><ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden /></button>
       <div className="min-w-0 flex-1">{header}</div>
     </div>
   ) : header;

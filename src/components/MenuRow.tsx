@@ -16,7 +16,7 @@ import {
   MEMORY_KINDS, forgetEverything, listStored, rememberedCount, setRemembering, useMemoryPrefs, type MemoryKind, type StoredItem,
 } from "@/lib/memory/memory";
 import { useMapState } from "@/lib/store/MapStateContext";
-import { setOpenMenu, useOpenMenu, type OpenMenu } from "@/lib/store/openMenu";
+import { type OpenMenu, setOpenMenu, useOpenMenu } from "@/lib/sheet/sheet";
 import { startSharing, stopSharing, useSharedLocation } from "@/lib/geo/sharedLocation";
 import { usePanel } from "@/lib/store/PanelContext";
 import { CHOICES, THEMES, setTheme, useTheme } from "@/lib/theme";

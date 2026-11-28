@@ -3,8 +3,7 @@ import { formatStationName } from "@/lib/streetName";
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { nextLevel, swipeOf, type SheetLevel } from "@/components/sheetSwipe";
-import { setLeftChips, setLeftSheet, setLeftSlot, useColumnWide } from "@/lib/store/leftColumn";
-import { pullSheetMounted, raiseSheet, usePullSheetUp, useSheetPlace } from "@/lib/store/pullSheet";
+import { pullSheetMounted, raiseSheet, setLeftChips, setLeftSheet, setLeftSlot, useColumnWide, usePullSheetUp, useSheetPlace } from "@/lib/sheet/sheet";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/appLang";
 import { removeShell, shellFocused, shellText } from "@/lib/shellDraft";
@@ -235,7 +234,7 @@ const PHONE_ANSWER_H: Record<SheetLevel, string> = {
  * sheet that wraps the bar so the map shows through.
  *
  * From 640 px it is one left card that is always there (owner, 2026-11-14 and
- * 2026-11-27, #180): the top view of the one sheet (src/lib/store/pullSheet.ts) or
+ * 2026-11-27, #180): the top view of the one sheet (src/lib/sheet/sheetMachine.ts) or
  * the answer above, the ask box at its foot, so the middle of the map stays clear.
  * On a phone the answer pulls up and down, and other views rest on the bar.
  * The answer is a view of that sheet too: a card opened over it hides it until Back.
