@@ -145,29 +145,20 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
-    test("Settings links to tracker health only while Advanced is on", async ({ page }) => {
+    test("the You card links to tracker health", async ({ page }) => {
       await mock(page, true);
-      const phone = size.width < 640; // the menu row (and its Settings dropdown) starts at the sm breakpoint
-      const openSettings = async () => {
-        await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
-        return page.getByTestId(phone ? "settings-sheet" : "settings-panel");
-      };
       await page.goto("/");
-      let panel = await openSettings();
-      await expect(panel).toBeVisible({ timeout: slow(20_000) });
-      await expect(page.getByTestId("open-tracker-health")).toHaveCount(0);
-      await page.evaluate(() => localStorage.setItem("nma:advancedMode", "1"));
-      await page.reload();
-      panel = await openSettings();
+      await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible({ timeout: slow(20_000) });
+      await page.getByTestId("me-button").click({ timeout: slow(20_000) });
+      const panel = page.getByTestId("settings-sheet");
       const link = panel.getByTestId("open-tracker-health");
-      await expect(link).toBeVisible({ timeout: slow(20_000) });
+      await expect(link).toBeAttached({ timeout: slow(20_000) });
       await expectLayout(page);
-      // A phone's sheet opens half way and the link is at its foot, so pull it up as a person would.
-      // The layout is not measured again here: with the sheet fully up, the home screen's Record
-      // button overlaps the sheet's Close button, which is older than this page (see the pull request).
-      if (phone) {
+      // A phone's card opens half way and the link is near its foot, so pull it up as a person would.
+      if (size.width < 640) {
         await panel.getByTestId("sheet-grip").click();
         await expect(panel).toHaveAttribute("data-level", "2");
+        await expectLayout(page);
       }
       await link.click();
       await expect(page).toHaveURL(/\/tracker-health$/);

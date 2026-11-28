@@ -27,12 +27,11 @@ for (const [width, height] of [[375, 667], [320, 568]]) {
     expect(box!.x + box!.width).toBeLessThanOrEqual(width);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/zh-home-${width}.png` });
 
-    // A phone has no menu row; language is the rail's chip (#54) and sits in Settings too, and both follow.
-    await expect(page.getByTestId("menu-row")).toHaveCount(0);
-    await expect(page.getByTestId("lang-chip").getByLabel("语言")).toBeAttached();
-    await page.getByTestId("settings-chip").click();
+    // Language is in the You card, behind the person button, and both follow the question's language.
+    await page.getByRole("button", { name: "我和更多" }).click();
     const sheet = page.getByTestId("settings-sheet");
-    await expect(sheet.getByLabel("语言")).toBeVisible();
+    await expect(sheet.getByTestId("you-language")).toContainText("语言");
+    await expect(sheet.getByLabel("语言")).toBeAttached();
     const box2 = (await sheet.boundingBox())!;
     expect(box2.x + box2.width).toBeLessThanOrEqual(width);
   });

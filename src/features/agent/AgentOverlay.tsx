@@ -48,7 +48,7 @@ import { nameRemindButton, remindAt, saveReminder } from "./reminder";
 import { joinSegments, nameLocationButton } from "./answerText";
 import { toast } from "sonner";
 import { clearPoints, clearTrip, routeColor, showPoints, showTrip } from "./tripLayer";
-import { runMapAction, TROUBLE_COLOR, type ExitAction, type MapActionContext } from "./mapActions";
+import { runMapAction, type ExitAction, type MapActionContext } from "./mapActions";
 import { setQuickLayer } from "@/lib/quickLayers";
 import { setOptions } from "@/lib/map/mapOptions";
 import { useHeading } from "@/lib/compass/useHeading";
@@ -62,13 +62,13 @@ import { useWakePhrase } from "./useWakePhrase";
 import { useHandsFree } from "./useHandsFree";
 import { closeAsk, streetContextHere, useAskRequest } from "@/lib/agent/streetContext";
 import { AgentHome, AnswerCard, WorkingPanel } from "./AgentHome";
-import { DailyCard, TaskButtons } from "./HomeTasks";
+import { TaskButtons } from "./HomeTasks";
 
 const SettingsSheet = lazy(() => import("@/components/SettingsSheet"));
 // Only once a trip is previewed: keeps the overlay inside its size budget.
 const LostHelper = lazy(() => import("./lost/LostHelper"));
 const TripPreview = lazy(() => import("./TripPreview").then((m) => ({ default: m.TripPreview })));
-import { rememberCommute, useHomeWork } from "./commute";
+import { rememberCommute } from "./commute";
 import { memorySummary } from "./memorySummary";
 import { recentTurns } from "./chatWindow";
 import { rememberChat, rememberLookup } from "@/lib/memory/memory";
@@ -156,7 +156,6 @@ export default function AgentOverlay() {
   useLayoutEffect(() => {
     if (!home) removeShell();
   }, [home]);
-  const places = useHomeWork();
   const followed = useFollowed();
   const selectedLine = useSelectedLine();
   const openLines = useLinesControl();
@@ -953,7 +952,6 @@ export default function AgentOverlay() {
 
     const trainRoute = trip?.legs.find((l) => l.kind === "ride")?.route;
     const tasks = {
-      settings: () => setSettingsOpen(true),
       restroom: () => void send(tr(appLang, "askRestroom")),
       train: () => {
         if (trainRoute) void send(tr(appLang, "askLine").replace("{r}", trainRoute));
@@ -982,14 +980,11 @@ export default function AgentOverlay() {
       </button>
     ) : null;
     // Another sheet pulled up from behind the chat (station exits) owns that space: the task row used to
-    // sit on top of it and hide its question (owner report, 2026-10-27). Settings is itself one.
+    // sit on top of it and hide its question (owner report, 2026-10-27). The You card is itself one.
     const idle = chip ?? (showIdle && !(sheetUp && !settingsOpen) ? (
-      <>
-        <DailyCard places={places} onAsk={(q) => void send(q)} onFly={(sp) => flyTo({ lon: sp.lon, lat: sp.lat, zoom: 16 })} onShowStations={(points) => actionCtx.showPoints(points, { color: TROUBLE_COLOR.problem, title: "Delay" })} />
-        <TaskButtons on={tasks} />
-      </>
+      <TaskButtons on={tasks} />
     ) : null);
-    // Any other step on screen (an answer, a line, a train) puts settings away.
+    // Any other step on screen (an answer, a line, a train) puts the You card away.
     const settingsUp = settingsOpen && showIdle && !chip;
 
     return (
@@ -1010,6 +1005,7 @@ export default function AgentOverlay() {
           onCloseAnswer={() => { stopAnswer(); setChatOpen(false); clearAnswerMarks(); }}
           answer={homeAnswer}
           idle={idle}
+          onMe={() => setSettingsOpen(true)}
           // Task controls sit above the persistent chat bar.
           hidden={false}
           lift={!isDesktop && panelContent !== null && panelMinimized}

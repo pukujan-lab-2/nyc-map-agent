@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useFlag } from "@/lib/flags";
 import { sharedCoords, startSharing, useSharedLocation } from "@/lib/geo/sharedLocation";
@@ -8,18 +7,17 @@ import { onMapInstance } from "@/lib/map/mapInstance";
 import { setOpenMenu, useOpenMenu } from "@/lib/store/openMenu";
 import { setFollowMode, stopFollowing, useFollowMode, useFollowed, usePreviewing, type FollowMode } from "@/lib/transit/follow";
 import { useSelectedLine } from "@/lib/transit/selectedLine";
-import { useMenuT } from "@/lib/i18n/menuText";
 import { usePullSheetUp } from "@/lib/store/pullSheet";
-import { APP_LANGS, LANG_LABELS, setLangPref, useLangPref, type AppLang } from "@/lib/voice/langPref";
 import type { ViewName } from "@/lib/map/viewChange";
 import { pickView, useCurrentView } from "./MapViewSwitch";
 import { LiveLayerRows } from "./LiveLayerRows";
 
 /**
  * Agent-first map chrome (#370, #372): one column of quick buttons at the top
- * right (Change view, zoom, north; on a phone also Layers and the language), the view menu, and Center on my location just above the chat.
- * Everything else comes up from behind the chat (owner, 2026-10-25). Layers and
- * every other menu live in the top-left menu row (MenuRow).
+ * right (Change view on a phone, zoom, north, Layers), the view menu, and Center on my location just above the chat.
+ * Everything else comes up from behind the chat (owner, 2026-10-25); settings,
+ * language and the pages that are not about getting around open from the chat
+ * bar's person button.
  */
 
 const ROUND = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 shadow-[0_6px_18px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
@@ -37,81 +35,6 @@ const VIEWS: Array<{ id: ViewName; label: string; note: string; icon: ReactNode 
   { id: "3d", label: "3D", note: "Tilted, with buildings", icon: <svg {...svg}><path d="M3 20h18M6 20V10l6-5 6 5v10" /></svg> },
   { id: "street", label: "Street", note: "Walk at street level", icon: <svg {...svg}><circle cx="12" cy="5" r="2" /><path d="M12 7v7M9 21l3-7 3 7M8 11h8" /></svg> },
 ];
-
-const LIVE_URL = "https://nyc.design-bakery.com";
-const QrIcon = () => <svg {...svg} width={18} height={18}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3" /></svg>;
-
-/** A small QR button: opens a code for the live app, so someone nearby can scan it any time. */
-export function QrButton({ wide }: { wide?: boolean } = {}) {
-  const [open, setOpen] = useState(false);
-  useEffect(() => {
-    if (!open) return;
-    const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
-  }, [open]);
-  return <>
-    {wide
-      ? <button type="button" data-testid="qr-button" onClick={() => setOpen(true)} className="task-action task-secondary gap-2"><QrIcon />Show the app's QR code</button>
-      : <button type="button" aria-label="QR code for this app" data-testid="qr-button" onClick={() => setOpen(true)}
-        className={`${ROUND} ${DARK} pointer-events-auto !h-9 !w-9`}><QrIcon /></button>}
-    {open ? (
-      <div className="pointer-events-auto fixed inset-0 z-[60] flex items-center justify-center p-4" data-testid="qr-sheet">
-        {/* A tap anywhere around the code closes it. */}
-        <button type="button" aria-label="Close QR code" tabIndex={-1} className="absolute inset-0 bg-black/45" onClick={() => setOpen(false)} />
-        <div role="dialog" aria-modal="true" aria-label="Scan to open the app"
-          className="relative flex w-[min(300px,100%)] flex-col items-center gap-3 rounded-[24px] bg-white p-5 text-center text-[#0f172a] shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
-          <button type="button" aria-label="Close QR code" onClick={() => setOpen(false)}
-            className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-[#0b1220] text-xl leading-none text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">×</button>
-          <p className="pr-10 text-left text-[15px] font-semibold">Scan to open the app</p>
-          <img src="/qr-live.svg" alt={`QR code for ${LIVE_URL}`} width={220} height={220} className="h-[220px] w-[220px] [image-rendering:pixelated]" />
-          <p className="text-[13px] font-medium text-[#334155]">nyc.design-bakery.com</p>
-          {/* More than a code: what the project is, in one tap (owner, 2026-11-18). */}
-          <Link to="/present" data-testid="qr-more-presenter" onClick={() => setOpen(false)}
-            className="flex min-h-11 w-full items-center justify-center rounded-full bg-[#0b1220] px-4 text-[14px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">Meet Design Baker →</Link>
-          <Link to="/record" data-testid="qr-more-record" onClick={() => setOpen(false)}
-            className="flex min-h-11 w-full items-center justify-center rounded-full border border-[#0b1220]/25 px-4 text-[14px] font-semibold text-[#0b1220] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">Record a station walk →</Link>
-          {/* Where the product is going: a short animated page of the full loop. */}
-          <a href="/coming-soon.html" data-testid="coming-soon-link"
-            className="flex min-h-11 w-full items-center justify-center rounded-full bg-[#0b1220] px-4 text-[14px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">See what is coming →</a>
-        </div>
-      </div>
-    ) : null}
-  </>;
-}
-
-/**
- * The language, as a small chip in the rail at every size. Someone who does not read English must
- * be able to switch from the home screen (owner, 2026-10-25, phones, #54; 2026-11-12, laptops too,
- * #124: the choice in Settings was too hard to find). Settings keeps its own Language choice.
- * A native select sits over the chip, so a phone opens its own picker.
- */
-/** Round red Record button: opens the station-walk recorder. Same size and shape as the QR button. */
-function RecordButton() {
-  const navigate = useNavigate();
-  return (
-    <button type="button" aria-label="Record a station walk" title="Record a station walk" data-testid="open-recorder"
-      onClick={() => navigate("/record")}
-      className={`${ROUND} border border-red-700 !bg-red-600 text-white hover:!bg-red-500 pointer-events-auto !h-9 !w-9`}>
-      <span aria-hidden className="block h-3 w-3 rounded-full bg-white" />
-    </button>
-  );
-}
-
-function LangChip() {
-  const lang = useLangPref();
-  const t = useMenuT();
-  return (
-    <label data-testid="lang-chip" className={`${ROUND} ${DARK} pointer-events-auto relative text-[13px] font-bold uppercase`}>
-      {lang ?? <svg {...svg} width={20} height={20}><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6" /></svg>}
-      <select value={lang ?? ""} aria-label={t("language")} onChange={(e) => setLangPref((e.target.value || null) as AppLang | null)}
-        className="absolute inset-0 cursor-pointer appearance-none opacity-0">
-        <option value="">{t("thisPhone")}</option>
-        {APP_LANGS.map((code) => <option key={code} value={code}>{LANG_LABELS[code]}</option>)}
-      </select>
-    </label>
-  );
-}
 
 /** The live map and its bearing and pitch, outside the react-map-gl tree. */
 function useCamera(): { map: MapLibreMap | null; bearing: number; pitch: number } {
@@ -279,7 +202,7 @@ const LayersIcon = () => <svg {...svg} width={20} height={20}><path d="m12 2 10 
  */
 function PhoneLayers({ open, onOpen }: { open: boolean; onOpen: (open: boolean) => void }) {
   return (
-    <div className="relative sm:hidden">
+    <div className="relative">
       <button type="button" aria-label="Layers: trains, buses, restrooms" aria-haspopup="dialog" aria-expanded={open} data-testid="phone-layers-button"
         onClick={() => onOpen(!open)} className={`${ROUND} ${open ? LIGHT : DARK} pointer-events-auto`}>
         <LayersIcon />
@@ -317,7 +240,7 @@ export function MapChrome() {
   const open = menu === "view" ? "view" : null;
   const setOpen = (v: "view" | null) => setOpenMenu(v);
   // The menu row owns "layers" on wider screens; here it is the phone's Layers button.
-  const layersOpen = menu === "layers" && typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+  const layersOpen = menu === "layers";
   const stack = useRef<HTMLDivElement>(null);
   const rotated = Math.abs(bearing) > 0.5 || pitch > 0.5;
   const lineSheet = usePullSheetUp();
@@ -372,7 +295,7 @@ export function MapChrome() {
         <ZoomButtons map={map} />
         {map ? <Compass map={map} bearing={bearing} /> : null}
       </div>
-      {/* Locate rides just above the follow sheet; language and the QR code live in its Settings tab. */}
+      {/* Locate rides just above the follow sheet; language lives in its Settings tab. */}
       <LocateButton map={map} className="sheet-locate corner-locate absolute z-40" />
       </>
     );
@@ -419,12 +342,6 @@ export function MapChrome() {
       <ZoomButtons map={map} />
       {map ? <Compass map={map} bearing={bearing} /> : null}
       <PhoneLayers open={layersOpen} onOpen={(v) => setOpenMenu(v ? "layers" : null)} />
-      {/* Language stays in sight at every size (#54, #124). */}
-      <LangChip />
-      {/* The QR code: wider screens here, a phone in Settings. */}
-      <div className="hidden sm:flex"><QrButton /></div>
-      {/* Record a station walk, under the QR button, at every width. */}
-      <RecordButton />
     </div>
     <LocateButton map={map} className="sheet-locate corner-locate absolute z-40" />
     </>

@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * The one open dropdown on the agent-first home (#370): a menu in the top-left
- * row or the Change view menu on the right. Opening one closes the other.
+ * The one open dropdown on the map's top-right buttons (#370): Layers or
+ * Change view. Opening one closes the other.
  */
-export type OpenMenu = "myDay" | "layers" | "filters" | "data" | "cityData" | "settings" | "view" | null;
+export type OpenMenu = "layers" | "view" | null;
 
 let open: OpenMenu = null;
 const subs = new Set<() => void>();

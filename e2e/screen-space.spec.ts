@@ -59,8 +59,8 @@ for (const [width, height] of SIZES) {
     }
 
     // A menu over the answer: the answer folds to its question chip, the map stays clear.
-    await page.getByTestId("menu-pill").click();
-    await expect(page.getByTestId("menu-dropdown")).toHaveCount(1);
+    await page.getByTestId("phone-layers-button").click();
+    await expect(page.getByTestId("phone-layers-menu")).toHaveCount(1);
     await expect(page.getByTestId("answer-chip")).toBeVisible();
     await expect(page.getByTestId("answer-card")).toHaveCount(0);
     strip = await clearStrip(page);
@@ -68,15 +68,15 @@ for (const [width, height] of SIZES) {
 
     // Escape steps back one level: the menu closes and the answer returns.
     await page.keyboard.press("Escape");
-    await expect(page.getByTestId("menu-dropdown")).toHaveCount(0);
+    await expect(page.getByTestId("phone-layers-menu")).toHaveCount(0);
     await expect(page.getByTestId("answer-card")).toBeVisible();
 
     // Sending a question closes an open menu.
-    await page.getByTestId("menu-pill").click();
-    await expect(page.getByTestId("menu-dropdown")).toHaveCount(1);
+    await page.getByTestId("phone-layers-button").click();
+    await expect(page.getByTestId("phone-layers-menu")).toHaveCount(1);
     await page.getByLabel("Ask the assistant").fill("And the next one?");
     await page.getByLabel("Ask the assistant").press("Enter");
-    await expect(page.getByTestId("menu-dropdown")).toHaveCount(0);
+    await expect(page.getByTestId("phone-layers-menu")).toHaveCount(0);
     await expect(page.getByTestId("answer-card")).toBeVisible();
   });
 }

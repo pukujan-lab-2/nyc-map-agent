@@ -25,6 +25,27 @@ async function ask(page: Page, text: string) {
   await page.getByRole("button", { name: "Send", exact: true }).click();
 }
 
+/** The You card from the chat bar's person button. */
+async function openYou(page: Page) {
+  await page.getByTestId("me-button").click();
+  const card = page.getByTestId("settings-sheet");
+  await expect(card.getByTestId("you-card")).toBeVisible();
+  return card;
+}
+
+/** A phone's sheet pulled all the way up, as a rider would; from 640 px the card has no grip. */
+async function pullUp(card: ReturnType<Page["getByTestId"]>) {
+  if (card.page().viewportSize()!.width < 640) await card.getByTestId("sheet-grip").click();
+}
+
+/** The You card's Settings view, pulled all the way up so every row is clear of the header. */
+async function openSettings(page: Page) {
+  const card = await openYou(page);
+  await card.getByTestId("you-settings").click();
+  await pullUp(card);
+  return card.getByTestId("settings-panel");
+}
+
 /** The app with the network mocked; `answer` is what the agent says (registered after the mocks, so it wins). */
 async function open(page: Page, answer: unknown[] = []) {
   await mockNetwork(page);
@@ -45,16 +66,44 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
-    test("home shows the red Record button inside the layout bar", async ({ page }) => {
+    // The idle map is only about getting around (owner, 2026-11-27): the top-right buttons, the
+    // four tasks and the chat bar with its person button. Everything else waits in the You card.
+    test("the idle map shows only getting-around controls", async ({ page }) => {
       await open(page);
-      await expect(page.getByTestId("open-recorder")).toBeVisible();
+      await expect(page.getByTestId("me-button")).toBeVisible();
+      await expect(page.getByTestId("home-tasks").getByRole("button")).toHaveCount(4);
+      for (const gone of ["menu-row", "lang-chip", "open-recorder", "qr-button", "settings-chip", "right-now"]) await expect(page.getByTestId(gone)).toHaveCount(0);
       await expectLayout(page);
     });
 
-    test("the Record button opens /record", async ({ page }) => {
+    test("the You card", async ({ page }) => {
       await open(page);
-      await page.getByTestId("open-recorder").click();
+      const card = await openYou(page);
+      for (const id of ["you-settings", "you-language", "you-memory", "open-city-data", "open-presenter", "open-recorder", "open-tracker-health", "open-coming-soon", "qr-button", "open-info"]) await expect(card.getByTestId(id)).toBeAttached();
+      await expectLayout(page);
+      await card.getByTestId("you-memory").click();
+      await expect(card.getByTestId("data-panel")).toBeVisible();
+      await expectLayout(page);
+      await card.getByTestId("you-back").click();
+      await card.getByTestId("open-recorder").click();
       await expect(page).toHaveURL(/\/record$/);
+    });
+
+    test("city data", async ({ page }) => {
+      await mockNetwork(page);
+      await page.goto("/city-data");
+      await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
+      await expect(page.getByTestId("city-data-bar")).toBeVisible();
+      await expectLayout(page);
+      await page.getByTestId("city-data-back").click();
+      await expect(page).toHaveURL(/\/$/);
+      await expect(page.getByTestId("me-button")).toBeVisible();
+    });
+
+    test("an old analytics link opens city data", async ({ page }) => {
+      await mockNetwork(page);
+      await page.goto("/?view=noise");
+      await expect(page).toHaveURL(/\/city-data\?view=/);
     });
 
     test("home with the live trains moving", async ({ page }) => {
@@ -230,15 +279,12 @@ for (const size of SIZES) {
         sent.push(r.request().postDataJSON() as { profile?: string });
         return r.fulfill({ contentType: "application/x-ndjson", body: stream([{ type: "text", text: "Dev answered." }, { type: "done" }]) });
       });
-      const phone = size.width < 640; // the menu row (and its Settings dropdown) starts at the sm breakpoint
-      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
-      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
+      const panel = await openSettings(page);
       await expect(panel.getByTestId("model-health")).toHaveText("DeepSeek (InferHub) · 1/2");
       await expectLayout(page);
       await panel.getByLabel("Model").selectOption("dev");
       await expect(panel.getByTestId("model-health")).toHaveCount(0);
-      if (phone) await panel.getByRole("button", { name: /^Close/ }).click();
-      else await page.keyboard.press("Escape");
+      await page.getByTestId("settings-sheet").getByRole("button", { name: /^Close/ }).click();
       await ask(page, "Nearest restroom?");
       await expect(page.getByText("Dev answered.")).toBeVisible();
       expect(sent.at(-1)?.profile).toBe("dev");
@@ -252,12 +298,7 @@ for (const size of SIZES) {
         sent.push(r.request().postDataJSON() as { stepFree?: boolean });
         return r.fulfill({ contentType: "application/x-ndjson", body: stream([{ type: "text", text: "Planned for elevators only." }, { type: "done" }]) });
       });
-      const phone = size.width < 640;
-      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
-      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
-      // On a phone Settings opens as a short pull sheet. At 320×568 no row is clear of its header until
-      // the sheet is pulled up, so the test pulls it up as a rider would.
-      if (phone) await panel.getByTestId("sheet-grip").click();
+      const panel = await openSettings(page);
       const sw = panel.getByRole("switch", { name: "Elevators only" });
       await expect(sw).toBeVisible();
       await expect(sw).toHaveAttribute("aria-checked", "false");
@@ -265,8 +306,7 @@ for (const size of SIZES) {
       await sw.click();
       await expect(sw).toHaveAttribute("aria-checked", "true");
       await expectLayout(page);
-      if (phone) await panel.getByRole("button", { name: /^Close/ }).click();
-      else await page.keyboard.press("Escape");
+      await page.getByTestId("settings-sheet").getByRole("button", { name: /^Close/ }).click();
       await ask(page, "Get me to Fulton St");
       await expect(page.getByText("Planned for elevators only.")).toBeVisible();
       expect(sent.at(-1)?.stepFree).toBe(true);
@@ -276,11 +316,7 @@ for (const size of SIZES) {
     // Settings → Voice: the app's voice (Kokoro) or the phone's own, kept on the phone (plan step 7).
     test("the Voice choice in Settings", async ({ page }) => {
       await open(page);
-      const phone = size.width < 640;
-      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
-      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
-      if (phone) await panel.getByTestId("sheet-grip").click();
-      const choice = panel.getByLabel("Voice", { exact: true });
+      const choice = (await openSettings(page)).getByLabel("Voice", { exact: true });
       await expect(choice).toHaveValue("app");
       await expectLayout(page);
       await choice.selectOption("phone");
@@ -288,19 +324,16 @@ for (const size of SIZES) {
       expect(await page.evaluate(() => localStorage.getItem("nma.voice"))).toBe("phone");
       await expectLayout(page);
       await page.reload();
-      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
-      await expect(page.getByTestId(phone ? "settings-sheet" : "settings-panel").getByLabel("Voice", { exact: true })).toHaveValue("phone");
+      await expect((await openSettings(page)).getByLabel("Voice", { exact: true })).toHaveValue("phone");
     });
 
-    // Settings → Meet Design Baker (NMA-0064): the guided presentation opens from the menu on every size.
-    test("the presentation link in Settings", async ({ page }) => {
+    // You → Meet Design Baker (NMA-0064): the guided presentation opens from the You card on every size.
+    test("the presentation link in the You card", async ({ page }) => {
       await open(page);
       await page.route("**/api/presenter/status", (r) => r.fulfill({ json: { haiku: false, octo: false, dictate: false } }));
-      const phone = size.width < 640;
-      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
-      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
-      if (phone) await panel.getByTestId("sheet-grip").click();
-      const link = panel.getByTestId("open-presenter");
+      const card = await openYou(page);
+      await pullUp(card);
+      const link = card.getByTestId("open-presenter");
       await expect(link).toBeVisible();
       await expectLayout(page);
       await link.click();
@@ -309,14 +342,13 @@ for (const size of SIZES) {
       await expectLayout(page);
     });
 
-    // Language is one tap from the home screen on every size: the rail's chip (#54 on phones, #124 on wider screens).
+    // Language is the You card's second row (#10, #54, #124): the person button, then one native picker.
     test("changing the language", async ({ page }) => {
       await open(page);
-      const chip = page.getByTestId("lang-chip");
-      await expect(chip).toBeVisible();
+      const row = (await openYou(page)).getByTestId("you-language");
       await expectLayout(page);
-      await chip.getByLabel("Language").selectOption("es");
-      await expect(chip.getByLabel("Idioma")).toHaveValue("es");
+      await row.getByLabel("Language").selectOption("es");
+      await expect(row.getByLabel("Idioma")).toHaveValue("es");
       await expect(page.getByRole("button", { name: "Baño" })).toBeVisible();
       await expectLayout(page);
     });
@@ -555,15 +587,9 @@ test("the QR panel offers more than a code", async ({ page }) => {
   for (const size of SIZES) {
     await page.setViewportSize(size);
     await open(page);
-    const phone = size.width < 640;
-    if (phone) {
-      await page.getByTestId("settings-chip").click();
-      const panel = page.getByTestId("settings-sheet");
-      await panel.getByTestId("sheet-grip").click();
-      await panel.getByTestId("qr-button").click();
-    } else {
-      await page.getByTestId("qr-button").click();
-    }
+    const card = await openYou(page);
+    await pullUp(card);
+    await card.getByTestId("qr-button").click();
     const sheet = page.getByTestId("qr-sheet");
     await expect(sheet).toBeVisible();
     await expect(sheet.getByTestId("qr-more-presenter")).toBeVisible();
