@@ -54,7 +54,10 @@ export function startSharing(g: Geo | null = geo()): Promise<SharedLocation["coo
         set({ status: "on", coords, accuracy: num(p.coords.accuracy), course: num(p.coords.heading), speed: num(p.coords.speed), fixAt: num(p.timestamp) ?? Date.now() });
         if (first) { first = false; resolve(coords); }
       },
-      () => {
+      (e?: GeolocationPositionError) => {
+        // After a fix, a timeout or a lost signal is not a refusal: a phone standing still sends no new
+        // fix for a while (the 15 s timeout below). Keep the watch and the last fix (#249: a walk's arrival).
+        if (!first && e && e.code !== 1) return;
         if (watchId !== null) g.clearWatch(watchId);
         watchId = null;
         set({ status: "denied", coords: null });

@@ -20,6 +20,42 @@ const stream = (events: unknown[]) => events.map((e) => JSON.stringify(e)).join(
 const RESTROOM = { name: "Bryant Park", lon: -73.9832, lat: 40.7536, distanceM: 420, hours: "8am-8pm" };
 
 
+/** Riders' restrooms near Fulton St: a café (closest), a free public one 1 to 3 minutes further, a deli, and a closed park. */
+const HERE = { latitude: 40.7105, longitude: -74.009 };
+const OPEN_UNTIL = { status: "open", until: new Date(Date.now() + 3 * 3_600_000).toISOString(), opensAt: null, reason: null };
+const CLOSED = { status: "closed", until: null, opensAt: "2099-01-01T13:00:00.000Z", reason: null };
+const restroomFeature = (id: string, name: string, lon: number, lat: number, open: unknown, extra: Record<string, unknown> = {}) => ({
+  type: "Feature", id, geometry: { type: "Point", coordinates: [lon, lat] },
+  properties: { id, name, source: "nyc-open-data", asOf: null, status: "Operational", hours: "7am-10pm", accessibility: null, operator: null, location_type: null, fee: false, changingTable: null, unisex: null, osmId: null, osmUrl: null, filledFromOsm: [], fetchedAt: null, open, ...extra },
+});
+const CAFE = { id: "osm:node/101", lon: -74.0094, lat: 40.7108 };
+const FULTON = { lon: -74.0079, lat: 40.7116 };
+
+/** The restroom routes answered from the fixtures above, and the router refused so walking times are estimated. */
+async function mockRestrooms(page: Page) {
+  await page.route("**/api/restrooms", (r) => r.fulfill({ json: { type: "FeatureCollection", sources: [], features: [
+    restroomFeature("nyc:Fulton Center", "Fulton Center", FULTON.lon, FULTON.lat, OPEN_UNTIL),
+    restroomFeature("nyc:Battery Park", "Battery Park", -74.0135, 40.7065, CLOSED),
+  ] } }));
+  await page.route("**/api/v1/place-toilets", (r) => r.fulfill({ json: { type: "FeatureCollection", features: [
+    { type: "Feature", id: CAFE.id, geometry: { type: "Point", coordinates: [CAFE.lon, CAFE.lat] }, properties: { id: CAFE.id, name: "Dey St Café", kind: "cafe", access: "customers", accessTagged: false, wheelchair: null, changingTable: null, fee: null, source: "openstreetmap", url: "https://www.openstreetmap.org/node/101", openingHours: "Mo-Su 07:00-19:00", phone: null, website: null, address: "10 Dey St", brandWikidata: null, checkDate: null, fetchedAt: null, open: OPEN_UNTIL } },
+    { type: "Feature", id: "osm:node/102", geometry: { type: "Point", coordinates: [-74.0068, 40.7098] }, properties: { id: "osm:node/102", name: "Pearl St Deli", kind: "restaurant", access: "customers", accessTagged: false, wheelchair: null, changingTable: null, fee: null, source: "openstreetmap", url: "https://www.openstreetmap.org/node/102", openingHours: "24/7", phone: null, website: null, address: null, brandWikidata: null, checkDate: null, fetchedAt: null, open: { status: "open", until: null, opensAt: null, reason: null } } },
+  ] } }));
+  await page.route("**/api/v1/restroom-answers**", (r) => (r.request().method() === "POST" ? r.fulfill({ status: 204 }) : r.fulfill({ json: { answers: { "nyc:Fulton Center": { confirmedAt: new Date(Date.now() - 2.5 * 86_400_000).toISOString(), free: true, recentNo: 0, warn: false, problem: null } } } })));
+}
+
+/** Home with your location shared near Fulton St, then the Restroom button. */
+async function openRestroomPick(page: Page) {
+  await page.context().grantPermissions(["geolocation"]);
+  await page.context().setGeolocation({ ...HERE, accuracy: 8 });
+  await mockNetwork(page);
+  await mockRestrooms(page);
+  await page.goto("/");
+  await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
+  await page.getByRole("button", { name: "Restroom", exact: true }).click();
+  await expect(page.getByTestId("restroom-pick")).toBeVisible({ timeout: 15_000 });
+}
+
 async function ask(page: Page, text: string) {
   await page.getByLabel("Ask the assistant").fill(text);
   await page.getByRole("button", { name: "Send", exact: true }).click();
@@ -87,6 +123,52 @@ for (const size of SIZES) {
       await ask(page, "Where is the nearest restroom?");
       await expect(page.getByText("Bryant Park is the closest open restroom.")).toBeVisible();
       await expectLayout(page, { focus: [RESTROOM.lon, RESTROOM.lat] });
+    });
+
+    // Restroom picks the closest open one; a business also offers the free public one when it is at most 5 minutes further (#249).
+    test("the restroom pick", async ({ page }) => {
+      await openRestroomPick(page);
+      const pick = page.getByTestId("restroom-pick");
+      await expect(pick.getByText("Closest")).toBeVisible();
+      await expect(pick.getByText("Dey St Café")).toBeVisible();
+      await expect(pick.getByText("May be customers only")).toBeVisible();
+      await expect(pick.getByText(/^Free, \d+ min further$/)).toBeVisible();
+      await expect(pick.getByText("Free, confirmed 2 days ago")).toBeVisible();
+      await expect(pick.getByRole("button", { name: "Walk me there" })).toBeEnabled();
+      await expect(pick.getByRole("button", { name: "Preview in Street view" })).toBeEnabled();
+      await page.waitForTimeout(1000); // the map frames you and the restroom
+      await expectLayout(page, { focus: [CAFE.lon, CAFE.lat] });
+    });
+
+    test("the full restroom list", async ({ page }) => {
+      await openRestroomPick(page);
+      await page.getByRole("button", { name: "All restrooms nearby" }).click();
+      const rows = page.getByTestId("restroom-row");
+      await expect(rows).toHaveCount(4);
+      // Closed last, greyed and not pickable.
+      await expect(rows.last()).toContainText("Battery Park");
+      await expect(rows.last()).toBeDisabled();
+      // Tapping an open one picks it.
+      await rows.filter({ hasText: "Fulton Center" }).click();
+      await expect(rows.filter({ hasText: "Fulton Center" })).toHaveAttribute("aria-pressed", "true");
+      await page.waitForTimeout(1000);
+      await expectLayout(page, { focus: [FULTON.lon, FULTON.lat] });
+    });
+
+    test("the arrival question", async ({ page }) => {
+      await openRestroomPick(page);
+      await page.getByRole("button", { name: "Walk me there" }).click();
+      await page.context().setGeolocation({ latitude: CAFE.lat, longitude: CAFE.lon, accuracy: 8 });
+      const arrival = page.getByTestId("restroom-arrival");
+      await expect(arrival.getByText("Was the restroom available to use?")).toBeVisible();
+      await expectLayout(page);
+      await arrival.getByRole("button", { name: "Yes", exact: true }).click();
+      await expect(arrival.getByText("Did you have to pay or buy something?")).toBeVisible();
+      await expectLayout(page);
+      const sent = page.waitForRequest((r) => r.url().includes("/api/v1/restroom-answers") && r.method() === "POST");
+      for (let i = 0; i < 3; i++) await arrival.getByRole("button", { name: "Skip" }).click();
+      expect((await sent).postDataJSON()).toMatchObject({ restroomId: CAFE.id, available: true });
+      await expect(arrival.getByText("Thanks")).toBeVisible();
     });
 
     test("a trip card", async ({ page }) => {

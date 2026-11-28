@@ -28,7 +28,7 @@ export default function RestroomOverlay() {
   const wasFollowing = useRef(false);
 
   useEffect(
-    () => onRestroomPick(() => showPanel({ id: PICK_PANEL, title: "Restroom", subtitle: "Open now, nearest first", details: <RestroomPick /> })),
+    () => onRestroomPick(() => showPanel({ id: PICK_PANEL, title: "Restroom", subtitle: "Open now, nearest first", snap: "half", details: <RestroomPick /> })),
     [showPanel],
   );
 
@@ -48,7 +48,7 @@ export default function RestroomOverlay() {
     wasFollowing.current = false;
     setWalkTarget(null);
     clearRoute();
-    showPanel({ id: arrivalPanel(target.id), title: target.name, subtitle: "You're here", details: <ArrivalQuestion restroom={target} /> });
+    showPanel({ id: arrivalPanel(target.id), title: target.name, subtitle: "You're here", snap: "half", details: <ArrivalQuestion restroom={target} /> });
   }, [target, followingRoute, walking, routeEnd, shared, clearRoute, showPanel]);
 
   return null;

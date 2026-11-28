@@ -1,4 +1,4 @@
-import { Globe, Phone } from "lucide-react";
+import { Accessibility, Globe, Phone } from "lucide-react";
 import { DirectionsFromHere } from "@/components/DirectionsFromHere";
 import { Button } from "@/components/ui/button";
 import { hoursLabel, stateAt } from "@/lib/openHours";
@@ -34,9 +34,7 @@ export function PlaceToiletSheet({ place, lon, lat }: { place: PlaceToiletProps;
         </span>
         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-900">{CUSTOMERS_LINE}</span>
         {place.wheelchair ? (
-          <span role="img" aria-label="Wheelchair accessible toilet" className="text-[13px] leading-none">
-            ♿
-          </span>
+          <Accessibility className="h-4 w-4 text-foreground" role="img" aria-label="Wheelchair accessible toilet" />
         ) : null}
       </div>
       {place.address ? <div className="text-foreground">{place.address}</div> : null}

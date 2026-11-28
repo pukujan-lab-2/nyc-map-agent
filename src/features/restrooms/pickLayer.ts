@@ -4,11 +4,14 @@ import type { RestroomOption } from "./pick";
 
 /**
  * The restrooms the pick shows, drawn on the map with their own icons while
- * the sheet is open (#249): the picked one larger, closed ones faded. Gone
- * when the pick closes.
+ * the sheet is open (#249): the picked one larger, closed ones faded, and the
+ * dotted walk to it. Gone when the pick closes.
  */
 const SRC = "restroom-pick";
 const PICK_LAYER = "restroom-pick";
+/** The picked restroom's walk, drawn here rather than as the app's route so walking guidance does not start. */
+const ROUTE_SRC = "restroom-pick-route";
+const ROUTE_LAYER = "restroom-pick-route";
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 function collection(options: RestroomOption[], picked: string | null): GeoJSON.FeatureCollection {
@@ -25,6 +28,16 @@ function collection(options: RestroomOption[], picked: string | null): GeoJSON.F
 
 function install(map: MapLibreMap): void {
   ensureRestroomIcons(map);
+  if (!map.getSource(ROUTE_SRC)) map.addSource(ROUTE_SRC, { type: "geojson", data: EMPTY });
+  if (!map.getLayer(ROUTE_LAYER)) {
+    map.addLayer({
+      id: ROUTE_LAYER,
+      type: "line",
+      source: ROUTE_SRC,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#2563eb", "line-width": 5, "line-dasharray": [0.2, 1.6] },
+    });
+  }
   if (!map.getSource(SRC)) map.addSource(SRC, { type: "geojson", data: EMPTY });
   if (!map.getLayer(PICK_LAYER)) {
     map.addLayer({
@@ -45,13 +58,17 @@ function install(map: MapLibreMap): void {
 }
 
 /** Shows these options (or clears with an empty list). Brand logos load in the background and redraw. */
-export function showPickOnMap(map: MapLibreMap, options: RestroomOption[], picked: string | null): void {
+export function showPickOnMap(map: MapLibreMap, options: RestroomOption[], picked: string | null, walk: Array<[number, number]> | null = null): void {
   if (!map.isStyleLoaded()) {
-    map.once("idle", () => showPickOnMap(map, options, picked));
+    map.once("idle", () => showPickOnMap(map, options, picked, walk));
     return;
   }
   install(map);
+  map.moveLayer(ROUTE_LAYER);
   map.moveLayer(PICK_LAYER);
+  void map.getSource<GeoJSONSource>(ROUTE_SRC)?.setData(
+    walk && walk.length > 1 ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: walk } }] } : EMPTY,
+  );
   const data = collection(options, picked);
   void map.getSource<GeoJSONSource>(SRC)?.setData(data);
   const brands = [...new Set(options.map((o) => o.brandWikidata).filter((q): q is string => Boolean(q)))];
@@ -63,4 +80,5 @@ export function showPickOnMap(map: MapLibreMap, options: RestroomOption[], picke
 
 export function clearPickOnMap(map: MapLibreMap): void {
   void map.getSource<GeoJSONSource>(SRC)?.setData(EMPTY);
+  void map.getSource<GeoJSONSource>(ROUTE_SRC)?.setData(EMPTY);
 }

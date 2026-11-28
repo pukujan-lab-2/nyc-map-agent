@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Footprints, PersonStanding } from "lucide-react";
-import type { LngLat } from "@/lib/api/routing";
+import { useEffect, useMemo, useState } from "react";
+import { Check, ChevronDown, ChevronUp, Footprints, LocateFixed, PersonStanding } from "lucide-react";
+import { fetchWalkingRoute, type LngLat } from "@/lib/api/routing";
 import { Button } from "@/components/ui/button";
-import { sharedCoords, startSharing } from "@/lib/geo/sharedLocation";
+import { startSharing, useSharedLocation } from "@/lib/geo/sharedLocation";
 import { frameRestrooms } from "@/lib/map/mapCover";
 import { getMapInstance } from "@/lib/map/mapInstance";
 import { useDataView } from "@/lib/store/DataViewContext";
@@ -50,7 +50,7 @@ function Row({ o, tag, picked, answer, onPick, now }: { o: RestroomOption; tag?:
  * restrooms nearby lists the rest (closed ones greyed, not pickable).
  */
 export function RestroomPick() {
-  const { setRoutePoint, setFollowingRoute, beginRestroomTrip, clearRoute } = useDataView();
+  const { setRoutePoint, setFollowingRoute, beginRestroomTrip } = useDataView();
   const { flyTo, setChatOpen } = useMapState();
   const { closePanel } = usePanel();
   const [phase, setPhase] = useState<Phase>("locating");
@@ -59,19 +59,29 @@ export function RestroomPick() {
   const [answers, setAnswers] = useState<Record<string, AnswerSummary>>({});
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [all, setAll] = useState(false);
-  const leaving = useRef(false);
   const now = useMemo(() => new Date(), [options]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The tap is the gesture that may show the browser's location prompt. Another part of the app may
+  // already be asking, so this follows the shared location's state rather than startSharing's answer.
+  const shared = useSharedLocation();
   useEffect(() => {
+    if (shared.status === "off") void startSharing();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const at = shared.status === "on" ? shared.coords : null;
+  useEffect(() => {
+    if (shared.status === "denied" || shared.status === "unavailable") setPhase((p) => (p === "locating" ? "noLocation" : p));
+  }, [shared.status]);
+  useEffect(() => {
+    if (!at || here) return;
+    setHere({ lon: at.lon, lat: at.lat });
+  }, [at, here]);
+
+  useEffect(() => {
+    if (!here) return;
     const ctrl = new AbortController();
+    setPhase("loading");
     void (async () => {
-      // The tap is the gesture that may show the browser's location prompt.
-      const at = sharedCoords() ?? (await startSharing());
-      if (ctrl.signal.aborted) return;
-      if (!at) return setPhase("noLocation");
-      setHere({ lon: at.lon, lat: at.lat });
-      setPhase("loading");
-      const list = await loadOptions({ lon: at.lon, lat: at.lat }, ctrl.signal);
+      const list = await loadOptions(here, ctrl.signal);
       if (ctrl.signal.aborted) return;
       setOptions(list);
       const { closest } = pickRestroom(list);
@@ -81,34 +91,41 @@ export function RestroomPick() {
       void loadAnswers(list.map((o) => o.id)).then((a) => !ctrl.signal.aborted && setAnswers(a));
     })();
     return () => ctrl.abort();
-  }, []);
+  }, [here]);
 
   const { closest, free } = useMemo(() => pickRestroom(options), [options]);
   const picked = options.find((o) => o.id === pickedId) ?? null;
   const shown = all ? listOrder(options) : [closest, free].filter((o): o is RestroomOption => o !== null);
 
-  // The picked restroom's walking route, and the shown restrooms on the map with you.
+  // The picked restroom's walk (a straight line until the router answers), and the shown restrooms, on the map with you.
+  const [walkLine, setWalkLine] = useState<{ id: string; line: Array<[number, number]> } | null>(null);
+  useEffect(() => {
+    if (!here || !picked) return;
+    const ctrl = new AbortController();
+    fetchWalkingRoute(here, { lon: picked.lon, lat: picked.lat }, ctrl.signal)
+      .then((r) => setWalkLine({ id: picked.id, line: r.coordinates }))
+      .catch(() => {});
+    return () => ctrl.abort();
+  }, [here, picked?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const m = getMapInstance();
     if (!here || !m) return;
-    showPickOnMap(m, shown, pickedId);
-    if (picked) {
-      setRoutePoint("start", here);
-      setRoutePoint("end", { lon: picked.lon, lat: picked.lat });
-      frameRestrooms(m, [[here.lon, here.lat], [picked.lon, picked.lat]]);
-    }
-  }, [here, pickedId, all, options]); // eslint-disable-line react-hooks/exhaustive-deps
+    const line = picked ? (walkLine?.id === picked.id ? walkLine.line : [[here.lon, here.lat], [picked.lon, picked.lat]] as Array<[number, number]>) : null;
+    showPickOnMap(m, shown, pickedId, line);
+  }, [here, pickedId, all, options, walkLine]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const m = getMapInstance();
+    if (here && picked && m) frameRestrooms(m, [[here.lon, here.lat], [picked.lon, picked.lat]]);
+  }, [here, pickedId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Closing the sheet without walking takes the route and the icons away.
+  // Closing the sheet takes the walk and the icons away.
   useEffect(() => () => {
     const m = getMapInstance();
     if (m) clearPickOnMap(m);
-    if (!leaving.current) clearRoute();
-  }, [clearRoute]);
+  }, []);
 
   const walk = () => {
     if (!here || !picked) return;
-    leaving.current = true;
     setWalkTarget(picked);
     setRoutePoint("start", here);
     setRoutePoint("end", { lon: picked.lon, lat: picked.lat });
@@ -119,12 +136,18 @@ export function RestroomPick() {
   };
   const preview = () => {
     if (!here || !picked) return;
-    leaving.current = true;
     closePanel();
     beginRestroomTrip(here, { lon: picked.lon, lat: picked.lat });
   };
 
-  if (phase === "noLocation") return <p className="text-sm text-muted-foreground">Location isn't shared. Allow it, then tap Restroom again.</p>;
+  if (phase === "noLocation") {
+    return (
+      <Button type="button" className="h-11 w-full gap-1.5 rounded-full" onClick={() => { setPhase("locating"); void startSharing(); }}>
+        <LocateFixed className="h-4 w-4" aria-hidden="true" />
+        Use my location
+      </Button>
+    );
+  }
   if (phase !== "ready") return <p className="text-sm text-muted-foreground" role="status">{phase === "locating" ? "Finding you" : "Finding restrooms"}</p>;
   if (!options.length) return <p className="text-sm text-muted-foreground">No restrooms within a 25-minute walk.</p>;
 
