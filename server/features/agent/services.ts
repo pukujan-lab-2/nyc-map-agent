@@ -179,7 +179,8 @@ export async function hazardsAt(at: LngLatTuple): Promise<string[]> {
 }
 
 /* ---------- elevator_status: MTA elevator & escalator feed (keyless JSON) ---------- */
-const eneSchema = z.array(z.object({ station: z.string(), trainno: z.string(), equipmenttype: z.string(), serving: z.string(), ADA: z.string().optional(), outagedate: z.string(), estimatedreturntoservice: z.string(), reason: z.string(), isupcomingoutage: z.string() }));
+// `equipment` is the unit's number ("EL219"); optional so a row without one still counts as an outage at its station.
+const eneSchema = z.array(z.object({ station: z.string(), trainno: z.string(), equipment: z.string().optional(), equipmenttype: z.string(), serving: z.string(), ADA: z.string().optional(), outagedate: z.string(), estimatedreturntoservice: z.string(), reason: z.string(), isupcomingoutage: z.string() }));
 export type Outage = z.infer<typeof eneSchema>[number];
 let eneCache: { at: number; rows: Outage[] } | null = null;
 export async function elevatorOutages(): Promise<Outage[]> {
