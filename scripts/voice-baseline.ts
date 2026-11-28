@@ -52,7 +52,8 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** The built app on localhost, as the browser tests serve it. */
 async function startApp(): Promise<ChildProcess> {
   if (!existsSync(join(ROOT, ".e2e-build/index.html"))) throw new Error("No .e2e-build: run `pnpm build:e2e` first.");
-  const app = spawn("pnpm", ["exec", "vite", "preview", "--outDir", ".e2e-build", "--port", String(APP_PORT), "--strictPort"], { cwd: ROOT, stdio: "ignore" });
+  // vite itself, not through pnpm: killing pnpm left vite serving after the script ended.
+  const app = spawn(join(ROOT, "node_modules/.bin/vite"), ["preview", "--outDir", ".e2e-build", "--port", String(APP_PORT), "--strictPort"], { cwd: ROOT, stdio: "ignore" });
   for (let i = 0; i < 60; i += 1) {
     try { if ((await fetch(`http://localhost:${APP_PORT}/`)).ok) return app; } catch { /* not up yet */ }
     await wait(500);
