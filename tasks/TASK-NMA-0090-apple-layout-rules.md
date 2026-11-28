@@ -126,3 +126,26 @@ Blocked/uncertain:
 
 Next:
 - Confirm CI's e2e passes on pull request 293 so auto-merge lands it, then tell the station-walk session that /info/ is live and delete the scratch clone.
+
+### 2026-11-28 12:50:47 UTC — agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/8fedcaac-7345-407c-8230-38883f64d4b9","blocked":[],"changed":["src/pages/Index.tsx, src/pages/CityData.tsx, src/pages/cityDataRedirect.test.ts"],"completed":["City data keeps the classic layout's flags query and sits below its search bar, so the smoke and panel-slot browser tests pass locally."],"decisions":["no new decisions"],"evidence":["Locally, smoke and panel-slot pass (9 of 9) and the responsive idle map, You card and City data cases pass (20 of 20); typecheck, lint and module boundaries pass."],"evidence_class":"observed","next_action":"Confirm CI's e2e passes on pull request 293 so auto-merge lands it, then tell the station-walk session that /info/ is live and delete the scratch clone.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0090","timestamp":"2026-11-28T12:50:47Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"b4b745abfeeb7d583b2175998ae455ffcc0bf2c6befc6ed67d3352ed4fcb3c08","request_id":"8325a585236f40939b998a0300122d77","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0090"} -->
+
+Completed:
+- City data keeps the classic layout's flags query and sits below its search bar, so the smoke and panel-slot browser tests pass locally.
+
+Evidence:
+- Locally, smoke and panel-slot pass (9 of 9) and the responsive idle map, You card and City data cases pass (20 of 20); typecheck, lint and module boundaries pass.
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/pages/Index.tsx, src/pages/CityData.tsx, src/pages/cityDataRedirect.test.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Confirm CI's e2e passes on pull request 293 so auto-merge lands it, then tell the station-walk session that /info/ is live and delete the scratch clone.
