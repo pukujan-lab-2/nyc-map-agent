@@ -1,0 +1,209 @@
+{
+  "collection": "86-st-6-train-2026-11-26",
+  "source": "Partner's Google Drive folder '3D models / 86th St ADA 6 train', taken on an iPhone 16 on 2026-11-26 and handed over 2026-11-27",
+  "prepared": "Photos cut to 2400 px on the long side and videos to 720p H.264 at 1.8 Mbit/s, faces blurred with Apple Vision face and body detection, metadata (including the phone's GPS) dropped. The sensor log is the original CSVs in a tar.xz. NaviLens codes were read with the reader from pull request 261 with its white-frame check at 50% (see docs/STATION_MEDIA.md).",
+  "files": [
+    {
+      "stem": "IMG_9823",
+      "file": "IMG_9823.jpg",
+      "kind": "photo",
+      "original_name": "IMG_9823.JPG",
+      "original_bytes": 4857894,
+      "station": "59 St",
+      "stop_id": "629",
+      "title": "Lexington Av-59 St platform: the NaviLens code above the 'Exit 59-60 Streets & Lexington Avenue, 24 hr booth' sign",
+      "place": "Platform, under the hanging exit sign for 59-60 Streets & Lexington Avenue; a stair up to the uptown local is behind it",
+      "taken_at": "2026-11-26T12:54:48-05:00",
+      "width": 1800,
+      "height": 2400,
+      "faces_blurred": true,
+      "tags": ["navilens", "exit-sign", "platform"],
+      "navilens": [
+        {
+          "box": [2150, 1470, 230, 230],
+          "confidence": "not-read",
+          "place": "On the ceiling bracket above the hanging exit sign for 59-60 Streets & Lexington Avenue",
+          "crop": "codes/IMG_9823-code1.jpg"
+        }
+      ]
+    },
+    {
+      "stem": "IMG_9824",
+      "file": "IMG_9824.jpg",
+      "kind": "screenshot",
+      "original_name": "IMG_9824.PNG",
+      "original_bytes": 6807035,
+      "station": null,
+      "stop_id": null,
+      "station_note": "A phone screenshot; taken between the 59 St photo and the gate photo",
+      "title": "The NaviLens GO app waiting for a code: 'Point your camera at the NaviLens codes nearby to get information'",
+      "place": null,
+      "taken_at": "2026-11-26T12:55:09-05:00",
+      "width": 739,
+      "height": 1600,
+      "faces_blurred": false,
+      "tags": ["navilens", "navilens-app"]
+    },
+    {
+      "stem": "IMG_9825",
+      "file": "IMG_9825.jpg",
+      "kind": "photo",
+      "original_name": "IMG_9825.JPG",
+      "original_bytes": 4445975,
+      "station": null,
+      "stop_id": null,
+      "station_note": "Probably still Lexington Av-59 St: taken 94 seconds after the 59 St platform photo, and nothing in the picture names the station",
+      "title": "A 'Scan for live subway info' NaviLens sign on the iron gate beside a stair",
+      "place": "On the ornamental iron gate at the side of a stair",
+      "taken_at": "2026-11-26T12:56:22-05:00",
+      "width": 1800,
+      "height": 2400,
+      "faces_blurred": true,
+      "tags": ["navilens", "stair"],
+      "navilens": [
+        {
+          "box": [1618, 1670, 585, 585],
+          "confidence": "photo-read",
+          "pattern": "CKYKMKCKCMCYCMMMCMKMYYKMY",
+          "place": "On the iron gate beside a stair, on an MTA 'Scan for live subway info' sign",
+          "crop": "codes/IMG_9825-code1.jpg"
+        }
+      ]
+    },
+    {
+      "stem": "IMG_9826",
+      "file": "IMG_9826.jpg",
+      "kind": "photo",
+      "original_name": "IMG_9826.JPG",
+      "original_bytes": 5397697,
+      "station": "86 St",
+      "stop_id": "626",
+      "title": "86 St platform: the NaviLens code above the 'No Exit, exit at middle of platform' sign, with a 6 train in the station",
+      "place": "Platform end by the '86' mosaic, under the 'No Exit' sign",
+      "taken_at": "2026-11-26T13:01:28-05:00",
+      "width": 1800,
+      "height": 2400,
+      "faces_blurred": true,
+      "tags": ["navilens", "platform", "no-exit-sign"],
+      "navilens": [
+        {
+          "box": [2180, 3004, 186, 180],
+          "confidence": "photo-read",
+          "pattern": "CKKKMKCMCCYCCMCMCCMYKYYCY",
+          "place": "Above the hanging 'No Exit, exit at middle of platform' sign at the platform end",
+          "crop": "codes/IMG_9826-code1.jpg"
+        }
+      ]
+    },
+    {
+      "stem": "IMG_9827",
+      "file": "IMG_9827.jpg",
+      "kind": "photo",
+      "original_name": "IMG_9827.JPG",
+      "original_bytes": 5583319,
+      "station": "86 St",
+      "stop_id": "626",
+      "title": "86 St: the foot of the 'Exit, Uptown & The Bronx 6' stair, with a NaviLens code on the wall beside the 86TH ST mosaic",
+      "place": "Foot of the stair signed 'Exit, Uptown & The Bronx 6'",
+      "taken_at": "2026-11-26T13:03:07-05:00",
+      "width": 1800,
+      "height": 2400,
+      "faces_blurred": true,
+      "tags": ["navilens", "stair", "exit-sign"],
+      "navilens": [
+        {
+          "box": [2471, 2430, 108, 206],
+          "confidence": "photo-read",
+          "pattern": "CKCKMKCMCCCKCYYMCCCCKYYMY",
+          "place": "On the tiled wall at the foot of the 'Exit, Uptown & The Bronx 6' stair, left of the 86TH ST mosaic",
+          "crop": "codes/IMG_9827-code1.jpg"
+        }
+      ]
+    },
+    {
+      "stem": "IMG_9828",
+      "file": "IMG_9828.mp4",
+      "kind": "video",
+      "original_name": "IMG_9828.MOV",
+      "original_bytes": 376568150,
+      "station": "86 St",
+      "stop_id": "626",
+      "title": "86 St, walked from the 86TH ST mosaic along the platform to the elevator, up in the elevator, and out at the street (3 min 9 s)",
+      "place": "Platform to the elevator at 86 St & Lexington Ave, NE corner",
+      "taken_at": "2026-11-26T13:04:11-05:00",
+      "duration_s": 188.9,
+      "width": 720,
+      "height": 1280,
+      "faces_blurred": true,
+      "equipment_id": "EL273",
+      "tags": ["navilens", "elevator", "step-free", "walk"],
+      "navilens": [
+        {
+          "at_s": 4.5,
+          "box": [850, 164, 130, 194],
+          "confidence": "video-matches-photo",
+          "pattern": "CKCKMKCMCCCKCYYMCCCCKYYMY",
+          "raw_read": "CKCKMCCMCCCKCYYMCCCCKYYMY",
+          "place": "The stair-foot wall code from IMG_9827, seen 0:02 to 0:04 (5 frames read, 1 to 4 cells off it)",
+          "crop": "codes/IMG_9828-code1-0m04s.jpg"
+        },
+        {
+          "at_s": 38.5,
+          "box": [968, 515, 49, 46],
+          "confidence": "video-read-only",
+          "raw_read": "KMYKCYYYCKMYCCKKYMCKYMYMM",
+          "place": "On a column on the platform, near the 'Uptown & The Bronx 4 5' sign, seen 0:36 to 0:38",
+          "crop": "codes/IMG_9828-code2-0m38s.jpg"
+        },
+        {
+          "at_s": 74.0,
+          "box": [954, 475, 52, 82],
+          "confidence": "video-read-only",
+          "raw_read": "CKCKMKCKCKKYCMKMCYCMKYCYY",
+          "place": "On the passage wall above the fare machines, seen at 1:14",
+          "crop": "codes/IMG_9828-code3-1m14s.jpg"
+        },
+        {
+          "at_s": 186.5,
+          "box": [80, 850, 59, 56],
+          "confidence": "video-read-only",
+          "raw_read": "CKYKMKCMCKMCCMCMCMCKKYCYY",
+          "place": "At the street, on the green entrance railing right of the '86 Street Station, Uptown & The Bronx 4 5 6' sign, seen 3:06 to 3:07 (3 frames read the same)",
+          "crop": "codes/IMG_9828-code4-3m06s.jpg"
+        }
+      ]
+    },
+    {
+      "stem": "86-st-walk",
+      "file": "86-st-walk.json.gz",
+      "kind": "walk",
+      "original_name": "86_St-2026-11-26_18-03-58.zip",
+      "original_bytes": 6927461,
+      "station": "86 St",
+      "stop_id": "626",
+      "title": "The sensor log of the same walk, converted to the app's walk recording (motion, heading, barometer, GPS; no step counts), gzipped",
+      "place": "Platform to the elevator at 86 St & Lexington Ave, NE corner; the video starts 13 s into it",
+      "taken_at": "2026-11-26T13:03:58-05:00",
+      "duration_s": 207.1,
+      "faces_blurred": false,
+      "equipment_id": "EL273",
+      "tags": ["elevator", "step-free", "walk", "barometer"]
+    },
+    {
+      "stem": "86-st-sensor-logger",
+      "file": "86-st-sensor-logger.tar.xz",
+      "kind": "sensor-log",
+      "original_name": "86_St-2026-11-26_18-03-58.zip",
+      "original_bytes": 6927461,
+      "station": "86 St",
+      "stop_id": "626",
+      "title": "The original Sensor Logger CSVs of the same walk (11 sensors at 100 Hz, including the barometer), recompressed",
+      "place": "Platform to the elevator at 86 St & Lexington Ave, NE corner",
+      "taken_at": "2026-11-26T13:03:58-05:00",
+      "duration_s": 207.1,
+      "faces_blurred": false,
+      "equipment_id": "EL273",
+      "tags": ["elevator", "walk", "barometer", "raw"]
+    }
+  ]
+}

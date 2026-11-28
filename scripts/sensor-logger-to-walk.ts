@@ -158,7 +158,13 @@ function readExport(input: string): { files: Record<string, string>; cleanup: ()
   let tmp: string | undefined;
   if (statSync(input).isFile()) {
     tmp = mkdtempSync(join(tmpdir(), "sensor-logger-"));
-    execFileSync("unzip", ["-q", "-o", input, ...NAMES, "-d", tmp], { stdio: ["ignore", "ignore", "ignore"] });
+    try {
+      execFileSync("unzip", ["-q", "-o", input, ...NAMES, "-d", tmp], { stdio: ["ignore", "ignore", "ignore"] });
+    } catch (err) {
+      // unzip exits 11 when some of the named files are not in the archive (an export with no
+      // Pedometer.csv, as from an iPhone 16 on 2026-11-26). The files it did find were written.
+      if ((err as { status?: number }).status !== 11) throw err;
+    }
     dir = tmp;
   }
   const files: Record<string, string> = {};
