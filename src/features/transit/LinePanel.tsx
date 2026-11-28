@@ -72,7 +72,8 @@ function useNoticeRings(map: MaplibreMap | undefined, notice: LineNotice | null,
     // A shuttle notice's stops are drawn by the map itself, each named as a bus stop or the place to change.
     if (!map || !notice?.stations.length || bused) return;
     const tone = TONE[notice.tone];
-    const markers = notice.stations.map((s) => new Marker({ element: ringMarker(tone.color, tone.glow, s.label) }).setLngLat(s.coord).addTo(map));
+    // A service notice's walk draws its own tracks, skips and labels (NoticeMapLayers); rings are for outages.
+    const markers = notice.alert ? [] : notice.stations.map((s) => new Marker({ element: ringMarker(tone.color, tone.glow, s.label) }).setLngLat(s.coord).addTo(map));
     // The ring's tag names each skip and its direction: the station's own "Skipped …-bound" words would print under it.
     const quiet = map.getLayer("transit-skip") ? "transit-skip" : null;
     if (quiet) map.setPaintProperty(quiet, "text-opacity", 0);

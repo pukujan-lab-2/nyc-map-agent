@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { stationOf, type StaticSystem } from "./model";
 import type { TransitAlert } from "./hooks";
+import type { StepMap } from "./walkMap";
 import { otherDirection, sameStation, serviceChanges, towardEnd } from "@/lib/transit/serviceChanges";
 
 /**
@@ -23,7 +24,7 @@ export function useAlertFocus(): TransitAlert | null {
  * The notice walk's current step (#55): the map frames these stations, marks the shuttle bus corners
  * with the MTA's own words, and shows the buses a travel tip names. Null between steps and when it stops.
  */
-type WalkFocus = { ids: string[]; corners: Array<{ id: string; text: string }>; bus: string[] };
+type WalkFocus = { ids: string[]; corners: Array<{ id: string; text: string }>; bus: string[]; map?: StepMap };
 let walk: WalkFocus | null = null;
 const walkSubs = new Set<() => void>();
 export function setWalkFocus(w: WalkFocus | null): void {
@@ -32,6 +33,22 @@ export function setWalkFocus(w: WalkFocus | null): void {
 }
 export function useWalkFocus(): WalkFocus | null {
   return useSyncExternalStore((f) => (walkSubs.add(f), () => walkSubs.delete(f)), () => walk, () => walk);
+}
+
+/**
+ * What the open walk step put on the map (`NoticeMapLayers`, a chunk loaded with the first notice): its frame,
+ * whether it drew the line's two tracks (then the map's own skip marks stand down), and the stations of the bus
+ * stops it labels (the shuttle's own labels stand down there). Null while no notice is open.
+ */
+export type NoticeMapView = { bounds: [Pos, Pos] | null; tracks: boolean; busStations: string[] };
+let mapView: NoticeMapView | null = null;
+const mapViewSubs = new Set<() => void>();
+export function setNoticeMapView(v: NoticeMapView | null): void {
+  mapView = v;
+  mapViewSubs.forEach((f) => f());
+}
+export function useNoticeMapView(): NoticeMapView | null {
+  return useSyncExternalStore((f) => (mapViewSubs.add(f), () => mapViewSubs.delete(f)), () => mapView, () => mapView);
 }
 
 /**

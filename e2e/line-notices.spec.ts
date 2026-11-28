@@ -258,10 +258,10 @@ for (const size of SIZES) {
       "Get off the bus at 14 Street and change to the 1 or 3.",
       "When: November 14 to 15, Saturday 3:45 AM to Sunday 10:00 PM.",
     ]);
-    // The voice reached the corner step; the map marks that corner at Times Sq-42 St.
+    // The voice reached the corner step; the map marks that corner at Times Sq-42 St (the walk's own shuttle stop).
     await expect(walk).toHaveAttribute("data-step", "2", { timeout: slow(10_000) });
     await expect.poll(() => page.evaluate(async () => {
-      const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: Array<{ properties?: { label?: string } }> }> } | undefined } }).__map?.getSource("transit-walk-corners");
+      const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: Array<{ properties?: { label?: string } }> }> } | undefined } }).__map?.getSource("notice-bus-stops");
       return (await src?.getData())?.features?.map((f) => f.properties?.label ?? "").join("|") ?? "";
     })).toContain("7 Avenue at 42 Street");
     // Owner, 2026-11-14: "it did not show the shuttle bus route". The bus has its own line through its
