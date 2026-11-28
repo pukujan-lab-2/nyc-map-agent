@@ -102,6 +102,29 @@ Blocked/uncertain:
 Next:
 - Pull request 283 merges on green checks; whether Weekend also lists next weekend waits for the owner.
 
+### 2026-11-28 04:14:17 UTC — agent:claude-code/615f0a6f-de1a-43d6-8a53-65d4b47bc4b5
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/615f0a6f-de1a-43d6-8a53-65d4b47bc4b5","blocked":[],"changed":["src/lib/transit/periods.ts, src/features/transit/LinePanel.tsx, .size-limit.json"],"completed":["Pull request 283 failed two required checks: a period test took 8 s on CI against its 5 s limit, and the line panel went 882 B over its size budget. The period maths now keeps one date formatter and reads New York hours one at a time, so the whole file's tests run in under a second, and the feature adds 489 B to the line panel and 450 B to all JS."],"decisions":["Raised two size budgets by the measured cost of the time buttons; main had 164 B of all-JS headroom, less than the feature needs."],"evidence":["All 2324 unit tests pass; the line panel's layout cases pass at all four sizes; size-limit passes with the line panel budget at 7.1 kB (main measured 6545 B, this branch 7034 B) and all JS at 1291 kB (main 1290436 B, this branch 1290886 B)."],"evidence_class":"observed","next_action":"Pull request 283 merges on green checks; whether Weekend also lists next weekend waits for the owner.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0079","timestamp":"2026-11-28T04:14:17Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"868264c89391b4b940b82a49d8da3d63173321b2cf8baf78e0ff22444b56c8e2","request_id":"81f25d9c1c594b929ff942d6808d7428","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0079"} -->
+
+Completed:
+- Pull request 283 failed two required checks: a period test took 8 s on CI against its 5 s limit, and the line panel went 882 B over its size budget. The period maths now keeps one date formatter and reads New York hours one at a time, so the whole file's tests run in under a second, and the feature adds 489 B to the line panel and 450 B to all JS.
+
+Evidence:
+- All 2324 unit tests pass; the line panel's layout cases pass at all four sizes; size-limit passes with the line panel budget at 7.1 kB (main measured 6545 B, this branch 7034 B) and all JS at 1291 kB (main 1290436 B, this branch 1290886 B).
+
+Decisions:
+- Raised two size budgets by the measured cost of the time buttons; main had 164 B of all-JS headroom, less than the feature needs.
+
+Changed:
+- src/lib/transit/periods.ts, src/features/transit/LinePanel.tsx, .size-limit.json
+
+Blocked/uncertain:
+- none
+
+Next:
+- Pull request 283 merges on green checks; whether Weekend also lists next weekend waits for the owner.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
