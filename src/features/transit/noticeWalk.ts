@@ -531,6 +531,22 @@ const cornerAt = (facts: NoticeFacts, id: string): string | null => {
   return c ? formatStreetText(c.replace(/\[[^\]]*icon\]/gi, "").trim()) : null;
 };
 
+/** The stations a temporary bus serves, in order, with the MTA's corner where it gives one. */
+function busStops(sys: StaticSystem, facts: NoticeFacts, between: [StationRef, StationRef] | undefined): Array<{ station: string; corner: string | null }> {
+  const [a, b] = between ?? [];
+  let run: string[] = [];
+  if (a?.id && b?.id) {
+    for (const line of Object.keys(sys.stopM)) {
+      const r = span(seqOf(sys, line), a.id, b.id);
+      // The local line: a bus stops near every station, not only the express stops.
+      if (r && r.length > run.length) run = r;
+    }
+    if (!run.length) run = [a.id, b.id];
+  }
+  if (!run.length) run = [...new Set(facts.busStops.flatMap((x) => (x.station.id ? [x.station.id] : [])))];
+  return run.map((station) => ({ station, corner: cornerAt(facts, station) }));
+}
+
 /** The MTA's advice that is for this rider: their case (going to, starting from) and their stop. */
 function adviceFor(facts: NoticeFacts, e: Effect, trip: NonNullable<Trip>): Advice[] {
   const want = trip.mode === "off" ? "to" : "from";
@@ -618,11 +634,16 @@ function adviceSteps(sys: StaticSystem, a: Advice, facts: NoticeFacts, e: Effect
     const shuttle = /shuttle/i.test(b);
     const corner = at ? cornerAt(facts, at) : null;
     const route = shuttle ? facts.buses.find((x) => x.shuttle)?.routes[0] ?? "shuttle" : b;
+    const own = facts.buses.find((x) => x.routes.includes(b) || (shuttle && x.shuttle));
+    // A shuttle or a bus that runs only during the work (T323) is in none of our bus data: the map draws it from
+    // the stations it serves, from the advice's stretch, the bus's own stretch, or the stops the notice gives corners for.
+    const temporary = shuttle || Boolean(own?.shuttle);
+    const stops = at ? [{ station: at, corner }] : temporary ? busStops(sys, facts, a.between ?? own?.between) : [];
     if (shuttle) s.say(corner ? "advice.shuttleAt" : "advice.shuttle", { corner: corner ?? "" });
     else s.say(corner ? "advice.busAt" : "advice.busUnknown", { bus: b, corner: corner ?? "" });
     s.bus(route);
-    s.map.bus = [{ route, shuttle, stops: at ? [{ station: at, corner }] : [] }];
-    out.push(s.show(at).done());
+    s.map.bus = [{ route, shuttle: temporary, stops }];
+    out.push(s.show(at, stops[0]?.station, stops.at(-1)?.station).done());
   }
   return out;
 }
