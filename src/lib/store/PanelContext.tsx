@@ -4,13 +4,12 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useReducer,
   useRef,
   useState,
   type ReactNode,
 } from "react";
 import { useMapState } from "@/lib/store/MapStateContext";
-import { EMPTY_SLOT, escapeTarget, slotReducer } from "@/lib/store/panelSlot";
+import { escapeTarget, getSlot, sendSlot, useSlot } from "@/lib/sheet/sheet";
 
 /**
  * The one map panel (left side panel on desktop, bottom sheet on mobile).
@@ -124,7 +123,8 @@ export function PanelProvider({ children }: { children: ReactNode }) {
   const [searchMap, setSearchMap] = useState<Record<string, SearchProvider>>({});
   const [snap, setSnap] = useState<SheetSnap>("peek");
   const [collapsed, setCollapsed] = useState(false);
-  const [slot, dispatch] = useReducer(slotReducer, EMPTY_SLOT);
+  // The slot (drawer open, sheet minimised) is the sheet machine's (src/lib/sheet/sheetMachine.ts).
+  const slot = useSlot();
   const [modes, setModes] = useState<Record<string, () => void>>({});
 
   // A neighborhood / block pick is a sheet too: it takes the slot.
@@ -132,11 +132,11 @@ export function PanelProvider({ children }: { children: ReactNode }) {
   const sheet = !!content || hasPlace;
   const placeKey = `${selectedNtaCode ?? ""}|${selectedBlockKey ?? ""}`;
   useEffect(() => {
-    if (hasPlace) dispatch({ type: "showSheet" });
+    if (hasPlace) sendSlot({ type: "showSheet" });
   }, [hasPlace, placeKey]);
   // Keep the reducer's "sheet" in step with what is actually shown.
   useEffect(() => {
-    if (!sheet) dispatch({ type: "closeSheet" });
+    if (!sheet) sendSlot({ type: "closeSheet" });
   }, [sheet]);
 
   const showPanel = useCallback(
@@ -145,7 +145,7 @@ export function PanelProvider({ children }: { children: ReactNode }) {
       setContent(next);
       setCollapsed(false);
       setSnap(next.snap ?? "peek");
-      dispatch({ type: "showSheet" });
+      sendSlot({ type: "showSheet" });
     },
     [selectNta],
   );
@@ -153,23 +153,23 @@ export function PanelProvider({ children }: { children: ReactNode }) {
     setContent(null);
     selectNta(null);
     selectBlock(null);
-    dispatch({ type: "closeSheet" });
+    sendSlot({ type: "closeSheet" });
   }, [selectNta, selectBlock]);
   const closePanel = useCallback(() => setContent(null), []);
-  const setDrawerOpen = useCallback((open: boolean) => dispatch({ type: open ? "openDrawer" : "closeDrawer" }), []);
-  const toggleDrawer = useCallback(() => dispatch({ type: "toggleDrawer" }), []);
-  const minimize = useCallback(() => dispatch({ type: "minimize" }), []);
+  const setDrawerOpen = useCallback((open: boolean) => sendSlot({ type: open ? "openDrawer" : "closeDrawer" }), []);
+  const toggleDrawer = useCallback(() => sendSlot({ type: "toggleDrawer" }), []);
+  const minimize = useCallback(() => sendSlot({ type: "minimize" }), []);
   const restore = useCallback(() => {
-    dispatch({ type: "restore" });
+    sendSlot({ type: "restore" });
     setSnap("peek");
   }, []);
   const closeAll = useCallback(() => {
-    dispatch({ type: "closeDrawer" });
+    sendSlot({ type: "closeDrawer" });
     clearSheet();
   }, [clearSheet]);
   const emptyMapTap = useCallback(() => {
     if (slot.drawerOpen) return;
-    dispatch({ type: "emptyTap" });
+    sendSlot({ type: "emptyTap" });
     clearSheet();
   }, [slot.drawerOpen, clearSheet]);
   const setMode = useCallback((id: string, stop: (() => void) | null) => {
@@ -183,12 +183,12 @@ export function PanelProvider({ children }: { children: ReactNode }) {
   }, []);
   const modeActive = Object.keys(modes).length > 0;
 
-  const live = useRef({ slot, sheet, modes, clearSheet });
-  live.current = { slot, sheet, modes, clearSheet };
+  const live = useRef({ sheet, modes, clearSheet });
+  live.current = { sheet, modes, clearSheet };
   const dismissTop = useCallback((): boolean => {
-    const { slot: s, sheet: hasSheet, modes: m, clearSheet: clear } = live.current;
-    const target = escapeTarget({ ...s, sheet: hasSheet }, Object.keys(m).length > 0);
-    if (target === "drawer") dispatch({ type: "closeDrawer" });
+    const { sheet: hasSheet, modes: m, clearSheet: clear } = live.current;
+    const target = escapeTarget({ ...getSlot(), sheet: hasSheet }, Object.keys(m).length > 0);
+    if (target === "drawer") sendSlot({ type: "closeDrawer" });
     else if (target === "sheet") clear();
     else if (target === "mode") Object.values(m).forEach((stop) => stop());
     return target !== null;

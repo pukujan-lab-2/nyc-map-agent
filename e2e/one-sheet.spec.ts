@@ -3,8 +3,8 @@ import { expectLayout } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
-// Owner, 2026-10-28: one sheet, like Google and Apple Maps. The ask box is always there; an answer
-// and a map card share one left column on wide screens, and a phone's answer pulls up and down.
+// Owner, 2026-10-28 and 2026-11-27: one sheet, like Google and Apple Maps. The ask box is always there; from
+// 640 px it is the foot of one left card that every panel opens in, and a phone's answer pulls up and down.
 const stream = (events: unknown[]) => events.map((e) => JSON.stringify(e)).join("\n") + "\n";
 const LONG = Array.from({ length: 14 }, (_, i) => `Step ${i + 1}: walk one more block north along Broadway and keep the park on your right.`).join("\n");
 
@@ -33,9 +33,12 @@ test("a wide screen puts the answer and the ask box in one left column", async (
   expect(answers.y + answers.height).toBeLessThanOrEqual(bar.y);
   expect(answers.height).toBeGreaterThan(800 * 0.5);
   await expectLayout(page);
-  // Closing the answer gives the bar back to the middle.
+  // Closing the answer leaves the card, with the ask box at its foot, where it was (#180).
   await page.getByRole("button", { name: "Close answer", exact: true }).click();
-  await expect(home).not.toHaveAttribute("data-layout", "column");
+  await expect(page.getByTestId("agent-answers")).toHaveCount(0);
+  await expect(home).toHaveAttribute("data-layout", "column");
+  const after = (await page.getByTestId("agent-bar").boundingBox())!;
+  expect(Math.abs(after.x - bar.x)).toBeLessThan(2);
 });
 
 test("a phone's answer pulls up for more and down for more map", async ({ page }) => {
@@ -70,12 +73,9 @@ test("a wide screen keeps status chips in one row at the top of the left side", 
   expect(box.x).toBeLessThan(40);
   expect(box.y + box.height).toBeLessThanOrEqual(card.y);
   expect(box.y).toBeLessThan(800 * 0.25);
-  // The card keeps the app's theme: only the answer and the ask box are dark.
-  const darkAbove = await page.getByTestId("details-sheet").evaluate((el) => {
-    const d = el.closest(".dark");
-    return d && d !== document.documentElement ? d.getAttribute("data-testid") ?? d.tagName : null;
-  });
-  expect(darkAbove).toBeNull();
+  // The place is the top of the one left card, above the ask box.
+  const inCard = await page.getByTestId("details-sheet").evaluate((el) => Boolean(el.closest("[data-testid='agent-card']")));
+  expect(inCard).toBe(true);
   await expectLayout(page);
 });
 

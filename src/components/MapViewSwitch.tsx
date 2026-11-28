@@ -5,22 +5,12 @@ import { onMapInstance } from "@/lib/map/mapInstance";
 import { metresBetween } from "@/lib/map/walk";
 import { backToStreet, setStreetSpot, showView, useStreetSpot, type ViewName } from "@/lib/map/viewChange";
 import { useMapState } from "@/lib/store/MapStateContext";
-import { useLeftChips } from "@/lib/store/leftColumn";
-import { usePanel } from "@/lib/store/PanelContext";
-import { usePullSheetUp } from "@/lib/store/pullSheet";
-import { setFollowMode, useFollowMode, useFollowed, type FollowMode } from "@/lib/transit/follow";
-import { useSelectedLine } from "@/lib/transit/selectedLine";
+import { useLeftChips } from "@/lib/sheet/sheet";
 
 /** Tilted past this, the map counts as 3D. */
 const TILTED_DEG = 20;
 /** Street from the map goes back to where you stood when the map is still about there. */
 const SAME_SPOT_M = 150;
-
-const VIEWS: Array<{ id: ViewName; label: string }> = [
-  { id: "map", label: "Map" },
-  { id: "3d", label: "3D" },
-  { id: "street", label: "Street" },
-];
 
 function useMap(): MapLibreMap | null {
   const [map, setMap] = useState<MapLibreMap | null>(null);
@@ -40,23 +30,6 @@ function useTilted(map: MapLibreMap | null): boolean {
   return tilted;
 }
 
-/**
- * Where the switch and "Back to street view" stand. A line panel docked at the top
- * (right side on wider screens, the whole top on a phone) pushes them below its
- * pill and centres them in the map left beside it, clear of the menu row too.
- * `--lp` is the docked panel's width plus its margins.
- */
-function usePlace(): { docked: boolean; left: string; cls: string } {
-  const line = useSelectedLine();
-  const sheet = usePullSheetUp();
-  const docked = Boolean(line) && !sheet;
-  return {
-    docked,
-    left: docked ? "max(131px, calc((100% - var(--lp)) / 2))" : "50%",
-    cls: "[--lp:392px] md:[--lp:412px] lg:[--lp:432px]",
-  };
-}
-
 /** Map, 3D or Street for the spot you are looking at, keeping the heading. */
 export function pickView(map: MapLibreMap | null, view: ViewName, walking: boolean, spot: ReturnType<typeof useStreetSpot>): void {
   if (!map) return;
@@ -69,15 +42,6 @@ export function pickView(map: MapLibreMap | null, view: ViewName, walking: boole
   showView(view, walking ? null : { lon: c.lng, lat: c.lat }, walking ? null : map.getBearing());
 }
 
-/**
- * While following a train the switch moves the follow camera instead: Map is
- * the flat follow, 3D the chase camera, Street the cab (owner, 2026-10-26).
- */
-const FOLLOW_FOR: Record<ViewName, FollowMode> = { map: "map", "3d": "chase", street: "cab" };
-export function followView(mode: FollowMode): ViewName {
-  return mode === "cab" ? "street" : mode === "chase" || mode === "side" ? "3d" : "map";
-}
-
 /** Which of Map, 3D and Street is showing. */
 export function useCurrentView(): { map: MapLibreMap | null; current: ViewName; walking: boolean; spot: ReturnType<typeof useStreetSpot> } {
   const map = useMap();
@@ -85,33 +49,6 @@ export function useCurrentView(): { map: MapLibreMap | null; current: ViewName; 
   const tilted = useTilted(map);
   const spot = useStreetSpot();
   return { map, current: walking ? "street" : tilted ? "3d" : "map", walking, spot };
-}
-
-/**
- * Map · 3D · Street, stacked in the bottom-right corner over Center on my location,
- * on wider screens (on a phone the cube button opens the same three). Each keeps the
- * spot and the heading.
- */
-export function MapViewSwitch() {
-  const { map, current: here, walking, spot } = useCurrentView();
-  const following = useFollowed() !== null;
-  const mode = useFollowMode();
-  const current = following ? followView(mode) : here;
-  return (
-    <div role="radiogroup" aria-label="View" data-testid="map-view-switch"
-      className="corner-view pointer-events-auto absolute z-40 hidden w-[52px] flex-col gap-0.5 rounded-[18px] border border-[#263449] bg-[rgba(15,23,42,0.92)] p-1 text-[#f1f5f9] shadow-[0_6px_18px_rgba(0,0,0,0.35)] sm:flex">
-      {VIEWS.map((v) => {
-        const on = current === v.id;
-        return (
-          <button key={v.id} type="button" role="radio" aria-checked={on} onClick={() => { if (on) return; if (following) setFollowMode(FOLLOW_FOR[v.id]); else pickView(map, v.id, walking, spot); }}
-            className="h-9 w-full rounded-[14px] text-[12px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]"
-            style={{ background: on ? "#f8fafc" : "transparent", color: on ? "#0f172a" : undefined }}>
-            {v.label}
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 /**
@@ -126,7 +63,6 @@ export function BackToStreet() {
   const { walking } = useMapState();
   const spot = useStreetSpot();
   const show = !walking && spot !== null;
-  const place = usePlace();
   const row = useLeftChips();
 
   useEffect(() => {
@@ -145,8 +81,7 @@ export function BackToStreet() {
   if (!show) return null;
   const pill = (
     <div data-testid="back-to-street"
-      className={row ? CHIP : `pointer-events-auto absolute left-1/2 top-[calc(env(safe-area-inset-top)+var(--bt))] z-40 -translate-x-1/2 sm:left-[var(--bl)] ${CHIP} ${place.cls}`}
-      style={row ? undefined : { ["--bl" as string]: place.left, ["--bt" as string]: `${place.docked ? 72 : 16}px` }}>
+      className={row ? CHIP : `pointer-events-auto absolute left-1/2 top-[calc(env(safe-area-inset-top)+16px)] z-40 -translate-x-1/2 ${CHIP}`}>
       <button type="button" onClick={backToStreet}
         className="h-9 whitespace-nowrap rounded-full bg-[#2563eb] px-4 text-[14px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">
         Back to street view
@@ -156,37 +91,5 @@ export function BackToStreet() {
     </div>
   );
   // On wide screens it joins the chip row at the top of the left side.
-  return row ? createPortal(pill, row) : pill;
-}
-
-/**
- * While live buses are on the map, one pill under the top says which and turns them off
- * (owner, 2026-10-27: "no way to cut off the buses"). Off drops the route line, the
- * chips, a followed bus and the bus lines in the URL. It sits under "Back to street view".
- * Hidden in street view. On a phone it keeps to the left, clear of the 3D and zoom buttons on the right.
- */
-export function BusesOff() {
-  const { chips } = usePanel();
-  const buses = chips.find((c) => c.id === "liveBuses");
-  const { walking } = useMapState();
-  const spot = useStreetSpot();
-  const place = usePlace();
-  const row = useLeftChips();
-  // Street view keeps its own controls up top; there the Layers menu still turns buses off.
-  if (!buses?.active || walking) return null;
-  const routes = buses.routes ?? [];
-  const label = routes.length > 3 ? `${routes.slice(0, 3).join(", ")} +${routes.length - 3}` : routes.join(", ");
-  const top = (place.docked ? 72 : 16) + (spot ? 52 : 0);
-  const pill = (
-    <div data-testid="buses-off"
-      className={row ? `${CHIP} min-w-0 max-w-full pl-3.5` : `pointer-events-auto absolute left-4 top-[calc(env(safe-area-inset-top)+var(--bt))] z-40 max-w-[calc(100%-96px)] sm:max-w-[calc(100%-32px)] sm:-translate-x-1/2 ${CHIP} pl-3.5 sm:left-[var(--bl)] ${place.cls}`}
-      style={row ? undefined : { ["--bl" as string]: place.left, ["--bt" as string]: `${top}px` }}>
-      <span className="min-w-0 truncate text-[13px] font-semibold">Buses{label ? ` · ${label}` : ""}</span>
-      <button type="button" onClick={buses.onToggle} aria-label="Turn live buses off"
-        className="flex h-9 shrink-0 items-center gap-1 rounded-full px-3 text-[13px] font-semibold text-[#fca5a5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">
-        Hide <span aria-hidden className="text-[18px] leading-none">×</span>
-      </button>
-    </div>
-  );
   return row ? createPortal(pill, row) : pill;
 }

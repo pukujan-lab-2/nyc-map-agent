@@ -22,6 +22,8 @@ import { useMapState } from "@/lib/store/MapStateContext";
 import { usePanel, type PanelChip } from "@/lib/store/PanelContext";
 import { CHOICES, THEMES, setTheme, useAutoPhase, useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
+import { PullSheet } from "./PullSheet";
 
 /** A labelled filter chip: filled ink when on, outlined when off. No icons. */
 export function Pill({ on, onClick, children, className }: { on?: boolean; onClick?: () => void; children: ReactNode; className?: string }) {
@@ -221,7 +223,7 @@ export function LayersDrawer({
 
   const body = (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-start justify-between gap-[var(--sp-3)] px-[var(--sp-4)] pt-[var(--sp-3)]">
+      {home ? null : <div className="flex items-start justify-between gap-[var(--sp-3)] px-[var(--sp-4)] pt-[var(--sp-3)]">
         <div className="min-w-0">
           <h2 className="truncate font-serif text-[26px] leading-tight">
             Exploring <em>{hood}</em>
@@ -231,7 +233,7 @@ export function LayersDrawer({
         <button type="button" onClick={() => onOpenChange(false)} className="mt-2 text-[14px] font-semibold underline underline-offset-4">
           Done
         </button>
-      </div>
+      </div>}
       <div className="px-[var(--sp-4)] pb-[var(--sp-1)] pt-[var(--sp-3)]">
         <label className="sr-only" htmlFor="layers-search">Search filters</label>
         <input
@@ -365,6 +367,19 @@ export function LayersDrawer({
     </div>
   );
 
+  // The agent home: More layers is a view of the one sheet, a phone's bottom sheet or the left card.
+  if (home) {
+    if (!open) return null;
+    return (
+      <PullSheet testId="layers-drawer" label="More layers" level={2} onLevel={(l) => { if (l < 2) onOpenChange(false); }} onClose={() => onOpenChange(false)}
+        header={<div className="flex min-h-11 items-center gap-2">
+          <h2 className="min-w-0 flex-1 truncate text-[15px] font-bold">More layers</h2>
+          <button type="button" aria-label="Close More layers" onClick={() => onOpenChange(false)} className="task-action task-close"><X className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden /></button>
+        </div>}>
+        <div className="pull-sheet-body flex min-h-0 flex-col rounded-[18px] bg-card text-card-foreground">{body}</div>
+      </PullSheet>
+    );
+  }
   if (isDesktop) {
     if (!open) return null;
     return (

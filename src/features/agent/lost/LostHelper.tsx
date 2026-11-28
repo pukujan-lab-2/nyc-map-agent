@@ -1,8 +1,8 @@
 import "@/components/task-screens.css";
-import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { LocateOff, MapPin, WifiOff, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useColumnWide } from "@/lib/sheet/sheet";
 import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
 import { askAgent } from "../stream";
@@ -10,12 +10,10 @@ import { useAppLang } from "@/lib/i18n/appLang";
 import { tr } from "@/lib/i18n/appLang";
 import { useSharedLocation } from "@/lib/geo/sharedLocation";
 import { getMapInstance } from "@/lib/map/mapInstance";
-import { useLeftCard } from "@/lib/store/leftColumn";
 import { useActiveTrip } from "@/lib/transit/activeTrip";
 import { closeLostHelper, notedTrain, notedTrainPart, notedTrip, setLostSender, type LostContext } from "@/lib/underground/lostHelper";
 import { useStationHelp } from "@/lib/underground/stationHelp";
 import { useUndergroundNow } from "@/lib/underground/whereNow";
-import { useMediaQuery } from "@/lib/useMediaQuery";
 import { metres, type Pt } from "@/lib/map/mapRead";
 import { bestGuess, readSignal, signalPoor, type Connection, type Fix, type Signal } from "./lostGuess";
 import { guessText, lostT, offlineReply, signalChips, signalForAgent } from "./lostText";
@@ -222,9 +220,7 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
     if (at) getMapInstance()?.flyTo({ center: [at[0], at[1]], zoom: 17 });
   };
   const canShow = !!guess.stationId && (!!stationHelp || !!station);
-  const wide = useMediaQuery("(min-width: 640px)");
-  const desktop = useMediaQuery("(min-width: 1024px)");
-  const { slot, top } = useLeftCard("lost-helper", desktop);
+  const wide = useColumnWide();
   const [level, setLevel] = useState<SheetLevel>(1);
 
   // Inside Fulton St the helper pins down where in the station someone is (#143): a few tap questions
@@ -364,7 +360,8 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
   const body = <>{signalRow}{thread}{taps}{actions}</>;
   const name = guess.station ?? lostT(lang, "title");
 
-  if (!wide) return (
+  // One sheet at every size: a phone's pull sheet, the left card from 640 px.
+  return (
     <PullSheet testId="lost-sheet" label={lostT(lang, "title")} level={level} onLevel={setLevel} onClose={closeLostHelper}
       header={<div className="flex items-center gap-2.5">
         <button type="button" className="flex min-h-11 min-w-0 flex-1 items-center gap-2 text-left" aria-expanded={level > 0} onClick={() => setLevel((l) => (l === 0 ? 1 : l))}>
@@ -377,18 +374,6 @@ export function LostHelper({ ctx }: { ctx: LostContext }) {
       <section className="pull-sheet-body mt-1 flex flex-col gap-2" aria-label={lostT(lang, "title")}>{body}</section>
     </PullSheet>
   );
-  const card = (
-    <section aria-label={lostT(lang, "title")} data-testid="lost-card" className={`task-panel ${slot ? (top ? "flex" : "hidden") : "absolute left-3 z-40 flex max-h-[calc(100dvh-250px)] w-[min(420px,calc(100%-104px))]"} min-h-0 flex-col gap-2 overflow-y-auto rounded-2xl px-3 py-2.5`}
-      style={slot ? undefined : { top: "calc(env(safe-area-inset-top) + 76px)" }}>
-      <div className="flex items-center gap-2">
-        <MapPin size={16} className="shrink-0 text-blue-300" aria-hidden />
-        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{name}{guess.line ? ` · ${guess.line}` : ""}</h2>
-        {close}
-      </div>
-      {body}
-    </section>
-  );
-  return slot ? createPortal(card, slot) : card;
 }
 
 export default LostHelper;

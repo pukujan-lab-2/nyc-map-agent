@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 import { Pause } from "lucide-react";
 import { useIdle } from "@/lib/idle";
-import { useLeftChips } from "@/lib/store/leftColumn";
+import { useLeftChips } from "@/lib/sheet/sheet";
 import { useLiveWanted } from "./hooks";
 
 /**

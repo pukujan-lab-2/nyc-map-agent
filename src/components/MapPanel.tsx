@@ -2,8 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useFlag, useFlags } from "@/lib/flags";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { useLeftCard, useLeftChips, useLeftColumn } from "@/lib/store/leftColumn";
-import { peekChipLabel } from "@/lib/store/panelSlot";
+import { peekChipLabel, useColumnWide, useLeftChips } from "@/lib/sheet/sheet";
 import { PullSheet } from "./PullSheet";
 import type { SheetLevel } from "./sheetSwipe";
 import { Button } from "@/components/ui/button";
@@ -136,32 +135,27 @@ export function MapPanel({
   const panelHidden = walking && !content && !pickedAtStreet;
   const level: SheetLevel = snap === "peek" ? 0 : snap === "half" ? 1 : 2;
   const showSheet = !!(content || place) && !panelHidden && !layersOpen && !minimized;
-  // The view controls sit in the map beside the desktop sheet or layers drawer,
-  // and step out of the way when the phone sheet is half or full.
-  const leftBusy = useLeftColumn((s) => s.answer || s.cards.length > 0);
-  // The agent home draws one left column on wide screens; the card goes at its top.
-  // Another place or restroom is a new card on the stack, so Back returns to the line under it.
-  const inColumn = home && isDesktop && showSheet;
+  // The agent home has one place for a card at every size: the phone's sheet, or the left card from 640 px
+  // (PullSheet). Another place or restroom is a new view on it, so Back returns to the line under it.
+  const wide = useColumnWide();
   const row = useLeftChips();
-  const { slot, top: cardOnTop } = useLeftCard(`map:${content?.id ?? "place"}`, inColumn);
   useLayoutEffect(() => {
     const root = document.documentElement;
-    const column = home && isDesktop && (showSheet || leftBusy);
-    const leftColumn = column || (isDesktop && layersOpen);
-    root.style.setProperty("--sheet-left", column ? "calc(var(--edge) + min(400px, 44vw))" : leftColumn ? "calc(var(--edge) + 360px)" : "0px");
-    root.style.setProperty("--controls-display", !isDesktop && showSheet && (snap === "half" || snap === "full") ? "none" : "flex");
+    const column = home ? wide : isDesktop && (showSheet || layersOpen);
+    root.style.setProperty("--sheet-left", column ? (home ? "calc(var(--edge) + min(400px, 44vw))" : "calc(var(--edge) + 360px)") : "0px");
+    root.style.setProperty("--controls-display", !wide && showSheet && (snap === "half" || snap === "full") ? "none" : "flex");
     return () => {
       root.style.removeProperty("--sheet-left");
       root.style.removeProperty("--controls-display");
     };
-  }, [home, isDesktop, showSheet, leftBusy, layersOpen, snap]);
+  }, [home, wide, isDesktop, showSheet, layersOpen, snap]);
   // No top bar, but the menu row (My day, layers…) sits top-left: the side sheet starts below it, or its
   // title hides under the row (owner screenshot, 2026-10-25).
   useLayoutEffect(() => {
     if (!home) return;
     const root = document.documentElement;
-    const row = document.querySelector<HTMLElement>("[data-testid='menu-row'] > *");
-    root.style.setProperty("--topbar-h", `${row ? Math.ceil(row.getBoundingClientRect().bottom) : 64}px`);
+    const menu = document.querySelector<HTMLElement>("[data-testid='menu-row'] > *");
+    root.style.setProperty("--topbar-h", `${menu ? Math.ceil(menu.getBoundingClientRect().bottom) : 0}px`);
     return () => { root.style.removeProperty("--topbar-h"); };
   }, [home]);
   if (panelHidden) return null;
@@ -212,7 +206,7 @@ export function MapPanel({
   // The minimized sheet: one labelled chip that restores on tap.
   const peekLabel = content ? peekChipLabel(content.title, content.peek) : "Place";
   // On the wide home it joins the chip row at the top of the left side, clear of the ask box.
-  const peekRow = home && isDesktop ? row : null;
+  const peekRow = home && wide ? row : null;
   const peekChip = body && minimized && !layersOpen ? (
     <button
       type="button"
@@ -230,18 +224,14 @@ export function MapPanel({
   const chip = peekChip && peekRow ? createPortal(peekChip, peekRow) : peekChip;
 
 
-  if (isDesktop) {
+  // The classic layout (agentHome off) keeps its floating desktop card.
+  if (isDesktop && !home) {
     return (
       <>
         {top ? <div className="absolute left-[var(--edge)] top-[var(--edge)] z-40 w-[clamp(360px,46vw,720px)]">{top}</div> : null}
         {drawer}
         {chip}
-        {inColumn && slot ? createPortal(
-          <div data-testid="details-sheet" className={cn("pointer-events-auto min-h-0 flex-col overflow-hidden rounded-[22px] border border-border bg-card text-card-foreground shadow-2xl", cardOnTop ? "flex" : "hidden")}>
-            {body}
-          </div>,
-          slot,
-        ) : showSheet ? (
+        {showSheet ? (
           <div data-testid="details-sheet" className="absolute left-[var(--edge)] top-[calc(var(--edge)+var(--topbar-h)+var(--sp-3))] z-30 flex max-h-[calc(100%-var(--edge)*2-var(--topbar-h)-var(--sp-3))] w-[360px] flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-2xl">
             {body}
           </div>
@@ -255,8 +245,8 @@ export function MapPanel({
       {top ? <div className="absolute z-30" style={{ top: "calc(env(safe-area-inset-top) + var(--edge))", left: "max(var(--edge), env(safe-area-inset-left))", right: "max(var(--edge), env(safe-area-inset-right))" }}>{top}</div> : null}
       {drawer}
       {chip}
-      {/* The phone's one sheet (owner, 2026-11-07): a line or a train opened from here comes up as the
-          sheet's next view, and Back brings this one back (src/lib/store/pullSheet.ts). */}
+      {/* The one sheet (owner, 2026-11-07): a line or a train opened from here comes up as the sheet's
+          next view, and Back brings this one back (src/lib/sheet/sheetMachine.ts). From 640 px it is the left card. */}
       {showSheet ? (
         <PullSheet testId="details-sheet" label={content?.title ?? "Place"} level={level} onLevel={(l) => setSnap(l === 0 ? "peek" : l === 1 ? "half" : "full")}
           onClose={content ? back : minimize} ownBack={Boolean(content)}
@@ -266,7 +256,7 @@ export function MapPanel({
               {minimizeBtn}
             </div>
           )}>
-          <div className="pull-sheet-body text-card-foreground">{content ? (content.details ? <div className="pt-2">{content.details}</div> : null) : place}</div>
+          <div className="pull-sheet-body text-card-foreground sm:rounded-[18px] sm:bg-card sm:px-3 sm:pb-3">{content ? (content.details ? <div className="pt-2">{content.details}</div> : null) : place}</div>
         </PullSheet>
       ) : null}
     </>

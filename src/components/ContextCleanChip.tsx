@@ -3,7 +3,7 @@ import { Layers } from "lucide-react";
 import { useFlag } from "@/lib/flags";
 import { setShowAll, useMapContextState } from "@/lib/mapContext/context";
 import { useContextClean } from "@/lib/mapContext/useContextClean";
-import { useLeftChips } from "@/lib/store/leftColumn";
+import { useLeftChips } from "@/lib/sheet/sheet";
 
 const LABEL: Record<string, string> = {
   following: "Showing your line",

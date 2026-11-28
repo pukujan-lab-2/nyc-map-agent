@@ -59,17 +59,19 @@ async function tapMyrtle(page: Page) {
   return at;
 }
 
-test("a tap where the J, M and Z meet asks which line, and a bullet opens that line", async ({ page }) => {
+test("a tap where the J, M and Z meet asks which line in the left card, and a bullet opens that line", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   const at = await tapMyrtle(page);
   const chooser = page.getByTestId("line-chooser");
   await expect(chooser).toBeVisible();
   await expect(chooser.locator("[data-line]")).toHaveText(["J", "M", "Z"]);
   await expect(chooser.getByRole("button", { name: "Myrtle Av station" })).toBeVisible();
-  // It sits just above the tapped spot.
+  // It is the top of the left card, above the ask box, not a bubble over the tapped spot.
   const b = (await chooser.boundingBox())!;
-  expect(b.y + b.height).toBeLessThanOrEqual(at.y + 1);
-  expect(Math.abs(b.x + b.width / 2 - at.x)).toBeLessThan(4);
+  const card = (await page.getByTestId("agent-card").boundingBox())!;
+  expect(b.x).toBeGreaterThanOrEqual(card.x);
+  expect(b.x + b.width).toBeLessThanOrEqual(card.x + card.width + 1);
+  expect(b.x + b.width).toBeLessThan(at.x);
   await chooser.getByRole("button", { name: "M line" }).click();
   await expect(chooser).toBeHidden();
   await expect(page.getByTestId("line-panel")).toContainText("M");

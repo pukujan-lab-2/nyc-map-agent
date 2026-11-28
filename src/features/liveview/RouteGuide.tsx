@@ -17,11 +17,13 @@ import { LOOK_CENTER_DISTANCE_M, poseAlongRoute } from "@/lib/map/walk";
 import { useDataView } from "@/lib/store/DataViewContext";
 import { setTripStep, useTripStep } from "@/lib/store/tripStep";
 import { useCssHeight } from "@/lib/useCssHeight";
+import { PullSheet } from "@/components/PullSheet";
+import { useNavBanner } from "@/lib/sheet/sheet";
+import type { SheetLevel } from "@/components/sheetSwipe";
 import { appGeo } from "@/lib/geo/devGeo";
 import { useMapState } from "@/lib/store/MapStateContext";
 import { useActiveTrip } from "@/lib/transit/activeTrip";
-import { useT } from "@/lib/i18n/appLang";
-import { openLostHelper, useLostHelper } from "@/lib/underground/lostHelper";
+import { useLostHelper } from "@/lib/underground/lostHelper";
 import { bearingTo } from "./heading";
 import { installNavLayers, readNavColors, removeNavLayers, roadNameAt, updateNavLayers } from "./layers";
 import { distanceAlong, fetchGuidedRoute, formatMetres, metresLeft, progressAt, type RouteStep } from "./steps";
@@ -58,16 +60,14 @@ interface Fix {
 export default function RouteGuide() {
   const home = useFlag("agentHome");
   const { routeStart, routeEnd, clearRoute, followingRoute } = useDataView();
-  const { walking, stopWalk, chatOpen } = useMapState();
+  const { walking, stopWalk } = useMapState();
   // Where am I opens the where-am-I helper with this walk's destination and landmark (#131).
   const walkTo = useActiveTrip()?.destination.label ?? null;
-  const t = useT();
   const lost = useLostHelper();
   const [landmarks, setLandmarks] = useState<readonly GuideLandmark[]>([]);
   const [confirmed, setConfirmed] = useState<string[]>([]);
-  const [showPhoto, setShowPhoto] = useState(false);
   useEffect(() => { void loadGuideLandmarks().then(setLandmarks).catch(() => {}); }, []);
-  useEffect(() => { setConfirmed([]); setShowPhoto(false); }, [routeStart, routeEnd]);
+  useEffect(() => { setConfirmed([]); }, [routeStart, routeEnd]);
   const shared = useSharedLocation();
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [pos, setPos] = useState<{ lon: number; lat: number; bearing: number } | null>(null);
@@ -94,7 +94,8 @@ export default function RouteGuide() {
   const active = Boolean(route) && (walking || navigating || (home && followingRoute));
   // The rest of a train or bus trip, waiting at the end of this walk.
   const tripStep = useTripStep();
-  const bottomCard = useCssHeight("--task-bottom-h");
+  const banner = useCssHeight("--task-top-h", 12);
+  const [trayLevel, setTrayLevel] = useState<SheetLevel>(1);
   useEffect(() => { if (!followingRoute && !walking && !navigating) setTripStep(null); }, [followingRoute, walking, navigating]);
 
   // Layers live while guidance is active; re-added after a style reload and on theme change.
@@ -250,55 +251,68 @@ export default function RouteGuide() {
     if (!map || !homeWalk || !here) return;
     keepInView(map, [here.lon, here.lat]);
   }, [map, homeWalk, here?.lon, here?.lat]); // eslint-disable-line react-hooks/exhaustive-deps
+  const bannerUp = useNavBanner("walk", home && active && !lost);
 
   if (!route) return null;
 
   const left = here ? metresLeft(route, here) : route.steps.reduce((s, x) => s + x.distance, 0);
 
   const checkpoint = here ? nextCheckpoint(here, heading, landmarks, confirmed) : null;
-  if (home && active) return chatOpen || lost ? null : <>
-    <section className="task-panel task-top flex items-center gap-3 px-3.5 py-3 min-[380px]:gap-3.5 min-[380px]:px-4 min-[380px]:py-3.5" aria-label="Walking guidance">
-      <TurnIcon step={progress?.next ?? null} />
-      {/* A few short lines at most, so on a small phone the walk still shows between this and the checkpoint card. */}
-      <div className="min-w-0 flex-1"><h2 className="text-base font-bold leading-tight min-[380px]:text-xl">{checkpoint ? <span className="block text-xs font-semibold text-slate-300">Walk toward</span> : null}<span className="line-clamp-3 min-[380px]:line-clamp-2">{checkpoint ? checkpoint.landmark.name : progress?.instruction ?? "Follow the walking route"}</span></h2>
-        {away ? <p className="mt-0.5 truncate text-sm font-semibold text-amber-300" role="alert" data-testid="wrong-way">{turnAroundLine(awayFrom ?? "")}</p> : <p className="mt-0.5 truncate text-sm text-slate-300">{[progress && !checkpoint ? `In ${formatMetres(progress.metresToNext)}` : progress?.instruction, street, `${Math.max(1, Math.round(left / 80))} min left`].filter(Boolean).join(" · ")}</p>}</div>
-      {arFlag && progress ? (
-        <Suspense fallback={null}>
-          <LiveViewBeta
-            compact
-            onOpenChange={liveViewOpen}
-            accuracyM={fix?.accuracy ?? null}
-            targetBearing={here ? bearingTo(here, { lon: progress.next.location[0], lat: progress.next.location[1] }) : routeBearing}
-            instruction={progress.instruction}
-            distanceLabel={formatMetres(progress.metresToNext)}
-            frame={{ route, along, next: progress.next }}
-            at={fix}
-          />
-        </Suspense>
-      ) : null}
-      <button type="button" className="task-action task-secondary h-11 w-11 shrink-0 p-0" aria-label="Stop walking guidance" onClick={() => { stopNav(); stopWalk(); clearRoute(); setTripStep(null); }}><Square size={18} /></button>
-    </section>
-    {/* Near the station the next step wins over a landmark checkpoint. */}
-    {checkpoint?.landmark.picture && !(tripStep && left < 150) ? <section ref={bottomCard} className="task-panel task-bottom flex flex-col gap-2.5 p-3.5" aria-label="Landmark checkpoint">
-      <div className="flex items-center gap-2.5">
-        <img src={checkpoint.landmark.picture.url} alt={checkpoint.landmark.name} className="h-11 w-11 shrink-0 rounded-xl border border-slate-400/25 object-cover" />
-        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug min-[380px]:text-base">See {checkpoint.landmark.name} {checkpoint.direction}?</h3>
-      </div>
-      {showPhoto ? <figure><img src={checkpoint.landmark.picture.url} alt={`Look for ${checkpoint.landmark.name}`} className="max-h-40 w-full rounded-xl object-contain" /><figcaption className="mt-1 text-xs text-slate-300">About {checkpoint.distanceM} m · {checkpoint.direction}</figcaption></figure> : null}
-      <div className="grid grid-cols-3 gap-2 text-[13px] min-[380px]:text-sm">
-        <button type="button" className="task-action min-h-11 !text-[length:inherit]" onClick={() => { setConfirmed([...confirmed, checkpoint.landmark.id]); setShowPhoto(false); }}>Yes, I see it</button>
-        <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" aria-expanded={showPhoto} onClick={() => setShowPhoto(!showPhoto)}>Not yet</button>
-        <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: checkpoint.landmark.name })}>{t("whereAmI")}</button>
-      </div>
-      <a href={checkpoint.landmark.picture.page} target="_blank" rel="noreferrer" className="block truncate text-xs text-slate-300">Photo: {checkpoint.landmark.picture.artist} · {checkpoint.landmark.picture.license}</a>
-    </section> : tripStep ? <section ref={bottomCard} className="task-panel task-bottom flex flex-col gap-2.5 p-3.5" aria-label="Next on this trip">
-      <p className="line-clamp-2 text-[15px] font-semibold leading-snug">{tripStep.then}</p>
-      <div className="grid grid-cols-2 gap-2 text-[13px] min-[380px]:text-sm">
-        <button type="button" className="task-action min-h-11 !text-[length:inherit]" onClick={() => { stopNav(); stopWalk(); tripStep.go(); }}>{tripStep.action}</button>
-        <button type="button" className="task-action task-secondary min-h-11 !text-[length:inherit]" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: null })}>{t("whereAmI")}</button>
-      </div>
-    </section> : <div ref={bottomCard} className="task-panel task-bottom"><button type="button" className="task-action task-secondary w-full" onClick={() => openLostHelper({ from: "walk", walkingTo: walkTo, landmark: null })}>{t("whereAmI")}</button></div>}
-  </>;
+  if (home && active) {
+    // An open answer no longer hides the walk: the one sheet shows whichever view is on top.
+    if (lost) return null;
+    const mins = Math.max(1, Math.round(left / 80));
+    const arrived = left <= 20;
+    const arriveAt = new Date(Date.now() + mins * 60_000).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const end = () => { stopNav(); stopWalk(); clearRoute(); setTripStep(null); };
+    // Near the station the next step of the trip wins over a landmark hint.
+    const hint = checkpoint?.landmark.picture && !(tripStep && left < 150) ? checkpoint : null;
+    return <>
+      {/* The turn banner, as Apple Maps navigates: the next turn or landmark, at the top. */}
+      {bannerUp ? <section ref={banner} className="task-panel task-top flex items-center gap-3 px-3.5 py-3 min-[380px]:gap-3.5 min-[380px]:px-4 min-[380px]:py-3.5" aria-label="Walking guidance">
+        <TurnIcon step={arrived ? { type: "arrive" } as RouteStep : progress?.next ?? null} />
+        <div className="min-w-0 flex-1"><h2 className="text-base font-bold leading-tight min-[380px]:text-xl"><span className="line-clamp-2">{arrived ? (walkTo ? `You're at ${walkTo.split(",")[0]}` : "You're here") : checkpoint ? `Walk toward ${checkpoint.landmark.name}` : progress?.instruction ?? "Follow the walking route"}</span></h2>
+          {away ? <p className="mt-0.5 truncate text-sm font-semibold text-amber-300" role="alert" data-testid="wrong-way">{turnAroundLine(awayFrom ?? "")}</p> : !arrived ? <p className="mt-0.5 truncate text-sm text-slate-300">{[progress && !checkpoint ? `In ${formatMetres(progress.metresToNext)}` : progress?.instruction, street].filter(Boolean).join(" · ")}</p> : null}</div>
+        {arFlag && progress ? (
+          <Suspense fallback={null}>
+            <LiveViewBeta
+              compact
+              onOpenChange={liveViewOpen}
+              accuracyM={fix?.accuracy ?? null}
+              targetBearing={here ? bearingTo(here, { lon: progress.next.location[0], lat: progress.next.location[1] }) : routeBearing}
+              instruction={progress.instruction}
+              distanceLabel={formatMetres(progress.metresToNext)}
+              frame={{ route, along, next: progress.next }}
+              at={fix}
+            />
+          </Suspense>
+        ) : null}
+      </section> : null}
+      {/* The rest is the sheet's: time and distance left, the next landmark as a hint, and End. */}
+      <PullSheet testId="walk-tray" label="Walking" level={trayLevel} onLevel={(l) => setTrayLevel(l || 1)}
+        header={<div className="flex min-h-11 items-center gap-2.5" data-testid="walk-left">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[17px] font-bold">{arrived ? "Arrived" : `${mins} min · ${formatMetres(left)}`}</p>
+            {arrived ? null : <p className="truncate text-[13px] text-slate-300">Arrive {arriveAt}</p>}
+          </div>
+          <button type="button" className="task-action shrink-0 bg-red-600 px-5" aria-label="End walking guidance" onClick={end}>{arrived ? "Done" : "End"}</button>
+        </div>}>
+        <div className="pull-sheet-body mt-1 flex flex-col gap-2">
+          {hint ? <div className="flex items-center gap-2.5" data-testid="walk-hint">
+            <img src={hint.landmark.picture!.url} alt="" className="h-12 w-12 shrink-0 rounded-xl border border-slate-400/25 object-cover" />
+            <div className="min-w-0 flex-1">
+              <p className="line-clamp-2 text-[15px] font-semibold leading-snug">{hint.landmark.name} {hint.direction}</p>
+              <p className="text-[13px] text-slate-300">in {formatMetres(hint.distanceM)} · <a href={hint.landmark.picture!.page} target="_blank" rel="noreferrer" className="underline-offset-2 hover:underline">Photo: {hint.landmark.picture!.artist}</a></p>
+            </div>
+          </div> : null}
+          {tripStep ? <div className="flex items-center gap-2.5" data-testid="walk-next">
+            <p className="line-clamp-2 min-w-0 flex-1 text-[15px] font-semibold leading-snug">{tripStep.then}</p>
+            <button type="button" className="task-action shrink-0 px-4" onClick={() => { stopNav(); stopWalk(); tripStep.go(); }}>{tripStep.action}</button>
+          </div> : null}
+        </div>
+      </PullSheet>
+    </>;
+  }
 
   return (
     <>

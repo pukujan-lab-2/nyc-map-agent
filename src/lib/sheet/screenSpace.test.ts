@@ -1,29 +1,30 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createActor } from "xstate";
-import { screenMachine, type ScreenEvent, type ScreenSize } from "./screenSpace";
+import { sheetMachine, type SheetEvent, type ScreenSize } from "./sheetMachine";
 
 type Surface = "task" | "voice" | "answer" | "line" | "menu";
 type Shown = "open" | "chip" | "pill" | "closed";
 
-const OPEN: Record<Surface, ScreenEvent> = {
+const OPEN: Record<Surface, SheetEvent> = {
   task: { type: "TASK", on: true },
   voice: { type: "VOICE", on: true },
   answer: { type: "ANSWER", on: true },
   line: { type: "LINE", on: true },
-  menu: { type: "MENU", on: true },
+  menu: { type: "MENU", menu: "layers" },
 };
 
-function run(size: ScreenSize, ...events: ScreenEvent[]) {
-  const closeMenu = vi.fn();
-  const actor = createActor(screenMachine.provide({ actions: { closeMenu } }), { input: { size } }).start();
+function run(size: ScreenSize, ...events: SheetEvent[]) {
+  const actor = createActor(sheetMachine, { input: { size } }).start();
   events.forEach((e) => actor.send(e));
-  const { value, context: c } = actor.getSnapshot() as unknown as { value: { answer: string; line: string }; context: Record<Surface, boolean> };
+  const { value, context: c } = actor.getSnapshot();
+  const view = value as { answer: string; line: string };
   const shown = (s: Surface): Shown => {
-    if (s === "answer") return value.answer === "none" ? "closed" : (value.answer as Shown);
-    if (s === "line") return value.line === "none" ? "closed" : (value.line as Shown);
+    if (s === "answer") return view.answer === "none" ? "closed" : (view.answer as Shown);
+    if (s === "line") return view.line === "none" ? "closed" : (view.line as Shown);
+    if (s === "menu") return c.menu !== null ? "open" : "closed";
     return c[s] ? "open" : "closed";
   };
-  return { shown, closeMenu };
+  return { shown, menu: c.menu };
 }
 
 const ALL: ScreenSize[] = ["small", "phone", "wide"];
@@ -81,8 +82,14 @@ describe("screen space: every pair that can clash (docs/PDD.md)", () => {
 });
 
 describe("screen space: chips, pills and stepping back", () => {
+  it("switching from one menu to another keeps the answer folded", () => {
+    const r = run("phone", OPEN.answer, OPEN.menu, { type: "MENU", menu: "view" });
+    expect(r.menu).toBe("view");
+    expect(r.shown("answer")).toBe("chip");
+  });
+
   it("a menu closing brings the answer back", () => {
-    expect(run("phone", OPEN.answer, OPEN.menu, { type: "MENU", on: false }).shown("answer")).toBe("open");
+    expect(run("phone", OPEN.answer, OPEN.menu, { type: "MENU", menu: null }).shown("answer")).toBe("open");
   });
 
   it("a task ending brings the answer back", () => {
@@ -91,7 +98,7 @@ describe("screen space: chips, pills and stepping back", () => {
 
   it("sending a question closes the menu and shows the answer", () => {
     const r = run("phone", OPEN.answer, OPEN.menu, { type: "SEND" });
-    expect(r.closeMenu).toHaveBeenCalled();
+    expect(r.menu).toBeNull();
     expect(r.shown("menu")).toBe("closed");
     expect(r.shown("answer")).toBe("open");
   });
