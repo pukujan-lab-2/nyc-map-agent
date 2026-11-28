@@ -1,0 +1,826 @@
+<meta charset="utf-8">
+<title>NYC Map Shell</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a page header with screen jumps, then one device frame (phone or desktop) scaled to fit. Inside: map + one sheet. */
+:root {
+  --page: #eef1f4; --page-fg: #14181f; --page-mute: #5b6573; --page-line: #d5dbe2;
+  --land: #f2efe9; --water: #b9d3e6; --park: #d4e7cc; --street: #ffffff; --street-edge: #e2ddd4; --label: #6b7280;
+  --sheet: rgba(255,255,255,0.88); --sheet-solid: #ffffff; --ink: #111827; --mute: #6b7280; --line: #e5e7eb; --fill: #f3f4f6;
+  --accent: #0a66d8; --accent-ink: #ffffff; --warn-bg: #fff4cc; --warn-ink: #6b4e00; --bad: #c62828; --nav: #12663a; --nav-ink: #ffffff;
+  --shadow: 0 6px 24px rgba(15,23,42,0.18); --you: #0a66d8; --bus: #1f4fa3;
+  --font: "Inter", -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e1117; --page-fg: #e8ebf0; --page-mute: #9aa3af; --page-line: #262c36;
+  --land: #1d2128; --water: #122233; --park: #1c2b20; --street: #2b313b; --street-edge: #2b313b; --label: #8b93a0;
+  --sheet: rgba(28,31,38,0.9); --sheet-solid: #1c1f26; --ink: #f3f4f6; --mute: #9ca3af; --line: #2f3540; --fill: #262b34;
+  --accent: #3b8cff; --accent-ink: #ffffff; --warn-bg: #3a2f0b; --warn-ink: #f7d774; --bad: #ff6b6b; --nav: #1f7a4a; --nav-ink: #ffffff;
+  --shadow: 0 6px 24px rgba(0,0,0,0.5); --you: #3b8cff; --bus: #4b7bd6; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0e1117; --page-fg: #e8ebf0; --page-mute: #9aa3af; --page-line: #262c36;
+  --land: #1d2128; --water: #122233; --park: #1c2b20; --street: #2b313b; --street-edge: #2b313b; --label: #8b93a0;
+  --sheet: rgba(28,31,38,0.9); --sheet-solid: #1c1f26; --ink: #f3f4f6; --mute: #9ca3af; --line: #2f3540; --fill: #262b34;
+  --accent: #3b8cff; --accent-ink: #ffffff; --warn-bg: #3a2f0b; --warn-ink: #f7d774; --bad: #ff6b6b; --nav: #1f7a4a; --nav-ink: #ffffff;
+  --shadow: 0 6px 24px rgba(0,0,0,0.5); --you: #3b8cff; --bus: #4b7bd6; color-scheme: dark }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--page); color: var(--page-fg); font-family: var(--font); margin: 0; }
+button { font: inherit; color: inherit; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 16px 32px; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; justify-content: space-between; }
+h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+.seg { display: inline-flex; background: var(--page-line); border-radius: 9px; padding: 2px; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--page-mute); }
+.seg button[aria-pressed="true"] { background: var(--sheet-solid); color: var(--page-fg); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.jumps { display: flex; flex-wrap: wrap; gap: 6px; }
+.jumps button { border: 1px solid var(--page-line); background: transparent; padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; color: var(--page-fg); }
+.jumps button[aria-pressed="true"] { background: var(--page-fg); color: var(--page); border-color: var(--page-fg); }
+.copied { font-size: 13px; color: var(--page-mute); min-height: 18px; }
+.copied b { color: var(--page-fg); font-weight: 600; }
+.stage { display: flex; justify-content: center; }
+.scaler { position: relative; }
+
+/* ---------- Device ---------- */
+.device { position: absolute; top: 0; left: 0; transform-origin: 0 0; overflow: hidden; background: var(--land); border-radius: 36px; box-shadow: 0 0 0 10px #111, 0 20px 50px rgba(0,0,0,.25); font-size: 15px; color: var(--ink); }
+.device.desk { border-radius: 10px; box-shadow: 0 0 0 1px var(--page-line), 0 20px 50px rgba(0,0,0,.18); }
+.mapwrap { position: absolute; inset: 0; perspective: 900px; overflow: hidden; }
+.map { position: absolute; inset: -10%; width: 120%; height: 120%; transition: transform .6s ease; transform-origin: 50% 60%; }
+.device:not(.desk) .map { top: -32%; }
+.device.desk .map { left: 5%; }
+.device.tilt-chase .map { transform: rotateX(48deg) rotateZ(-18deg) scale(1.6) translateY(4%); }
+.device.tilt-side .map { transform: rotateX(40deg) rotateZ(62deg) scale(1.5); }
+.device.tilt-overhead .map { transform: scale(0.8); }
+.device.tilt-cab .map { transform: rotateX(62deg) rotateZ(-10deg) scale(2.4) translateY(6%); }
+.svg-water { fill: var(--water); } .svg-land { fill: var(--land); } .svg-park { fill: var(--park); }
+.svg-street { stroke: var(--street); stroke-width: 7; } .svg-street-edge { stroke: var(--street-edge); stroke-width: 9; }
+.svg-label { fill: var(--label); font: 600 15px var(--font); letter-spacing: .08em; }
+.sline { fill: none; stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; transition: opacity .3s; }
+.station circle { fill: #fff; stroke: #1f2937; stroke-width: 3; }
+.station text { fill: var(--ink); font: 600 15px var(--font); paint-order: stroke; stroke: var(--land); stroke-width: 4px; }
+.station.hit { cursor: pointer; }
+.station.on circle { r: 11; stroke: var(--accent); stroke-width: 5; }
+.dim .sline:not(.keep), .dim .train:not(.keep) { opacity: .15; }
+.train { cursor: pointer; }
+.train rect { fill: #111827; }
+.train text { font: 700 13px var(--font); text-anchor: middle; dominant-baseline: central; }
+.train.followed rect { fill: var(--accent); }
+.you-ring { fill: var(--you); opacity: .18; } .you-dot { fill: var(--you); stroke: #fff; stroke-width: 3; }
+.stepmark { fill: var(--accent); stroke: #fff; stroke-width: 3; }
+.stepmark-t { fill: #fff; font: 700 14px var(--font); text-anchor: middle; dominant-baseline: central; }
+.bline { fill: none; stroke: var(--bus); stroke-width: 4; stroke-dasharray: 2 9; stroke-linecap: round; opacity: .8; }
+.bstop { cursor: pointer; } .bstop rect { fill: var(--bus); stroke: #fff; stroke-width: 3; }
+.bstop.on rect { stroke: var(--accent); stroke-width: 5; }
+.train.bus rect { fill: var(--bus); }
+.nobus .bline, .nobus .bstop, .nobus .train.bus { display: none; }
+.dim .bline:not(.keep) { opacity: .15; }
+.bb { display: inline-grid; place-items: center; min-width: 40px; height: 24px; padding: 0 6px; border-radius: 6px; background: var(--bus); color: #fff; font: 700 12px var(--font); flex: none; }
+.bb.sbs { background: #00a1de; }
+.walkroute { fill: none; stroke: var(--accent); stroke-width: 7; stroke-dasharray: 1 13; stroke-linecap: round; }
+.rpin { cursor: pointer; } .rpin > circle { fill: #0f766e; stroke: #fff; stroke-width: 3; }
+.rpin .bizpin { fill: #fff; stroke: #7c3aed; stroke-width: 3; } .rpin .wcbadge { fill: #0f766e; stroke: #fff; stroke-width: 2; }
+.rpin.on > circle, .rpin.on .bizpin { stroke: var(--accent); stroke-width: 5; }
+.ricon { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.ricon.pub { background: #0f766e; } .ricon.biz { background: #fff; border: 2px solid #7c3aed; border-radius: 8px; }
+.norest .rpin { display: none; }
+.photo { height: 120px; border-radius: 10px; background: linear-gradient(180deg, #c9d6e3 0 35%, #8d6e57 35% 100%); position: relative; overflow: hidden; }
+.photo::before { content: ""; position: absolute; left: 12%; right: 12%; bottom: 0; height: 52%; background: linear-gradient(90deg, #f3e1c7 0 30%, #2b2b2b 30% 42%, #f3e1c7 42%); border-top: 10px solid #1f2937; }
+.photo span { position: absolute; left: 10px; bottom: 8px; background: rgba(0,0,0,.6); color: #fff; font-size: 12px; padding: 3px 7px; border-radius: 6px; }
+.thumb { width: 56px; height: 56px; border-radius: 8px; flex: none; background: linear-gradient(180deg, #b7c9da 0 40%, #6b7280 40%); }
+.facts { display: flex; flex-wrap: wrap; gap: 6px; }
+.fact { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: var(--fill); }
+.fact.ok { background: #dcfce7; color: #14532d; } .fact.warn { background: var(--warn-bg); color: var(--warn-ink); }
+.skipx { stroke: var(--bad); stroke-width: 4; stroke-linecap: round; }
+
+/* ---------- Map buttons (Apple: top-right stacked pair; compass under it) ---------- */
+.mapbtns { position: absolute; top: 56px; right: 12px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end; z-index: 5; }
+.device.desk .mapbtns { top: 16px; right: 16px; }
+.btnpair { display: flex; flex-direction: column; background: var(--sheet); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.btnpair button { width: 44px; height: 44px; border: 0; background: transparent; display: grid; place-items: center; cursor: pointer; color: var(--accent); }
+.btnpair button + button { border-top: 1px solid var(--line); }
+.compass { width: 44px; height: 44px; border-radius: 50%; background: var(--sheet); box-shadow: var(--shadow); display: grid; place-items: center; font: 700 12px var(--font); color: var(--bad); border: 0; cursor: pointer; }
+.zoom { position: absolute; right: 16px; bottom: 16px; z-index: 5; }
+.device:not(.desk) .zoom { display: none; }
+
+/* ---------- The one sheet (phone: bottom sheet; desktop/tablet: left card) ---------- */
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--sheet); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-radius: 14px 14px 0 0; box-shadow: 0 -4px 24px rgba(15,23,42,.16); display: flex; flex-direction: column; transition: height .3s ease; }
+.sheet[data-snap="peek"] { height: 112px; }
+.sheet[data-snap="half"] { height: 50%; }
+.sheet[data-snap="full"] { height: calc(100% - 50px); }
+.sheet[data-snap="tray"] { height: 300px; }
+.device.desk .sheet { left: 16px; right: auto; top: 16px; bottom: 16px; width: 380px; height: auto !important; border-radius: 12px; box-shadow: var(--shadow); }
+.device.desk .sheet[data-snap="peek"] { top: auto; height: 84px !important; }
+.grab { height: 22px; display: grid; place-items: center; cursor: grab; flex: none; touch-action: none; border: 0; background: transparent; width: 100%; }
+.grab::before { content: ""; width: 38px; height: 5px; border-radius: 3px; background: var(--line); }
+.device.desk .grab { display: none; }
+.body { flex: 1; min-height: 0; overflow-y: auto; padding: 0 16px 12px; display: flex; flex-direction: column; gap: 14px; }
+.sheet[data-snap="peek"] .body { display: none; }
+.body > * { flex-shrink: 0; }
+.device.desk .body { padding-top: 16px; }
+.chat { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 12px 26px; border-top: 1px solid var(--line); }
+.sheet[data-snap="peek"] .chat { border-top: 0; }
+.device.desk .chat { padding-bottom: 14px; }
+.field { flex: 1; min-width: 0; height: 44px; border-radius: 10px; background: var(--fill); display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px; color: var(--mute); }
+.field input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; color: var(--ink); outline: none; }
+.field input::placeholder { color: var(--mute); }
+.mic { width: 32px; height: 32px; border: 0; background: transparent; color: var(--mute); display: grid; place-items: center; cursor: pointer; }
+.wave { width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; cursor: pointer; flex: none; }
+.me { width: 40px; height: 40px; border: 0; border-radius: 50%; background: var(--fill); color: var(--ink); display: grid; place-items: center; cursor: pointer; flex: none; }
+
+/* ---------- Card parts ---------- */
+.head { display: flex; align-items: flex-start; gap: 10px; }
+.head .t { flex: 1; min-width: 0; }
+.head h2 { margin: 0; font-size: 22px; line-height: 1.15; letter-spacing: -0.015em; text-wrap: balance; }
+.head p { margin: 3px 0 0; color: var(--mute); font-size: 14px; }
+.x { width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--fill); color: var(--mute); display: grid; place-items: center; cursor: pointer; flex: none; }
+.back { width: 32px; height: 32px; border: 0; background: transparent; color: var(--accent); display: grid; place-items: center; cursor: pointer; flex: none; margin-left: -6px; }
+.actions { display: flex; gap: 8px; }
+.act { flex: 1; min-height: 52px; border: 0; border-radius: 10px; background: var(--fill); color: var(--accent); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.act.primary { background: var(--accent); color: var(--accent-ink); }
+.act.stop { background: var(--bad); color: #fff; }
+.group { background: var(--sheet-solid); border-radius: 10px; overflow: hidden; }
+.sect { font-size: 13px; font-weight: 600; color: var(--mute); margin: 0 0 -6px 4px; }
+.row { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 12px; border: 0; background: transparent; width: 100%; text-align: left; cursor: pointer; font-size: 15px; }
+.row + .row { border-top: 1px solid var(--line); }
+.row .grow { flex: 1; min-width: 0; }
+.row .sub { display: block; color: var(--mute); font-size: 13px; }
+.row .end { color: var(--mute); font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row .end b { color: var(--ink); }
+.row.lit { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.chev { color: var(--mute); }
+.fav { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.fav button { border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--ink); }
+.fav .ic { width: 52px; height: 52px; border-radius: 50%; background: var(--fill); display: grid; place-items: center; color: var(--accent); }
+.notice { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--warn-bg); color: var(--warn-ink); border: 0; width: 100%; text-align: left; cursor: pointer; font-size: 14px; font-weight: 500; }
+.notice .grow { flex: 1; min-width: 0; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--sheet-solid); border-radius: 8px; padding: 7px 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--sheet-solid); border-color: var(--ink); }
+.bul { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 700 14px var(--font); color: #fff; flex: none; }
+.bul.sm { width: 22px; height: 22px; font-size: 12px; }
+.bul.y { color: #111; }
+.bul-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.bul-row button { border: 0; padding: 0; background: transparent; cursor: pointer; border-radius: 50%; }
+.bul-row button[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--accent); }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tile { border: 2px solid transparent; border-radius: 10px; background: var(--sheet-solid); padding: 6px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.tile[aria-pressed="true"] { border-color: var(--accent); }
+.tile .pic { height: 64px; border-radius: 7px; }
+.pic.p-map { background: linear-gradient(90deg, transparent 47%, #fff 47% 53%, transparent 53%), linear-gradient(0deg, transparent 47%, #fff 47% 53%, transparent 53%), #e9e4da; }
+.pic.p-3d { background: linear-gradient(160deg, #cfd8e3 0 30%, transparent 30%), repeating-linear-gradient(90deg, #b8c2cf 0 14px, #9aa6b5 14px 22px, transparent 22px 30px), #e9e4da; }
+.pic.p-street { background: linear-gradient(180deg, #a9cdf0 0 45%, #8f9aa6 45% 70%, #6b7280 70%); }
+.toggle { width: 46px; height: 28px; border-radius: 14px; background: var(--line); position: relative; flex: none; transition: background .2s; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .2s; }
+.toggle.on { background: #34c759; } .toggle.on::after { left: 21px; }
+.diagram { list-style: none; margin: 0; padding: 0 12px; }
+.diagram li { display: flex; align-items: center; gap: 10px; min-height: 30px; font-size: 14px; position: relative; }
+.diagram li::before { content: ""; position: absolute; left: 7px; top: 0; bottom: 0; width: 3px; background: #00933c; }
+.diagram li:first-child::before { top: 50%; } .diagram li:last-child::before { bottom: 50%; }
+.diagram .dot { width: 17px; height: 17px; border-radius: 50%; background: var(--sheet-solid); border: 3px solid #00933c; position: relative; flex: none; }
+.diagram .skip { text-decoration: line-through; color: var(--mute); }
+.tag { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 5px; background: var(--bad); color: #fff; }
+.steps { counter-reset: s; }
+.steps .row { align-items: flex-start; }
+.num { width: 26px; height: 26px; border-radius: 50%; background: var(--fill); display: grid; place-items: center; font-size: 13px; font-weight: 700; flex: none; }
+.row.lit .num { background: var(--accent); color: var(--accent-ink); }
+.answer { font-size: 17px; line-height: 1.4; margin: 0; }
+.q { align-self: flex-end; background: var(--accent); color: var(--accent-ink); padding: 8px 12px; border-radius: 12px 12px 4px 12px; font-size: 14px; max-width: 85%; }
+.small { font-size: 13px; color: var(--mute); margin: 0; }
+
+/* ---------- Follow banner (Apple navigation) ---------- */
+.banner { position: absolute; left: 8px; right: 8px; top: 48px; z-index: 9; background: var(--nav); color: var(--nav-ink); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
+.device.desk .banner { left: 16px; right: auto; width: 380px; top: 16px; }
+.device.desk.following .sheet { top: 104px; }
+.banner .big { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.banner .sm { font-size: 14px; opacity: .85; }
+.device.following .mapbtns { top: 136px; }
+.device.desk.following .mapbtns { top: 16px; }
+
+/* ---------- Street view ---------- */
+.street { position: absolute; inset: 0; z-index: 20; background: linear-gradient(180deg, #a9cdf0 0 42%, #9aa4b0 42%); overflow: hidden; }
+.street .bldg { position: absolute; bottom: 30%; }
+.street .road { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: linear-gradient(180deg, #7b8490, #5b636e); }
+.street .road::after { content: ""; position: absolute; left: 50%; top: 10%; bottom: 0; width: 8px; transform: translateX(-50%); background: repeating-linear-gradient(180deg, #f5d142 0 30px, transparent 30px 60px); }
+.street .top { position: absolute; top: 48px; left: 12px; right: 12px; display: flex; gap: 8px; align-items: center; }
+.device.desk .street .top { top: 16px; left: 16px; right: auto; }
+.pillbtn { height: 44px; border-radius: 10px; border: 0; background: var(--sheet); backdrop-filter: blur(14px); box-shadow: var(--shadow); padding: 0 14px; display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; }
+.street .mini { position: absolute; left: 12px; bottom: 34px; width: 140px; height: 140px; border-radius: 10px; overflow: hidden; border: 3px solid #fff; box-shadow: var(--shadow); background: var(--land); }
+.device.desk .street .mini { width: 220px; height: 160px; bottom: 16px; left: 16px; }
+.simbar { position: absolute; left: 12px; right: 12px; bottom: 34px; background: var(--sheet); backdrop-filter: blur(14px); border-radius: 12px; box-shadow: var(--shadow); padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.device.desk .simbar { left: 252px; right: auto; width: 380px; bottom: 16px; }
+.street.sim .mini { bottom: 196px; }
+.device.desk .street.sim .mini { bottom: 16px; }
+.simstep { font-size: 18px; font-weight: 700; }
+.simprog { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.simprog span { display: block; height: 100%; width: 0; background: var(--accent); }
+.street.sim .road::after { animation: dash .5s linear infinite; }
+.street.sim.paused .road::after { animation-play-state: paused; }
+.street.sim .bldg { animation: drift 6s linear infinite alternate; transform-origin: 50% 100%; }
+.street.sim.paused .bldg { animation-play-state: paused; }
+@keyframes dash { to { background-position: 0 60px; } }
+@keyframes drift { to { transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) { .street.sim .road::after, .street.sim .bldg { animation: none; } }
+.street .go-in { position: absolute; right: 12px; bottom: 34px; }
+.device.desk .street .go-in { bottom: 16px; right: 16px; }
+
+/* Hint for what's tappable */
+.hint { position: absolute; z-index: 4; left: 50%; transform: translateX(-50%); top: 60px; font-size: 12px; background: var(--sheet); padding: 5px 10px; border-radius: 8px; box-shadow: var(--shadow); color: var(--mute); white-space: nowrap; pointer-events: none; }
+.device.desk .hint { top: 16px; left: 55%; }
+@media (prefers-reduced-motion: reduce) { .map, .sheet, .toggle, .toggle::after { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>NYC map: the Apple Maps layout</h1>
+    <div class="seg" role="group" aria-label="Device">
+      <button type="button" id="dev-phone" aria-pressed="true">Phone</button>
+      <button type="button" id="dev-desk" aria-pressed="false">Desktop</button>
+    </div>
+  </header>
+  <div class="jumps" id="jumps" role="group" aria-label="Screens"></div>
+  <div class="copied" id="copied"></div>
+  <div class="stage"><div class="scaler" id="scaler"><div class="device" id="device">
+    <div class="mapwrap"><svg class="map" id="map" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" aria-label="Map of Lower Manhattan">
+      <g id="mapcontent">
+        <rect class="svg-water" x="0" y="0" width="1000" height="1000"/>
+        <path class="svg-land" d="M250 0 L700 0 L690 300 L640 520 L600 700 L540 830 L470 880 L420 860 L380 760 L330 560 L280 300 Z"/>
+        <path class="svg-land" d="M760 380 L1000 340 L1000 1000 L700 1000 L690 840 L740 640 Z"/>
+        <path class="svg-park" d="M420 800 L470 790 L500 850 L465 872 L425 855 Z"/>
+        <g id="streets">
+          <g class="svg-street-edge" stroke-linecap="round"><line x1="300" y1="80" x2="620" y2="40"/><line x1="310" y1="200" x2="650" y2="160"/><line x1="320" y1="320" x2="660" y2="280"/><line x1="340" y1="440" x2="650" y2="400"/><line x1="360" y1="560" x2="630" y2="520"/><line x1="380" y1="680" x2="600" y2="650"/><line x1="560" y1="0" x2="470" y2="860"/><line x1="440" y1="0" x2="390" y2="700"/><line x1="660" y1="0" x2="600" y2="680"/><line x1="770" y1="500" x2="1000" y2="470"/><line x1="740" y1="700" x2="1000" y2="660"/><line x1="860" y1="360" x2="830" y2="1000"/></g>
+          <g class="svg-street" stroke-linecap="round"><line x1="300" y1="80" x2="620" y2="40"/><line x1="310" y1="200" x2="650" y2="160"/><line x1="320" y1="320" x2="660" y2="280"/><line x1="340" y1="440" x2="650" y2="400"/><line x1="360" y1="560" x2="630" y2="520"/><line x1="380" y1="680" x2="600" y2="650"/><line x1="560" y1="0" x2="470" y2="860"/><line x1="440" y1="0" x2="390" y2="700"/><line x1="660" y1="0" x2="600" y2="680"/><line x1="770" y1="500" x2="1000" y2="470"/><line x1="740" y1="700" x2="1000" y2="660"/><line x1="860" y1="360" x2="830" y2="1000"/></g>
+        </g>
+        <text class="svg-label" x="120" y="520">HUDSON RIVER</text>
+        <text class="svg-label" x="780" y="300" transform="rotate(-12 780 300)">EAST RIVER</text>
+        <text class="svg-label" x="820" y="560">BROOKLYN</text>
+        <g id="lines">
+          <path id="l-45" class="sline" stroke="#00933c" d="M600 0 L585 260 L560 450 L540 560 L525 650 L470 770 L560 790 L760 760 L900 740"/>
+          <path id="l-23" class="sline" stroke="#ee352e" d="M380 0 L405 300 L430 450 L470 520 L540 560 L570 640 L720 620 L900 600"/>
+          <path id="l-ac" class="sline" stroke="#0039a6" d="M330 0 L370 300 L420 445 L540 560 L640 560 L760 545 L960 520" transform="translate(0 8)"/>
+          <path id="l-jz" class="sline" stroke="#996633" d="M720 200 L620 380 L560 450 L540 560 L520 690"/>
+        </g>
+        <g id="buslines">
+          <path id="b-m15" class="bline" d="M690 300 L650 500 L610 640 L560 780 L480 860"/>
+          <path id="b-m55" class="bline" d="M555 50 L470 860"/>
+          <path id="b-m22" class="bline" d="M330 452 L650 410"/>
+        </g>
+        <g id="busstops"></g>
+        <g id="walk"></g>
+        <g id="rpins"></g>
+        <g id="steps"></g>
+        <g id="trains"></g>
+        <g id="stations"></g>
+        <g id="you"><circle class="you-ring" cx="470" cy="610" r="34"/><circle class="you-dot" cx="470" cy="610" r="10"/></g>
+      </g>
+    </svg></div>
+
+    <div class="mapbtns" id="mapbtns">
+      <div class="btnpair">
+        <button type="button" id="btn-style" aria-label="Map style and layers"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></button>
+        <button type="button" id="btn-locate" aria-label="Center on my location"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
+      </div>
+      <button type="button" class="compass" id="compass" aria-label="Face north" hidden>N</button>
+    </div>
+    <div class="zoom"><div class="btnpair"><button type="button" aria-label="Zoom in">+</button><button type="button" aria-label="Zoom out">−</button></div></div>
+
+    <div class="banner" id="banner" hidden></div>
+    <div class="hint" id="hint">Tap a train or a station</div>
+
+    <div class="sheet" id="sheet" data-snap="half">
+      <button type="button" class="grab" id="grab" aria-label="Resize the sheet"></button>
+      <div class="body" id="body"></div>
+      <form class="chat" id="chat" autocomplete="off">
+        <label class="field"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><input id="ask" placeholder="Ask anything" aria-label="Ask anything"><button type="button" class="mic" aria-label="Dictate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4"/></svg></button></label>
+        <button type="button" class="wave" aria-label="Talk hands-free"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M2 10v3M6 6v11M10 3v18M14 8v7M18 5v13M22 10v3"/></svg></button>
+        <button type="button" class="me" id="btn-me" aria-label="You and more"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+      </form>
+    </div>
+
+    <div class="street" id="street" hidden>
+      <div class="bldg" style="left:0;width:32%;height:46%;background:linear-gradient(90deg,#8a7a6a,#a08f7c)"></div>
+      <div class="bldg" style="left:28%;width:14%;height:38%;background:#7d8896"></div>
+      <div class="bldg" style="right:0;width:34%;height:52%;background:linear-gradient(270deg,#6f7b8a,#8995a3)"></div>
+      <div class="bldg" style="right:30%;width:12%;height:34%;background:#9a8b78"></div>
+      <div class="road"></div>
+      <div class="top"><button type="button" class="pillbtn" id="street-back" aria-label="Back to the map"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Fulton St &amp; Broadway</button></div>
+      <div class="mini"><svg viewBox="300 420 400 300" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"><use href="#mapcontent"/></svg></div>
+      <button type="button" class="pillbtn go-in" id="go-in">Walk inside Fulton St</button>
+      <div class="simbar" id="simbar" hidden>
+        <div class="simstep" id="simstep">Head down Dey St</div>
+        <div class="simprog"><span id="simfill"></span></div>
+        <div class="actions"><button type="button" class="act" id="simpause" style="min-height:44px">Pause</button><button type="button" class="act primary" id="simgo" style="min-height:44px">Walk me there</button></div>
+      </div>
+    </div>
+  </div></div></div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const device = $("device"), sheet = $("sheet"), body = $("body"), map = $("map");
+  const LINES = {
+    "4": { c: "#00933c", path: "l-45" }, "5": { c: "#00933c", path: "l-45" },
+    "2": { c: "#ee352e", path: "l-23" }, "3": { c: "#ee352e", path: "l-23" },
+    "A": { c: "#0039a6", path: "l-ac" }, "C": { c: "#0039a6", path: "l-ac" },
+    "J": { c: "#996633", path: "l-jz" }, "Z": { c: "#996633", path: "l-jz" },
+    "M15": { bus: true, sbs: true, path: "b-m15" }, "M55": { bus: true, path: "b-m55" }, "M22": { bus: true, path: "b-m22" },
+  };
+  const bul = (l, sm) => LINES[l].bus ? `<span class="bb${LINES[l].sbs ? " sbs" : ""}">${l}${LINES[l].sbs ? "+" : ""}</span>` : `<span class="bul${sm ? " sm" : ""}" style="background:${LINES[l].c}">${l}</span>`;
+  const BUSSTOPS = [
+    { id: "water", name: "Water St & Fulton St", x: 638, y: 540, routes: ["M15"] },
+    { id: "bway", name: "Broadway & Fulton St", x: 501, y: 560, routes: ["M55"] },
+    { id: "chambers", name: "Chambers St & Broadway", x: 495, y: 437, routes: ["M22", "M55"] },
+  ];
+  const STATIONS = [
+    { id: "fulton", name: "Fulton St", x: 540, y: 560, lines: ["2","3","4","5","A","C","J","Z"] },
+    { id: "wall", name: "Wall St", x: 525, y: 650, lines: ["4","5"] },
+    { id: "bowling", name: "Bowling Green", x: 470, y: 770, lines: ["4","5"] },
+    { id: "chambers", name: "Chambers St", x: 420, y: 445, lines: ["A","C","2","3"] },
+    { id: "borough", name: "Borough Hall", x: 760, y: 760, lines: ["4","5","2","3"] },
+  ];
+  const ICON = {
+    restroom: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="7" cy="4" r="2"/><circle cx="17" cy="4" r="2"/><path d="M5 22v-7H3l2-7h4l2 7H9v7M17 8v14M14 8h6v6h-6z"/></svg>',
+    train: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 11h14M8 21l2-4M16 21l-2-4"/><circle cx="9" cy="14" r=".5"/><circle cx="15" cy="14" r=".5"/></svg>',
+    trip: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>',
+    exit: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M13 4h3a2 2 0 0 1 2 2v14M2 20h3M13 20h9M10 12v.01M13 4.56v16.157a.5.5 0 0 1-.68.465l-4-1.47a2 2 0 0 1-1.32-1.88V5.355a2 2 0 0 1 1.32-1.88l4-1.47a.5.5 0 0 1 .68.465z"/></svg>',
+    x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+    back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+    chev: '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>',
+    warn: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>',
+    play: '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg>',
+    follow: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+    walk: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="13" cy="4" r="2"/><path d="m9 20 3-6 3 3v4M6 12l3-4 4 1 3 4"/></svg>',
+    door: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 21h18M6 21V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v17M14 12v.01"/></svg>',
+    street: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v6M9 21l3-8 3 8M8 11h8"/></svg>',
+  };
+
+  // ---------- Map: stations, trains ----------
+  const NS = "http://www.w3.org/2000/svg";
+  const sg = $("stations");
+  for (const s of STATIONS) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "station hit"); g.dataset.id = s.id;
+    g.innerHTML = `<circle cx="${s.x}" cy="${s.y}" r="${s.id === "fulton" ? 10 : 8}"/><text x="${s.x + 16}" y="${s.y + 5}">${s.name}</text>`;
+    g.addEventListener("click", () => go("station", { station: s.id }));
+    sg.appendChild(g);
+  }
+  const bsg = $("busstops");
+  for (const b of BUSSTOPS) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", "bstop"); g.dataset.id = b.id;
+    g.innerHTML = `<rect x="${b.x - 9}" y="${b.y - 9}" width="18" height="18" rx="4"/>`;
+    g.addEventListener("click", (e) => { e.stopPropagation(); go("busstop", { busstop: b.id }); });
+    bsg.appendChild(g);
+  }
+  const RICON = {
+    public: '<circle cx="7" cy="4" r="2"/><circle cx="17" cy="4" r="2"/><path d="M5 22v-7H3l2-7h4l2 7H9v7M17 8v14M14 8h6v6h-6z"/>',
+    cafe: '<path d="M10 2v2M14 2v2M6 2v2M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>',
+    deli: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+  };
+  const rIcon = (kind, size, color) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${RICON[kind]}</svg>`;
+  const RESTROOMS = [
+    { id: "fcenter", x: 585, y: 515, biz: false, kind: "public" },
+    { id: "cafe", x: 440, y: 655, biz: true, kind: "cafe" },
+    { id: "deli", x: 610, y: 610, biz: true, kind: "deli" },
+  ];
+  const rg = $("rpins");
+  for (const r of RESTROOMS) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", r.biz ? "rpin biz" : "rpin"); g.dataset.id = r.id;
+    g.innerHTML = r.biz
+      ? `<rect x="${r.x - 18}" y="${r.y - 18}" width="36" height="36" rx="8" class="bizpin"/><svg x="${r.x - 11}" y="${r.y - 11}" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${RICON[r.kind]}</svg><circle cx="${r.x + 16}" cy="${r.y - 16}" r="10" class="wcbadge"/><svg x="${r.x + 9}" y="${r.y - 23}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round">${RICON.public}</svg>`
+      : `<circle cx="${r.x}" cy="${r.y}" r="18"/><svg x="${r.x - 11}" y="${r.y - 11}" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round">${RICON.public}</svg>`;
+    g.addEventListener("click", (e) => { e.stopPropagation(); go(r.biz ? "rbiz" : "rpublic", { rest: r.id }); });
+    rg.appendChild(g);
+  }
+  const TRAINS = [
+    { id: "t4", line: "4", path: "l-45", at: 0.42, speed: 0.012 },
+    { id: "t2", line: "2", path: "l-23", at: 0.25, speed: 0.01 },
+    { id: "tA", line: "A", path: "l-ac", at: 0.55, speed: 0.009 },
+    { id: "tJ", line: "J", path: "l-jz", at: 0.2, speed: 0.008 },
+    { id: "t5", line: "5", path: "l-45", at: 0.8, speed: 0.011 },
+    { id: "bM15", line: "M15", path: "b-m15", at: 0.3, speed: 0.006, bus: true },
+    { id: "bM55", line: "M55", path: "b-m55", at: 0.55, speed: 0.005, bus: true },
+    { id: "bM22", line: "M22", path: "b-m22", at: 0.4, speed: 0.007, bus: true },
+  ];
+  const tg = $("trains");
+  for (const t of TRAINS) {
+    const g = document.createElementNS(NS, "g");
+    g.setAttribute("class", t.bus ? "train bus" : "train"); g.dataset.id = t.id; g.dataset.line = t.line;
+    g.innerHTML = t.bus
+      ? `<rect x="-26" y="-14" width="52" height="28" rx="6"/><text fill="#fff">${t.line}</text>`
+      : `<rect x="-17" y="-17" width="34" height="34" rx="7"/><circle r="12" fill="${LINES[t.line].c}"/><text fill="#fff">${t.line}</text>`;
+    g.addEventListener("click", (e) => { e.stopPropagation(); go("train", { train: t.id }); });
+    tg.appendChild(g); t.el = g; t.pathEl = $(t.path); t.len = t.pathEl.getTotalLength();
+  }
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let last = performance.now();
+  function tick(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    for (const t of TRAINS) {
+      if (!reduce) t.at = (t.at + t.speed * dt) % 1;
+      const p = t.pathEl.getPointAtLength(t.at * t.len);
+      t.el.setAttribute("transform", `translate(${p.x} ${p.y})`);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---------- State ----------
+  const st = { screen: "idle", snap: "half", desk: false, station: "fulton", busstop: "water", rest: "cafe", train: "t4", cam: "chase", stepLit: 0, isolate: null, view: "map", layers: { trains: true, buses: false, restrooms: true }, time: "wday", stop: "Wall St", stack: [] };
+
+  const SCREENS = [
+    ["idle", "Home", "<b>Apple Maps home.</b> One sheet. Collapsed it is just the chat bar; pulled up, our four tasks sit where Apple puts Home and Work."],
+    ["style", "Map style", "<b>Apple's map-style card</b> (Google's Layers sheet is the same idea). Map, 3D and Street, plus live trains, buses and restrooms."],
+    ["train", "A train", "<b>Apple/Google transit card,</b> opened by tapping a train or a bus. Line, where it's going, next stops with estimates, Follow."],
+    ["follow", "Following", "<b>Apple navigation.</b> Banner on top, tray at the bottom. Our camera views (Map, Chase, Side, Overhead, Street) live in the tray."],
+    ["restroom", "Restroom", "<b>Google Maps route preview.</b> The closest open restroom is picked and drawn, public or business. If it's a business, a free one shows under it when it's open and at most 5 minutes further. All restrooms nearby opens the full list; tap any open one to pick it."],
+    ["rsim", "Street view preview", "<b>Google's route preview in Street View.</b> Plays the walk at street level before you go; Walk me there starts it for real."],
+    ["rbiz", "Café restroom", "<b>Apple place card</b> for a business: photo, hours, and one warning that the restroom may be for customers only."],
+    ["rwalk", "Restroom walk", "<b>Apple walking navigation.</b> Turn banner on top, dotted route, and our landmark photo check in the tray."],
+    ["rdone", "Arrived", "<b>Apple's after-visit prompt,</b> one question: was the restroom available? Then a few quick follow-ups anyone can skip (pay, customers only, code)."],
+    ["busstop", "Buses", "<b>Google Maps bus stop card.</b> Live buses is a switch in the map card. Buses carry their route; a stop lists the next buses with times, and tapping one opens it like a train."],
+    ["station", "Station", "<b>Google Maps station card.</b> Departures with estimates, the notice row, line bullets that isolate a line."],
+    ["notice", "Notice", "<b>Google service alert,</b> opened from the notice row. Our station-by-station strip and the time buttons."],
+    ["walk", "Notice walk", "<b>Apple's directions step list.</b> Each step says what to do and where; tapping a step moves the map there."],
+    ["answer", "Answer", "<b>Apple search result card.</b> The agent's answer opens in the same sheet, with one main action."],
+    ["me", "You and more", "<b>Apple's account card.</b> Settings and memory, then the pages that left the map: City data, presenter, recorder, QR."],
+    ["street", "Street view", "<b>Google Street View.</b> Full screen, back on the top left, small map bottom left."],
+  ];
+  const jumps = $("jumps");
+  // The top row only starts each flow; the steps inside are reached by tapping, as in the app.
+  const STEPS_INSIDE = new Set(["follow", "rsim", "rbiz", "rwalk", "rdone", "walk", "answer"]);
+  for (const [id, label] of SCREENS) {
+    if (STEPS_INSIDE.has(id)) continue;
+    const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.dataset.id = id;
+    b.addEventListener("click", () => { st.stack = []; go(id, id === "restroom" ? { rest: "cafe", rlist: false } : {}, true); });
+    jumps.appendChild(b);
+  }
+
+  function go(screen, opts = {}, fromJump) {
+    if (!fromJump && st.screen !== screen && !["idle"].includes(screen)) st.stack.push(st.screen);
+    if (screen === "idle") st.stack = [];
+    Object.assign(st, opts);
+    st.answered = null; st.q = 0;
+    if (screen === "restroom" && st.screen !== "restroom") st.rlist = false;
+    if (screen === "busstop") st.layers.buses = true;
+    st.screen = screen;
+    const snaps = { idle: "half", style: "half", train: "half", busstop: "half", restroom: "half", rbiz: "half", rpublic: "half", rwalk: "half", rdone: "half", rsim: "peek", follow: "tray", station: "half", notice: "full", walk: "half", answer: "half", me: "half", street: "half" };
+    st.snap = snaps[screen];
+    if (screen === "follow") st.stack = ["train"];
+    render();
+  }
+  function back() { const prev = st.stack.pop(); if (prev) { st.screen = prev; st.snap = prev === "notice" ? "full" : "half"; render(); } else go("idle"); }
+
+  const head = (title, sub, { backBtn } = {}) => `<div class="head">${backBtn || st.stack.length ? `<button type="button" class="back" data-act="back" aria-label="Back">${ICON.back}</button>` : ""}<div class="t"><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div><button type="button" class="x" data-act="close" aria-label="Close">${ICON.x}</button></div>`;
+
+  const VIEWS = {
+    idle: () => `
+      <div class="fav">
+        <button type="button" data-go="restroom" data-rest="cafe"><span class="ic">${ICON.restroom}</span>Restroom</button>
+        <button type="button" data-go="station"><span class="ic">${ICON.train}</span>My train</button>
+        <button type="button" data-go="answer"><span class="ic">${ICON.trip}</span>Plan trip</button>
+        <button type="button" data-go="exit"><span class="ic">${ICON.exit}</span>Find exit</button>
+      </div>
+      <p class="sect">Near you</p>
+      <div class="group">
+        <button type="button" class="row" data-go="station"><span class="bul-row">${bul("4",1)}${bul("5",1)}</span><span class="grow">Fulton St<span class="sub">2 min walk</span></span><span class="end"><b>2</b>, 6 min</span>${ICON.chev}</button>
+        <button type="button" class="row" data-go="station"><span class="bul-row">${bul("A",1)}${bul("C",1)}</span><span class="grow">Fulton St<span class="sub">3 min walk</span></span><span class="end"><b>4</b>, 11 min</span>${ICON.chev}</button>
+        ${st.layers.buses ? `<button type="button" class="row" data-go="busstop">${bul("M15")}<span class="grow">Water St &amp; Fulton St<span class="sub">4 min walk</span></span><span class="end"><b>1</b>, 9 min</span>${ICON.chev}</button>` : ""}
+      </div>`,
+    style: () => `
+      ${head("Map", "")}
+      <div class="tiles">
+        ${[["map","Map","p-map"],["3d","3D","p-3d"],["street","Street","p-street"]].map(([id, l, p]) => `<button type="button" class="tile" data-view="${id}" aria-pressed="${st.view === id}"><span class="pic ${p}"></span>${l}</button>`).join("")}
+      </div>
+      <div class="group">
+        ${[["trains","Live trains"],["buses","Live buses"],["restrooms","Restrooms"]].map(([k, l]) => `<button type="button" class="row" data-layer="${k}" aria-pressed="${st.layers[k]}"><span class="grow">${l}</span><span class="toggle ${st.layers[k] ? "on" : ""}"></span></button>`).join("")}
+        <button type="button" class="row"><span class="grow">More layers</span>${ICON.chev}</button>
+      </div>`,
+    train: () => {
+      const t = TRAINS.find((x) => x.id === st.train) || TRAINS[0];
+      if (t.bus) return `
+      <div class="head">${st.stack.length ? `<button type="button" class="back" data-act="back" aria-label="Back">${ICON.back}</button>` : ""}${bul(t.line)}<div class="t"><h2>to South Ferry</h2><p>Select Bus Service · on time</p></div><button type="button" class="x" data-act="close" aria-label="Close">${ICON.x}</button></div>
+      <div class="actions">
+        <button type="button" class="act primary" data-go="follow">${ICON.follow}Follow</button>
+        <button type="button" class="act" data-go="busstop">${ICON.door}Stops</button>
+      </div>
+      <button type="button" class="notice" data-go="busstop">${ICON.warn}<span class="grow">Detoured off Water St at Wall St until Friday</span>${ICON.chev}</button>
+      <p class="sect">Next stops</p>
+      <div class="group">
+        ${[["Water St & Fulton St","1 min"],["Pearl St & Wall St","4 min"],["Whitehall St","7 min"],["South Ferry","9 min"]].map(([n, m]) => `<div class="row"><span class="grow">${n}</span><span class="end">${m}</span></div>`).join("")}
+      </div>`;
+      return `
+      <div class="head">${st.stack.length ? `<button type="button" class="back" data-act="back" aria-label="Back">${ICON.back}</button>` : ""}${bul(t.line)}<div class="t"><h2>to Crown Hts–Utica Av</h2><p>Express · 1 min late</p></div><button type="button" class="x" data-act="close" aria-label="Close">${ICON.x}</button></div>
+      <div class="actions">
+        <button type="button" class="act primary" data-go="follow">${ICON.follow}Follow</button>
+        <button type="button" class="act" data-go="station">${ICON.train}Line</button>
+      </div>
+      <button type="button" class="notice" data-go="notice">${ICON.warn}<span class="grow">Downtown skips Wall St and Bowling Green this weekend</span>${ICON.chev}</button>
+      <p class="sect">Next stops</p>
+      <div class="group">
+        ${[["Fulton St","now"],["Wall St","2 min"],["Bowling Green","4 min"],["Borough Hall","8 min"],["Nevins St","11 min"]].map(([n, m]) => `<div class="row"><span class="grow">${n}</span><span class="end">${m}</span></div>`).join("")}
+      </div>`;
+    },
+    follow: () => `
+      <div class="head"><div class="t"><h2>Following the ${(TRAINS.find((x) => x.id === st.train) || TRAINS[0]).line}</h2><p>${(TRAINS.find((x) => x.id === st.train) || TRAINS[0]).bus ? "South Ferry at 9:51" : "Borough Hall at 9:42"}</p></div></div>
+      <div class="chips" role="group" aria-label="Camera">
+        ${[["map","Map"],["chase","Chase"],["side","Side"],["overhead","Overhead"],["cab","Street"]].map(([id, l]) => `<button type="button" class="chip" data-cam="${id}" aria-pressed="${st.cam === id}">${l}</button>`).join("")}
+      </div>
+      <div class="actions"><button type="button" class="act" data-go="exit">${ICON.exit}Find exit</button><button type="button" class="act stop" data-act="stopfollow">Stop</button></div>`,
+    station: () => {
+      const s = STATIONS.find((x) => x.id === st.station) || STATIONS[0];
+      const iso = st.isolate;
+      const rows = [
+        ["4","Uptown","Woodlawn","2, 6, 11"],["5","Uptown","Eastchester","4, 13"],["4","Downtown","Crown Hts","1, 7, 12"],["5","Downtown","Flatbush Av","5, 15"],
+        ["A","Uptown","Inwood","3, 9"],["C","Uptown","168 St","6, 14"],["A","Downtown","Far Rockaway","2, 10"],["2","Uptown","Wakefield","1, 8"],["J","Downtown","Broad St","7"],
+      ].filter((r) => !iso || r[0] === iso);
+      return `
+      ${head(s.name, "Subway station · 2 min walk")}
+      <div class="bul-row" role="group" aria-label="Lines">${s.lines.map((l) => `<button type="button" data-iso="${l}" aria-pressed="${iso === l}" aria-label="Show only the ${l}">${bul(l)}</button>`).join("")}</div>
+      <div class="actions">
+        <button type="button" class="act primary" data-go="answer">${ICON.trip}Directions</button>
+        <button type="button" class="act" data-go="exit">${ICON.exit}Exits</button>
+        <button type="button" class="act" data-go="street">${ICON.door}Inside</button>
+      </div>
+      ${!iso || iso === "4" || iso === "5" ? `<button type="button" class="notice" data-go="notice">${ICON.warn}<span class="grow">Downtown 4 and 5 skip Wall St and Bowling Green this weekend</span>${ICON.chev}</button>` : ""}
+      <p class="sect">Departures</p>
+      <div class="group">${rows.map(([l, d, to, m]) => `<button type="button" class="row" data-go="train" data-train="${{"4":"t4","5":"t5","A":"tA","C":"tA","2":"t2","J":"tJ"}[l] || "t4"}">${bul(l, 1)}<span class="grow">${to}<span class="sub">${d}</span></span><span class="end">${m.replace(/^(\d+)/, "<b>$1</b>")} min</span></button>`).join("")}</div>`;
+    },
+    busstop: () => {
+      const b = BUSSTOPS.find((x) => x.id === st.busstop) || BUSSTOPS[0];
+      const rows = {
+        water: [["M15", "South Ferry", "bM15", "1, 9"], ["M15", "East Harlem", "bM15", "4, 12"]],
+        bway: [["M55", "South Ferry", "bM55", "3, 14"], ["M55", "44 St", "bM55", "6, 18"]],
+        chambers: [["M22", "Grand St", "bM22", "5, 20"], ["M55", "South Ferry", "bM55", "2, 13"]],
+      }[b.id];
+      return `
+      ${head(b.name, "Bus stop · 4 min walk")}
+      <div class="bul-row">${b.routes.map((r) => bul(r)).join("")}</div>
+      <div class="actions"><button type="button" class="act primary" data-go="answer">${ICON.trip}Directions</button><button type="button" class="act" data-go="street">${ICON.street}Look around</button></div>
+      ${b.id === "water" ? `<button type="button" class="notice">${ICON.warn}<span class="grow">M15 detoured off Water St at Wall St until Friday</span>${ICON.chev}</button>` : ""}
+      <p class="sect">Departures</p>
+      <div class="group">${rows.map(([r, to, id, m]) => `<button type="button" class="row" data-go="train" data-train="${id}">${bul(r)}<span class="grow">${to}</span><span class="end">${m.replace(/^(\d+)/, "<b>$1</b>")} min</span></button>`).join("")}</div>`;
+    },
+    notice: () => `
+      ${head("Downtown 4 and 5 skip two stops", "Sat 6 AM to Sun 10 PM")}
+      <div class="chips" role="group" aria-label="When">
+        ${[["wday","Day"],["wnight","Night"],["wkday","Weekend day"],["wknight","Weekend night"]].map(([id, l]) => `<button type="button" class="chip" data-time="${id}" aria-pressed="${st.time === id}">${l}</button>`).join("")}
+      </div>
+      <div class="group" style="padding:8px 0"><ol class="diagram" aria-label="Downtown, station by station">
+        <li><span class="dot"></span>Fulton St</li>
+        <li><span class="dot"></span><span class="skip">Wall St</span><span class="tag">Skipped</span></li>
+        <li><span class="dot"></span><span class="skip">Bowling Green</span><span class="tag">Skipped</span></li>
+        <li><span class="dot"></span>Borough Hall</li>
+      </ol></div>
+      <p class="sect">Your stop</p>
+      <div class="chips" role="group" aria-label="Your stop">${["Wall St","Bowling Green"].map((n) => `<button type="button" class="chip" data-stop="${n}" aria-pressed="${st.stop === n}">${n}</button>`).join("")}</div>
+      <div class="actions"><button type="button" class="act primary" data-go="walk">${ICON.walk}Walk me through it</button><button type="button" class="act" data-act="speak">${ICON.play}Listen</button></div>`,
+    walk: () => {
+      const steps = st.stop === "Wall St" ? [
+        ["Stay on the downtown 4 to Borough Hall.", "Downtown trains don't stop at Wall St this weekend."],
+        ["At Borough Hall, cross the platform to the uptown 4.", "Same platform, other side."],
+        ["Ride one stop back to Wall St.", "Uptown trains stop as usual."],
+      ] : [
+        ["Stay on the downtown 4 to Borough Hall.", "Bowling Green is skipped downtown."],
+        ["At Borough Hall, cross the platform to the uptown 4.", "Same platform, other side."],
+        ["Ride one stop back to Bowling Green.", "Uptown trains stop as usual."],
+      ];
+      return `
+      ${head(`Getting off at ${st.stop}`, `${steps.length} steps`)}
+      <div class="group steps">${steps.map(([a, b], i) => `<button type="button" class="row ${st.stepLit === i ? "lit" : ""}" data-step="${i}"><span class="num">${i + 1}</span><span class="grow">${a}<span class="sub">${b}</span></span></button>`).join("")}</div>
+      <div class="actions"><button type="button" class="act" data-act="speak">${ICON.play}Read it to me</button></div>`;
+    },
+    answer: () => `
+      ${head("Grand Central", "")}
+      <div class="q">How do I get to Grand Central?</div>
+      <p class="answer">Take the 4 or 5 uptown from Fulton St. 14 min, next train in 2 min.</p>
+      <div class="actions"><button type="button" class="act primary" data-act="walkthere">${ICON.walk}Walk me there</button><button type="button" class="act">More</button></div>`,
+    me: () => `
+      ${head("You", "")}
+      <div class="group">
+        <button type="button" class="row"><span class="grow">Settings</span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">Language</span><span class="end">English</span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">What we remember</span>${ICON.chev}</button>
+      </div>
+      <p class="sect">More</p>
+      <div class="group">
+        <button type="button" class="row"><span class="grow">City data<span class="sub">311, noise, crashes</span></span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">Meet Design Baker</span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">Record a station walk</span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">Tracker health</span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">What's coming</span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">Share this app</span><span class="end">QR</span>${ICON.chev}</button>
+      </div>`,
+    restroom: () => {
+      // Every restroom near you, open ones first by walking time. The closest open one is picked by default,
+      // public or business. A free one is offered beside it only when it is open and at most 5 minutes further.
+      const ALL = [
+        { id: "cafe", kind: "cafe", name: "Dey St Café", min: 2, free: false, open: true, hours: "Open until 7 PM" },
+        { id: "fcenter", kind: "public", name: "Fulton Center", min: 4, free: true, open: true, hours: "Open until 10 PM" },
+        { id: "deli", kind: "deli", name: "Pearl St Deli", min: 5, free: false, open: true, hours: "Open 24 hours" },
+        { id: "park", kind: "public", name: "Battery Park", min: 11, free: true, open: false, hours: "Closed · opens 8 AM" },
+      ];
+      const open = ALL.filter((r) => r.open).sort((a, b) => a.min - b.min);
+      const closest = open[0];
+      const freeAlt = !closest.free ? open.find((r) => r.free && r.min - closest.min <= 5) : null;
+      const kind = (r) => r.free ? "Public · free" : "Business · may be customers only";
+      const check = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+      const row = (r, tag) => `<button type="button" class="row ${st.rest === r.id ? "lit" : ""}" ${r.open ? `data-pick="${r.id}"` : "disabled"} aria-pressed="${st.rest === r.id}" style="align-items:flex-start${r.open ? "" : ";opacity:.5"}">
+        <span class="ricon ${r.free ? "pub" : "biz"}">${rIcon(r.kind, 20, r.free ? "#fff" : "#7c3aed")}</span>
+        <span class="grow">${tag ? `<span class="sub" style="font-weight:700;color:var(--accent)">${tag}</span>` : ""}${r.name}<span class="sub">${kind(r)}</span><span class="sub">${r.hours}</span></span>
+        <span class="end" style="font-size:${tag ? 20 : 16}px"><b>${r.min}</b> min</span><span style="width:20px;color:var(--accent)">${st.rest === r.id ? check : ""}</span></button>`;
+      return `
+      ${head("Restroom", "Open now, nearest first")}
+      ${st.rlist
+        ? `<div class="group">${ALL.map((r) => row(r)).join("")}</div>`
+        : `<div class="group">${row(closest, "Closest")}${freeAlt ? row(freeAlt, "Free, " + (freeAlt.min - closest.min) + " min further") : ""}</div>`}
+      <div class="actions"><button type="button" class="act primary" data-go="rwalk" style="font-size:14px">${ICON.walk}Walk me there</button><button type="button" class="act" data-go="rsim" style="font-size:14px">${ICON.street}Preview in Street view</button></div>
+      <button type="button" class="row" data-act="rlist" style="min-height:40px"><span class="grow small">${st.rlist ? "Fewer" : "All restrooms nearby"}</span>${ICON.chev}</button>`;
+    },
+    rbiz: () => `
+      ${st.rest === "deli" ? head("Pearl St Deli", "Deli · 5 min walk") : head("Dey St Café", "Café · 4 min walk")}
+      <div class="photo"><span>Entrance on Dey St</span></div>
+      <div class="facts"><span class="fact ok">Open until 7 PM</span><span class="fact warn">May be customers only</span></div>
+      <div class="actions"><button type="button" class="act primary" data-go="rwalk">${ICON.walk}Walk me there</button><button type="button" class="act">Website</button><button type="button" class="act">Call</button></div>
+      <div class="group">
+        <div class="row"><span class="grow">Hours<span class="sub">Mon–Fri 7 AM–7 PM · Sat–Sun 8 AM–5 PM</span></span></div>
+      </div>
+      <button type="button" class="row" style="padding:0 4px;min-height:36px"><span class="grow small">More</span>${ICON.chev}</button>`,
+    rpublic: () => `
+      ${head("Fulton Center", "Public restroom · 3 min walk")}
+      <div class="photo"><span>Lower level, by the Dey St stairs</span></div>
+      <div class="facts"><span class="fact ok">Open until 10 PM</span><span class="fact ok">Free</span></div>
+      <div class="actions"><button type="button" class="act primary" data-go="rwalk">${ICON.walk}Walk me there</button><button type="button" class="act">More</button></div>
+      <div class="group"><div class="row"><span class="grow">Hours<span class="sub">Every day 6 AM–10 PM</span></span></div></div>`,
+    rwalk: () => `
+      <div class="head"><div class="t"><h2>4 min · 230 m</h2><p>Arrive 9:46</p></div></div>
+      <div class="group"><div class="row" style="align-items:center"><span class="thumb"></span><span class="grow">St Paul\u2019s Chapel on your right<span class="sub">in 80 m</span></span></div></div>
+      <div class="actions"><button type="button" class="act stop" data-act="close">End</button></div>
+      <button type="button" class="row" data-go="rdone" style="min-height:36px"><span class="grow small">Mockup only: jump to arriving</span>${ICON.chev}</button>`,
+    rdone: () => {
+      const place = st.rest === "fcenter" ? "Fulton Center" : st.rest === "deli" ? "Pearl St Deli" : "Dey St Café";
+      const YES_QS = [["Did you have to pay or buy something?", ["Yes", "No"]], ["Was it customers only?", ["Yes", "No"]], ["Did you need a code or key?", ["Yes", "No"]]];
+      const NO_QS = [["What happened?", ["Closed", "Customers only", "Out of order", "Couldn't find it"]]];
+      if (st.answered === null || st.answered === undefined || st.answered === false) return `
+      ${head(place, "You're here")}
+      <p class="answer">Was the restroom available to use?</p>
+      <div class="actions"><button type="button" class="act primary" data-ans="yes" style="font-size:16px">Yes</button><button type="button" class="act" data-ans="no" style="font-size:16px">No</button></div>`;
+      const qs = st.answered === "yes" ? YES_QS : NO_QS;
+      if (st.q >= qs.length) return `
+      ${head("Thanks", "")}
+      <p class="small">That keeps the map right for the next person.</p>`;
+      const [q, opts] = qs[st.q];
+      return `
+      ${head(place, `${st.q + 1} of ${qs.length}`)}
+      <p class="answer">${q}</p>
+      <div class="chips" role="group" aria-label="${q}">${opts.map((o) => `<button type="button" class="chip" data-next="1" style="min-height:44px;flex:1">${o}</button>`).join("")}</div>
+      <button type="button" class="act" data-next="1" style="min-height:44px;background:transparent">Skip</button>`;
+    },
+    exit: () => `
+      ${head("Exits", "Fulton St")}
+      <div class="group">
+        <button type="button" class="row"><span class="grow">Broadway &amp; Fulton St<span class="sub">Elevator</span></span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">Dey St &amp; Broadway<span class="sub">Stairs</span></span>${ICON.chev}</button>
+        <button type="button" class="row"><span class="grow">Fulton Center<span class="sub">Escalator</span></span>${ICON.chev}</button>
+      </div>`,
+  };
+
+  const STEP_POS = [[760, 760], [760, 760], [525, 650]];
+  function render() {
+    const s = st.screen;
+    device.classList.toggle("desk", st.desk);
+    $("dev-phone").setAttribute("aria-pressed", !st.desk); $("dev-desk").setAttribute("aria-pressed", st.desk);
+    const FLOW = { follow: "train", rsim: "restroom", rbiz: "restroom", rpublic: "restroom", rwalk: "restroom", rdone: "restroom", walk: "notice", answer: "idle", exit: "idle" };
+    for (const b of jumps.children) b.setAttribute("aria-pressed", b.dataset.id === (FLOW[s] || s));
+    const meta = SCREENS.find((x) => x[0] === s);
+    $("copied").innerHTML = meta ? meta[2] : s === "restroom" ? "<b>Apple place card.</b> A restroom opens in the same sheet." : "<b>Google station exits list,</b> in the same sheet.";
+    sheet.dataset.snap = st.snap;
+    body.innerHTML = (VIEWS[s] || VIEWS.idle)();
+    body.scrollTop = 0;
+    // map state
+    const following = s === "follow";
+    const nav = following || s === "rwalk";
+    device.classList.toggle("following", nav);
+    device.classList.remove("tilt-chase", "tilt-side", "tilt-overhead", "tilt-cab");
+    if (following && st.cam !== "map") device.classList.add("tilt-" + st.cam);
+    $("compass").hidden = !(following && st.cam !== "map" && st.cam !== "overhead");
+    const banner = $("banner");
+    banner.hidden = !nav;
+    if (s === "rwalk") banner.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V9H6M9 5 5 9l4 4"/></svg><div><div class="big">60 m · Turn left</div><div class="sm">onto Fulton St</div></div>`;
+    const veh = TRAINS.find((x) => x.id === st.train) || TRAINS[0];
+    if (following) banner.innerHTML = veh.bus
+      ? `${bul(veh.line)}<div><div class="big">Pearl St &amp; Wall St · 4 min</div><div class="sm">then Whitehall St</div></div>`
+      : `${bul(veh.line)}<div><div class="big">Wall St · 2 min</div><div class="sm">then Bowling Green</div></div>`;
+    for (const t of TRAINS) { t.el.classList.toggle("followed", following && t.id === st.train); }
+    const lines = $("lines"), mapEl = $("mapcontent");
+    const iso = s === "station" && st.isolate ? LINES[st.isolate].path : (s === "train" || following) ? veh.path : (s === "notice" || s === "walk") ? "l-45" : null;
+    mapEl.classList.toggle("nobus", !st.layers.buses);
+    mapEl.classList.toggle("norest", !(st.layers.restrooms || ["restroom", "rbiz", "rpublic", "rwalk", "rdone", "rsim"].includes(s)));
+    for (const g of $("rpins").children) g.classList.toggle("on", ["restroom", "rbiz", "rpublic", "rwalk", "rdone", "rsim"].includes(s) && g.dataset.id === st.rest);
+    const dest = RESTROOMS.find((r) => r.id === st.rest) || RESTROOMS[0];
+    $("walk").innerHTML = (s === "rwalk" || s === "restroom" || s === "rsim") ? `<path class="walkroute" d="M470 610 L500 585 ${dest.id === "fcenter" ? "L585 560 L585 515" : dest.id === "deli" ? "L560 600 L610 610" : "L455 630 L440 655"}"/>` : "";
+    for (const p of $("buslines").children) p.classList.toggle("keep", p.id === iso);
+    for (const g of $("busstops").children) g.classList.toggle("on", s === "busstop" && g.dataset.id === st.busstop);
+    mapEl.classList.toggle("dim", !!iso);
+    for (const p of lines.children) p.classList.toggle("keep", p.id === iso);
+    for (const t of TRAINS) t.el.classList.toggle("keep", t.path === iso);
+    for (const g of $("stations").children) g.classList.toggle("on", (s === "station" && g.dataset.id === st.station));
+    const steps = $("steps"); steps.innerHTML = "";
+    if (s === "notice" || s === "walk") {
+      for (const [x, y] of [[525, 650], [470, 770]]) steps.insertAdjacentHTML("beforeend", `<line class="skipx" x1="${x - 10}" y1="${y - 10}" x2="${x + 10}" y2="${y + 10}"/><line class="skipx" x1="${x + 10}" y1="${y - 10}" x2="${x - 10}" y2="${y + 10}"/>`);
+    }
+    if (s === "walk") { const [x, y] = STEP_POS[st.stepLit]; steps.insertAdjacentHTML("beforeend", `<circle class="stepmark" cx="${x}" cy="${y}" r="18"/><text class="stepmark-t" x="${x}" y="${y}">${st.stepLit + 1}</text>`); }
+    $("street").hidden = s !== "street" && s !== "rsim";
+    $("street").classList.toggle("sim", s === "rsim");
+    $("simbar").hidden = s !== "rsim";
+    $("go-in").hidden = s === "rsim";
+    $("street-back").lastChild.textContent = s === "rsim" ? "Preview: to " + (st.rest === "fcenter" ? "Fulton Center" : "Dey St Café") : "Fulton St & Broadway";
+    simRun(s === "rsim");
+    $("hint").hidden = s !== "idle";
+    $("mapbtns").hidden = s === "street" || s === "rsim";
+  }
+
+  // ---------- Street view preview: plays the walk ----------
+  let simTimer = null, simT = 0, simPaused = false;
+  const SIM_STEPS = [[0, "Head down Dey St"], [0.35, "Turn left onto Fulton St"], [0.7, "St Paul\u2019s Chapel on your right"], [0.95, "Restroom entrance ahead"]];
+  function simRun(on) {
+    if (!on) { clearInterval(simTimer); simTimer = null; return; }
+    if (simTimer) return;
+    simT = 0; simPaused = false; $("street").classList.remove("paused"); $("simpause").textContent = "Pause";
+    simTimer = setInterval(() => {
+      if (simPaused) return;
+      simT = Math.min(1, simT + 0.01);
+      $("simfill").style.width = (simT * 100) + "%";
+      $("simstep").textContent = SIM_STEPS.filter(([t]) => t <= simT).pop()[1];
+      if (simT >= 1) { simPaused = true; $("street").classList.add("paused"); $("simpause").textContent = "Replay"; }
+    }, 120);
+  }
+  $("simpause").addEventListener("click", () => {
+    if (simT >= 1) { clearInterval(simTimer); simTimer = null; return simRun(true); }
+    simPaused = !simPaused; $("street").classList.toggle("paused", simPaused); $("simpause").textContent = simPaused ? "Play" : "Pause";
+  });
+  $("simgo").addEventListener("click", () => go("rwalk"));
+
+  // ---------- Events ----------
+  body.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.go) return go(b.dataset.go, b.dataset.train ? { train: b.dataset.train } : b.dataset.rest ? { rest: b.dataset.rest } : {});
+    if (b.dataset.act === "close") return go("idle");
+    if (b.dataset.act === "back") return back();
+    if (b.dataset.act === "stopfollow") { st.stack = []; return go("train", {}, true); }
+    if (b.dataset.act === "walkthere") return go("follow");
+    if (b.dataset.ans) { st.answered = b.dataset.ans; st.q = 0; return render(); }
+    if (b.dataset.next) { st.q += 1; return render(); }
+    if (b.dataset.pick) { st.rest = b.dataset.pick; return render(); }
+    if (b.dataset.act === "rlist") { st.rlist = !st.rlist; return render(); }
+    if (b.dataset.view) { st.view = b.dataset.view; if (st.view === "street") return go("street"); return render(); }
+    if (b.dataset.layer) { st.layers[b.dataset.layer] = !st.layers[b.dataset.layer]; return render(); }
+    if (b.dataset.cam) { st.cam = b.dataset.cam; return render(); }
+    if (b.dataset.iso) { st.isolate = st.isolate === b.dataset.iso ? null : b.dataset.iso; return render(); }
+    if (b.dataset.time) { st.time = b.dataset.time; return render(); }
+    if (b.dataset.stop) { st.stop = b.dataset.stop; return render(); }
+    if (b.dataset.step) { st.stepLit = +b.dataset.step; return render(); }
+  });
+  $("btn-style").addEventListener("click", () => go("style"));
+  $("btn-locate").addEventListener("click", () => go("idle"));
+  $("compass").addEventListener("click", () => { st.cam = "map"; render(); });
+  $("btn-me").addEventListener("click", () => go("me"));
+  $("street-back").addEventListener("click", () => back());
+  $("go-in").addEventListener("click", () => {});
+  $("chat").addEventListener("submit", (e) => { e.preventDefault(); $("ask").value = ""; go("answer"); });
+  $("ask").addEventListener("focus", () => { if (st.snap === "peek") { st.snap = "half"; sheet.dataset.snap = "half"; } });
+  $("dev-phone").addEventListener("click", () => { st.desk = false; layout(); render(); });
+  $("dev-desk").addEventListener("click", () => { st.desk = true; layout(); render(); });
+
+  // Sheet: tap the grabber to step through heights, or drag it.
+  const ORDER = ["peek", "half", "full"];
+  let drag = null;
+  $("grab").addEventListener("pointerdown", (e) => { drag = { y: e.clientY, moved: false }; e.currentTarget.setPointerCapture(e.pointerId); });
+  $("grab").addEventListener("pointermove", (e) => { if (drag && Math.abs(e.clientY - drag.y) > 24) drag.moved = true; });
+  $("grab").addEventListener("pointerup", (e) => {
+    if (!drag) return;
+    const i = ORDER.indexOf(st.snap);
+    if (drag.moved) st.snap = ORDER[Math.max(0, Math.min(2, i + (e.clientY < drag.y ? 1 : -1)))];
+    else st.snap = ORDER[(i + 1) % 3];
+    sheet.dataset.snap = st.snap; drag = null;
+  });
+
+  // ---------- Fit the device to the page ----------
+  function layout() {
+    const W = st.desk ? 1280 : 390, H = st.desk ? 800 : 844;
+    device.style.width = W + "px"; device.style.height = H + "px";
+    const avail = Math.min(document.querySelector(".wrap").clientWidth - 32, 1360);
+    const availH = Math.max(480, window.innerHeight - 170);
+    const s = Math.min(1, avail / W, availH / H);
+    device.style.transform = `scale(${s})`;
+    const sc = $("scaler"); sc.style.width = W * s + "px"; sc.style.height = H * s + "px";
+  }
+  addEventListener("resize", layout);
+  layout(); render();
+})();
+</script>
