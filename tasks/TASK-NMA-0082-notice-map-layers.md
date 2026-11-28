@@ -30,9 +30,12 @@ Open the uptown A notice and the map shows the A's two tracks over the stretch, 
 
 - In scope: the map layers, the pure feature builder, a stand-in step map made from today's walk focus until the walk builder supplies one.
 - Out of scope: the walk text and `alertDiagram.ts` (NMA-0081), the time buttons, elevator outage matching, voice.
-- Uncertainty: entrance ids in our data are station ids, not one per entrance, so a step that names one elevator needs its coordinates or its index in `entrances.features`; the walk builder was asked for coordinates.
+- Uncertainty: entrance ids in our data are station ids, not one per entrance; the walk builder's step map now gives each entrance its coordinates (`at`). Three temporary shuttles in the saved feed come with no stops, so the map has no place to draw them.
 
 ## Acceptance criteria
+
+Pull request: https://github.com/pukujan-lab-2/nyc-map-agent/pull/289
+
 
 - [x] The layout bar passes at 320×568, 375×667, 390×844 and 1280×800 with a notice open and the skipped stretch in view (`e2e/notice-map.spec.ts`).
 - [x] Every station, bus, shuttle stop, entrance and walk in a step's map data is drawn (`noticeMap.test.ts`).
