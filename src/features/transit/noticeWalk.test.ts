@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 import { slimAlert, type MercuryAlert, type SlimAlert } from "../../../server/features/transit/alerts";
 import { hasFacts } from "../../../server/features/transit/noticeFacts";
 import type { StaticSystem } from "./model";
-import { factsOf, noticeWalk, type NoticeWalk, type Trip, type WalkStep } from "./noticeWalk";
+import { factsOf, noticeWalk, periodWords, type NoticeWalk, type Trip, type WalkStep } from "./noticeWalk";
+import type { TransitAlert } from "./hooks";
 import { PATTERNS, fill } from "./walkPatterns";
 
 const sys = JSON.parse(readFileSync("public/transit/subway.json", "utf8")) as StaticSystem;
@@ -127,6 +128,32 @@ describe("notice walks over every saved notice (plan step 3)", () => {
   it("says a notice on several lines once", () => {
     const w = noticeWalk(byText("Uptown [2][3] trains are running with delays"), sys, "2", null);
     expect(texts(w)).toEqual(["Uptown 2 and 3 trains are delayed near 14 Street."]);
+  });
+});
+
+describe("notices as the phone keeps them", () => {
+  // The 1's shuttle with the MTA's per-station corners, as the live site served it on 2026-11-08 (an older payload
+  // with no facts from the server): the phone reads the facts itself.
+  const live = JSON.parse(readFileSync("src/features/transit/alertDiagram.fixtures.json", "utf8")) as Record<string, TransitAlert>;
+  it("reads an older notice the rules cannot place in the MTA's own words, without its reason", () => {
+    // "Dyckman St, Upper Manhattan" matches none of our stations, so the walk does not guess one.
+    const w = noticeWalk(live.oneCorners, sys, "1", null);
+    expect(w.read).toBe(false);
+    expect(w.stops).toEqual([]);
+    expect(w.steps[0].text).toMatch(/^No 1 between/);
+    expect(w.steps.length).toBeGreaterThan(1);
+    for (const s of w.steps) expect(s.text).not.toMatch(/What's happening|Why:/i);
+  });
+
+  it("walks an older notice the rules can read from its text alone", () => {
+    const w = noticeWalk(live.aSkip, sys, "A", { stop: "A17", mode: "off" });
+    expect(w.read).toBe(true);
+    expect(w.steps[1].text).toMatch(/^Getting off at /);
+    for (const s of w.steps) expect(missing(s)).toEqual([]);
+  });
+
+  it("says when in full words", () => {
+    expect(periodWords("Beginning Nov 7, Sat 12:30 AM until Nov 16, Mon 5:00 AM")).toBe("Beginning November 7, Saturday 12:30 AM until November 16, Monday 5:00 AM");
   });
 });
 

@@ -20,6 +20,7 @@ export const PATTERNS = {
   "lead.notStretch": "If your trip stays off that stretch, nothing changes for you.",
   "lead.closed": "No {line} trains at {stations}.",
   "lead.suspended": "No {line} trains between {from} and {to}.",
+  "lead.shuttle": "Free shuttle buses run instead.",
   "lead.noService": "No {line} trains.",
   "lead.runs": "{line} trains run only between {from} and {to}.",
   "lead.sections": "{line} trains run in separate parts: {parts}. Change trains where they meet.",

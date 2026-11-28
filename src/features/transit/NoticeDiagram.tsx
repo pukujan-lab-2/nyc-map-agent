@@ -246,8 +246,17 @@ export default function NoticeDiagram({ alert, sys, route, color, auto, stop }: 
       {diagram ? <div className="mr-8"><Diagram d={diagram} color={color} lit={lit} labels={labels} /></div> : null}
       {you ? (
         <div className="flex flex-col gap-1.5" data-testid="notice-trip">
-          {stops.length > 1 ? (
-            <div role="group" aria-label={trip.stop} className="flex items-center gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none]">
+          {stops.length > 4 ? (
+            // A long stretch: one dropdown, so the sheet stays short and nothing scrolls sideways.
+            <label className="flex items-center gap-1.5 text-[12px] text-[#a5b4cb]">
+              <span className="shrink-0">{trip.stop}</span>
+              <select value={you} onChange={(e) => choose({ stop: e.target.value })}
+                className="h-8 min-w-0 flex-1 rounded-lg border border-[#60a5fa] bg-[#0f172a] px-2 text-[12.5px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">
+                {stops.map((id) => <option key={id} value={id}>{stopName(id)}</option>)}
+              </select>
+            </label>
+          ) : stops.length > 1 ? (
+            <div role="group" aria-label={trip.stop} className="flex flex-wrap items-center gap-1.5">
               <span className="shrink-0 text-[12px] text-[#a5b4cb]">{trip.stop}</span>
               {stops.map((id) => (
                 <button key={id} type="button" aria-pressed={id === you} className={`${chip} ${chipOn(id === you)}`} onClick={() => choose({ stop: id })}>{stopName(id)}</button>

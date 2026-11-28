@@ -33,6 +33,35 @@ async function open(page: Page, answer: unknown[] = []) {
   await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
 }
 
+
+// The 2 line, live (captured from /api/transit-live, trimmed), with a downtown skip at Christopher St and Houston St.
+const LIVE_2 = JSON.parse(readFileSync(new URL("./fixtures/transit-live-2-line.json", import.meta.url), "utf8")) as {
+  at: number; systems: { subway: { at: number; trips: Array<{ stops: Array<[string, number]>; vt: number }> } }; alerts: { at: number; alerts: unknown[] };
+};
+function liveWithSkip(): string {
+  const now = Math.floor(Date.now() / 1000);
+  const shift = now - Math.min(...LIVE_2.systems.subway.trips.map((t) => t.vt));
+  const d = structuredClone(LIVE_2);
+  d.at = d.systems.subway.at = d.alerts.at = now;
+  for (const t of d.systems.subway.trips) { t.vt += shift; t.stops = t.stops.map(([s, at]) => [s, at + shift]); }
+  const names = ["Christopher St-Stonewall", "Houston St"];
+  d.alerts.alerts.push({
+    id: "lmm:planned_work:layout", kind: "planned", type: "Planned - Stops Skipped", reroute: true, agency: "MTASBWY", routes: ["2"], stops: ["133S", "134S"],
+    text: "In Manhattan, downtown [2] skips Christopher St-Stonewall and Houston St",
+    description: "For service to these stations, take the [2] to Canal St and transfer to an uptown [1].\n\nFor service from these stations, take the [2] to 14 St and transfer to a downtown [1].",
+    period: "Nov 28 - 30, Sat 12:01 AM to Mon 5:00 AM",
+    changes: [{ alertId: "lmm:planned_work:layout", route: "2", kind: "skip", names, toward: "Downtown", notice: "Skipped Downtown-bound" }], skipNames: names,
+  });
+  return JSON.stringify(d);
+}
+async function openWithSkip(page: Page) {
+  await mockNetwork(page);
+  await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: liveWithSkip() }));
+  await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+  await page.goto("/");
+  await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
+}
+
 for (const size of SIZES) {
   test.describe(`layout at ${size.name} ${size.width}×${size.height}`, () => {
     test.beforeEach(async ({ page }) => {
@@ -496,6 +525,41 @@ for (const size of SIZES) {
         await page.waitForTimeout(300);
         await expectLayout(page);
       }
+    });
+
+    // Plan step 3 (docs/PLAN-notice-walks.md): a notice asks for the rider's stop and trip, then walks that case alone.
+    test("a notice walk with the rider's stop and trip", async ({ page }) => {
+      await openWithSkip(page);
+      await page.getByRole("button", { name: "My train" }).click({ timeout: slow(15_000) });
+      await page.getByRole("button", { name: /^7 Avenue Express/ }).first().click({ timeout: slow(15_000) });
+      const panel = page.getByTestId("line-panel");
+      const notice = panel.locator("[data-notice]", { hasText: "skips" });
+      await notice.scrollIntoViewIfNeeded();
+      await notice.click();
+      const walk = panel.getByTestId("notice-walk");
+      await expect(walk.getByTestId("notice-trip")).toBeVisible();
+      await expect(walk.getByTestId("notice-step").nth(1)).toHaveText(/^Getting off at Christopher Street-Stonewall/);
+      await expectLayout(page);
+      await walk.getByRole("button", { name: "Getting on at Christopher Street-Stonewall" }).click();
+      await walk.getByRole("button", { name: "The MTA's words" }).click();
+      await expect(walk.getByTestId("notice-mta")).toBeVisible();
+      await walk.getByRole("button", { name: "The MTA's words" }).scrollIntoViewIfNeeded();
+      await expectLayout(page);
+    });
+
+    // Owner, 2026-11-27: the "Skipped" card was horrible; a skipped station opens its notice walk, that station picked.
+    test("a skipped station opens its notice walk", async ({ page }) => {
+      await openWithSkip(page);
+      await page.waitForFunction(() => typeof (window as unknown as { __openStation?: unknown }).__openStation === "function", null, { timeout: slow(15_000) });
+      await page.evaluate(() => (window as unknown as { __openStation: (s: string, id: string, name: string) => void }).__openStation("subway", "133", "Christopher St-Stonewall"));
+      const station = page.getByTestId("details-sheet");
+      await expect(station).toBeVisible();
+      if (size.width < 640) await station.getByTestId("sheet-grip").click();
+      await station.getByTestId("station-skip").first().click();
+      const walk = station.getByTestId("skip-walk");
+      await expect(walk.getByTestId("notice-step").first()).toHaveText(/^Downtown 2 trains skip Christopher Street-Stonewall and Houston Street\./);
+      await expect(walk.getByRole("button", { name: "Christopher Street-Stonewall", exact: true })).toHaveAttribute("aria-pressed", "true");
+      await expectLayout(page);
     });
 
     // Owner, 2026-11-07: the station sheet and the line sheet stacked and cut each other off. A phone has one

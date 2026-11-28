@@ -1,4 +1,4 @@
-import { formatStationName } from "@/lib/streetName";
+import { formatStationName, formatStreetText } from "@/lib/streetName";
 import { otherDirection, towardEnd } from "@/lib/transit/serviceChanges";
 import { hasFacts, noticeFacts, stationIndex, type Advice, type Change, type LineDir, type NoticeFacts, type StationIndex, type StationRef, type Toward } from "../../../server/features/transit/noticeFacts";
 import type { SlimAlert } from "../../../server/features/transit/alerts";
@@ -193,14 +193,22 @@ function nearestOpen(seq: string[], x: string, out: Set<string>): string | null 
 /* ------------------------------------------------------------------------------------------------------------ */
 
 /** A change read onto our track: the stations trains no longer stop at, and those the rider can pick. */
-type Effect = { change: Change; line: string; seq: string[]; out: string[]; picks: string[]; stretch: boolean };
+type Effect = { change: Change; line: string; seq: string[]; out: string[]; picks: string[]; stretch: boolean; blocked?: Set<string> };
 
 const ids = (rs: StationRef[]) => rs.flatMap((r) => (r.id ? [r.id] : []));
 
-function effectOf(sys: StaticSystem, c: Change, route: string, informed: Set<string>, served: Set<string> = new Set()): Effect | null {
+function effectOf(sys: StaticSystem, c: Change, route: string, informed: Set<string>, served: Set<string> = new Set(), runs: Array<[string, string]> = []): Effect | null {
   const line = trackLine(sys, c.line, route);
   if (!line) return null;
   const seq = seqOf(sys, line);
+  const e = effectOn(c, line, seq, informed, served);
+  // "[2] runs between Wakefield-241 St and Times Sq-42 St": no stop outside that has the line either.
+  const inside = runs.flatMap(([a, b]) => span(seq, a, b) ?? []);
+  if (e && e.stretch && inside.length) e.blocked = new Set([...e.out, ...seq.filter((id) => !inside.includes(id))]);
+  return e;
+}
+
+function effectOn(c: Change, line: string, seq: string[], informed: Set<string>, served: Set<string>): Effect | null {
   const on = (xs: string[]) => xs.filter((id) => seq.includes(id));
   const base = { change: c, line, seq };
   switch (c.kind) {
@@ -234,7 +242,7 @@ function effectOf(sys: StaticSystem, c: Change, route: string, informed: Set<str
 /* ------------------------------------------------------------------------------------------------------------ */
 
 /** Step one for a change: what it does, then who it does not touch. */
-function leadStep(sys: StaticSystem, e: Effect | null, c: Change, group: string[] = [c.line]): WalkStep {
+function leadStep(sys: StaticSystem, e: Effect | null, c: Change, group: string[] = [c.line], shuttle = false): WalkStep {
   const s = new Step(sys);
   const L = c.line;
   s.lines(...group);
@@ -277,6 +285,7 @@ function leadStep(sys: StaticSystem, e: Effect | null, c: Change, group: string[
       break;
     case "suspended":
       s.say("lead.suspended", { line: lw(), from: s.st(c.from.id, c.from.name), to: s.st(c.to.id, c.to.name) }).show(c.from.id, c.to.id);
+      if (shuttle) s.say("lead.shuttle");
       track({ closed: true });
       if (e?.out.length) s.say("lead.notStretch");
       break;
@@ -376,7 +385,7 @@ function tripSteps(sys: StaticSystem, e: Effect, facts: NoticeFacts, trip: NonNu
   if (c.kind === "entrance") return [];
   // The MTA's own way for this stop comes first: it picked the station to change at.
   if (advised.length) return advised.flatMap((a) => adviceSteps(sys, a, facts, e, trip));
-  const out = new Set(e.out);
+  const out = e.blocked ?? new Set(e.out);
   const shuttle = e.stretch && facts.buses.some((b) => b.shuttle);
   if (shuttle) return shuttleSteps(sys, e, facts, trip);
   const end = c.kind === "skip" || c.kind === "express" ? endOf(sys, e.line, c.toward) : null;
@@ -451,8 +460,8 @@ function tripSteps(sys: StaticSystem, e: Effect, facts: NoticeFacts, trip: NonNu
 function shuttleSteps(sys: StaticSystem, e: Effect, facts: NoticeFacts, trip: NonNullable<Trip>): WalkStep[] {
   const x = trip.stop;
   const L = e.change.line;
-  const out = new Set(e.out);
-  const corner = (id: string) => facts.busStops.find((b) => b.station.id === id)?.corner ?? null;
+  const out = e.blocked ?? new Set(e.out);
+  const corner = (id: string) => cornerAt(facts, id);
   const route = facts.buses.find((b) => b.shuttle)?.routes[0] ?? "shuttle";
   const end = nearestOpen(e.seq, x, out);
   const bus = (s: Step, stops: string[]) => {
@@ -506,6 +515,12 @@ function shuttleSteps(sys: StaticSystem, e: Effect, facts: NoticeFacts, trip: No
   }
   return steps;
 }
+
+/** Where the shuttle bus stops for a station, in the MTA's words with the streets spelled out ("7 Avenue at 42 Street"). */
+const cornerAt = (facts: NoticeFacts, id: string): string | null => {
+  const c = facts.busStops.find((b) => b.station.id === id)?.corner;
+  return c ? formatStreetText(c.replace(/\[[^\]]*icon\]/gi, "").trim()) : null;
+};
 
 /** The MTA's advice that is for this rider: their case (going to, starting from) and their stop. */
 function adviceFor(facts: NoticeFacts, e: Effect, trip: NonNullable<Trip>): Advice[] {
@@ -592,7 +607,7 @@ function adviceSteps(sys: StaticSystem, a: Advice, facts: NoticeFacts, e: Effect
     const s = base();
     const at = you ?? (forWhom ? ids(forWhom)[0] : null) ?? null;
     const shuttle = /shuttle/i.test(b);
-    const corner = at ? facts.busStops.find((x) => x.station.id === at)?.corner ?? null : null;
+    const corner = at ? cornerAt(facts, at) : null;
     const route = shuttle ? facts.buses.find((x) => x.shuttle)?.routes[0] ?? "shuttle" : b;
     if (shuttle) s.say(corner ? "advice.shuttleAt" : "advice.shuttle", { corner: corner ?? "" });
     else s.say(corner ? "advice.busAt" : "advice.busUnknown", { bus: b, corner: corner ?? "" });
@@ -635,7 +650,7 @@ function whenStep(sys: StaticSystem, facts: NoticeFacts, focus: string[]): WalkS
 }
 
 /** MTA icons and bullets as words, for a headline read as it is. */
-export function cleanAlertText(s: string): string {
+function cleanAlertText(s: string): string {
   return s.replace(/\[shuttle bus icon\]/gi, "shuttle").replace(/\[[a-z][\w ]*icon\]/gi, "").replace(/\](?=\[)/g, "], ")
     .replace(/\[([A-Z0-9]+)\]/g, "$1").replace(/[ \t]+/g, " ").replace(/ +([.,])/g, "$1");
 }
@@ -650,7 +665,7 @@ export function mtaWords(a: TransitAlert): string {
 /* ------------------------------------------------------------------------------------------------------------ */
 
 /** The stations a rider can pick for this notice on this line, in track order. */
-export function walkStops(facts: NoticeFacts, sys: StaticSystem, route: string, informed: Set<string> = new Set(), served: Set<string> = new Set()): string[] {
+function walkStops(facts: NoticeFacts, sys: StaticSystem, route: string, informed: Set<string> = new Set(), served: Set<string> = new Set()): string[] {
   const effects = facts.changes.filter((c) => lineMatches(c.line, route) && !c.note).map((c) => effectOf(sys, c, route, informed, served)).filter((e): e is Effect => Boolean(e));
   const seq = seqOf(sys, route);
   const picks = [...new Set(effects.flatMap((e) => e.picks))];
@@ -664,7 +679,7 @@ export function walkStops(facts: NoticeFacts, sys: StaticSystem, route: string, 
 export function noticeWalk(a: TransitAlert & { facts?: NoticeFacts }, sys: StaticSystem | undefined, route: string, trip: Trip): NoticeWalk {
   if (!sys) return { stops: [], steps: [headlineStep(a)], read: false };
   const facts = factsOf(a, sys);
-  if (!hasFacts(facts)) return { stops: [], steps: [headlineStep(a), whenStep(sys, facts, []) ].filter((x): x is WalkStep => Boolean(x)), read: false };
+  if (!hasFacts(facts)) return { stops: [], steps: [headlineStep(a), ...mtaSteps(a), whenStep(sys, facts, [])].filter((x): x is WalkStep => Boolean(x)), read: false };
   const informed = new Set(a.stops.map((s) => stationOf(sys.system, s)));
   const changes = dedupe(facts.changes);
   const groups = merged(changes.filter((c) => !c.note));
@@ -674,10 +689,12 @@ export function noticeWalk(a: TransitAlert & { facts?: NoticeFacts }, sys: Stati
   const others = [...groups.filter((g) => !own.some((o) => o.key === g.key)), ...merged(changes.filter((c) => c.note))];
   // Stations the notice says trains still reach: the ends of what still runs, and where it says to change.
   const served = new Set(changes.flatMap((c) => (c.kind === "runs" ? [c.from.id, c.to.id] : c.kind === "sections" ? c.sections.flat().map((r) => r.id) : [])).filter((x): x is string => Boolean(x)));
-  const effects = own.map(({ c, group }) => ({ c, group, e: effectOf(sys, c, route, informed, served) ?? effectOf(sys, c, c.line, informed, served) }));
+  const runs = changes.flatMap((c) => (c.kind === "runs" && c.from.id && c.to.id ? [[c.from.id, c.to.id] as [string, string]] : []));
+  const effects = own.map(({ c, group }) => ({ c, group, e: effectOf(sys, c, route, informed, served, runs) ?? effectOf(sys, c, c.line, informed, served, runs) }));
   const stops = walkStops(facts, sys, route, informed, served);
   const pick = trip && stops.includes(trip.stop) ? trip : null;
-  const steps: WalkStep[] = effects.map(({ c, e, group }) => leadStep(sys, e, c, group));
+  const bus = facts.buses.some((b) => b.shuttle);
+  const steps: WalkStep[] = effects.map(({ c, e, group }) => leadStep(sys, e, c, group, bus));
   if (pick) {
     let any = false;
     for (const { e } of effects) {
@@ -731,9 +748,26 @@ function merged(changes: Change[]): Array<{ c: Change; group: string[]; key: str
   return out;
 }
 
+/**
+ * A notice our rules could not read: the MTA's own guidance lines, read as written, without its reason
+ * ("What's happening?") or the stock lines every notice carries. Step 8 flags these for a new rule.
+ */
+function mtaSteps(a: TransitAlert): WalkStep[] {
+  const lines = cleanAlertText((a.description ?? "").replace(/\[[a-z][\w ]*icon\]/gi, "")).split(/\n/).map((l) => l.trim());
+  const out: string[] = [];
+  let reason = false;
+  for (const l of lines) {
+    if (/^what(?:'s| is) happening\??$|^what happened\??$/i.test(l)) { reason = true; continue; }
+    if (!l) { reason = false; continue; }
+    if (reason || /ADA accessible|^see a map\b|^(?:travel alternatives|transfer stations|note)s?:?$/i.test(l) || l.length < 4) continue;
+    out.push(formatStationName(/[.!?]$/.test(l) ? l : `${l}.`));
+  }
+  return out.slice(0, 6).map((t) => ({ parts: [{ key: "mta.headline" as const, slots: { text: t } }], text: t, named: { stations: [], lines: [], buses: [], entrances: [] }, map: { stations: [], lines: [...a.routes] } }));
+}
+
 /** A notice our rules could not read: its headline, as the MTA wrote it. */
 function headlineStep(a: TransitAlert): WalkStep {
-  const text = cleanAlertText(a.text).replace(/\s*\n+\s*/g, " ").trim();
+  const text = formatStationName(cleanAlertText(a.text).replace(/\s*\n+\s*/g, " ").trim());
   const t = /[.!?]$/.test(text) ? text : `${text}.`;
   return { parts: [{ key: "mta.headline", slots: { text: t } }], text: fill("mta.headline", { text: t }), named: { stations: [], lines: [], buses: [], entrances: [] }, map: { stations: [], lines: [...a.routes] } };
 }
