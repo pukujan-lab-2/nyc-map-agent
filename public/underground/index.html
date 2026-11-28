@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Underground Guide · NYC Map Agent</title>
+<meta name="description" content="How we plan to guide riders through NYC subway stations without GPS: what we tried, the technology, our data, and how anyone, especially people with an iPhone Pro or iPad Pro, can help map stations.">
+<link rel="icon" href="/partners/assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a station's wayfinding system. Each section is a black hanging sign with a line bullet; the page ground is platform tile. */
+:root {
+  --tile: #f3f5f6;
+  --tile-line: #e2e7ea;
+  --panel: #ffffff;
+  --ink: #15191c;
+  --ink-soft: #4a545b;
+  --ink-faint: #7b868d;
+  --sign: #15191c;
+  --sign-ink: #ffffff;
+  --rule: #d5dce0;
+  --l456: #00933c;
+  --lnqr: #fccc0a;
+  --lace: #0039a6;
+  --l123: #ee352e;
+  --lbdf: #ff6319;
+  --l7: #b933ad;
+  --lg: #6cbe45;
+  --ok: #00933c;
+  --wip: #b88a00;
+  --todo: #8a959c;
+  --wait: #0039a6;
+  --nc: #1fa9e1;
+  --nm: #e6007e;
+  --ny: #ffe500;
+  --nk: #121212;
+  --display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --body: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --tile: #0f1316; --tile-line: #1a2024; --panel: #161c20; --ink: #e9eef1; --ink-soft: #b3bec5; --ink-faint: #85919a;
+    --sign: #050708; --sign-ink: #ffffff; --rule: #2a3339; --ok: #3cc26f; --wip: #f2c230; --todo: #7d8a92; --wait: #6f9bff;
+    --lace: #4d7fff; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --tile: #0f1316; --tile-line: #1a2024; --panel: #161c20; --ink: #e9eef1; --ink-soft: #b3bec5; --ink-faint: #85919a;
+  --sign: #050708; --sign-ink: #ffffff; --rule: #2a3339; --ok: #3cc26f; --wip: #f2c230; --todo: #7d8a92; --wait: #6f9bff;
+  --lace: #4d7fff; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; -webkit-text-size-adjust: 100%; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background-color: var(--tile);
+  background-image: linear-gradient(var(--tile-line) 1px, transparent 1px), linear-gradient(90deg, var(--tile-line) 1px, transparent 1px);
+  background-size: 48px 24px;
+  color: var(--ink);
+  font: 400 15px/1.6 var(--body);
+}
+.wrap { max-width: 1120px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+a { color: var(--lace); }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 3px solid var(--lnqr); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+
+/* Sticky station-sign nav */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--sign); }
+nav.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 9; background: var(--sign); color: var(--sign-ink); border-bottom: 3px solid var(--l456); }
+nav.top .wrap { display: flex; gap: 6px; overflow-x: auto; padding-block: 8px; scrollbar-width: thin; }
+nav.top a { color: var(--sign-ink); text-decoration: none; font: 600 13px/1 var(--display); white-space: nowrap; padding: 8px 10px; border-radius: 4px; }
+nav.top a:hover { background: #2b3237; }
+
+/* Hero */
+.hero { padding-block: 40px 28px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+.eyebrow { font: 700 12px/1 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.hero h1 { font-size: clamp(34px, 6vw, 60px); line-height: 1.02; font-weight: 800; letter-spacing: -0.02em; margin-top: 10px; }
+.hero .lede { font-size: 18px; color: var(--ink-soft); margin-top: 14px; }
+.stages { display: grid; gap: 10px; margin-top: 22px; }
+.stage { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; }
+.bullet { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font: 800 20px/1 var(--display); color: #fff; flex: none; }
+.bullet.y { color: #111; }
+.stage b { font-family: var(--display); font-size: 16px; }
+.stage span { display: block; color: var(--ink-soft); font-size: 13.5px; }
+.codes-hero { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.codes-hero figure { margin: 0; text-align: center; }
+.codes-hero figcaption { font-size: 12px; color: var(--ink-soft); margin-top: 6px; line-height: 1.35; }
+.nl { width: 100%; max-width: 150px; aspect-ratio: 1; display: grid; grid-template-columns: repeat(9, 1fr); background: #fff; padding: 0; border-radius: 3px; box-shadow: 0 1px 0 var(--rule); margin: 0 auto; }
+.nl i { display: block; }
+.note { font-size: 12.5px; color: var(--ink-faint); }
+
+/* Section sign */
+section { padding-block: 34px; scroll-margin-top: 56px; }
+#goal { scroll-margin-top: 56px; }
+.sign { display: flex; align-items: center; gap: 12px; background: var(--sign); color: var(--sign-ink); border-radius: 6px; padding: 12px 16px; }
+.sign .bullet { width: 34px; height: 34px; font-size: 16px; }
+.sign h2 { font-size: clamp(19px, 2.6vw, 24px); font-weight: 700; color: var(--sign-ink); }
+.sign .arrow { margin-left: auto; font: 700 22px/1 var(--display); opacity: 0.7; }
+.intro { margin-top: 14px; color: var(--ink-soft); }
+
+.grid { display: grid; gap: 14px; margin-top: 18px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.card h3 { font-size: 16px; font-weight: 700; }
+.card p { font-size: 14px; color: var(--ink-soft); margin-top: 6px; }
+
+/* Status */
+.chip { display: inline-flex; align-items: center; gap: 6px; font: 600 11.5px/1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; border: 1.5px solid currentColor; white-space: nowrap; }
+.chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.s-ok { color: var(--ok); } .s-wip { color: var(--wip); } .s-todo { color: var(--todo); } .s-wait { color: var(--wait); }
+.board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.col { background: var(--panel); border: 1px solid var(--rule); border-top: 5px solid var(--c); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.col h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--c); }
+.col ul { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.col li { font-size: 13.5px; line-height: 1.4; padding-left: 12px; border-left: 2px solid var(--rule); }
+
+/* Details */
+details { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; min-width: 0; }
+details + details { margin-top: 8px; }
+summary { cursor: pointer; list-style: none; padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-weight: 600; }
+summary > :not(.chip) { min-width: 0; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; margin-left: auto; font: 700 18px/1 var(--display); color: var(--ink-faint); }
+details[open] > summary::after { content: "−"; }
+details > .body { padding: 0 14px 14px; color: var(--ink-soft); font-size: 14px; display: grid; gap: 8px; }
+details > .body ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+summary .meta { font-weight: 400; color: var(--ink-faint); font-size: 13px; }
+
+/* Timeline */
+.timeline { position: relative; margin-top: 20px; display: grid; gap: 10px; padding-left: 26px; }
+.timeline::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 4px; background: var(--l456); border-radius: 2px; }
+.tl { position: relative; }
+.tl::before { content: ""; position: absolute; left: -24px; top: 15px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel); border: 3px solid var(--sign); }
+.tl .when { font: 600 12px/1 var(--mono); color: var(--ink-faint); white-space: nowrap; }
+
+/* Problems */
+.prob { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+.prob .n { font: 800 15px/28px var(--display); width: 28px; height: 28px; text-align: center; border-radius: 4px; background: var(--l123); color: #fff; }
+.pipe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.pipe div { font-size: 13px; background: var(--tile); border: 1px dashed var(--rule); border-radius: 6px; padding: 8px 10px; position: relative; min-width: 0; }
+.pipe.good div { border-style: solid; border-color: var(--ok); }
+.pipe b { display: block; font-family: var(--display); font-size: 13.5px; color: var(--ink); }
+
+/* Charts */
+.chart { width: 100%; height: auto; display: block; }
+.chart text { fill: var(--ink-soft); font: 11px var(--body); }
+.chart .lbl { fill: var(--ink); font-weight: 600; }
+.fig { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px; min-width: 0; }
+.fig h3 { font-size: 15px; }
+.fig p.cap { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+
+/* Matrix */
+.scroll { overflow-x: auto; margin-top: 18px; border-radius: 8px; border: 1px solid var(--rule); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 13.5px; }
+th, td { padding: 9px 10px; text-align: center; border-bottom: 1px solid var(--rule); }
+th { font: 700 12px/1.25 var(--display); color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; background: var(--tile); position: sticky; top: 0; }
+td:first-child, th:first-child { text-align: left; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; }
+.d2 { background: var(--ok); } .d1 { background: transparent; border: 3px solid var(--wip); } .d0 { background: transparent; border: 2px solid var(--rule); }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 10px; font-size: 13px; color: var(--ink-soft); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.tick { color: var(--ok); font-weight: 700; } .cross { color: var(--ink-faint); } .q { color: var(--wip); font-weight: 700; }
+
+/* System diagram */
+.diagram { margin-top: 18px; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.diagram svg { min-width: 720px; width: 100%; height: auto; display: block; }
+.diagram text { font: 600 13px var(--display); fill: var(--ink); }
+.diagram .sm { font: 400 11.5px var(--body); fill: var(--ink-soft); }
+
+/* Media */
+.gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.gallery figure { margin: 0; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; min-width: 0; }
+.gallery img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; background: var(--tile-line); }
+.gallery figcaption { padding: 8px 10px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.4; }
+.codecard { display: grid; grid-template-columns: 96px 96px minmax(0, 1fr); gap: 12px; align-items: center; }
+.codecard img { width: 96px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid var(--rule); }
+.codecard .nl { max-width: 96px; }
+.codecard .chip { white-space: normal; line-height: 1.25; }
+.pattern { font: 600 12px/1.3 var(--mono); letter-spacing: 0.08em; word-break: break-all; color: var(--ink); }
+
+/* Coverage */
+.cov td, .cov th { text-align: center; }
+.cov td:first-child { text-align: left; }
+
+/* Contributor picker */
+.picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.picker button { font: 600 13.5px/1 var(--body); color: var(--ink); background: var(--panel); border: 1.5px solid var(--rule); border-radius: 999px; padding: 10px 14px; cursor: pointer; }
+.picker button[aria-pressed="true"] { background: var(--sign); color: var(--sign-ink); border-color: var(--sign); }
+.tasks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.task { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 14px; min-width: 0; transition: opacity .2s; display: grid; gap: 8px; align-content: start; }
+.task.dim { opacity: 0.28; }
+.task h3 { font-size: 15.5px; }
+.task p { font-size: 13.5px; color: var(--ink-soft); }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { font: 600 11px/1 var(--display); padding: 4px 7px; border-radius: 4px; background: var(--tile); border: 1px solid var(--rule); color: var(--ink-soft); }
+.tag.time { color: var(--lace); }
+
+/* Scan guide */
+.steps { counter-reset: s; display: grid; gap: 10px; margin-top: 14px; }
+.step { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; }
+.step::before { content: counter(s); width: 34px; height: 34px; border-radius: 50%; background: var(--lace); color: #fff; display: grid; place-items: center; font: 800 16px/1 var(--display); }
+.step b { font-family: var(--display); }
+.step p { font-size: 14px; color: var(--ink-soft); margin-top: 2px; }
+
+.proposal { font: 700 11px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--l7); }
+footer { padding-block: 30px 50px; color: var(--ink-faint); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .board, .g4, .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g3, .tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .board, .g2, .g3, .g4, .tasks { grid-template-columns: minmax(0, 1fr); }
+  .codecard { grid-template-columns: 72px 72px minmax(0, 1fr); }
+  .codecard img, .codecard .nl { width: 72px; height: 72px; }
+}
+</style>
+</head>
+<body>
+<nav class="top" aria-label="Sections"><div class="wrap">
+  <a href="/" style="background:var(--l456)">← Map</a>  <a href="#goal">Goal</a><a href="#status">Where we are</a><a href="#tried">What we tried</a><a href="#why3d">Why 3D breaks</a>
+  <a href="#sensors">Phone sensors</a><a href="#tech">Tech map</a><a href="#plan">Full plan</a><a href="#tests">Tests</a>
+  <a href="#assets">What we have</a><a href="#contribute">Help map</a><a href="#scan">Pro scanning</a><a href="#grow">More people</a><a href="#decide">Decisions</a>
+</div></nav>
+
+<header class="wrap hero" id="goal">
+  <div>
+    <div class="eyebrow">NYC Map Agent · stations below the street</div>
+    <h1>Getting a rider through a station without GPS</h1>
+    <p class="lede">Below the street, GPS stops working. We want a guide that knows where you are in the station and tells you the next turn, accurate enough that a blind rider can follow it from a watch.</p>
+    <div class="stages">
+      <div class="stage"><div class="bullet" style="background:var(--l456)">1</div><div><b>Camera on</b><span>The app reads signs and NaviLens codes and guides you, offline where possible.</span></div></div>
+      <div class="stage"><div class="bullet y" style="background:var(--lnqr)">2</div><div><b>Phone in a pocket</b><span>Accurate enough without the camera: spoken turns from steps, the barometer and the station map.</span></div></div>
+      <div class="stage"><div class="bullet" style="background:var(--lace)">3</div><div><b>A watch</b><span>A tap and a spoken word at each turn, so people can get through a station without looking at a phone. Built for disabled riders first.</span></div></div>
+    </div>
+  </div>
+  <div>
+    <div class="codes-hero" id="heroCodes"></div>
+    <p class="note" style="margin-top:12px">The three NaviLens codes we have read and checked at 86 St, drawn from their patterns. Each is a 5 by 5 grid of cyan, magenta, yellow and black, and each one is a known spot in the station.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="status">
+  <div class="sign"><div class="bullet" style="background:var(--l456)">✓</div><h2>Where we are, 27 Nov 2026</h2><span class="arrow">→</span></div>
+  <p class="intro">Nothing new gets built until the tests below say what works. Everything is tracked in GitHub issue <a href="https://github.com/pukujan-lab-2/nyc-map-agent/issues/290">#290</a>.</p>
+  <div class="board">
+    <div class="col" style="--c:var(--ok)"><h3>Done</h3><ul>
+      <li>86 St photos, video, sensor log and NaviLens codes catalogued in Octo (PR #286)</li>
+      <li>Plan for finding a rider without GPS (<code>docs/PLAN-underground-guidance.md</code>)</li>
+      <li>Tests that need no true position (PR #256)</li>
+      <li>PostGIS database running on the server, empty (PR #255)</li>
+      <li>Tracker issue #290 with all context</li>
+    </ul></div>
+    <div class="col" style="--c:var(--wip)"><h3>In flight</h3><ul>
+      <li>NaviLens code reader, reads photos offline (PR #261)</li>
+      <li>How stations connect inside, step-free routes (PR #263)</li>
+      <li>Agent answers step-free routes (PR #268)</li>
+      <li>Station walk lighting and shadows (PR #272)</li>
+      <li>Guide learns each rider's step length</li>
+    </ul></div>
+    <div class="col" style="--c:var(--todo)"><h3>Not started</h3><ul>
+      <li>Station data loaded into PostGIS</li>
+      <li>The four tests below</li>
+      <li>Native app (barometer, pocket mode, ARKit, watch)</li>
+      <li>Any station scan</li>
+      <li>A defect test for the 3D walk that can actually fail</li>
+    </ul></div>
+    <div class="col" style="--c:var(--wait)"><h3>Waiting on a decision</h3><ul>
+      <li>Rebuild the 3D walk from scans, or keep patching</li>
+      <li>Does anyone have an iPhone Pro or iPad Pro</li>
+      <li>Which test runs first</li>
+      <li>Pass mark in metres for each stage</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="tried">
+  <div class="sign"><div class="bullet" style="background:var(--lbdf)">↺</div><h2>What we have tried</h2><span class="arrow">→</span></div>
+  <p class="intro">Two separate 3D engines and one guide, each fixed one recording at a time. Open any step for what happened.</p>
+  <div class="timeline">
+    <details class="tl"><summary><span class="when">Oct 2026</span> First-person station view from OpenStreetMap <span class="chip s-wip">patched</span></summary>
+      <div class="body"><p>Walls, floors and ceilings built from OpenStreetMap's centre lines and level tags on a half-metre grid (<code>src/lib/map/stationWalk.ts</code>).</p>
+      <ul><li>#71 plain grey walls, no signs</li><li>#73 jagged gaps at the top and foot of walls</li><li>#95 ceilings and floors cut across stairs</li><li>#97 mezzanines came out as 3 m strips</li><li>#102 stairs were open chutes</li><li>#111 jagged stairwell edges from the grid</li></ul>
+      <p>Each was fixed, and the next recording found the next one.</p></div></details>
+    <details class="tl"><summary><span class="when">Nov 2026</span> Fulton St traced by hand <span class="chip s-wip">misfit 1–1.5 m</span></summary>
+      <div class="body"><p>Nine rooms traced from screenshots of the reference model with OpenCV. Only 33 of 52 stairs landed on a floor. A run of fixes (#113, #115, #117, #119, #121) kept chasing the same stair.</p></div></details>
+    <details class="tl"><summary><span class="when">Nov 2026</span> Dollhouse walks from the Project Subway model <span class="chip s-wip">149 defects left</span></summary>
+      <div class="body"><p>Fulton St, then City Hall and Barclays, cropped from Project Subway NYC (used with permission). The model has floors and stairs but no walls, ceilings, gates or signs, so walls are pushed up a fixed 3 m from the floor edges.</p>
+      <ul><li>#129 dollhouse view added</li><li>#161 City Hall and Barclays are drawn twice as deep; halved by hand, about 4 m off the tracks</li><li>PR #168 walls merged into one solid; a ray check still finds 149 problem spots, 52 of them holes</li><li>The simulated walker still stops on 4 walks and falls through a floor on 3</li></ul></div></details>
+    <details class="tl"><summary><span class="when">14 Nov</span> Hackathon walks filmed and logged <span class="chip s-ok">data</span></summary>
+      <div class="body"><p>Cortlandt St to Union Sq filmed turn by turn, with sensor recordings for each leg. Union Sq on 13 Nov became the first replay case.</p></div></details>
+    <details class="tl"><summary><span class="when">20 Nov</span> Replayed Union Sq with GPS withheld <span class="chip s-wip">63 m off</span></summary>
+      <div class="body"><p>The guide's dot ended about 63 m past the second elevator. The rider took 296 steps where the guide counts 212. Measuring the step on the platform first cut the miss to about 23 m. The compass was off by between +54 and −147 degrees, so it was ruled out.</p></div></details>
+    <details class="tl"><summary><span class="when">20 Nov</span> Station look: tone curve, shadows, glowing lamps <span class="chip s-wip">PR #272</span></summary>
+      <div class="body"><p>Fixes how the walk is lit, not where walls are. The shapes stay as wrong as before.</p></div></details>
+    <details class="tl"><summary><span class="when">20 Nov</span> NaviLens reader written <span class="chip s-wip">PR #261</span></summary>
+      <div class="body"><p>Reads a code's 25-cell pattern from a picture, offline, in a folder that can be deleted if permission is withdrawn. First tried on real codes on 27 Nov.</p></div></details>
+    <details class="tl"><summary><span class="when">27 Nov</span> 86 St partner walk catalogued <span class="chip s-ok">PR #286</span></summary>
+      <div class="body"><p>411 MB cut to 54 MB, faces blurred, stored in Octo and searchable by station and by code. Three codes read and checked; the reader needed a looser white-frame check for the dim "No Exit" code.</p></div></details>
+  </div>
+</section>
+
+<section id="why3d">
+  <div class="sign"><div class="bullet" style="background:var(--l123)">!</div><h2>Why the 3D walk keeps breaking</h2><span class="arrow">→</span></div>
+  <p class="intro">The walls, ceilings and floors are guessed rather than measured. Every place a guess meets another guess becomes a seam to patch.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Today: guessed</h3>
+      <div class="pipe"><div><b>Map lines</b>Centre lines and level tags</div><div><b>Half-metre grid</b>Floors drawn as squares</div><div><b>Walls pushed up</b>A fixed 3 m from each edge</div><div><b>Seams</b>Holes, slabs over stairs</div></div></div>
+    <div class="card"><h3>Proposed: measured</h3>
+      <div class="pipe good"><div><b>Scan</b>LiDAR or photos of the real station</div><div><b>Real shapes</b>Walls, floors, ceilings in metres</div><div><b>Pinned</b>Lined up on NaviLens codes and stairs</div><div><b>Checked</b>A defect test that can fail</div></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card prob"><div class="n">1</div><div><h3>Walls and ceilings guessed</h3><p>Built from map centre lines on a half-metre grid, so stair edges are jagged.</p></div></div>
+    <div class="card prob"><div class="n">2</div><div><h3>Fulton St model is a diagram</h3><p>Floors and stairs only. Walls pushed up 3 m everywhere; 149 problem spots remain.</p></div></div>
+    <div class="card prob"><div class="n">3</div><div><h3>Two models the wrong size</h3><p>City Hall and Barclays drawn twice as deep, halved by hand, about 4 m off the tracks.</p></div></div>
+    <div class="card prob"><div class="n">4</div><div><h3>Signs placed by rule</h3><p>Not where the real signs hang, and they repeat the same words.</p></div></div>
+    <div class="card prob"><div class="n">5</div><div><h3>The defect test cannot fail</h3><p>It checks for zero or more defects, so nothing stops new holes.</p></div></div>
+    <div class="card prob"><div class="n">6</div><div><h3>Two separate engines</h3><p>A fix to the street-view walk never reaches the dollhouse walk.</p></div></div>
+    <div class="card prob"><div class="n">7</div><div><h3>The dot drifts</h3><p>About 63 m off at Union Sq with GPS withheld.</p></div></div>
+    <div class="card prob"><div class="n">8</div><div><h3>GPS is useless underground</h3><p>At 86 St it barely moved while the rider walked the platform.</p></div></div>
+  </div>
+</section>
+
+<section id="sensors">
+  <div class="sign"><div class="bullet y" style="background:var(--lnqr)">≈</div><h2>What the phone actually sensed at 86 St</h2><span class="arrow">→</span></div>
+  <p class="intro">Real data from the partner's walk on 26 Nov: up a stair, along the platform, up elevator EL273 to the street. The video starts 13 seconds into the sensor log, so we can see where they were at every second.</p>
+  <div class="grid g2">
+    <div class="fig"><h3>The barometer sees every level change</h3><svg class="chart" id="baroChart" viewBox="0 0 560 260" role="img" aria-label="Height from the barometer over the 86 St walk"></svg>
+      <p class="cap">A stair climb of about 4.8 m and the elevator ride of about 5 m stand out. On the flat platform the reading wanders about 1.5 m, so it tells levels apart but not where you are on one.</p></div>
+    <div class="fig"><h3>GPS gives up below the street</h3><svg class="chart" id="gpsChart" viewBox="0 0 560 260" role="img" aria-label="GPS reported accuracy over the 86 St walk"></svg>
+      <p class="cap">Reported accuracy mostly 16 to 24 m with jumps to 354 and 550 m, while the position barely moved (within about 10 m) as the rider walked the platform.</p></div>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <details><summary>Accelerometer <span class="meta">steps</span></summary><div class="body"><p>Counts steps well. Step length varies by rider: 296 steps at Union Sq where the guide counted 212. The guide now learns each rider's step at the first confirmed sign.</p></div></details>
+    <details><summary>Gyroscope <span class="meta">turns</span></summary><div class="body"><p>Good for turns over a few seconds. Drifts over minutes, so it needs a reset at known spots.</p></div></details>
+    <details><summary>Compass <span class="meta">ruled out</span></summary><div class="body"><p>Steel in stations throws it off. At Union Sq it was off by between +54 and −147 degrees leg by leg.</p></div></details>
+  </div>
+</section>
+
+<section id="tech">
+  <div class="sign"><div class="bullet" style="background:var(--lace)">⌘</div><h2>Tech map: what each option can and cannot do</h2><span class="arrow">→</span></div>
+  <p class="intro">No single option covers everything. Read across a row to see what it gives; read down a column to see what covers a need.</p>
+  <div class="scroll"><table id="matrix"></table></div>
+  <div class="legend"><span><i class="dot d2"></i> Does this well</span><span><i class="dot d1"></i> Partly, or with limits</span><span><i class="dot d0"></i> No</span></div>
+  <div style="margin-top:16px" id="techDetails"></div>
+  <details style="margin-top:14px"><summary>How Apple Maps and Google Maps get their accuracy, and our version</summary><div class="body">
+    <p>They do not track riders inside NYC subway stations either. Outdoors their accuracy comes from references we can copy underground.</p>
+    <ul><li><b>Snapping to the road network</b> → snapping to the station's walking network (MTA draft Pathways in PostGIS)</li>
+    <li><b>Matching the camera against Street View</b> → NaviLens codes and signs now; a station scan later</li>
+    <li><b>3D buildings</b> → station levels plus the barometer</li>
+    <li><b>Wi-Fi surveys</b> → possible in stations, Android native app only</li>
+    <li><b>Blending every sensor</b> → ARKit or ARCore with the camera up; steps and barometer in a pocket</li></ul></div></details>
+</section>
+
+<section id="plan">
+  <div class="sign"><div class="bullet" style="background:var(--l7)">⇄</div><h2>The full plan, as one map</h2><span class="arrow">→</span></div>
+  <p class="intro">Sensors move the dot. Known spots fix it. The walking network keeps it on real paths. The 3D walk is a separate track that only needs measured shapes.</p>
+  <div class="diagram"><svg viewBox="0 0 1060 470" role="img" aria-label="How sensors, known spots and the walking network combine into the three stages">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-faint)"/></marker></defs>
+    <g style="stroke:var(--ink-faint)" stroke-width="2" fill="none" marker-end="url(#ah)">
+      <path d="M232 75 H330"/><path d="M232 190 H330"/><path d="M232 305 H330"/>
+      <path d="M560 190 H640"/>
+      <path d="M840 120 L900 80"/><path d="M840 190 H900"/><path d="M840 260 L900 300"/>
+      <path d="M445 400 V250" stroke-dasharray="6 5"/>
+    </g>
+    <g><rect x="18" y="30" width="214" height="90" rx="8" style="fill:var(--tile);stroke:var(--rule)"/>
+      <text x="34" y="58">Phone sensors</text><text class="sm" x="34" y="80">Steps, turns, barometer</text><text class="sm" x="34" y="98">Camera tracking (ARKit / ARCore)</text></g>
+    <g><rect x="18" y="145" width="214" height="90" rx="8" style="fill:var(--tile);stroke:var(--rule)"/>
+      <text x="34" y="173">Known spots</text><text class="sm" x="34" y="195">NaviLens codes, signs</text><text class="sm" x="34" y="213">Turnstiles, stair ends, elevators</text></g>
+    <g><rect x="18" y="260" width="214" height="90" rx="8" style="fill:var(--tile);stroke:var(--rule)"/>
+      <text x="34" y="288">Station walking network</text><text class="sm" x="34" y="310">MTA draft Pathways, 230 stations</text><text class="sm" x="34" y="328">Stored in PostGIS</text></g>
+    <g><rect x="330" y="120" width="230" height="140" rx="10" style="fill:var(--sign)"/>
+      <text x="350" y="160" style="fill:var(--sign-ink)">Where is the rider?</text>
+      <text class="sm" x="350" y="186" style="fill:#c9d2d7">Dot moves by sensors,</text><text class="sm" x="350" y="204" style="fill:#c9d2d7">snaps to the network,</text><text class="sm" x="350" y="222" style="fill:#c9d2d7">resets at each known spot</text></g>
+    <g><rect x="640" y="150" width="200" height="80" rx="8" style="fill:var(--tile);stroke:var(--rule)"/>
+      <text x="656" y="180">Scored on replay</text><text class="sm" x="656" y="202">Metres off at each checkpoint</text><text class="sm" x="656" y="219">against the synced video</text></g>
+    <g><circle cx="930" cy="70" r="24" style="fill:var(--l456)"/><text x="923" y="77" style="fill:#fff">1</text><text x="962" y="66">Camera on</text><text class="sm" x="962" y="84">offline</text></g>
+    <g><circle cx="930" cy="190" r="24" style="fill:var(--lnqr)"/><text x="923" y="197" style="fill:#111">2</text><text x="962" y="186">In a pocket</text><text class="sm" x="962" y="204">native app</text></g>
+    <g><circle cx="930" cy="310" r="24" style="fill:var(--lace)"/><text x="923" y="317" style="fill:#fff">3</text><text x="962" y="306">Watch</text><text class="sm" x="962" y="324">taps and speech</text></g>
+    <g><rect x="330" y="400" width="420" height="56" rx="8" style="fill:var(--panel);stroke:var(--l123)" stroke-width="2"/>
+      <text x="346" y="424">3D walk track: scans give real walls, floors, ceilings</text><text class="sm" x="346" y="444">and the reference a camera can later match against</text></g>
+  </svg></div>
+  <details style="margin-top:12px"><summary>The plan's steps (from <code>docs/PLAN-underground-guidance.md</code>) and what was added on 27 Nov</summary><div class="body">
+    <ul><li><b>0. Replay test</b>: checks on real recordings. First set done (PR #256).</li>
+    <li><b>1. Station as data</b>: levels, paths and checkpoints in PostGIS from the MTA draft Pathways. Database running, empty.</li>
+    <li><b>2. Position</b>: the dot learns the rider's step. Target under 25 m at the far elevator on recordings it was not tuned on.</li>
+    <li><b>3. Known spots</b>: elevator rides from the barometer and NaviLens codes reset the dot. Target under about 12 m before each reset.</li>
+    <li><b>4. Checks</b>: held-back recordings and agents as test riders.</li>
+    <li><b>5. Native app</b>: pocket, spoken turns, barometer.</li>
+    <li><b>6. Watch</b>: a tap at each instruction.</li></ul>
+    <p>Added 27 Nov: ARKit and ARCore tracking with the camera up, Wi-Fi on Android, COLMAP and LiDAR tests, the 3D walk's problems, the synced video as a source of true positions, and offline as a requirement for stage 1.</p></div></details>
+</section>
+
+<section id="tests">
+  <div class="sign"><div class="bullet" style="background:var(--lg)">?</div><h2>Four tests before we build anything</h2><span class="arrow">→</span></div>
+  <p class="intro">Each ends in a number. The first two need only files we already have.</p>
+  <div class="grid g4">
+    <div class="card"><span class="chip s-todo">not run</span><h3 style="margin-top:8px">86 St replay</h3><p>Snap the dot to the station network, reset at the three codes and the elevator ride, score against the video.</p><p><b>Pass:</b> within about 12 m at every checkpoint.</p><p><b>Needs:</b> nothing new.</p></div>
+    <div class="card"><span class="chip s-todo">not run</span><h3 style="margin-top:8px">COLMAP on the video</h3><p>Rebuild the 86 St walk in 3D from the video frames alone.</p><p><b>Pass:</b> most frames placed (over 80%), straight platform, right length.</p><p><b>Needs:</b> nothing new.</p></div>
+    <div class="card"><span class="chip s-wait">needs a device</span><h3 style="margin-top:8px">LiDAR test scan</h3><p>Scan the 86 St stair foot, platform and elevator landing.</p><p><b>Pass:</b> loop ends meet within about 1 m; tape checks match.</p><p><b>Needs:</b> an iPhone Pro or iPad Pro.</p></div>
+    <div class="card"><span class="chip s-wait">needs a device</span><h3 style="margin-top:8px">ARKit walk</h3><p>Walk the same route there and back with an ARKit logger, camera up, then in a pocket.</p><p><b>Pass:</b> loop gap of a couple of metres with the camera up.</p><p><b>Needs:</b> any recent iPhone.</p></div>
+  </div>
+</section>
+
+<section id="assets">
+  <div class="sign"><div class="bullet" style="background:var(--l456)">◧</div><h2>What we have so far</h2><span class="arrow">→</span></div>
+  <p class="intro">From the 86 St walk on 26 Nov, faces blurred. Stored in Octo under <code>station-media/86-st-6-train-2026-11-26/</code>.</p>
+  <div class="gallery">
+    <figure><img src="img/v-mosaic.jpg" alt="The 86th Street mosaic on the platform wall"><figcaption>Video 0:00, the 86TH ST mosaic where the walk starts</figcaption></figure>
+    <figure><img src="img/v-platform.jpg" alt="The platform with riders, faces blurred"><figcaption>Video 0:40, along the platform</figcaption></figure>
+    <figure><img src="img/v-elevator.jpg" alt="Elevator buttons for street and platform"><figcaption>Video 2:46, inside elevator EL273</figcaption></figure>
+    <figure><img src="img/v-street.jpg" alt="The street entrance at 86 St and Lexington Ave"><figcaption>Video 3:08, out at the street, northeast corner</figcaption></figure>
+  </div>
+  <h3 style="margin-top:22px;font-size:17px">NaviLens codes found</h3>
+  <div class="grid g2" id="codeCards"></div>
+
+  <h3 style="margin-top:26px;font-size:17px">Station coverage</h3>
+  <p class="intro" style="margin-top:4px">What we hold for each station. A question mark means we have not checked.</p>
+  <div class="scroll"><table class="cov" id="coverage"></table></div>
+
+  <div class="grid g3" style="margin-top:16px">
+    <details><summary>Data and datasets</summary><div class="body"><ul>
+      <li>MTA draft station walking network (2021): 230 stations, 3,810 paths, 401 elevators, sign text on 3,307 paths. Permission to use it.</li>
+      <li>Live MTA elevator and escalator feed, same identifiers</li>
+      <li>Project Subway NYC models of Fulton St, City Hall and Barclays, used with permission</li>
+      <li>OpenStreetMap station lines and levels</li>
+      <li>Octo: <code>core.station_media</code>, <code>core.navilens_sightings</code>, <code>core.navilens_codes</code></li></ul></div></details>
+    <details><summary>Recordings and film</summary><div class="body"><ul>
+      <li>86 St: video, sensor log with barometer, 4 photos (Octo)</li>
+      <li>Union Sq evening walk, 13 Nov (replay case)</li>
+      <li>Cortlandt St to Union Sq, filmed turn by turn, with sensor logs per leg (starter pack in Octo)</li>
+      <li>74 St-Broadway 7-to-R transfer, filmed (PR #237)</li>
+      <li>Partner's Drive "3D models" folder: Fulton St step-free models and entry and exit videos, Union Sq videos, and folders for NYU MetroTech, 67 Av exit, Roosevelt, Queens Plaza and Pratt, not yet opened</li></ul></div></details>
+    <details><summary>Tools, code and people</summary><div class="body"><ul>
+      <li>Station Recorder in the app, uploads walks in parts</li>
+      <li><code>pnpm walk:from-sensor-logger</code> converts Sensor Logger exports</li>
+      <li><code>pnpm media:find</code>, <code>pnpm media:codes</code> search the catalogue</li>
+      <li>NaviLens reader, offline (PR #261)</li>
+      <li>PostGIS on the server, empty</li>
+      <li>NaviLens team: permission given and they offered help</li>
+      <li>MTA has NaviLens codes at 50 stations in Manhattan and the Bronx</li></ul></div></details>
+  </div>
+</section>
+
+<section id="contribute">
+  <div class="sign"><div class="bullet" style="background:var(--lbdf)">+</div><h2>How you can help map stations</h2><span class="arrow">→</span></div>
+  <p class="intro">Pick what you have. The tasks that fit light up.</p>
+  <div class="picker" id="picker" role="group" aria-label="What do you have">
+    <button type="button" data-k="all" aria-pressed="true">Show all</button>
+    <button type="button" data-k="phone" aria-pressed="false">Any phone</button>
+    <button type="button" data-k="pro" aria-pressed="false">iPhone Pro or iPad Pro</button>
+    <button type="button" data-k="android" aria-pressed="false">Android phone</button>
+    <button type="button" data-k="watch" aria-pressed="false">Apple Watch</button>
+    <button type="button" data-k="blind" aria-pressed="false">I'm blind or low vision</button>
+    <button type="button" data-k="wheel" aria-pressed="false">I use a wheelchair</button>
+    <button type="button" data-k="code" aria-pressed="false">I write code</button>
+  </div>
+  <div class="tasks" id="tasks"></div>
+</section>
+
+<section id="scan">
+  <div class="sign"><div class="bullet" style="background:var(--lace)">◎</div><h2>Scanning a station with an iPhone Pro or iPad Pro</h2><span class="arrow">→</span></div>
+  <p class="intro">Pro models have a LiDAR sensor that measures distance with light, so a scan comes out at real size. Short sections pinned to known spots stop a long platform from drifting. <span class="proposal">Proposal</span></p>
+  <div class="diagram"><svg viewBox="0 0 1060 230" role="img" aria-label="A platform split into overlapping scan sections, each starting and ending at a NaviLens code or stair">
+    <rect x="20" y="70" width="1020" height="90" rx="6" style="fill:var(--tile);stroke:var(--rule)"/>
+    <rect x="20" y="160" width="1020" height="10" style="fill:var(--lnqr)"/>
+    <text x="30" y="200" class="sm">Yellow platform edge: stay behind it</text>
+    <g style="fill:var(--l456)" opacity="0.18"><rect x="40" y="78" width="300" height="74" rx="4"/><rect x="300" y="78" width="320" height="74" rx="4"/><rect x="580" y="78" width="300" height="74" rx="4"/><rect x="840" y="78" width="190" height="74" rx="4"/></g>
+    <g style="stroke:var(--l456)" stroke-width="2" fill="none"><rect x="40" y="78" width="300" height="74" rx="4"/><rect x="300" y="78" width="320" height="74" rx="4"/><rect x="580" y="78" width="300" height="74" rx="4"/><rect x="840" y="78" width="190" height="74" rx="4"/></g>
+    <text x="52" y="58">Section 1</text><text x="312" y="58">Section 2</text><text x="592" y="58">Section 3</text><text x="852" y="58">Section 4</text>
+    <text class="sm" x="300" y="40">overlap 3–5 m</text>
+    <g id="scanCodes"></g>
+    <g><rect x="980" y="88" width="42" height="54" rx="3" style="fill:var(--sign)"/><text x="984" y="120" style="fill:#fff;font-size:11px">EL</text></g>
+    <g style="fill:var(--ink-faint)"><rect x="60" y="92" width="40" height="46" rx="2"/></g><text x="56" y="150" class="sm">stair</text>
+  </svg></div>
+  <div class="steps">
+    <div class="step"><div><b>Go off-peak and stay safe</b><p>Handheld only. MTA rules allow photography but not tripods, lights or other added equipment without permission. Stay behind the yellow edge and never block a stair or door.</p></div></div>
+    <div class="step"><div><b>Start and end each section at a known spot</b><p>A NaviLens code, a sign, a stair end or an elevator door. Photograph it at the start and end. These are what lets us line the sections up.</p></div></div>
+    <div class="step"><div><b>Scan 20 to 30 metres at a time</b><p>Overlap the next section by 3 to 5 m. Walk slowly with the device at chest height, sweeping floor, wall and ceiling. Get the full top and bottom of every stair.</p></div></div>
+    <div class="step"><div><b>Measure one thing with a tape</b><p>A stair's width, the gap between two columns, or a door. Photograph the tape against it. This is how we check the scan's accuracy.</p></div></div>
+    <div class="step"><div><b>Record a short video of the same path</b><p>Phone at chest height, walking the same line. It gives us the look and a second check.</p></div></div>
+    <div class="step"><div><b>Name it and send it</b><p>Name files <code>station-section-date</code> (for example <code>86st-s2-2026-12-03</code>) and add them to the shared "3D models" Drive folder. A maintainer blurs faces and catalogues them in Octo.</p></div></div>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <details><summary>Which apps</summary><div class="body"><ul>
+      <li><b>Polycam</b>: LiDAR and photo modes, many export formats</li>
+      <li><b>Scaniverse</b>: free, LiDAR scans and on-device splats</li>
+      <li><b>3d Scanner App</b>: free, raw point clouds</li>
+      <li><b>SiteScape</b>: built for large spaces</li></ul><p>We will pick one after the 86 St test scan so every contributor uses the same settings.</p></div></details>
+    <details><summary>What to export</summary><div class="body"><ul><li>Point cloud: <code>.ply</code> or <code>.e57</code> (best for measuring)</li><li>Mesh: <code>.obj</code> or <code>.usdz</code> (best for the walk)</li><li>Keep the app's raw project if it offers one</li></ul></div></details>
+    <details><summary>What scans badly, and what to note</summary><div class="body"><ul><li>Glass (elevator shafts) and shiny steel</li><li>Black surfaces and dim corners</li><li>Anything beyond about 5 m: high ceilings, across the tracks</li><li>Moving trains and people</li></ul><p>Note these spots in a sentence with the upload so we know which gaps are real.</p></div></details>
+  </div>
+</section>
+
+<section id="grow">
+  <div class="sign"><div class="bullet" style="background:var(--l7)">↗</div><h2>Getting more people to contribute</h2><span class="arrow">→</span></div>
+  <p class="intro"><span class="proposal">Proposals</span> None of these is set up yet.</p>
+  <div class="grid g3">
+    <div class="card"><h3>A station coverage board</h3><p>A public map of which stations have a walk, codes, a scan. People pick an empty station, like claiming a square.</p></div>
+    <div class="card"><h3>Scan nights</h3><p>Three or four Pro devices per station, one evening, sections split between people. Like the 14 Nov hackathon, with a scan list.</p></div>
+    <div class="card"><h3>Blind and low-vision testers first</h3><p>Paid test sessions with blindness and disability organisations. They test every stage, and the watch is built for them.</p></div>
+    <div class="card"><h3>University labs</h3><p>GIS, robotics and architecture students, scanning as coursework. The partner's folders already include NYU MetroTech and Pratt.</p></div>
+    <div class="card"><h3>The NaviLens team</h3><p>They offered help. Ask for their code locations per station, which would give us known spots without anyone walking.</p></div>
+    <div class="card"><h3>Transit fans</h3><p>Subway enthusiasts know stations well and many carry Pro phones. A 15-minute task per section keeps it easy.</p></div>
+    <div class="card"><h3>Credit on every station</h3><p>Contributor names on each station they mapped, and an open licence for the scans (still to decide).</p></div>
+    <div class="card"><h3>A device lending pool</h3><p>One or two iPad Pros lent out for a week, so people without a Pro phone can scan too.</p></div>
+    <div class="card"><h3>Fifteen minutes is enough</h3><p>One stair, one section, one code photo. Small tasks bring in people who would never sign up for a whole station.</p></div>
+  </div>
+</section>
+
+<section id="decide">
+  <div class="sign"><div class="bullet" style="background:var(--wait)">?</div><h2>Decisions waiting</h2><span class="arrow">→</span></div>
+  <div class="grid g3">
+    <div class="card"><h3>Rebuild or patch the 3D walk</h3><p>Rebuild from scans, or keep fixing guessed shapes. The COLMAP and LiDAR tests inform this.</p></div>
+    <div class="card"><h3>A Pro device</h3><p>Does anyone on the team or among partners have an iPhone Pro or iPad Pro for the 86 St test scan?</p></div>
+    <div class="card"><h3>Which test first</h3><p>The 86 St replay and COLMAP tests need nothing new.</p></div>
+    <div class="card"><h3>Pass marks</h3><p>How many metres off is good enough for camera, pocket and watch.</p></div>
+    <div class="card"><h3>Scan licence and privacy</h3><p>Who owns contributed scans, how they are shared, and how people in them are removed.</p></div>
+    <div class="card"><h3>Native app timing</h3><p>Pocket mode, the barometer, ARKit on iPhone and the watch all need it.</p></div>
+  </div>
+</section>
+
+</main>
+<footer class="wrap">Tracker: GitHub issue <a href="https://github.com/pukujan-lab-2/nyc-map-agent/issues/290">pukujan-lab-2/nyc-map-agent#290</a>. Plan: <code>docs/PLAN-underground-guidance.md</code>. Media: <code>docs/STATION_MEDIA.md</code>. Figures from the 86 St walk of 26 Nov 2026 and the Union Sq replay of 20 Nov 2026.</footer>
+
+<script>
+(function () {
+  var INK = { C: "var(--nc)", M: "var(--nm)", Y: "var(--ny)", K: "var(--nk)" };
+  function code(pattern, size) {
+    var el = document.createElement("div");
+    el.className = "nl";
+    if (size) { el.style.width = size + "px"; el.style.height = size + "px"; }
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", "NaviLens code " + pattern);
+    for (var r = 0; r < 9; r++) for (var c = 0; c < 9; c++) {
+      var i = document.createElement("i");
+      var col = "#fff";
+      if (r >= 1 && r <= 7 && c >= 1 && c <= 7) col = "var(--nk)";
+      if (r >= 2 && r <= 6 && c >= 2 && c <= 6) col = INK[pattern[(r - 2) * 5 + (c - 2)]];
+      i.style.background = col;
+      el.appendChild(i);
+    }
+    return el;
+  }
+
+  var CODES = [
+    { p: "CKCKMKCMCCCKCYYMCCCCKYYMY", name: "Stair-foot wall", where: "86 St, at the foot of the 'Exit, Uptown & The Bronx 6' stair, beside the 86TH ST mosaic. Also in the video at 0:02.", img: "img/IMG_9827-code1.jpg", conf: "Photo read, checked; matched in video" },
+    { p: "CKKKMKCMCCYCCMCMCCMYKYYCY", name: "No Exit sign", where: "86 St, above the 'No Exit, exit at middle of platform' sign at the platform end.", img: "img/IMG_9826-code1.jpg", conf: "Photo read, checked; needed the looser frame check" },
+    { p: "CKYKMKCKCMCYCMMMCMKMYYKMY", name: "Gate sign", where: "On an iron gate beside a stair, 'Scan for live subway info'. Station not certain, probably Lexington Av-59 St.", img: "img/IMG_9825-code1.jpg", conf: "Photo read, checked" }
+  ];
+  var hero = document.getElementById("heroCodes");
+  CODES.forEach(function (c) {
+    var f = document.createElement("figure");
+    f.appendChild(code(c.p));
+    var cap = document.createElement("figcaption"); cap.textContent = c.name; f.appendChild(cap);
+    hero.appendChild(f);
+  });
+  var cards = document.getElementById("codeCards");
+  CODES.concat([
+    { p: null, name: "Street entrance railing", where: "86 St, on the green railing at the street, right of the station sign. Video 3:06, three frames agree but blurred.", img: "img/IMG_9828-code4-3m06s.jpg", conf: "Video only, not trusted" },
+    { p: null, name: "Lexington Av-59 St exit sign", where: "Above the hanging exit sign for 59-60 Streets & Lexington Avenue. Dim, tilted, with an MTA logo in its border.", img: "img/IMG_9823-code1.jpg", conf: "Not read" }
+  ]).forEach(function (c) {
+    var d = document.createElement("div"); d.className = "card codecard";
+    var im = document.createElement("img"); im.src = c.img; im.alt = "Photo of the " + c.name + " NaviLens code"; im.loading = "lazy"; d.appendChild(im);
+    if (c.p) d.appendChild(code(c.p)); else { var ph = document.createElement("div"); ph.className = "nl"; ph.style.cssText = "width:100%;aspect-ratio:1;display:grid;place-items:center;background:var(--tile);border:1px dashed var(--rule);font-size:11px;color:var(--ink-faint);text-align:center;padding:6px"; ph.textContent = "no trusted pattern"; d.appendChild(ph); }
+    var t = document.createElement("div"); t.style.minWidth = "0";
+    t.innerHTML = "<h3>" + c.name + "</h3><p>" + c.where + "</p>" + (c.p ? "<p class='pattern'>" + c.p + "</p>" : "") + "<p><span class='chip " + (c.p ? "s-ok" : c.conf === "Not read" ? "s-todo" : "s-wip") + "'>" + c.conf + "</span></p>";
+    d.appendChild(t);
+    cards.appendChild(d);
+  });
+
+  /* Charts */
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, attrs, parent, text) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent.appendChild(e); return e; }
+  function frame(svg, x0, x1, y0, y1, yTicks, xTicks, yUnit) {
+    var L = 48, R = 548, T = 18, B = 222;
+    var sx = function (x) { return L + (x - x0) / (x1 - x0) * (R - L); };
+    var sy = function (y) { return B - (y - y0) / (y1 - y0) * (B - T); };
+    yTicks.forEach(function (v) {
+      el("line", { x1: L, x2: R, y1: sy(v), y2: sy(v), style: "stroke:var(--rule)", "stroke-width": 1 }, svg);
+      el("text", { x: L - 6, y: sy(v) + 4, "text-anchor": "end" }, svg, v + yUnit);
+    });
+    xTicks.forEach(function (v) { el("text", { x: sx(v), y: B + 18, "text-anchor": "middle" }, svg, v + " s"); });
+    return { sx: sx, sy: sy, T: T, B: B };
+  }
+  var BARO = [[0,0],[2.1,0.03],[4.1,0.1],[5.4,0.11],[7.5,0.05],[9.7,-0.1],[11.8,-0.24],[13.9,-0.27],[16.1,-0.21],[18.2,-0.04],[20.3,0.29],[22.5,0.65],[24.6,1.01],[26.7,1.5],[28.9,2.07],[31,2.57],[33.1,3.06],[35.3,3.63],[37.4,4.27],[39.5,4.67],[41.7,4.79],[43.8,4.79],[45.9,4.75],[48.1,4.65],[50.2,4.51],[52.3,4.43],[54.4,4.39],[56.6,4.36],[58.7,4.3],[60.8,4.29],[63,4.32],[65.1,4.33],[67.2,4.32],[69.4,4.37],[71.5,4.46],[73.6,4.58],[75.8,4.77],[77.9,5.13],[80,5.5],[82.2,5.72],[84.3,5.89],[86.4,5.95],[88.6,5.86],[90.7,5.8],[92.8,5.83],[95,5.76],[97.1,5.37],[99.2,5.08],[101.4,4.91],[103.5,4.75],[105.6,4.71],[107.8,4.77],[109.9,4.89],[112,5],[114.2,5.1],[116.3,5.25],[118.4,5.42],[120.6,5.55],[122.7,5.64],[124.8,5.72],[127,5.77],[129.1,5.81],[131.2,5.82],[133.4,5.78],[135.5,5.7],[137.6,5.5],[139.8,5.29],[141.9,5.21],[144,5.23],[146.2,5.28],[148.3,5.33],[150.4,5.37],[152.6,5.55],[154.7,5.81],[156.8,6.03],[159,6.01],[161.1,5.91],[163.2,5.82],[165.4,5.8],[167.5,5.77],[169.6,5.72],[171.8,5.71],[173.9,5.73],[176,5.74],[178.2,5.73],[180.3,5.7],[182.4,5.83],[184.6,6.41],[186.7,7.37],[188.8,8.38],[191,9.23],[193.1,9.71],[195.2,9.87],[197.4,9.98],[199.5,10.16],[201.6,10.37],[203.7,10.64]];
+  var b = document.getElementById("baroChart");
+  var f = frame(b, 0, 210, -1, 12, [0, 3, 6, 9, 12], [0, 50, 100, 150, 200], " m");
+  [[20, 42, "Stair up, ~4.8 m", "var(--lnqr)"], [42, 180, "Platform, wanders ~1.5 m", "var(--todo)"], [182, 204, "Elevator, ~5 m", "var(--l456)"]].forEach(function (z) {
+    el("rect", { x: f.sx(z[0]), y: f.T, width: f.sx(z[1]) - f.sx(z[0]), height: f.B - f.T, style: "fill:" + z[3], opacity: 0.16 }, b);
+    el("text", { x: (f.sx(z[0]) + f.sx(z[1])) / 2, y: f.T + 14, "text-anchor": "middle", class: "lbl" }, b, z[2]);
+  });
+  var d = BARO.map(function (p, i) { return (i ? "L" : "M") + f.sx(p[0]).toFixed(1) + " " + f.sy(p[1]).toFixed(1); }).join(" ");
+  el("path", { d: d + " L" + f.sx(203.7) + " " + f.sy(-1) + " L" + f.sx(0) + " " + f.sy(-1) + " Z", style: "fill:var(--l456)", opacity: 0.12 }, b);
+  el("path", { d: d, fill: "none", style: "stroke:var(--l456)", "stroke-width": 2.5, "stroke-linejoin": "round" }, b);
+  el("circle", { cx: f.sx(203.7), cy: f.sy(10.64), r: 4.5, style: "fill:var(--l456)" }, b);
+  el("line", { x1: f.sx(13.5), x2: f.sx(13.5), y1: f.T + 20, y2: f.B, style: "stroke:var(--ink-faint)", "stroke-dasharray": "4 4" }, b);
+  el("text", { x: f.sx(13.5) + 4, y: f.B - 6 }, b, "video starts");
+
+  var GPS = [[-6,20],[0,20],[0,370],[0,370],[0,20],[7,22],[8,56],[21,551],[28,354],[36,22],[38,22],[39,21],[47,25],[50,20],[53,18],[59,18],[65,16],[68,20],[73,18],[80,27],[85,24],[88,27],[91,25],[97,19],[103,24],[108,261],[109,53],[115,54],[120,23],[122,130],[127,23],[128,22],[134,23],[138,77],[140,54],[142,127],[146,53],[152,23],[155,23],[155,23],[158,16],[166,16],[167,21],[174,16],[179,13],[185,17],[185,17],[185,17],[189,17],[191,15],[192,13],[193,24],[194,13],[195,11],[196,11],[197,11],[198,16],[199,16],[200,16],[201,16],[202,13],[203,12],[204,11],[205,11],[206,20],[207,24]];
+  var g = document.getElementById("gpsChart");
+  var h = frame(g, -10, 210, 0, 600, [0, 150, 300, 450, 600], [0, 50, 100, 150, 200], " m");
+  el("rect", { x: h.sx(-10), y: h.sy(25), width: h.sx(210) - h.sx(-10), height: h.sy(0) - h.sy(25), style: "fill:var(--ok)", opacity: 0.18 }, g);
+  el("text", { x: h.sx(60), y: h.sy(25) - 6, class: "lbl" }, g, "Usable: under 25 m");
+  GPS.forEach(function (p) {
+    el("line", { x1: h.sx(p[0]), x2: h.sx(p[0]), y1: h.sy(0), y2: h.sy(p[1]), style: "stroke:" + (p[1] > 100 ? "var(--l123)" : "var(--ink-faint)"), "stroke-width": 3, "stroke-linecap": "round" }, g);
+  });
+  el("text", { x: h.sx(21) + 8, y: h.sy(551) + 4, class: "lbl" }, g, "550 m");
+  el("text", { x: h.sx(108) + 8, y: h.sy(261) + 4, class: "lbl" }, g, "261 m");
+
+  /* Matrix */
+  var COLS = ["Which level", "Spot on a level", "Turns", "Real walls", "Real look", "Any phone", "In a pocket", "Offline", "In a web page"];
+  var ROWS = [
+    ["Barometer", [2,0,0,0,0,2,2,2,0]],
+    ["Steps (accelerometer)", [0,1,0,0,0,2,2,2,1]],
+    ["Gyroscope", [0,0,1,0,0,2,2,2,1]],
+    ["GPS", [0,0,0,0,0,2,2,2,2]],
+    ["NaviLens codes", [2,2,0,0,0,2,0,2,2]],
+    ["Signs read by camera", [1,1,0,0,0,2,0,1,2]],
+    ["Station walking network", [2,1,1,0,0,2,2,2,2]],
+    ["ARKit / ARCore", [1,1,2,1,0,2,0,2,1]],
+    ["Wi-Fi in stations", [1,1,0,0,0,1,2,1,0]],
+    ["LiDAR scan", [2,0,0,2,1,0,0,2,1]],
+    ["COLMAP + splatting", [1,1,0,0,2,2,0,1,1]]
+  ];
+  var t = document.getElementById("matrix");
+  var thead = t.appendChild(document.createElement("thead"));
+  var tr = document.createElement("tr"); tr.innerHTML = "<th scope='col'>Option</th>" + COLS.map(function (c) { return "<th scope='col'>" + c + "</th>"; }).join(""); thead.appendChild(tr);
+  var tb = document.createElement("tbody"); t.appendChild(tb);
+  var WORD = ["No", "Partly", "Yes"];
+  ROWS.forEach(function (r) {
+    var row = document.createElement("tr");
+    row.innerHTML = "<td>" + r[0] + "</td>" + r[1].map(function (v, i) { return "<td><span class='dot d" + v + "' title='" + COLS[i] + ": " + WORD[v] + "'></span><span style='position:absolute;left:-9999px'>" + WORD[v] + "</span></td>"; }).join("");
+    tb.appendChild(row);
+  });
+
+  var DETAIL = [
+    ["Barometer", "Level changes", "Shows stairs, escalators and elevators clearly (86 St: about 5 m in 25 s for the elevator). Wanders about 1.5 m on flat ground. A web page cannot read it on iPhone; needs the native app."],
+    ["NaviLens codes", "Exact known spots", "Read offline by our own reader (PR #261). The MTA has them at 50 stations. Only helps where codes are, and needs the camera."],
+    ["Station walking network", "Keeps the dot on real paths", "The MTA draft Pathways data: 230 stations, stairs, elevators, gates and sign text, but no positions inside stations. Stored in PostGIS; pgRouting and OpenTripPlanner find step-free routes over it."],
+    ["ARKit / ARCore", "Close tracking with the camera up", "Follows the phone's movement from what the camera sees. Cannot say where you start. Android's Chrome can use ARCore in a web page; iPhone needs the native app. Slips on blank tiles and in crowds."],
+    ["Wi-Fi in stations", "Rough position", "Underground stations have Wi-Fi. Only Android lets an app scan it, and only a native app."],
+    ["LiDAR scan", "Real walls, floors and ceilings", "iPhone Pro and iPad Pro only. Real scale, about 5 m range. Drifts on long platforms; glass and steel scan badly. Builds the 3D walk; does not track riders."],
+    ["COLMAP + splatting", "The real look", "Rebuilds a scene from video frames and renders it photo-real. No walls to walk into, scale must be set from a known distance, hard on white tiles, large files. Later it could find your position from a photo."]
+  ];
+  var td = document.getElementById("techDetails");
+  DETAIL.forEach(function (x) {
+    var dd = document.createElement("details");
+    dd.innerHTML = "<summary>" + x[0] + " <span class='meta'>" + x[1] + "</span></summary><div class='body'><p>" + x[2] + "</p></div>";
+    td.appendChild(dd);
+  });
+
+  /* Coverage */
+  var COV = [
+    ["86 St (4 5 6)", "✓", "✓", "3 checked", "✗", "✗"],
+    ["14 St-Union Sq", "✓", "✓", "?", "✗", "✗"],
+    ["Cortlandt St (R W)", "✓", "✓", "?", "✗", "✗"],
+    ["Fulton St", "✓", "?", "?", "Diagram model", "✗"],
+    ["Brooklyn Bridge-City Hall", "✗", "✗", "?", "Diagram, 2× deep", "✗"],
+    ["Atlantic Av-Barclays Ctr", "✗", "✗", "?", "Diagram, 2× deep", "✗"],
+    ["74 St-Broadway", "✓", "?", "?", "✗", "✗"],
+    ["Lexington Av-59 St", "✗", "✗", "1 not read", "✗", "✗"],
+    ["NYU MetroTech, Roosevelt, Queens Plaza, Pratt, 67 Av", "?", "?", "?", "?", "✗"]
+  ];
+  var ct = document.getElementById("coverage");
+  ct.innerHTML = "<thead><tr><th scope='col'>Station</th><th scope='col'>Filmed walk</th><th scope='col'>Sensor log</th><th scope='col'>NaviLens codes</th><th scope='col'>3D model</th><th scope='col'>Scan</th></tr></thead>";
+  var cb = document.createElement("tbody");
+  COV.forEach(function (r) {
+    var row = document.createElement("tr");
+    row.innerHTML = r.map(function (v, i) {
+      if (i === 0) return "<td>" + v + "</td>";
+      var cls = v === "✓" ? "tick" : v === "✗" ? "cross" : v === "?" ? "q" : "";
+      return "<td class='" + cls + "'>" + v + "</td>";
+    }).join("");
+    cb.appendChild(row);
+  });
+  ct.appendChild(cb);
+
+  /* Contributor tasks */
+  var TASKS = [
+    { k: ["phone"], t: "Photograph NaviLens codes", d: "Every code in a station, square on and close, plus one wider photo showing where it hangs.", time: "15 min", out: "Known spots for the guide" },
+    { k: ["phone"], t: "Record a walk with sensors and video", d: "Sensor Logger or the app's Station Recorder running while you film the same walk, phone at chest height.", time: "20 min", out: "A replay test case" },
+    { k: ["phone"], t: "Photograph every sign on a route", d: "Each sign from where a rider first sees it. Real sign text and real positions for the 3D walk.", time: "20 min", out: "Signs in the right places" },
+    { k: ["phone", "pro", "android"], t: "Tape-measure one stretch", d: "A stair's width, a platform's width, the gap between columns. Photograph the tape.", time: "10 min", out: "Checks every scan" },
+    { k: ["pro"], t: "LiDAR-scan a station section", d: "20 to 30 m between two known spots, following the scanning guide below.", time: "20 min a section", out: "Real walls, floors, ceilings" },
+    { k: ["pro"], t: "Scan a stair or elevator landing", d: "The places where the 3D walk breaks most. A stair top and bottom in one scan.", time: "10 min", out: "Fixes the worst seams" },
+    { k: ["phone", "pro"], t: "Run the ARKit walk test", d: "Walk the 86 St route there and back with an ARKit logger, camera up, then in a pocket.", time: "30 min", out: "Answers test 4" },
+    { k: ["android"], t: "Try ARCore in the browser", d: "Open the app's camera mode in Chrome on Android once the test page exists, and report where tracking slips.", time: "15 min", out: "Answers whether stage 1 works on the web" },
+    { k: ["android"], t: "Log Wi-Fi in a station", d: "With a Wi-Fi scanner app, walk a route and save the scan log. Shows whether station Wi-Fi can place a rider.", time: "20 min", out: "Tests the Wi-Fi idea" },
+    { k: ["watch", "blind"], t: "Try the watch prototype", d: "When it exists: follow taps and spoken turns through one station, with a sighted helper nearby.", time: "45 min", out: "Stage 3 feedback" },
+    { k: ["blind"], t: "Test the guide with the camera on", d: "Follow the guide through a station you know, and tell us every instruction that was unclear or late.", time: "45 min", out: "The test that matters most" },
+    { k: ["wheel"], t: "Check step-free routes", d: "Follow a step-free route from the app and note any elevator, ramp or gate that differs from what it says.", time: "30 min", out: "Correct step-free routes" },
+    { k: ["code"], t: "Run the 86 St replay test", d: "Load the station network into PostGIS, replay the walk, and score the dot against the video.", time: "a day", out: "Answers test 1" },
+    { k: ["code"], t: "Run COLMAP on the 86 St video", d: "Report how many frames it places and whether the platform comes out straight and the right length.", time: "half a day", out: "Answers test 2" },
+    { k: ["code"], t: "Make the defect test fail", d: "Give the 3D walk's defect check a real limit so new holes block a merge.", time: "half a day", out: "Stops regressions" }
+  ];
+  var tasksEl = document.getElementById("tasks");
+  var LABEL = { phone: "Any phone", pro: "Pro device", android: "Android", watch: "Watch", blind: "Blind / low vision", wheel: "Wheelchair", code: "Code" };
+  TASKS.forEach(function (x) {
+    var c = document.createElement("article"); c.className = "task"; c.dataset.k = x.k.join(" ");
+    c.innerHTML = "<div class='tags'>" + x.k.map(function (k) { return "<span class='tag'>" + LABEL[k] + "</span>"; }).join("") + "<span class='tag time'>" + x.time + "</span></div><h3>" + x.t + "</h3><p>" + x.d + "</p><p style='color:var(--ink)'><b>Gives us:</b> " + x.out + "</p>";
+    tasksEl.appendChild(c);
+  });
+  var picker = document.getElementById("picker");
+  function pick(k) {
+    picker.querySelectorAll("button").forEach(function (bt) { bt.setAttribute("aria-pressed", bt.dataset.k === k ? "true" : "false"); });
+    tasksEl.querySelectorAll(".task").forEach(function (c) { c.classList.toggle("dim", k !== "all" && c.dataset.k.split(" ").indexOf(k) < 0); });
+    try { localStorage.setItem("ug-pick", k); } catch (e) {}
+  }
+  picker.addEventListener("click", function (e) { var bt = e.target.closest("button"); if (bt) pick(bt.dataset.k); });
+  try { var saved = localStorage.getItem("ug-pick"); if (saved) pick(saved); } catch (e) {}
+
+  /* Scan guide codes */
+  var sc = document.getElementById("scanCodes");
+  [40, 330, 610, 870].forEach(function (x, i) {
+    var gg = document.createElementNS(NS, "g"); gg.setAttribute("transform", "translate(" + (x + 8) + ",92)");
+    el("rect", { width: 30, height: 30, style: "fill:#fff;stroke:var(--rule)" }, gg);
+    el("rect", { x: 4, y: 4, width: 22, height: 22, style: "fill:var(--nk)" }, gg);
+    var cols = ["var(--nc)", "var(--nm)", "var(--ny)"];
+    for (var q = 0; q < 4; q++) el("rect", { x: 7 + (q % 2) * 8, y: 7 + Math.floor(q / 2) * 8, width: 7, height: 7, style: "fill:" + cols[(q + i) % 3] }, gg);
+    sc.appendChild(gg);
+    el("text", { x: x + 8, y: 138, class: "sm" }, sc, "known spot");
+  });
+})();
+</script>
+</body></html>
