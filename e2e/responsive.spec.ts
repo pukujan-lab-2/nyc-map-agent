@@ -44,6 +44,12 @@ async function mockRestrooms(page: Page) {
   await page.route("**/api/v1/restroom-answers**", (r) => (r.request().method() === "POST" ? r.fulfill({ status: 204 }) : r.fulfill({ json: { answers: { "nyc:Fulton Center": { confirmedAt: new Date(Date.now() - 2.5 * 86_400_000).toISOString(), free: true, recentNo: 0, warn: false, problem: null } } } })));
 }
 
+/** The camera has finished framing you and the picked restroom (a slow runner is still mid-flight after a second). */
+async function mapSettled(page: Page) {
+  await page.waitForTimeout(300);
+  await page.waitForFunction(() => !(window as unknown as { __map?: { isMoving(): boolean } }).__map?.isMoving(), null, { timeout: 15_000 });
+}
+
 /** Home with your location shared near Fulton St, then the Restroom button. */
 async function openRestroomPick(page: Page) {
   await page.context().grantPermissions(["geolocation"]);
@@ -136,7 +142,7 @@ for (const size of SIZES) {
       await expect(pick.getByText("Free, confirmed 2 days ago")).toBeVisible();
       await expect(pick.getByRole("button", { name: "Walk me there" })).toBeEnabled();
       await expect(pick.getByRole("button", { name: "Preview in Street view" })).toBeEnabled();
-      await page.waitForTimeout(1000); // the map frames you and the restroom
+      await mapSettled(page);
       await expectLayout(page, { focus: [CAFE.lon, CAFE.lat] });
     });
 
@@ -151,7 +157,7 @@ for (const size of SIZES) {
       // Tapping an open one picks it.
       await rows.filter({ hasText: "Fulton Center" }).click();
       await expect(rows.filter({ hasText: "Fulton Center" })).toHaveAttribute("aria-pressed", "true");
-      await page.waitForTimeout(1000);
+      await mapSettled(page);
       await expectLayout(page, { focus: [FULTON.lon, FULTON.lat] });
     });
 
