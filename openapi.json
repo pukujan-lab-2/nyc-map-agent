@@ -678,6 +678,25 @@
         "required": [
           "text"
         ]
+      },
+      "VoiceGrant": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "room": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "room",
+          "token"
+        ]
       }
     },
     "parameters": {}
@@ -6954,6 +6973,145 @@
           },
           "503": {
             "description": "No voice server is set up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/voice/token": {
+      "post": {
+        "summary": "A token for one live voice call in a new room, with the app's voice worker asked to join; no secret is returned",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "use": {
+                    "type": "string",
+                    "enum": [
+                      "map",
+                      "present"
+                    ]
+                  }
+                },
+                "required": [
+                  "use"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The LiveKit server, the new room and a token that joins only it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceGrant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No use, or not map or present",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Live calls are not set up on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/voice/token": {
+      "post": {
+        "summary": "A token for one live voice call in a new room, with the app's voice worker asked to join; no secret is returned (alias of /api/v1/voice/token)",
+        "deprecated": true,
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "use": {
+                    "type": "string",
+                    "enum": [
+                      "map",
+                      "present"
+                    ]
+                  }
+                },
+                "required": [
+                  "use"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The LiveKit server, the new room and a token that joins only it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceGrant"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No use, or not map or present",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Live calls are not set up on this server",
             "content": {
               "application/json": {
                 "schema": {

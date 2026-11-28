@@ -205,8 +205,8 @@ interface AgentHomeProps {
   interim: string;
   dictation: { supported: boolean; on: boolean; toggle: () => void };
   handsFree: { on: boolean; toggle: () => void };
-  /** The orb: hands-free is listening. */
-  orb: { show: boolean; listening: boolean; transcript: string; stop: () => void };
+  /** The orb: hands-free is listening. `call` takes its place while a live call is on (the `liveCall` pilot). */
+  orb: { show: boolean; listening: boolean; transcript: string; stop: () => void; call?: ReactNode };
   /** A message by the bar (voice unsupported, mic blocked). */
   notice: string | null;
   answerOpen: boolean;
@@ -404,7 +404,7 @@ export function AgentHome(p: AgentHomeProps) {
   const content = (
     <>
       {orb.show ? (
-        <VoiceOrb listening={orb.listening} transcript={orb.transcript} onStop={orb.stop} />
+        orb.call ?? <VoiceOrb listening={orb.listening} transcript={orb.transcript} onStop={orb.stop} />
       ) : answerOpen ? (
         <section aria-label="Assistant answer" data-testid="agent-answers" className="relative flex min-h-0 flex-col">
           {column ? null : (
