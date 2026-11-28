@@ -38,6 +38,8 @@ import { setLinesControl } from "@/lib/transit/linesControl";
 import { lineOf, setSelectedLine, useSelectedLine } from "@/lib/transit/selectedLine";
 import { useActiveTrip } from "@/lib/transit/activeTrip";
 // The line panel loads on the first line picked (own chunk), keeping the transit layers chunk in budget.
+// The open notice's walk on the map (plan step 4): its own chunk, loaded with the first notice.
+const NoticeMapLayers = lazy(() => import("./NoticeMapLayers"));
 const LinePanel = lazy(() => import("./LinePanel").then((m) => ({ default: m.LinePanel })));
 import { STREET_XRAY_M, XRAY_VEIL_M, getStreetXray, inStreetXray, setStreetXray, useStreetXray, xrayForFollow, xrayVeilDisc } from "@/lib/transit/streetXray";
 import { usePrefersReducedMotion } from "@/lib/usePrefersReducedMotion";
@@ -51,7 +53,7 @@ import { FollowCard, SkipDetails, StationDetails, stopName } from "./TransitCard
 import { FollowMiniMap } from "./FollowMiniMap";
 import { busNextName } from "./followInfo";
 import { TransitStatusDetails } from "./TransitStatus";
-import { alertGeometry, endLabel, noticeSkips, setAlertFocus, shuttleFeatures, stationChanges, useAlertFocus, useShuttleFocus, useWalkFocus } from "./alertFocus";
+import { useNoticeMapView, alertGeometry, endLabel, noticeSkips, setAlertFocus, shuttleFeatures, stationChanges, useAlertFocus, useShuttleFocus, useWalkFocus } from "./alertFocus";
 import { LinesDrawer } from "./LinesDrawer";
 import { BusStopDetails } from "./BusStopDetails";
 import { busStopAt } from "@/lib/map/busStops";
@@ -664,24 +666,8 @@ export default function TransitLayer() {
       })),
     };
   }, [alertGeo, alertFocus]);  
-  // The notice walk (#55): the step's stations ringed, and where the shuttle bus stops, in the MTA's words.
-  const walkFc = useMemo<{ lit: GeoJSON.FeatureCollection; corners: GeoJSON.FeatureCollection; bounds: [Pos2, Pos2] | null }>(() => {
-    const sub = statics.find((s) => s.system === "subway");
-    const at = (id: string) => sub?.stations.features.find((f) => f.properties.id === id)?.geometry.coordinates as Pos2 | undefined;
-    const pts = (walkFocus?.ids ?? []).map(at).filter((p): p is Pos2 => Boolean(p));
-    const byStation = new Map<string, string[]>();
-    for (const c of walkFocus?.corners ?? []) byStation.set(c.id, [...(byStation.get(c.id) ?? []), c.text]);
-    const corners = [...byStation].flatMap(([id, texts]) => {
-      const p = at(id);
-      return p ? [{ type: "Feature" as const, properties: { label: `Shuttle bus\n${texts.join("\n")}` }, geometry: { type: "Point" as const, coordinates: p } }] : [];
-    });
-    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
-    return {
-      lit: { type: "FeatureCollection", features: pts.map((p) => ({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: p } })) },
-      corners: { type: "FeatureCollection", features: corners },
-      bounds: pts.length ? [[Math.min(...xs), Math.min(...ys)], [Math.max(...xs), Math.max(...ys)]] : null,
-    };
-  }, [walkFocus, staticKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The notice walk (#55, plan step 4): NoticeMapLayers draws the open step and says what it framed.
+  const noticeView = useNoticeMapView();
   // An open shuttle bus notice: the bus's line through its stops, every stop marked, the place to change named.
   const shuttleFc = useMemo(() => {
     const sub = statics.find((s) => s.system === "subway");
@@ -725,12 +711,12 @@ export default function TransitLayer() {
   // Each step of the walk moves the camera to its stations; the alert's own framing above comes back with Back.
   useEffect(() => {
     // Between steps and after the last, a shuttle notice shows the whole stretch its buses cover.
-    const bounds = walkFc.bounds ?? shuttleFc.bounds;
+    const bounds = noticeView?.bounds ?? shuttleFc.bounds;
     if (!map || !bounds || !alertFocus || followedRef.current) return;
     const wide = window.innerWidth >= 768;
     const pad = framePadding(map, lineSelRef.current ? (wide ? { top: 90, bottom: 120, left: 80, right: 460 } : { top: 90, bottom: 24, left: 30, right: 72 }) : wide ? { top: 90, bottom: 60, left: 440, right: 80 } : { top: 90, bottom: Math.round(window.innerHeight * 0.45), left: 30, right: 30 });
     map.fitBounds(bounds, { padding: pad, maxZoom: 15.5, duration: 900, bearing: 0, pitch: 0 });
-  }, [map, walkFc, shuttleFc, alertFocus]);
+  }, [map, noticeView, shuttleFc, alertFocus]);
   // The alert card owns the focus: once it leaves the panel (Back, Esc, another pick), clear it.
   const shownAlert = useRef<string | null>(null);
   useEffect(() => {
@@ -1507,7 +1493,8 @@ export default function TransitLayer() {
         <Layer id="transit-work" type="symbol" minzoom={11} filter={["all", lineSel ? ["in", ` ${lineSel} `, ["get", "routes"]] : ["boolean", true], ...nearEye] as never}
           layout={{ "icon-image": "transit-wrench", "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.35, 16, 0.6], "icon-offset": [18, -18], "icon-allow-overlap": true }} />
       </Source>
-      <Source id="transit-skips" type="geojson" data={work.skips}>
+      {/* An open notice's walk crosses out its skips on their own track (NoticeMapLayers). */}
+      <Source id="transit-skips" type="geojson" data={noticeView?.tracks ? EMPTY_FC : work.skips}>
         <Layer id="transit-skip" type="symbol" minzoom={11} filter={["all", lineSel ? ["in", ` ${lineSel} `, ["get", "skipRoutes"]] : ["boolean", true], ...nearEye] as never}
           layout={{ "icon-image": ["get", "icon"], "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.5, 16, 0.9], "icon-allow-overlap": true, "icon-ignore-placement": true,
             "icon-offset": [18, -18],
@@ -1551,24 +1538,16 @@ export default function TransitLayer() {
             <Layer id="transit-shuttle-stop" type="circle"
               paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 4, 16, 8], "circle-color": ["case", ["get", "change"], "#2563eb", "#f59e0b"], "circle-stroke-color": theme.dark ? "#0b1220" : "#ffffff", "circle-stroke-width": 2 }} />
             {/* The stop the voice is on has its own label above it (transit-walk-corner). */}
-            <Layer id="transit-shuttle-stop-label" type="symbol" filter={["!", ["in", ["get", "id"], ["literal", (walkFocus?.corners ?? []).map((c) => c.id)]]] as never}
+            <Layer id="transit-shuttle-stop-label" type="symbol" filter={["!", ["in", ["get", "id"], ["literal", noticeView?.busStations ?? []]]] as never}
               layout={{ "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-variable-anchor": ["left", "right", "top", "bottom"], "text-radial-offset": 1.1, "text-justify": "auto", "text-max-width": 16, "text-optional": true, "symbol-sort-key": ["case", ["get", "change"], 0, 1] }}
               paint={{ "text-color": ["case", ["get", "change"], theme.dark ? "#93c5fd" : "#1d4ed8", theme.dark ? "#fcd34d" : "#92400e"], "text-halo-color": theme.land, "text-halo-width": 2 }} />
           </Source>
-          <Source id="transit-walk-lit" type="geojson" data={walkFc.lit}>
-            <Layer id="transit-walk-lit" type="circle"
-              paint={{ "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 9, 16, 16], "circle-color": "rgba(96,165,250,0.18)", "circle-stroke-color": "#60a5fa", "circle-stroke-width": 3 }} />
-          </Source>
-          <Source id="transit-walk-corners" type="geojson" data={walkFc.corners}>
-            <Layer id="transit-walk-corner" type="symbol"
-              layout={{ "text-field": ["get", "label"], "text-font": ["Noto Sans Bold"], "text-size": 12, "text-anchor": "bottom", "text-offset": [0, -1.6], "text-allow-overlap": true, "text-max-width": 16 }}
-              paint={{ "text-color": theme.dark ? "#fcd34d" : "#92400e", "text-halo-color": theme.land, "text-halo-width": 2 }} />
-          </Source>
+          <Suspense fallback={null}><NoticeMapLayers sys={statics.find((s) => s.system === "subway")} walk={walkFocus} alert={alertFocus} route={lineSel ?? ""} theme={theme} /></Suspense>
           <Source id="transit-alert-reroute" type="geojson" data={alertFc.reroute}>
             <Layer id="transit-alert-reroute" type="line" layout={{ "line-join": "round" }}
               paint={{ "line-color": ["get", "color"], "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 16, 7], "line-dasharray": [1.4, 1.2] }} />
           </Source>
-          <Source id="transit-alert-skipped" type="geojson" data={shuttleFocus || alertGeo?.stopping ? EMPTY_FC : alertFc.skipped}>
+          <Source id="transit-alert-skipped" type="geojson" data={shuttleFocus || alertGeo?.stopping || noticeView?.tracks ? EMPTY_FC : alertFc.skipped}>
             <Layer id="transit-alert-skipped" type="symbol"
               layout={{ "icon-image": ["get", "icon"], "icon-size": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 16, 1], "icon-allow-overlap": true, "icon-ignore-placement": true,
                 "icon-offset": [18, -18],
