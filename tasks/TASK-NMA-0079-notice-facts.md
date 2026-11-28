@@ -148,6 +148,29 @@ Blocked/uncertain:
 Next:
 - Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
 
+### 2026-11-28 04:42:24 UTC — agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b","blocked":[],"changed":["vite.config.ts"],"completed":["Unit tests get 20 s on CI and keep 5 s locally, after load timeouts on pull request 284"],"decisions":["no new decisions"],"evidence":["Rerun timed out on two different heavy tests; trainPart passes locally in 160 ms"],"evidence_class":"observed","next_action":"Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0079","timestamp":"2026-11-28T04:42:24Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"869aec7c9d8377e0ae4b3676e5565100bb1c86d36baf08ce2402155d218146c1","request_id":"fc47e0379b3f4b73be7a8e79f9c191b5","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0079"} -->
+
+Completed:
+- Unit tests get 20 s on CI and keep 5 s locally, after load timeouts on pull request 284
+
+Evidence:
+- Rerun timed out on two different heavy tests; trainPart passes locally in 160 ms
+
+Decisions:
+- no new decisions
+
+Changed:
+- vite.config.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
