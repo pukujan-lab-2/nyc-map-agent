@@ -122,6 +122,8 @@ export default defineConfig(({ mode }) => {
     },
     // Route tests share one client address; the live 5-second cooldown would refuse their back-to-back questions.
     // Tests that check the limits build their own limiter.
-    test: { env: { AGENT_RATE_BURST_MAX: "0" } },
+    // CI's runners are shared by many pull requests at once, and the heavy station-walk tests run close to 5 s
+    // there. Locally the limit stays at 5 s, so a test that really got slower still shows up here.
+    test: { env: { AGENT_RATE_BURST_MAX: "0" }, testTimeout: process.env.CI ? 20_000 : 5_000 },
   };
 });

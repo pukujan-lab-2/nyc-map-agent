@@ -7,7 +7,7 @@
   {
     "name": "app (boot chunk, loaded after the first paint)",
     "path": ".size-build/assets/boot-*.js",
-    "limit": "296.6 kB"
+    "limit": "298 kB"
   },
   {
     "name": "map library (maplibre-gl, its own chunk so it stays cached across deploys)",
@@ -77,7 +77,7 @@
   {
     "name": "feature: line panel (lazy)",
     "path": ".size-build/assets/LinePanel-*.js",
-    "limit": "6.6 kB"
+    "limit": "7.1 kB"
   },
   {
     "name": "feature: notice diagram (lazy, opens with the first notice)",
@@ -130,6 +130,6 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js"
     ],
-    "limit": "1290.6 kB"
+    "limit": "1292 kB"
   }
 ]

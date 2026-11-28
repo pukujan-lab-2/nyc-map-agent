@@ -16,7 +16,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: "off",
     launchOptions: {
-      args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
+      args: ["--mute-audio", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
       // Opt-in escape hatch for machines whose pinned browser revision cache is broken:
       // PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/a/working/Chromium pnpm e2e
       ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE

@@ -273,6 +273,25 @@ for (const size of SIZES) {
       expect(await page.evaluate(() => localStorage.getItem("nma.stepFree"))).toBe("1");
     });
 
+    // Settings → Voice: the app's voice (Kokoro) or the phone's own, kept on the phone (plan step 7).
+    test("the Voice choice in Settings", async ({ page }) => {
+      await open(page);
+      const phone = size.width < 640;
+      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
+      const panel = page.getByTestId(phone ? "settings-sheet" : "settings-panel");
+      if (phone) await panel.getByTestId("sheet-grip").click();
+      const choice = panel.getByLabel("Voice", { exact: true });
+      await expect(choice).toHaveValue("app");
+      await expectLayout(page);
+      await choice.selectOption("phone");
+      await expect(choice).toHaveValue("phone");
+      expect(await page.evaluate(() => localStorage.getItem("nma.voice"))).toBe("phone");
+      await expectLayout(page);
+      await page.reload();
+      await page.getByTestId(phone ? "settings-chip" : "menu-settings").click();
+      await expect(page.getByTestId(phone ? "settings-sheet" : "settings-panel").getByLabel("Voice", { exact: true })).toHaveValue("phone");
+    });
+
     // Settings → Meet Design Baker (NMA-0064): the guided presentation opens from the menu on every size.
     test("the presentation link in Settings", async ({ page }) => {
       await open(page);
@@ -449,6 +468,34 @@ for (const size of SIZES) {
       await page.getByRole("button", { name: "See the 7 trains live" }).click();
       await page.waitForTimeout(800);
       await expectLayout(page);
+    });
+
+    // Owner, 2026-11-27: four time buttons on one row, each with its dates under it (docs/PLAN-notice-walks.md, step 5).
+    test("a line panel's four time buttons", async ({ page }) => {
+      await page.route("**/api/transit/alerts?from=*", async (r) => {
+        const from = Number(new URL(r.request().url()).searchParams.get("from"));
+        await r.fulfill({ contentType: "application/json", body: JSON.stringify({ at: from, outages: [], alerts: [{
+          id: "lmm:planned_work:wk7", kind: "planned", type: "Planned - Stops Skipped", reroute: true, agency: "MTASBWY", routes: ["7"], stops: [],
+          text: "Flushing-bound [7] skips 52 St and 69 St", description: "", start: from, end: from + 3600, period: "", changes: [], skipNames: ["52 St", "69 St"] }] }) });
+      });
+      await open(page, [
+        { type: "text", text: "The 7 is running with delays." },
+        { type: "actions", actions: [{ kind: "showLine", id: "line:7", label: "See the 7 trains live", route: "7" }] },
+      ]);
+      await ask(page, "How is the 7?");
+      await page.getByRole("button", { name: "See the 7 trains live" }).click();
+      const days = page.getByTestId("line-day");
+      await expect(days.getByRole("button")).toHaveCount(4);
+      // One row: every button shares the first one's top edge.
+      const tops = await days.getByRole("button").evaluateAll((bs) => bs.map((b) => Math.round(b.getBoundingClientRect().top)));
+      expect(new Set(tops).size).toBe(1);
+      for (const k of ["day", "night", "weekendDay", "weekendNight"]) {
+        await days.locator(`[data-period="${k}"]`).click();
+        await expect(days.locator(`[data-period="${k}"]`)).toHaveAttribute("aria-pressed", "true");
+        await expect(page.getByTestId("line-period")).not.toBeEmpty();
+        await page.waitForTimeout(300);
+        await expectLayout(page);
+      }
     });
 
     // Owner, 2026-11-07: the station sheet and the line sheet stacked and cut each other off. A phone has one

@@ -9,10 +9,14 @@ function nyParts(ms: number) {
 }
 /** Epoch seconds of a New York wall-clock time (DST-correct: the offset is read at that instant). */
 export function nyEpoch(y: number, m: number, d: number, h: number): number {
-  const guess = Date.UTC(y, m - 1, d, h);
-  const off = nyParts(guess);
-  const shown = Date.UTC(off.y, off.m - 1, off.d, off.h);
-  return Math.round((guess + (guess - shown)) / 1000);
+  const wall = Date.UTC(y, m - 1, d, h);
+  const offsetAt = (ms: number) => { const p = nyParts(ms); return Date.UTC(p.y, p.m - 1, p.d, p.h) - ms; };
+  // Read the offset once at the wall time taken as UTC, then again at the answer: the first read can land on the
+  // other side of a clock change (6 AM on the March Sunday came out as 7 AM).
+  const first = wall - offsetAt(wall);
+  const second = wall - offsetAt(first);
+  // An hour the clocks skip (2 AM in March) has no answer: take the hour after, as the first read gives.
+  return Math.round((nyParts(second).h === h ? second : first) / 1000);
 }
 
 /**
