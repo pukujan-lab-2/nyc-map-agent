@@ -6,9 +6,11 @@ Older state: [`history/2026-11.md`](history/2026-11.md) and earlier months in `h
 
 ## Current projection
 
-*Updated 2026-11-27. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
+*Updated 2026-11-28. Read this first; it says where the work stands so a new agent does not have to rebuild that from branches and pull requests.*
 
 ## In flight
+
+**Nobody knew how long a hands-free turn takes, so the LiveKit live-call pilot had nothing to beat (step 1 of `docs/PLAN-livekit-hands-free.md`, issue 299, task NMA-0100, branch `perf/hands-free-baseline`).** Against the deployed app the first word of the answer comes 9.3 s after the rider stops talking (median of 9 turns, 6.1 to 12.4 s): 1.2 s waiting for silence, 0.4 s converting and sending the clip, 1.6 s speech-to-text, 3.5 s to the agent's first token, and 1.1 s to the app voice's first sound, which only starts once the whole answer is in. With instant server replies a turn still takes 2.5 s. `scripts/voice-baseline.ts` reruns it; the numbers are in `docs/eval/hands-free-baseline/`. Next: step 2, the worker, token endpoint and `liveCall` flag.
 
 **Every pull request waited about 40 minutes for CI's browser tests, and two were stopped at the 45-minute limit on 2026-11-28 (task NMA-0095, branch `ci/e2e-fast-prs`).** The full set is 296 tests: a third of the time is the same screens at four sizes, a sixth is prototypes that are off by default and pages that are not the map. The owner chose not to run the full set in CI at all, since specs are run locally before pushing (owner, 2026-11-28). `scripts/ci/e2e-select.sh` now runs `e2e/core.txt` plus edited specs for a change to shared code, a feature's own specs for a change inside one feature folder, and nothing for writing; screen specs check the smallest phone and desktop in CI (`E2E_SIZES`) and all four sizes locally. A pull request labelled `full-e2e` runs everything. Works alongside pull request 297, which splits a full run across three runners. Next: confirm a pull request's e2e job finishes in about 10 minutes.
 
