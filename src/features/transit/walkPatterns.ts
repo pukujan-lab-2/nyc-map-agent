@@ -118,3 +118,36 @@ export function fill(key: PatternKey, slots: Record<string, string>, table: Reco
   const out = text.replace(/\s+([,.:])/g, "$1").replace(/\s{2,}/g, " ").trim();
   return out.charAt(0).toUpperCase() + out.slice(1);
 }
+
+const ORD = (n: string) => {
+  const v = Number(n);
+  const t = v % 100 >= 11 && v % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[v % 10] ?? "th";
+  return `${n}${t}`;
+};
+const STREETS = "Street|Streets|Avenue|Avenues|Place|Road|Drive|Terrace|Lane";
+const WORDS: Record<string, string> = {
+  Sts: "Streets", Av: "Avenue", Ave: "Avenue", Avs: "Avenues", Sq: "Square", Pkwy: "Parkway", Blvd: "Boulevard", Rd: "Road", Pl: "Place",
+  Hts: "Heights", Pk: "Park", Ctr: "Center", Tpke: "Turnpike", Hwy: "Highway", Jct: "Junction",
+};
+
+/**
+ * A step as it is said aloud (owner, 2026-11-27: pauses in odd places, sentences running past their periods). Short
+ * forms are said in full and never end a sentence ("St." is "Street"), numbered streets are said as ordinals
+ * ("52 Street" is "52nd Street"), and the parts of a station's name are read with a pause ("74th Street, Broadway").
+ * Pure, so the same step always sounds the same and its audio can be cached by the text.
+ */
+export function spoken(text: string): string {
+  return text
+    // "St George" is a saint; "52 St" and "Dyckman St" are streets.
+    // A short form's own period goes only inside a sentence ("Dyckman St. and 231 St." is "Dyckman Street and 231st Street.").
+    .replace(/(?<![0-9] )\bSt\.?(?= [A-Z][a-z])/g, "Saint")
+    .replace(/\bSt\b(?:\.(?=\s+[a-z0-9,]))?/g, "Street")
+    .replace(/\b(Sts|Av|Ave|Avs|Sq|Pkwy|Blvd|Rd|Pl|Hts|Pk|Ctr|Tpke|Hwy|Jct)\b(?:\.(?=\s+[a-z0-9,]))?/g, (_m, w: string) => WORDS[w])
+    .replace(new RegExp(`\\b(\\d+)-(\\d+) (${STREETS})\\b`, "g"), (_m, a: string, b: string, w: string) => `${ORD(a)} to ${ORD(b)} ${w}`)
+    .replace(new RegExp(`\\b(\\d+) (${STREETS})\\b`, "g"), (_m, a: string, w: string) => `${ORD(a)} ${w}`)
+    // "Cathedral Parkway (110th Street)", "74th Street-Broadway", "5th Avenue/53rd Street": a pause between the parts.
+    .replace(/\s*\(([^)]*)\)/g, ", $1")
+    .replace(/(?<=[A-Za-z0-9])\s*[-/]\s*(?=[A-Z0-9])/g, ", ")
+    .replace(/,\s*,/g, ",").replace(/,(?=[.:])/g, "")
+    .replace(/\.{2,}/g, ".").replace(/\s{2,}/g, " ").trim();
+}

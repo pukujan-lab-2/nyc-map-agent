@@ -128,7 +128,7 @@ for (const size of SIZES) {
     const walk = panel.getByTestId("notice-walk");
     await expect(walk).toHaveAttribute("data-step", "0");
     await expect(diagram.locator("[data-lit]")).toHaveCount(4);
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.join(" "))).toContain("Christopher Street-Stonewall");
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.join(" "))).toContain("Christopher Street, Stonewall");
     await expectLayout(page);
     await walk.getByRole("button", { name: "Stop", exact: true }).click();
     await expect(walk).not.toHaveAttribute("data-step");
@@ -200,9 +200,14 @@ for (const size of SIZES) {
       const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: unknown[] }> } | undefined } }).__map?.getSource("transit-alert-skipped");
       return src ? ((await src.getData()).features ?? []).length : -1;
     })).toBe(0);
-    // "Read it to me" is the same summary, start to end (the browser voice takes it in pieces, cut at each colon).
+    // "Read it to me" says the same steps, start to end (the browser voice takes it in pieces, cut at each colon).
     const packed = (t: string[]) => t.join("").replace(/\s+/g, "");
-    await expect.poll(async () => packed(await page.evaluate(() => (window as unknown as { __said: string[] }).__said)), { timeout: slow(10_000) }).toBe(packed(summary));
+    // Said aloud, numbered streets are ordinals and a name's parts get a pause (owner, 2026-11-27).
+    const spoken = [
+      "Downtown 2 trains are stopping at Times Square, 42nd Street and 34th Street, Penn Station, but real-time arrival information may be unavailable.",
+      "When: November 14 to 16, Saturday 12:01 AM to Monday 5:00 AM.",
+    ];
+    await expect.poll(async () => packed(await page.evaluate(() => (window as unknown as { __said: string[] }).__said)), { timeout: slow(10_000) }).toBe(packed(spoken));
     await expect(walk.getByRole("button", { name: "Read it to me" })).toBeVisible();
     // Open, the row is a one-line label: the card has the dates, and the MTA's words add nothing here.
     await expect(notice).not.toContainText("Nov 14 - 16");
@@ -236,7 +241,8 @@ const voiceHoldingAtCorner = () => {
     speaking: false, paused: false, pending: false, getVoices: () => [], addEventListener: () => undefined, removeEventListener: () => undefined,
     speak: (u: SpeechSynthesisUtterance) => {
       said.push({ text: u.text, lang: u.lang });
-      if (!/7 Avenue at 42 Street/.test(u.text)) setTimeout(() => { u.onend?.(new Event("end") as SpeechSynthesisEvent); u.dispatchEvent(new Event("end")); }, 20);
+      // The corner as shown ("7 Avenue at 42 Street") or as said ("7th Avenue at 42nd Street").
+      if (!/at 42(?:nd)? Street/.test(u.text)) setTimeout(() => { u.onend?.(new Event("end") as SpeechSynthesisEvent); u.dispatchEvent(new Event("end")); }, 20);
     },
     cancel: () => undefined, pause: () => undefined, resume: () => undefined,
   } });

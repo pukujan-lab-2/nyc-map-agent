@@ -24,11 +24,7 @@ export function useAlertFocus(): TransitAlert | null {
  * The notice walk's current step (#55): the map frames these stations, marks the shuttle bus corners
  * with the MTA's own words, and shows the buses a travel tip names. Null between steps and when it stops.
  */
-type WalkFocus = {
-  ids: string[]; corners: Array<{ id: string; text: string }>; bus: string[];
-  /** Everything the step names, for the map layers to draw (plan step 3; `walkMap.ts`). */
-  map?: StepMap;
-};
+type WalkFocus = { ids: string[]; corners: Array<{ id: string; text: string }>; bus: string[]; map?: StepMap };
 let walk: WalkFocus | null = null;
 const walkSubs = new Set<() => void>();
 export function setWalkFocus(w: WalkFocus | null): void {

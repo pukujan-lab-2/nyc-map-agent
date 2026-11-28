@@ -2,7 +2,8 @@
  * What the map shows while one walk step is read (plan step 3 writes it, step 4 draws it; see
  * `docs/PLAN-notice-walks.md`). Every station, line, bus and entrance the step's words name is in here: a test
  * (`noticeWalk.test.ts`) checks that for every saved notice. Station ids are ours (`public/transit/subway.json`,
- * `stations.features[].properties.id`); entrance ids are `entrances.features[].properties.id` in the same file.
+ * `stations.features[].properties.id`). An entrance's `properties.id` in that file is its station's id, so an
+ * entrance is named by its place (`at`) or by its index in `entrances.features`.
  */
 export interface StepMap {
   /** Stations the step names, plus the ones it rides between. The map labels these and keeps them in view. */
@@ -31,6 +32,9 @@ export interface StepMap {
   bus?: Array<{ route: string; shuttle: boolean; stops: Array<{ station: string; corner: string | null }> }>;
   /** Walking lines from one station to another. */
   walk?: Array<{ from: string; to: string }>;
-  /** Entrances the step names. `id` null: our data has no such entrance, and the step's words say so. */
-  entrances?: Array<{ station: string; id: string | null; state: "closed" | "use" }>;
+  /**
+   * Entrances the step names. `at`: the matched entrance's [lon, lat]. `id`: its index in `entrances.features`, as
+   * digits. Both missing (`id` null): our data has no such entrance, and the step's words say so.
+   */
+  entrances?: Array<{ station: string; id: string | null; at?: [number, number]; state: "closed" | "use" }>;
 }
