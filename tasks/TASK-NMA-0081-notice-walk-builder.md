@@ -196,6 +196,29 @@ Blocked/uncertain:
 Next:
 - Let pull request 287 merge
 
+### 2026-11-28 11:43:59 UTC — agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f","blocked":[],"changed":["none"],"completed":["Rebased onto main after pull requests 289 and 298 merged; kept main's walk map shape and walk focus type, and set the all-JS budget to its measured 1,312.4 kB"],"decisions":["no new decisions"],"evidence":["Type check and size budgets pass; the notice walk and notice map unit tests pass (24 tests)"],"evidence_class":"observed","next_action":"Let pull request 287 merge","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0081","timestamp":"2026-11-28T11:43:59Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"879f8ab92370e5b89c894da5052f23fde116a59519916811873c8005ec355beb","request_id":"85d25ec665d848169687ea1325954133","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0081"} -->
+
+Completed:
+- Rebased onto main after pull requests 289 and 298 merged; kept main's walk map shape and walk focus type, and set the all-JS budget to its measured 1,312.4 kB
+
+Evidence:
+- Type check and size budgets pass; the notice walk and notice map unit tests pass (24 tests)
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 287 merge
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
