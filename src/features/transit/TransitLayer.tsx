@@ -1205,7 +1205,8 @@ export default function TransitLayer() {
       if (f?.properties && (f.layer.id === "transit-skip" || f.layer.id === "transit-alert-skipped")) {
         const id = String(f.properties.id ?? "");
         if (!id) return;
-        showPanel({ id: `transit:skip:${id}`, title: "Skipped", subtitle: String(f.properties.name ?? "Station"), details: <SkipDetails stationId={id} /> });
+        // The station's notice walk, not a "Skipped" card (owner, 2026-11-27).
+        showPanel({ id: `transit:skip:${id}`, title: String(f.properties.name ?? "Station"), subtitle: String(f.properties.label ?? "Skipped"), details: <SkipDetails stationId={id} /> });
         setSnap("half");
         return;
       }

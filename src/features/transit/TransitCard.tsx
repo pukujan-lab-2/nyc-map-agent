@@ -6,7 +6,7 @@ import { noteTrain, openLostHelper } from "@/lib/underground/lostHelper";
 import { useT } from "@/lib/i18n/appLang";
 import { formatStreetText } from "@/lib/streetName";
 import { liveProgress } from "./monotonic";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Accessibility, ChevronDown, Crosshair, Footprints, ScanEye, Star } from "lucide-react";
 import { hasWalkInside, openStationWalk } from "./stationWalk/store";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ import { getXray, setXray, useXray } from "./xray";
 import { AlertRow, presentAlert, StationNotice } from "./AlertCard";
 import { lineOf, setSelectedLine, useSelectedLine } from "@/lib/transit/selectedLine";
 import { stationChanges } from "./alertFocus";
-import { alertTimeLabel, classifyRouteAlerts, plainAlert, skipNamesFor, upcomingStops } from "./followInfo";
+import { alertTimeLabel, classifyRouteAlerts, plainAlert, upcomingStops } from "./followInfo";
 import { usePanel } from "@/lib/store/PanelContext";
 import { FollowSheet } from "./FollowSheet";
 
@@ -47,19 +47,27 @@ export const stopName = (data: Data, system: SystemId | "bus", stop?: string) =>
 const rowBtn = "mt-1 block w-full rounded-md border border-border bg-card px-2 py-1.5 text-left text-xs font-medium hover:border-[hsl(var(--acc))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /** Stations a skip covers, and the alert's time when it has one. */
-function SkipPlaces({ alert, route }: { alert: TransitAlert | undefined; route: string }) {
-  const names = skipNamesFor(alert, route);
-  const time = alertTimeLabel(alert);
+const NoticeDiagram = lazy(() => import("./NoticeDiagram"));
+
+/**
+ * A skip at this station, as the notice's walk with this station picked as the rider's stop (owner, 2026-11-27:
+ * the old "Skipped" card listed names and a time; the station opens its notice walk instead). The walk is a dark
+ * slab so its words read on every map theme.
+ */
+function SkipWalk({ alert, route, stationId, auto }: { alert: TransitAlert | undefined; route: string; stationId: string; auto: boolean }) {
+  const data = useTransitData(["subway"]);
+  const sys = data.subway?.stat;
+  if (!alert) return <p className="text-sm text-muted-foreground">This notice is no longer listed.</p>;
   return (
-    <div data-testid="skip-places" className="mt-1 rounded-md bg-muted px-2 py-1.5 text-xs">
-      <div className="font-semibold">Where this trip skips</div>
-      {names.length ? <ul className="mt-1 list-disc pl-4">{names.map((n) => <li key={n}>{n}</li>)}</ul> : <p className="mt-1">This station.</p>}
-      <p className="mt-1">{time ?? "No time given"}</p>
+    <div data-testid="skip-walk" className="mt-1 rounded-[14px] bg-[#0f172a]">
+      <Suspense fallback={null}>
+        <NoticeDiagram alert={alert} sys={sys} route={lineOf(route)} color={sys?.routes[route]?.color ?? "#808183"} auto={auto} stop={stationId} />
+      </Suspense>
     </div>
   );
 }
 
-/** Map click on Skipped: every skip at that station, with places and time. */
+/** Map click on a skipped station: the walk of every notice that skips it, this station picked. */
 export function SkipDetails({ stationId }: { stationId: string }) {
   const data = useTransitData(["subway"]);
   const alerts = useAlerts(true);
@@ -67,13 +75,12 @@ export function SkipDetails({ stationId }: { stationId: string }) {
   const change = st ? stationChanges(alerts.data?.alerts ?? [], st).get(stationId) : undefined;
   const list = alerts.data?.alerts ?? [];
   if (!change?.skips.length) return <p className="text-sm text-muted-foreground">No skip is listed for this station right now.</p>;
+  // One walk a notice: the 7 and the 7X skipping here share one.
+  const skips = change.skips.filter((k, i) => change.skips.findIndex((x) => x.alertId === k.alertId) === i);
   return (
     <div className="space-y-3 text-sm">
-      {change.skips.map((k) => (
-        <div key={`${k.alertId}|${k.route}`}>
-          <div className="font-semibold">{k.label}</div>
-          <SkipPlaces alert={list.find((a) => a.id === k.alertId)} route={k.route} />
-        </div>
+      {skips.map((k, i) => (
+        <SkipWalk key={`${k.alertId}|${k.route}`} alert={list.find((a) => a.id === k.alertId)} route={k.route} stationId={stationId} auto={i === 0} />
       ))}
     </div>
   );
@@ -145,7 +152,7 @@ export function StationDetails({ system, id }: { system: SystemId; id: string })
               <RouteBullet system={system} route={k.route} data={data} />
               <span><s>{k.end === null ? "Skipped both directions" : `Skipped ${k.toward}-bound`}</s>{k.end === null ? "" : ` · ${k.other}-bound stops`}</span>
             </button>
-            {open ? <SkipPlaces alert={alertById.get(k.alertId)} route={k.route} /> : null}
+            {open ? <SkipWalk alert={alertById.get(k.alertId)} route={k.route} stationId={id} auto /> : null}
           </div>
         );
       })}
