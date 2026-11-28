@@ -5,8 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { onMapInstance } from "@/lib/map/mapInstance";
 import { framePadding, measureCover } from "@/lib/map/mapCover";
-import { useLeftCard } from "@/lib/store/leftColumn";
-import { useMediaQuery } from "@/lib/useMediaQuery";
+import { useColumnWide, useLeftColumn } from "@/lib/store/leftColumn";
 import { FILM, FILM_S, frameOf, RIDE, tripAt, WALKED, type Part } from "./trip";
 
 const SRC = "station-replay";
@@ -72,8 +71,9 @@ export default function StationReplay() {
   const dotRef = useRef<{ marker: Marker; label: HTMLElement } | null>(null);
   const tRef = useRef(0);
   const partRef = useRef<Part | null>(null);
-  const desktop = useMediaQuery("(min-width: 1024px)");
-  const { slot, top } = useLeftCard("station-replay", desktop);
+  // From 640 px the replay is the left card, above the ask box.
+  const desktop = useColumnWide();
+  const slot = useLeftColumn((s) => s.slot);
 
   const frame = useCallback((part: Part, duration = 900) => {
     const map = mapRef.current;
@@ -212,13 +212,13 @@ export default function StationReplay() {
     </div>
   );
 
-  if (slot) return createPortal(
-    <section data-testid="station-replay" aria-label="Station replay" className={`task-panel ${top ? "flex" : "hidden"} min-h-0 flex-col gap-2 rounded-2xl p-3`}>
+  if (desktop) return slot ? createPortal(
+    <section data-testid="station-replay" aria-label="Station replay" className="task-panel side-card">
       {film}
       {controls}
     </section>,
     slot,
-  );
+  ) : null;
   // On a phone the film sits above the map: a panel under the menu row, with the map and the dot below it.
   return (
     <section data-testid="station-replay" aria-label="Station replay" className="task-panel task-top flex flex-col gap-2 rounded-2xl p-2">

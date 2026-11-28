@@ -17,13 +17,12 @@ test("a phone is chat-first: no menu row, and language comes up from behind the 
   await page.goto("/");
   await expect(page.getByTestId("agent-bar")).toBeVisible({ timeout: slow(15_000) });
   await expect(page.getByTestId("menu-row")).toHaveCount(0);
-  await expect(page.getByTestId("zoom-control")).toBeHidden();
-  // Quick buttons at the top right (zoom as + and −); Center on my location sits just above the chat.
-  await expect(page.getByTestId("zoom-buttons")).toBeVisible();
+  // Apple Maps' pair at the top right: the map style over Center on my location; a phone has no zoom buttons.
+  await expect(page.getByTestId("zoom-buttons")).toBeHidden();
   const locate = (await page.getByTestId("locate-button").boundingBox())!;
-  const bar = (await page.getByTestId("agent-bar").boundingBox())!;
-  expect(locate.y + locate.height).toBeLessThanOrEqual(bar.y);
-  expect(bar.y - (locate.y + locate.height)).toBeLessThan(160);
+  const style = (await page.getByTestId("map-style-button").boundingBox())!;
+  expect(locate.y).toBeGreaterThanOrEqual(style.y + style.height - 1);
+  expect(locate.y).toBeLessThan(160);
   // The language chip stays in the rail (#54); language and the QR code are in Settings as well.
   await expect(page.getByTestId("lang-chip")).toBeVisible();
   await page.getByTestId("settings-chip").click();

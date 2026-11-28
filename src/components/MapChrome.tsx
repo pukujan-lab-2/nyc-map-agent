@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronRight, Layers, Map as MapIcon, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useFlag } from "@/lib/flags";
@@ -9,29 +10,31 @@ import { setOpenMenu, useOpenMenu } from "@/lib/store/openMenu";
 import { setFollowMode, stopFollowing, useFollowMode, useFollowed, usePreviewing, type FollowMode } from "@/lib/transit/follow";
 import { useSelectedLine } from "@/lib/transit/selectedLine";
 import { useMenuT } from "@/lib/i18n/menuText";
-import { usePullSheetUp } from "@/lib/store/pullSheet";
+import { usePanel } from "@/lib/store/PanelContext";
 import { APP_LANGS, LANG_LABELS, setLangPref, useLangPref, type AppLang } from "@/lib/voice/langPref";
 import type { ViewName } from "@/lib/map/viewChange";
 import { pickView, useCurrentView } from "./MapViewSwitch";
 import { LiveLayerRows } from "./LiveLayerRows";
+import { PullSheet } from "./PullSheet";
 
 /**
- * Agent-first map chrome (#370, #372): one column of quick buttons at the top
- * right (Change view, zoom, north; on a phone also Layers and the language), the view menu, and Center on my location just above the chat.
- * Everything else comes up from behind the chat (owner, 2026-10-25). Layers and
- * every other menu live in the top-left menu row (MenuRow).
+ * Agent-first map chrome (#370, #372), copied from Apple Maps (owner, 2026-11-27): at the top right one
+ * stacked pair, the map style (a view of the one sheet: Map, 3D, Street, the live layers and More
+ * layers) over Center on my location, and the compass under it only while the map is turned. From
+ * 640 px, + and − at the bottom right; a phone pinches.
  */
 
 const ROUND = "flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 shadow-[0_6px_18px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
 const DARK = "border border-[#263449] bg-[rgba(15,23,42,0.92)] text-[#f1f5f9]";
-const LIGHT = "border border-transparent bg-[#f8fafc] text-[#0f172a]";
-const FLOAT = "rounded-[20px] border border-[#263449] bg-[rgba(11,18,32,0.82)] p-2 text-[#f1f5f9] shadow-[0_12px_32px_rgba(0,0,0,0.5)] backdrop-blur-[14px]";
+const RING = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
+/** Apple Maps' stacked pair: two square buttons in one rounded glass slab. */
+const PAIR = "pointer-events-auto flex w-11 flex-col overflow-hidden rounded-[14px] border border-[#263449] bg-[rgba(15,23,42,0.92)] shadow-[0_6px_18px_rgba(0,0,0,0.35)] backdrop-blur-[14px]";
+const PAIR_BTN = "flex h-11 w-11 items-center justify-center text-[#60a5fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#60a5fa]";
 
 const svg = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
-const ViewIcon = () => <svg {...svg} width={20} height={20}><path d="M12 3 3 8v8l9 5 9-5V8l-9-5Z" /><path d="M3 8l9 5 9-5M12 13v8" /></svg>;
 // The "my location" crosshair people know from Google Maps (Material Icons, Apache-2.0).
 const LocateIcon = () => <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.99 8.99 0 0 0 13 3.06V1h-2v2.06A8.99 8.99 0 0 0 3.06 11H1v2h2.06A8.99 8.99 0 0 0 11 20.94V23h2v-2.06A8.99 8.99 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" /></svg>;
-/** The same three as the Map · 3D · Street switch, which this menu stands in for on a phone. */
+/** Map, 3D and Street, the map style sheet's three tiles. */
 const VIEWS: Array<{ id: ViewName; label: string; note: string; icon: ReactNode }> = [
   { id: "map", label: "Map", note: "Flat, from above", icon: <svg {...svg}><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M4 12h16M12 4v16" /></svg> },
   { id: "3d", label: "3D", note: "Tilted, with buildings", icon: <svg {...svg}><path d="M3 20h18M6 20V10l6-5 6 5v10" /></svg> },
@@ -129,33 +132,21 @@ function useCamera(): { map: MapLibreMap | null; bearing: number; pitch: number 
   return { map, ...cam };
 }
 
-/** Map / 3D / Street, as a menu of radio items; each keeps the spot and the heading. */
-function ViewMenu({ onPick }: { onPick: () => void }) {
+
+/** Map, 3D and Street as three tiles; each keeps the spot and the heading. */
+function ViewTiles({ onPick }: { onPick: () => void }) {
   const street = useFlag("streetLevel");
   const { map, current: level, walking, spot } = useCurrentView();
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { ref.current?.querySelector<HTMLButtonElement>('[aria-checked="true"], [role="menuitemradio"]')?.focus(); }, []);
-  const go = (l: ViewName) => {
-    if (l !== level) pickView(map, l, walking, spot);
-    onPick();
-  };
-  const onKey = (e: ReactKeyboardEvent) => {
-    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-    e.preventDefault();
-    const items = [...(ref.current?.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]') ?? [])];
-    const i = items.indexOf(document.activeElement as HTMLButtonElement);
-    items[(i + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length]?.focus();
-  };
   return (
-    <div ref={ref} role="menu" tabIndex={-1} aria-label="Change view" data-testid="view-menu" data-map-cover onKeyDown={onKey} className={`flex w-[220px] flex-col gap-0.5 ${FLOAT}`}>
+    <div role="radiogroup" aria-label="View" data-testid="map-view-switch" className="grid grid-cols-3 gap-2">
       {VIEWS.filter((v) => street || v.id !== "street").map((v) => {
         const on = level === v.id;
         return (
-          <button key={v.id} type="button" role="menuitemradio" aria-checked={on} onClick={() => go(v.id)}
-            className="flex min-h-[52px] items-center gap-3 rounded-[14px] border px-2.5 text-left text-[15px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]"
-            style={{ background: on ? "rgba(37,99,235,0.22)" : "transparent", borderColor: on ? "rgba(96,165,250,0.55)" : "transparent" }}>
+          <button key={v.id} type="button" role="radio" aria-checked={on} onClick={() => { if (!on) pickView(map, v.id, walking, spot); onPick(); }}
+            className={`flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-[14px] border text-[14px] font-semibold ${RING}`}
+            style={{ background: on ? "rgba(37,99,235,0.22)" : "rgba(15,23,42,0.45)", borderColor: on ? "rgba(96,165,250,0.7)" : "rgba(148,163,184,0.16)" }}>
             {v.icon}
-            <span className="flex flex-1 flex-col"><span className="font-semibold">{v.label}</span><span className="text-[12px] text-[#a5b4cb]">{v.note}</span></span>
+            {v.label}
           </button>
         );
       })}
@@ -163,77 +154,72 @@ function ViewMenu({ onPick }: { onPick: () => void }) {
   );
 }
 
-/** While following, Change view picks the follow camera; Street rides along at street level (trains and buses). */
-const FOLLOW_VIEWS: Array<{ id: FollowMode; label: string; note: string }> = [
-  { id: "map", label: "Map", note: "Flat, from above" },
-  { id: "chase", label: "Chase", note: "Just behind it" },
-  { id: "side", label: "Side", note: "Alongside" },
-  { id: "overhead", label: "Overhead", note: "High above" },
-  { id: "cab", label: "Street", note: "Ride along at street level" },
+/** While following, the map style picks the follow camera; Street rides along at street level (trains and buses). */
+const FOLLOW_VIEWS: Array<{ id: FollowMode; label: string }> = [
+  { id: "map", label: "Map" },
+  { id: "chase", label: "Chase" },
+  { id: "side", label: "Side" },
+  { id: "overhead", label: "Overhead" },
+  { id: "cab", label: "Street" },
 ];
 
-function FollowViewMenu({ onPick, preview }: { onPick: () => void; preview?: boolean }) {
+function FollowTiles({ preview, onPick }: { preview?: boolean; onPick: () => void }) {
   const mode = useFollowMode();
   return (
-    <div role="menu" aria-label="Change view" data-testid="follow-view-menu" data-map-cover className={`flex w-[220px] flex-col gap-0.5 ${FLOAT}`}>
-      {FOLLOW_VIEWS.map((view) => {
-        // In a trip preview the first view walks the trip through your eyes; "Map, flat, from above" was wrong for it (owner, 2026-11-10).
-        const v = preview && view.id === "map" ? { ...view, label: "Walkthrough", note: "On foot, through your eyes" } : view;
+    <div role="radiogroup" aria-label="Camera" data-testid="follow-view-menu" className="flex flex-wrap gap-2">
+      {FOLLOW_VIEWS.map((v) => {
         const on = mode === v.id;
         return (
-          <button key={v.id} type="button" role="menuitemradio" aria-checked={on} onClick={() => { setFollowMode(v.id); onPick(); }}
-            className="flex min-h-[48px] items-center rounded-[14px] border px-2.5 text-left text-[15px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]"
-            style={{ background: on ? "rgba(37,99,235,0.22)" : "transparent", borderColor: on ? "rgba(96,165,250,0.55)" : "transparent" }}>
-            <span className="flex flex-1 flex-col"><span className="font-semibold">{v.label}</span><span className="text-[12px] text-[#a5b4cb]">{v.note}</span></span>
+          <button key={v.id} type="button" role="radio" aria-checked={on} onClick={() => { setFollowMode(v.id); onPick(); }}
+            className={`h-11 rounded-full border px-4 text-[14px] font-semibold ${RING}`}
+            style={{ background: on ? "#f8fafc" : "transparent", color: on ? "#0f172a" : undefined, borderColor: on ? "transparent" : "rgba(148,163,184,0.3)" }}>
+            {preview && v.id === "map" ? "Walkthrough" : v.label}
           </button>
         );
       })}
-      {preview ? null : <><div className="mx-2 my-1 h-px bg-[#263449]" />
-      <button type="button" onClick={() => { stopFollowing(); onPick(); }} className="flex min-h-[44px] items-center rounded-[14px] px-2.5 text-left text-[14px] font-semibold text-[#fca5a5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">Stop following</button></>}
     </div>
   );
 }
 
 /**
- * Zoom, always in the same place: +, a vertical slider, −. It works while
- * following or previewing too: the camera keeps your zoom (ZoomKeeper).
+ * The map style button's view of the one sheet, as Apple Maps' map picker: Map, 3D and Street (the follow
+ * cameras while following), the Live trains, Live buses and Restrooms switches, then More layers.
  */
-export const ZOOM_MIN = 9;
-export const ZOOM_MAX = 20;
-function ZoomControl({ map }: { map: MapLibreMap | null }) {
-  const [z, setZ] = useState(() => map?.getZoom() ?? 12);
-  useEffect(() => {
-    if (!map) return;
-    const sync = () => setZ(map.getZoom());
-    sync();
-    map.on("zoom", sync);
-    return () => { map.off("zoom", sync); };
-  }, [map]);
-  const set = (next: number) => map?.setZoom(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, next)));
-  const step = "flex h-9 w-11 items-center justify-center text-[20px] font-semibold leading-none text-[#f1f5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
+function MapStyleSheet({ onClose, follow, preview }: { onClose: () => void; follow: boolean; preview: boolean }) {
+  const { setDrawerOpen } = usePanel();
   return (
-    <div data-testid="zoom-control" className="pointer-events-auto flex max-sm:hidden w-11 flex-col items-center rounded-full border border-[#263449] bg-[rgba(15,23,42,0.92)] py-1 shadow-[0_6px_18px_rgba(0,0,0,0.35)]">
-      <button type="button" aria-label="Zoom in" className={step} onClick={() => set(z + 1)}>+</button>
-      <input type="range" aria-label="Zoom" min={ZOOM_MIN} max={ZOOM_MAX} step={0.1} value={z} onChange={(e) => set(Number(e.target.value))}
-        className="h-24 w-6 cursor-pointer accent-[#60a5fa]" style={{ writingMode: "vertical-lr", direction: "rtl" }} />
-      <button type="button" aria-label="Zoom out" className={step} onClick={() => set(z - 1)}>−</button>
-    </div>
+    <PullSheet testId="map-style-sheet" label="Map" level={2} onLevel={(l) => { if (l < 2) onClose(); }} onClose={onClose}
+      header={<div className="flex min-h-11 items-center gap-2">
+        <h2 className="min-w-0 flex-1 truncate text-[17px] font-bold">Map</h2>
+        <button type="button" aria-label="Close map style" onClick={onClose} className="task-action task-close"><X className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden /></button>
+      </div>}>
+      <div className="pull-sheet-body mt-1 flex flex-col gap-3 text-[#f1f5f9]">
+        {/* A pick puts the sheet away, so the map (and the follow mini map) shows the new view. */}
+        {follow || preview ? <FollowTiles preview={!follow} onPick={onClose} /> : <ViewTiles onPick={onClose} />}
+        {follow ? <button type="button" onClick={() => { stopFollowing(); onClose(); }} className={`min-h-11 rounded-full border border-[rgba(148,163,184,0.3)] text-[14px] font-semibold text-[#fca5a5] ${RING}`}>Stop following</button> : null}
+        <div data-testid="map-style-layers" className="flex flex-col rounded-[16px] bg-[rgba(15,23,42,0.45)] py-1">
+          <LiveLayerRows />
+          <button type="button" data-testid="more-layers" onClick={() => setDrawerOpen(true)} className={`flex min-h-12 items-center gap-3 px-2 text-left text-[14px] font-medium ${RING}`}>
+            <Layers className="h-[22px] w-[22px] shrink-0" aria-hidden />
+            <span className="flex-1">More layers</span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-[#a5b4cb]" aria-hidden />
+          </button>
+        </div>
+      </div>
+    </PullSheet>
   );
 }
 
-/**
- * Phones: just + and −, no slider; the column stays short and pinches still work.
- * Short phones (under 700 px tall, an iPhone SE) drop them: with an answer open the
- * column ran into Center on my location and under the sheet (layout check, 320×568).
- */
-function ZoomButtons({ map }: { map: MapLibreMap | null }) {
+/** + and − at the bottom right, from 640 px only: a phone pinches (Apple Maps shows none there). */
+const ZOOM_MIN = 9;
+const ZOOM_MAX = 20;
+function ZoomPair({ map }: { map: MapLibreMap | null }) {
   const step = (d: number) => { if (map) map.easeTo({ zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, map.getZoom() + d)), duration: 250 }); };
-  const btn = "flex h-11 w-11 items-center justify-center text-[22px] font-semibold leading-none text-[#f1f5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
   return (
-    <div data-testid="zoom-buttons" className="pointer-events-auto flex w-11 flex-col items-center rounded-full border border-[#263449] bg-[rgba(15,23,42,0.92)] shadow-[0_6px_18px_rgba(0,0,0,0.35)] sm:hidden [@media(max-height:699px)]:hidden">
-      <button type="button" aria-label="Zoom in" className={btn} onClick={() => step(1)}>+</button>
-      <span className="h-px w-6 bg-[#263449]" aria-hidden />
-      <button type="button" aria-label="Zoom out" className={btn} onClick={() => step(-1)}>−</button>
+    <div data-testid="zoom-buttons" className={`${PAIR} absolute bottom-[44px] right-4 z-40 max-sm:hidden`}>
+      <button type="button" aria-label="Zoom in" className={`${PAIR_BTN} text-[22px] font-semibold text-[#f1f5f9]`} onClick={() => step(1)}>+</button>
+      <span className="h-px bg-[#263449]" aria-hidden />
+      <button type="button" aria-label="Zoom out" className={`${PAIR_BTN} text-[22px] font-semibold text-[#f1f5f9]`} onClick={() => step(-1)}>−</button>
     </div>
   );
 }
@@ -247,7 +233,7 @@ const TurnIcon = () => <svg width={22} height={22} viewBox="0 0 24 24" fill="cur
  * face (when the phone knows it); the next goes back to north up. Dragging the
  * map stops following (see youCamera).
  */
-function LocateButton({ className, style }: { map?: MapLibreMap | null; className?: string; style?: React.CSSProperties }) {
+function LocateButton() {
   const [asking, setAsking] = useState(false);
   const camera = useYouCamera();
   const shared = useSharedLocation();
@@ -264,33 +250,9 @@ function LocateButton({ className, style }: { map?: MapLibreMap | null; classNam
   const label = camera === "follow" && canTurn ? "Turn the map with me" : camera === "turn" ? "Keep north up" : "Center on my location";
   return (
     <button type="button" aria-label={label} aria-pressed={camera !== "off"} aria-busy={asking} onClick={locate} data-testid="locate-button" data-camera={camera}
-      className={`${ROUND} border border-[#263449] pointer-events-auto ${camera === "off" ? "bg-[rgba(15,23,42,0.92)] text-[#60a5fa]" : "bg-[#2563eb] text-white"} ${asking ? "animate-pulse motion-reduce:animate-none" : ""} ${className ?? ""}`} style={style}>
+      className={`${PAIR_BTN} ${camera === "off" ? "" : "bg-[#2563eb] !text-white"} ${asking ? "animate-pulse motion-reduce:animate-none" : ""}`}>
       {camera === "turn" ? <TurnIcon /> : <LocateIcon />}
     </button>
-  );
-}
-
-const LayersIcon = () => <svg {...svg} width={20} height={20}><path d="m12 2 10 5-10 5L2 7l10-5Z" /><path d="m2 12 10 5 10-5M2 17l10 5 10-5" /></svg>;
-
-/**
- * Phones: Live trains, Live buses (and which routes) and Restrooms, one tap from the map.
- * They were only in the Settings sheet, where nobody found them (owner, 2026-10-27).
- * The bus route groups make it tall: it scrolls instead of running under the buttons and chat at the bottom.
- */
-function PhoneLayers({ open, onOpen }: { open: boolean; onOpen: (open: boolean) => void }) {
-  return (
-    <div className="relative sm:hidden">
-      <button type="button" aria-label="Layers: trains, buses, restrooms" aria-haspopup="dialog" aria-expanded={open} data-testid="phone-layers-button"
-        onClick={() => onOpen(!open)} className={`${ROUND} ${open ? LIGHT : DARK} pointer-events-auto`}>
-        <LayersIcon />
-      </button>
-      {open ? (
-        <div role="dialog" aria-label="Layers" data-testid="phone-layers-menu" data-map-cover
-          className={`pointer-events-auto absolute right-[52px] top-0 max-h-[max(220px,calc(100dvh-380px))] w-[min(300px,calc(100vw-88px))] overflow-y-auto overscroll-contain ${FLOAT}`}>
-          <LiveLayerRows />
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -310,30 +272,25 @@ export function MapChrome() {
   const { map, bearing, pitch } = useCamera();
   const line = useSelectedLine();
   const followed = useFollowed();
-  // A trip preview rides its marker with the same follow cameras, so its Change view offers them too.
+  // A trip preview rides its marker with the same follow cameras, so the map style offers them too.
   const previewing = usePreviewing();
-  // One dropdown at a time across the menu row and this view menu.
+  // One dropdown at a time: the map style sheet is "view".
   const menu = useOpenMenu();
-  const open = menu === "view" ? "view" : null;
-  const setOpen = (v: "view" | null) => setOpenMenu(v);
-  // The menu row owns "layers" on wider screens; here it is the phone's Layers button.
-  const layersOpen = menu === "layers" && typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+  const styleOpen = menu === "view";
   const stack = useRef<HTMLDivElement>(null);
   const rotated = Math.abs(bearing) > 0.5 || pitch > 0.5;
-  const lineSheet = usePullSheetUp();
 
-  // A tap anywhere else, or Escape, closes the open panel or menu.
+  // Escape, or a tap on the map itself, puts the map style sheet away.
   useEffect(() => {
-    if (!open && !layersOpen) return;
-    const down = (e: PointerEvent) => { if (!stack.current?.contains(e.target as Node)) setOpenMenu(null); };
+    if (!styleOpen) return;
+    const down = (e: PointerEvent) => { if ((e.target as Element | null)?.closest?.(".maplibregl-canvas")) setOpenMenu(null); };
     const key = (e: KeyboardEvent) => { if (e.key === "Escape") setOpenMenu(null); };
     document.addEventListener("pointerdown", down);
     window.addEventListener("keydown", key);
     return () => { document.removeEventListener("pointerdown", down); window.removeEventListener("keydown", key); };
-  }, [open, layersOpen]);
-  // A newly picked line closes the menu; while following, the followed train's line is always
-  // selected, so that rule would shut the follow view menu the moment it opened.
-  // Only a change of line counts: with a line already open, the cube menu has to stay open on a phone.
+  }, [styleOpen]);
+  // A newly picked line closes the sheet; while following, the followed train's line is always
+  // selected, so only a change of line counts.
   const lastLine = useRef(line);
   useEffect(() => {
     const changed = lastLine.current !== line;
@@ -341,8 +298,7 @@ export function MapChrome() {
     if (changed && line && !followed) setOpenMenu(null);
   }, [line, followed]);
 
-  // Publish where the button stack ends, so a phone's pull sheet stops short enough for Center on my
-  // location to fit between them. Zoom grows with the screen, so the stack ends lower on a tall phone.
+  // Publish where the button stack ends, so a phone's pull sheet stops short of it.
   useLayoutEffect(() => {
     const el = stack.current;
     const root = document.documentElement;
@@ -356,77 +312,29 @@ export function MapChrome() {
   });
 
   const top = "calc(env(safe-area-inset-top) + 16px)";
-  // Following: the same quick bar, with the follow cameras under Change view.
-  if (followed || previewing) {
-    return (
-      <>
-      <div ref={stack} data-testid="map-chrome" className="pointer-events-none absolute right-4 z-40 flex flex-col items-end gap-2.5" style={{ top }}>
-        <div className="relative">
-          <button type="button" aria-label="Change view" aria-haspopup="menu" aria-expanded={open === "view"} data-testid="view-button"
-            onClick={() => setOpen(open === "view" ? null : "view")} className={`${ROUND} ${open === "view" ? LIGHT : DARK} pointer-events-auto`}>
-            <ViewIcon />
-          </button>
-          {open === "view" ? <div className="pointer-events-auto absolute right-[52px] top-0"><FollowViewMenu preview={!followed} onPick={() => setOpen(null)} /></div> : null}
-        </div>
-        <ZoomControl map={map} />
-        <ZoomButtons map={map} />
-        {map ? <Compass map={map} bearing={bearing} /> : null}
-      </div>
-      {/* Locate rides just above the follow sheet; language and the QR code live in its Settings tab. */}
-      <LocateButton map={map} className="sheet-locate corner-locate absolute z-40" />
-      </>
-    );
-  }
-  // A line is selected. On a phone it opens as a sheet over the chat, so the quick buttons stay;
-  // folded to its pill at the top (an answer is open), or on a wider screen, its close button takes the top right.
-  if (line) {
-    return (
-      <>
-        {lineSheet ? (
-          <div ref={stack} data-testid="map-chrome" className="pointer-events-none absolute right-4 z-40 flex flex-col items-end gap-2.5" style={{ top }}>
-            <div className="relative">
-              <button type="button" aria-label="Change view" aria-haspopup="menu" aria-expanded={open === "view"} data-testid="view-button"
-                onClick={() => setOpen(open === "view" ? null : "view")} className={`${ROUND} ${open === "view" ? LIGHT : DARK} pointer-events-auto`}>
-                <ViewIcon />
-              </button>
-              {open === "view" ? <div className="pointer-events-auto absolute right-[52px] top-0"><ViewMenu onPick={() => setOpen(null)} /></div> : null}
-            </div>
-            <ZoomButtons map={map} />
-            {map ? <Compass map={map} bearing={bearing} /> : null}
-          </div>
-        ) : rotated && map ? <Compass map={map} bearing={bearing} style={{ position: "absolute", top, right: 68, zIndex: 45 }} /> : null}
-        <LocateButton map={map} className="sheet-locate corner-locate absolute z-40" />
-      </>
-    );
-  }
+  const busy = Boolean(followed || previewing || line);
   return (
     <>
-    <div ref={stack} data-testid="map-chrome" className="pointer-events-none absolute right-4 z-40 flex flex-col items-end gap-2.5" style={{ top }}>
-      {/* On wider screens the Map · 3D · Street switch at the top centre stands in for it. */}
-      <div className="relative sm:hidden">
-        <button type="button" aria-label="Change view" aria-haspopup="menu" aria-expanded={open === "view"} data-testid="view-button"
-          onClick={() => setOpen(open === "view" ? null : "view")} className={`${ROUND} ${open === "view" ? LIGHT : DARK} pointer-events-auto`}>
-          <ViewIcon />
-        </button>
-        {open === "view" ? (
-          <div className="pointer-events-auto absolute right-[52px] top-0">
-            <ViewMenu onPick={() => setOpen(null)} />
-          </div>
-        ) : null}
+      {/* Apple Maps' stacked pair at the top right: the map style, then Center on my location; the compass under them only when the map is turned. */}
+      <div ref={stack} data-testid="map-chrome" className="pointer-events-none absolute right-4 z-40 flex flex-col items-end gap-2.5" style={{ top }}>
+        <div className={PAIR}>
+          <button type="button" aria-label="Map style and layers" aria-haspopup="dialog" aria-expanded={styleOpen} data-testid="map-style-button"
+            onClick={() => setOpenMenu(styleOpen ? null : "view")} className={`${PAIR_BTN} ${styleOpen ? "bg-[#f8fafc] !text-[#0f172a]" : ""}`}>
+            <MapIcon className="h-[22px] w-[22px]" strokeWidth={2} aria-hidden />
+          </button>
+          <span className="h-px bg-[#263449]" aria-hidden />
+          <LocateButton />
+        </div>
+        {rotated && map ? <Compass map={map} bearing={bearing} /> : null}
+        {busy ? null : <>
+          {/* Language stays in sight at every size (#54, #124). */}
+          <LangChip />
+          <div className="hidden sm:flex"><QrButton /></div>
+          <RecordButton />
+        </>}
       </div>
-      {/* Quick buttons, top to bottom: Change view, zoom, north. Everything else comes up from behind the chat. */}
-      <ZoomControl map={map} />
-      <ZoomButtons map={map} />
-      {map ? <Compass map={map} bearing={bearing} /> : null}
-      <PhoneLayers open={layersOpen} onOpen={(v) => setOpenMenu(v ? "layers" : null)} />
-      {/* Language stays in sight at every size (#54, #124). */}
-      <LangChip />
-      {/* The QR code: wider screens here, a phone in Settings. */}
-      <div className="hidden sm:flex"><QrButton /></div>
-      {/* Record a station walk, under the QR button, at every width. */}
-      <RecordButton />
-    </div>
-    <LocateButton map={map} className="sheet-locate corner-locate absolute z-40" />
+      <ZoomPair map={map} />
+      {styleOpen ? <MapStyleSheet onClose={() => setOpenMenu(null)} follow={Boolean(followed)} preview={!followed && previewing} /> : null}
     </>
   );
 }

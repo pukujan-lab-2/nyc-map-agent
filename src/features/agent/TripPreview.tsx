@@ -1,12 +1,10 @@
 import "@/components/task-screens.css";
 import { BellRing, ChevronDown, Clock, MapPin, Pause, PartyPopper, Play, SkipBack, SkipForward, TriangleAlert, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { useLeftCard } from "@/lib/store/leftColumn";
+import { useColumnWide } from "@/lib/store/leftColumn";
 import { toast } from "sonner";
 import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
-import { useMediaQuery } from "@/lib/useMediaQuery";
 import { useT } from "@/lib/i18n/appLang";
 import { plainAlertText } from "@/lib/transit/trouble";
 import { remindAt, saveReminder } from "./reminder";
@@ -50,10 +48,8 @@ export function TripPreview(p: {
   const progress = state.progress * 100;
   /** Play has been pressed: the preview is a walkthrough now, and the trip card steps back. */
   const started = state.status === "playing" || state.status === "paused" || state.status === "ended";
-  const wide = useMediaQuery("(min-width: 640px)");
-  // A desktop: the trip is a card in the one left column, with the ask box under it.
-  const desktop = useMediaQuery("(min-width: 1024px)");
-  const { slot, top } = useLeftCard(`trip:${trip.id}`, desktop);
+  // One sheet at every size: a phone's pull sheet, the left card from 640 px.
+  const wide = useColumnWide();
   const [level, setLevel] = useState<SheetLevel>(0);
   // Playing, the sheet drops to its one bar so the walk has the screen (owner, 2026-11-10: the panel hid half the station).
   useEffect(() => { if (state.playing) setLevel(0); }, [state.playing]);
@@ -133,19 +129,13 @@ export function TripPreview(p: {
   </div>;
   const balloons = state.status === "ended" ? <ArrivedBubble key={state.restart} text={t("arrivedAt").replace("{p}", place)} where={state.where} /> : null;
   // A phone: one pull sheet; resting, it is just the three things, and pulled up it shows the rest (owner, 2026-10-25).
-  if (!wide) return <>
+  // From 640 px the left card, with the details behind the destination's chevron.
+  return <>
     <PullSheet testId="trip-sheet" label="Trip preview" level={level} onLevel={setLevel} onClose={p.onClose} header={head}>
-      <div className="pull-sheet-body mt-2">{details}</div>
+      {open ? <div className="pull-sheet-body mt-2">{details}</div> : null}
     </PullSheet>
     {balloons}
   </>;
-  const card = (className: string) => <section aria-label="Trip preview" className={`task-panel ${className} flex-col gap-2.5 overflow-y-auto`}>
-    {head}
-    {more ? details : null}
-  </section>;
-  // A desktop: the trip is a card in the left column with the chat, the ask box under it (owner, 2026-10-28).
-  if (slot) return <>{createPortal(card(`${top ? "flex" : "hidden"} min-h-0 rounded-2xl p-3`), slot)}{balloons}</>;
-  return <>{card("task-bottom flex")}{balloons}</>;
 }
 
 /** You've arrived, said like a reply: a speech bubble just above the chat bar. Nothing to dismiss; Done or close puts it away with the trip. */

@@ -433,7 +433,7 @@ for (const [width, height] of [[375, 667], [1280, 800]]) {
   });
 }
 
-// Owner, 2026-10-28: one sheet. On a desktop the line is a card at the top of the left column, not a panel on the right.
+// Owner, 2026-10-28 and 2026-11-27: one sheet. On a desktop the line is the top of the left card, not a panel on the right.
 test("a desktop line card sits in the left column", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await mockNetwork(page);
@@ -449,7 +449,8 @@ test("a desktop line card sits in the left column", async ({ page }) => {
   await expectLayout(page);
   await page.getByRole("button", { name: "Close line" }).click();
   await expect(page.getByTestId("line-panel")).toHaveCount(0);
-  await expect(page.getByTestId("agent-home")).not.toHaveAttribute("data-layout", "column");
+  // The card stays, with the ask box at its foot (#180).
+  await expect(page.getByTestId("agent-home")).toHaveAttribute("data-layout", "column");
 });
 
 // Owner report, 2026-10-28: in the old layout's street view, picking a line from the Lines list did nothing.

@@ -185,7 +185,7 @@ const StationInside = lazy(() => import("./StationInside").then((m) => ({ defaul
 import { useQuickLayer } from "@/lib/quickLayers";
 import { QuickLayers } from "./QuickLayers";
 import { MapChrome } from "./MapChrome";
-import { BackToStreet, BusesOff, MapViewSwitch } from "./MapViewSwitch";
+import { BackToStreet } from "./MapViewSwitch";
 import { StreetMiniMap } from "./StreetMiniMap";
 import { nearestCorner, type CornerSign } from "@/lib/map/corner";
 import { pickAt as pickFurniture } from "@/lib/map/streetPick";
@@ -1869,9 +1869,7 @@ export function MapView({
 
 
       {agentHome ? <MapChrome /> : <QuickLayers />}
-      {agentHome ? <MapViewSwitch /> : null}
       {agentHome ? <BackToStreet /> : null}
-      {agentHome ? <BusesOff /> : null}
       {walking ? (
         <WalkControls
           place={walkPlace}
