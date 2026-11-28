@@ -151,6 +151,29 @@ Blocked/uncertain:
 Next:
 - let pull request 288 merge after 287; then check clips in /api/agent/health on the server
 
+### 2026-11-28 07:45:32 UTC — agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f","blocked":[],"changed":["none"],"completed":["Pull request 288's module-boundary check is fixed: the clip maker no longer imports the transit feature's alert type."],"decisions":["no new decisions"],"evidence":["dependency-cruiser finds no violations (728 modules); full lint, size and the 75 clip and voice tests pass."],"next_action":"let pull request 288 merge after 287; then check clips in /api/agent/health on the server","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0084","timestamp":"2026-11-28T07:45:32Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1774f0d0010ea0ee768734dc8604ae03a9cfa87c47e2e3e80c8680fe2a9c4774","request_id":"589dc0ff7e824e3f8b38aab7cb3f2c64","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0084"} -->
+
+Completed:
+- Pull request 288's module-boundary check is fixed: the clip maker no longer imports the transit feature's alert type.
+
+Evidence:
+- dependency-cruiser finds no violations (728 modules); full lint, size and the 75 clip and voice tests pass.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- let pull request 288 merge after 287; then check clips in /api/agent/health on the server
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
