@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { slimAlert, type MercuryAlert, type SlimAlert } from "../../../server/features/transit/alerts";
 import { hasFacts } from "../../../server/features/transit/noticeFacts";
 import type { StaticSystem } from "./model";
@@ -40,61 +40,49 @@ function missing(s: WalkStep): string[] {
 
 describe("notice walks over every saved notice (plan step 3)", () => {
   const lines = alerts.flatMap((a) => a.routes.filter((r) => sys.stopM[r]).map((route) => ({ a, route })));
+  // Every walk is built once and the tests below read them: 254 notice-and-line pairs, 1,760 walks.
+  let all: Array<{ a: SlimAlert; route: string; trip: Trip; walk: NoticeWalk }> = [];
+  beforeAll(() => {
+    all = lines.flatMap(({ a, route }) => everyWalk(a, route).map((w) => ({ a, route, ...w })));
+  });
+  const where = (x: (typeof all)[number]) => `${x.a.id} on the ${x.route}${x.trip ? ` (${x.trip.mode} at ${x.trip.stop})` : ""}`;
 
   it("gives every notice a walk on every line it names", () => {
     expect(alerts.length).toBe(214);
-    for (const { a, route } of lines) {
-      const w = noticeWalk(a, sys, route, null);
-      expect(w.steps.length, `${a.id} on the ${route}`).toBeGreaterThan(0);
-      expect(w.read, `${a.id} on the ${route}`).toBe(hasFacts(factsOf(a, sys)));
+    const first = all.filter((x) => !x.trip);
+    expect(first).toHaveLength(lines.length);
+    for (const x of first) {
+      expect(x.walk.steps.length, where(x)).toBeGreaterThan(0);
+      expect(x.walk.read, where(x)).toBe(hasFacts(factsOf(x.a, sys)));
     }
     // Step 2 read all 214 notices into facts on this snapshot; every one is walked from its facts.
-    expect(lines.filter(({ a, route }) => noticeWalk(a, sys, route, null).read).length).toBe(lines.length);
+    expect(first.filter((x) => x.walk.read)).toHaveLength(lines.length);
   });
 
   it("shows on the map every station, line, bus and entrance a step names", () => {
-    let steps = 0;
-    const gaps: string[] = [];
-    for (const { a, route } of lines) {
-      for (const { trip, walk } of everyWalk(a, route)) {
-        for (const s of walk.steps) {
-          steps++;
-          for (const m of missing(s)) gaps.push(`${a.id} on the ${route}${trip ? ` (${trip.mode} at ${trip.stop})` : ""}: "${s.text}" names ${m}`);
-        }
-      }
-    }
+    const steps = all.flatMap((x) => x.walk.steps.map((s) => ({ x, s })));
+    const gaps = steps.flatMap(({ x, s }) => missing(s).map((m) => `${where(x)}: "${s.text}" names ${m}`));
     expect(gaps).toEqual([]);
     // The preview's audit passed 952 steps over a hand-picked week; this covers every notice, stop and trip.
-    expect(steps).toBeGreaterThan(952);
-  }, 60_000);
+    expect(steps.length).toBeGreaterThan(952);
+  });
 
   it("gives guidance, not reasons, and leaves no slot empty", () => {
-    for (const { a, route } of lines) {
-      for (const { walk } of everyWalk(a, route)) {
-        for (const t of texts(walk)) {
-          expect(t).not.toMatch(/^Why\b|\bdue to\b|\bbecause\b|\bwhile we\b/i);
-          expect(t).not.toMatch(/\{|\bundefined\b|\bnull\b|\s[.,]|on the\.|\s{2}/);
-        }
-      }
-    }
-  }, 60_000);
+    const bad = all.flatMap((x) => texts(x.walk).filter((t) => /^Why\b|\bdue to\b|\bbecause\b|\bwhile we\b/i.test(t) || /\{|\bundefined\b|\bnull\b|\s[.,]|on the\.|\s{2}/.test(t)).map((t) => `${where(x)}: ${t}`));
+    expect(bad).toEqual([]);
+  });
 
   it("says each step in whole sentences with short forms in full, the same way every time", () => {
-    for (const { a, route } of lines) {
-      for (const { trip, walk } of everyWalk(a, route)) {
-        const again = noticeWalk(a, sys, route, trip);
-        walk.steps.forEach((s, i) => {
-          expect(s.say, s.text).not.toMatch(/\b(?:St|Av|Sq|Pkwy|Blvd)\.|\.\./);
-          expect(s.text).not.toMatch(/\.\./);
-          expect(s.say).toMatch(/[.!?]$/);
-          expect(again.steps[i].text).toBe(s.text);
-          expect(again.steps[i].say).toBe(s.say);
-        });
-      }
+    const bad = all.flatMap((x) => x.walk.steps.filter((s) => /\b(?:St|Av|Sq|Pkwy|Blvd)\.|\.\./.test(s.say) || /\.\./.test(s.text) || !/[.!?]$/.test(s.say)).map((s) => `${where(x)}: ${s.say}`));
+    expect(bad).toEqual([]);
+    // Built again from the same facts, every walk says exactly the same words.
+    for (const x of all) {
+      const again = noticeWalk(x.a, sys, x.route, x.trip);
+      expect(again.steps.map((s) => [s.text, s.say]), where(x)).toEqual(x.walk.steps.map((s) => [s.text, s.say]));
     }
     const seven = noticeWalk(byText("Flushing-bound [7] skips 52 St, 69 St, 74 St-Broadway"), sys, "7", { stop: "710", mode: "off" });
     expect(seven.steps.find((s) => s.say.startsWith("Getting off"))?.say).toBe("Getting off at 74th Street, Broadway: your train won't stop there. Stay on to Junction Boulevard.");
-  }, 60_000);
+  });
 
   it("plays only the rider's case, one action a step", () => {
     const seven = byText("Flushing-bound [7] skips 52 St, 69 St, 74 St-Broadway");

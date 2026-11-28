@@ -50,9 +50,19 @@ const indexOf = (sys: StaticSystem) => {
   return idx;
 };
 
-/** The facts of a notice: the server's when it sent them, else read here from the notice's text. */
+const read = new WeakMap<object, { sys: StaticSystem; facts: NoticeFacts }>();
+/** The facts of a notice: the server's when it sent them, else read here from the notice's text, once per notice. */
 export function factsOf(a: TransitAlert & { facts?: NoticeFacts }, sys: StaticSystem): NoticeFacts {
   if (a.facts) return a.facts;
+  // Picking another stop builds the walk again; the notice is read once.
+  const known = read.get(a);
+  if (known?.sys === sys) return known.facts;
+  const facts = readFacts(a, sys);
+  read.set(a, { sys, facts });
+  return facts;
+}
+
+function readFacts(a: TransitAlert, sys: StaticSystem): NoticeFacts {
   const slim: SlimAlert = {
     id: a.id, kind: a.kind, type: a.type, reroute: a.reroute, text: a.text, description: a.description ?? "", agency: a.agency, routes: a.routes,
     stops: a.stops.map((s) => stationOf(sys.system, s)), start: a.start ?? 0, end: a.end ?? 0, windows: a.windows, period: a.period ?? "", direction: a.direction ?? "",
