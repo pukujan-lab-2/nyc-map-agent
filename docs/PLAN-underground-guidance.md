@@ -21,7 +21,20 @@ The Walk Guide already works that way (`src/features/walkguide/progress.ts`). It
 
 These numbers come from one recording. The step counts and distances are now pinned by a test (`src/features/recorder/clean/metamorphic.test.ts`, pull request 256); the free-moving dot's 27 and 117 metres came from a one-off script that is not in the repository. The mezzanine sign times in that recording are estimates, so only the figures at the two elevators are measured against something we know for certain.
 
-Three sources disagree about the mezzanine, and that limits how much to read into the step-length gain. The map says about 144 metres. The guide's 212 steps would make a step 0.68 metres there, against 0.59 on the platform. The rider's 296 steps make it 0.49. Measuring the step on the platform closes most of the gap if the map's distances are right (63 metres down to 23) and little of it if the guide's step counts are right (the guide would be 28% early, against 25% after scaling by the platform's 5%). Which is right needs a second recording.
+Two more recordings from the same day, kept in the project's Octo files, settle part of this (added 2026-11-20; pinned in `src/features/recorder/replay/more-walks.test.ts`).
+
+| Walk | Stretch | Steps taken | Steps in the guide | Ratio |
+| --- | --- | --- | --- | --- |
+| Afternoon, going up | Union Sq mezzanine, elevator to elevator | 296 | 212 | 1.40 |
+| Evening, going down | The same stretch the other way | 218 | 212 | 1.03 |
+| Afternoon | Union Sq platform | 231 | 220 | 1.05 |
+| Afternoon | Cortlandt St, elevator to elevator | 280 | 235 | 1.19 |
+
+The afternoon mezzanine walk was the odd one. The same stretch on the same phone took 218 steps that evening, 3% over the guide's count, and at 0.7 metres a step that walk overshoots the far elevator by about 9 metres, where the afternoon walk overshoots by 63. So the guide's step counts are sound, the fixed 0.7-metre step is about right for an unhurried walk, and what varies is the walk: a rider filming in a rush-hour crowd took a third more steps than the same rider that evening.
+
+The evening walk is also the one walk where the phone kept a location below ground, good to about 18 metres, so the clean-up can be scored against places it was not given (`src/features/recorder/replay/evening.test.ts`). Given half of the mezzanine's fixes, the cleaned path lands about 5 metres from the other half. Given none, with the two elevators as its only fixed points, it is about 36 metres off; the Walk Guide's way, along the line by the share of steps taken, is about 27. Both are on the line and in the wrong place along it. Two elevators 160 metres apart are not enough, which is the case for more places to reset: a read sign, a code.
+
+That changes what learning the step is for. A pace measured once per rider would have been wrong for one of these two walks. The pace has to be learned during the walk, from the legs already confirmed, which is how pull request 259 built it.
 
 ## What other cities did
 
@@ -142,7 +155,8 @@ So the two fit together. The draft knows how a station connects and what the sig
 
 ## What we do not know
 
-- Whether the 16% drift holds for other riders, a phone in a pocket, or a crowded station.
+- How much a second rider's steps differ. The four ratios above are one person on one day, and they run from 1.03 to 1.40.
+- Whether a phone in a pocket counts steps the way a phone in the hand does.
 - Where the NaviLens codes at Union Sq are and what they say. Ten stills from our film show none, and the full video has not been searched.
 - Whether NaviLens's reader can run inside a web page or needs a native app.
 - Whether steps counted from the accelerometer (pull request 230) behave better than the phone's own pedometer.

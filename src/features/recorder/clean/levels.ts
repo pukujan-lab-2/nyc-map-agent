@@ -22,6 +22,12 @@ const quantile = (xs: number[], q: number) => {
  * minute after differs from the half minute before by at least `minRiseM`).
  * That keeps a passing train's pressure push from counting as a ride. A change
  * within the first or last half minute is not counted: there is nothing to compare.
+ *
+ * A ride is also steep: somewhere in it the height moves at least `flatM`
+ * between two readings (0.15 m, a second apart). A sloping passage changes
+ * height for good as well, but never that fast (the Dey St passage at
+ * Cortlandt St falls 1.6 m at about 0.07 m a second), and it is not a change
+ * of level, so it is not a ride.
  */
 export function findRides(baro: readonly BaroRow[], { minRiseM = 1.5, withinMs = 30_000, holdMs = 30_000, flatM = 0.15 } = {}): Ride[] {
   const rides: Ride[] = [];
@@ -42,7 +48,9 @@ export function findRides(baro: readonly BaroRow[], { minRiseM = 1.5, withinMs =
     const full = t(a) - holdMs >= t(0) && t(b) + holdMs <= t(baro.length - 1);
     const before = median(around(t(a) - holdMs, t(a)));
     const after = median(around(t(b), t(b) + holdMs));
-    if (full && s * (after - before) >= minRiseM) {
+    // No steep reading on either side of the crossing: a slope, walked, not a ride.
+    const steep = a < j || b > j;
+    if (full && steep && s * (after - before) >= minRiseM) {
       rides.push({ t0: t(a), t1: t(b), riseM: Math.round((after - before) * 100) / 100 });
       i = b + 1;
     } else i++;

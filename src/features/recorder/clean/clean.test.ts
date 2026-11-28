@@ -48,6 +48,8 @@ describe("rides and levels from the barometer", () => {
 
   it("ignores a pressure push that comes back, and a change with nothing before it", () => {
     expect(findRides(trace((s) => (s > 80 && s < 90 ? 3 : 0)))).toHaveLength(0);
+    // A ramp: three metres down over a minute and a half, never faster than 0.04 m a second.
+    expect(findRides(trace((s) => (s < 40 ? 0 : s > 130 ? -3 : (-3 * (s - 40)) / 90)))).toHaveLength(0);
     expect(findRides(trace((s) => ramp(s, 5, -3)))).toHaveLength(0);
   });
 
