@@ -50,6 +50,7 @@ OIO's triage reads only the intake form's `### <field label>` headings (`.github
 
 Saying a screen "works on mobile" is not evidence. The bar is code: `e2e/layout.ts` checks, at 320×568, 375×667, 390×844 and 1280×800, that nothing scrolls sideways or sits off the edge, every tap target is at least 24 px, no control is covered by or overlaps another, and the map's focus (you, the followed train, the asked place) stays clear of every panel.
 
+- CI checks screens at the smallest phone and desktop only and runs a fast set of specs (owner, 2026-11-28); run `pnpm e2e` locally, which checks all four sizes, before pushing a screen change. Label a pull request `full-e2e` to make CI run everything.
 - Any pull request that changes `src/**/*.tsx` or a stylesheet must add or update an e2e spec that calls `expectLayout` for that screen (usually a case in `e2e/responsive.spec.ts`). CI's `pr-title` job fails it otherwise; the `no-layout-change` label skips the gate only when nothing on screen moves (re-run the job after labelling).
 - A phone panel that rises from the bottom is a **pull sheet**: use `src/components/PullSheet.tsx` (drag handle, peek and full heights, publishes `--pull-sheet-h` so map controls sit above it). Do not hand-roll another bottom sheet.
 - `data-overlap-ok` marks a deliberate overlap (a resize handle on its frame's corner). Never use it to silence a real collision.

@@ -20,14 +20,26 @@ import { expect, type Page } from "@playwright/test";
  * fails a pull request that changes a screen without touching a spec that calls it.
  */
 
-export const SIZES = [
+export const ALL_SIZES = [
   { name: "small phone", width: 320, height: 568 },
   { name: "phone", width: 375, height: 667 },
   { name: "tall phone", width: 390, height: 844 },
   { name: "desktop", width: 1280, height: 800 },
 ] as const;
 
-export type Size = (typeof SIZES)[number];
+export type Size = (typeof ALL_SIZES)[number];
+
+/** The size a spec uses when it needs just one phone. */
+export const TALL_PHONE: Size = ALL_SIZES[2];
+
+/**
+ * The sizes screen specs loop over. A pull request's CI run sets E2E_SIZES (for example
+ * "small phone,desktop", from `scripts/ci/e2e-select.sh`) to check the smallest phone and desktop
+ * only; the run on main, the nightly run and a local run check all four.
+ */
+const wanted = (process.env.E2E_SIZES ?? "").split(",").map((n) => n.trim()).filter(Boolean);
+const picked = ALL_SIZES.filter((size) => wanted.includes(size.name));
+export const SIZES: readonly Size[] = picked.length ? picked : ALL_SIZES;
 
 export interface LayoutOpts {
   /** A map point that must stay in view, not under a panel: [lon, lat]. */

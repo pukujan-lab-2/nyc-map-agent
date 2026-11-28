@@ -1,6 +1,6 @@
 import { readFileSync, statSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { expectLayout, SIZES } from "./layout";
+import { expectLayout, SIZES, TALL_PHONE } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
@@ -86,7 +86,7 @@ for (const size of SIZES) {
 test("Save downloads the recording and its video, and nothing is sent anywhere", async ({ page }) => {
   const sent: string[] = [];
   page.on("request", (r) => { if (r.method() !== "GET") sent.push(`${r.method()} ${r.url()}`); });
-  await open(page, SIZES[2]);
+  await open(page, TALL_PHONE);
   await page.getByRole("button", { name: "Record" }).click();
   await expect(page.getByTestId("record-timer")).toBeVisible({ timeout: slow(10_000) });
   await page.getByTestId("mark-stairs").click();
@@ -125,7 +125,7 @@ test("Save downloads the recording and its video, and nothing is sent anywhere",
 test("the review draws the path from the location fixes", async ({ page, context }) => {
   await context.grantPermissions(["geolocation"]);
   await context.setGeolocation({ latitude: 40.735, longitude: -73.99, accuracy: 8 });
-  await open(page, SIZES[2]);
+  await open(page, TALL_PHONE);
   await page.getByRole("button", { name: "Record" }).click();
   await expect(page.getByTestId("record-timer")).toBeVisible({ timeout: slow(10_000) });
   // About 110 m north, then about 84 m east, as a phone's location would report it.
@@ -144,7 +144,7 @@ test("the review draws the path from the location fixes", async ({ page, context
 
 test("the recorded picture is kept small: a set bitrate, not the browser's own", async ({ page }) => {
   await recordOptions(page);
-  await open(page, SIZES[2]);
+  await open(page, TALL_PHONE);
   await page.getByRole("button", { name: "Record" }).click();
   await expect(page.getByTestId("record-timer")).toBeVisible({ timeout: slow(10_000) });
   const asked = await page.evaluate(() => (window as unknown as { __recorderOptions: (MediaRecorderOptions | null)[] }).__recorderOptions);

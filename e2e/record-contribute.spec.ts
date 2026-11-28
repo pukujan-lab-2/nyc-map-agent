@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { expectLayout, SIZES } from "./layout";
+import { expectLayout, SIZES, TALL_PHONE } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
 
@@ -25,7 +25,7 @@ const fakeCameras = (page: Page, count: number) =>
     if (!navigator.mediaDevices) Object.defineProperty(navigator, "mediaDevices", { value: md });
   }, count);
 
-const open = async (page: Page, cameras = 2, size = SIZES[2]) => {
+const open = async (page: Page, cameras = 2, size = TALL_PHONE) => {
   await page.setViewportSize({ width: size.width, height: size.height });
   await mockNetwork(page);
   await fakeCameras(page, cameras);

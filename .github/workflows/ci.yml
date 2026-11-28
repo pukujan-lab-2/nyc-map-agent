@@ -185,10 +185,9 @@ jobs:
         with: { fetch-depth: 2 }
       - name: Pick the specs this change needs
         id: pick
-        # All 200 tests take over half an hour here. A change to writing runs none; a change inside
-        # one feature folder runs that feature's specs and the smoke spec; anything else runs all.
-        env:
-          BEFORE: ${{ github.event_name == 'push' && github.event.before || '' }}
+        # The full set takes about 40 minutes here, so CI runs a fast set at two sizes (owner, 2026-11-28):
+        # a change to writing runs none, a change inside one feature folder runs that feature's specs,
+        # anything else runs e2e/core.txt. A pull request labelled full-e2e runs everything.
         run: |
           specs=$(bash scripts/ci/e2e-select.sh)
           echo "specs=$specs" >> "$GITHUB_OUTPUT"
