@@ -50,7 +50,7 @@ Audio is handled as it is today: heard, answered and dropped, never stored.
 
 Hands-free keeps working as it does now for everyone unless the flag is on. Typed questions, the agent's tools and its answers do not change. Speech routing changes only in `voice-agent-research`, and only when the owner asks; cloud speech stays off.
 
-## Decided, and still open
+## Decided
 
 - Decided: the worker lives in this repository, in `voice-agent/` (owner, 2026-11-28).
-- Open: should the pilot use design-bakery's LiveKit server, or one of its own on the VPS?
+- Decided: the pilot shares design-bakery's LiveKit server (owner, 2026-11-28). Our worker joins only rooms whose token names `nyc-map-voice`, so the two sites' calls stay apart.
