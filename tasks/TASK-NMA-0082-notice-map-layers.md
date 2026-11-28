@@ -40,3 +40,26 @@ Pull request: https://github.com/pukujan-lab-2/nyc-map-agent/pull/289
 - [x] The layout bar passes at 320×568, 375×667, 390×844 and 1280×800 with a notice open and the skipped stretch in view (`e2e/notice-map.spec.ts`).
 - [x] Every station, bus, shuttle stop, entrance and walk in a step's map data is drawn (`noticeMap.test.ts`).
 - [x] Each signpost sits beside its own track (test on the 7 at 52 St and 69 St).
+
+### 2026-11-28 07:28:43 UTC — agent:claude-code/f59eafb3-fdfd-40b2-bfef-be4f646ba311
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/f59eafb3-fdfd-40b2-bfef-be4f646ba311","blocked":[],"changed":["none"],"completed":["Rebased pull request 289 onto main after pull requests 284, 281 and 282 merged, and set the notice map chunk and total size budgets to their measured sizes."],"decisions":["no new decisions"],"evidence":["Typecheck, lint, import boundaries, knip and the size check pass on the rebased branch; the unit suite passes (2,354 tests), with the two Fulton station-shell tests passing alone once the Mac's load dropped."],"next_action":"Let pull request 289 merge once CI passes; if its e2e run is cancelled at the 45-minute cap, ask the lead session to rerun it.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0082","timestamp":"2026-11-28T07:28:43Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"68f56797ffe98d34759c293c0466cca755ce38e76132c42ba2f7a673e2c77074","request_id":"09134203a3fb4edc900fea7d652d94b6","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0082"} -->
+
+Completed:
+- Rebased pull request 289 onto main after pull requests 284, 281 and 282 merged, and set the notice map chunk and total size budgets to their measured sizes.
+
+Evidence:
+- Typecheck, lint, import boundaries, knip and the size check pass on the rebased branch; the unit suite passes (2,354 tests), with the two Fulton station-shell tests passing alone once the Mac's load dropped.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 289 merge once CI passes; if its e2e run is cancelled at the 45-minute cap, ask the lead session to rerun it.
