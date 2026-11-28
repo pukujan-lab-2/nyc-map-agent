@@ -99,6 +99,29 @@ Blocked/uncertain:
 Next:
 - Let CI pass on pull request 281; auto-merge is armed.
 
+### 2026-11-28 03:23:43 UTC — agent:claude-code/4cefb5fb-6625-4f75-af3d-30455892565b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/4cefb5fb-6625-4f75-af3d-30455892565b","blocked":["none"],"changed":["e2e/mocks.ts"],"completed":["The silent e2e speech stub now leaves a spec's own recording voice in place (the same block as pull request 283)."],"decisions":["Took the stub from the notice time-buttons branch unchanged so the two pull requests merge cleanly."],"evidence":["CI e2e on pull request 281 failed the notice and street-level specs, which install their own speechSynthesis; locally 21 of those 25 cases pass with the fix, and the 4 that fail time out clicking a visible home button at desktop size under load from other sessions."],"next_action":"Let CI e2e pass on pull request 281; auto-merge is armed.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0074","timestamp":"2026-11-28T03:23:43Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"4de0d9b94242719c06038fe430ab00252f251430e12fc6b850bd35b36f0e80bc","request_id":"d3f914bdf31d47589a520eed318c4cc7","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0074"} -->
+
+Completed:
+- The silent e2e speech stub now leaves a spec's own recording voice in place (the same block as pull request 283).
+
+Evidence:
+- CI e2e on pull request 281 failed the notice and street-level specs, which install their own speechSynthesis; locally 21 of those 25 cases pass with the fix, and the 4 that fail time out clicking a visible home button at desktop size under load from other sessions.
+
+Decisions:
+- Took the stub from the notice time-buttons branch unchanged so the two pull requests merge cleanly.
+
+Changed:
+- e2e/mocks.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let CI e2e pass on pull request 281; auto-merge is armed.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
