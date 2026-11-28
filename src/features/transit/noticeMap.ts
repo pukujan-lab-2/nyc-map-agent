@@ -154,10 +154,20 @@ export function noticeMapFeatures(
   const all: Pos[] = [];
   const keep = (p: Pos | undefined) => { if (p) all.push(p); return p; };
 
+  // A station named by another line's id in the same complex (Queensboro Plaza is 718 on the 7, R09 on the N).
+  const onLine = (id: string, line: string): string => {
+    const sm = sys.stopM[line] ?? {};
+    if (sm[id] !== undefined) return id;
+    const p = at(id);
+    if (!p) return id;
+    const near = Object.keys(sm).map((o) => ({ o, d: at(o) ? metres(at(o)!, p) : Infinity })).sort((x, y) => x.d - y.d)[0];
+    return near && near.d < 350 ? near.o : id;
+  };
   const tracks: Line[] = [], trackStops: Point[] = [], signposts: Point[] = [], closed: Line[] = [], train: Point[] = [];
   const onTrack = new Set<string>();
   const skipIds = new Set<string>();
-  for (const t of map.tracks ?? []) {
+  for (const t0 of map.tracks ?? []) {
+    const t = { ...t0, from: onLine(t0.from, t0.line), to: onLine(t0.to, t0.line), skip: t0.skip?.map((id) => onLine(id, t0.line)), stops: t0.stops?.map((id) => onLine(id, t0.line)) };
     const sm = sys.stopM[t.line];
     if (!sm || sm[t.from] === undefined || sm[t.to] === undefined) continue;
     const end = Math.max(...Object.values(sm));
@@ -197,16 +207,28 @@ export function noticeMapFeatures(
   }
 
   if (map.ride) {
-    const r = map.ride, sm = sys.stopM[r.line] ?? {};
+    // A rerouted train (the A over the F from Delancey St) runs on the track of a line that serves both ends.
+    const routesAt = (id: string) => String(byId.get(id)?.properties.routes ?? "").split(/[\s,]+/).filter(Boolean);
+    const both = (l: string) => sys.stopM[l]?.[onLine(map.ride!.from, l)] !== undefined && sys.stopM[l]?.[onLine(map.ride!.to, l)] !== undefined;
+    const track = [map.ride.line, ...routesAt(map.ride.from), ...routesAt(map.ride.to)].find(both) ?? map.ride.line;
+    const r = { ...map.ride, track, from: onLine(map.ride.from, track), to: onLine(map.ride.to, track) }, sm = sys.stopM[track] ?? {};
     const p = keep(at(r.from));
     if (p && sm[r.from] !== undefined && sm[r.to] !== undefined) {
       const up = sm[r.to] >= sm[r.from];
-      const h = headingAt(sys, r.line, sm[r.from], up);
+      const h = headingAt(sys, r.track, sm[r.from], up);
       const o = rightOf(h, LANE);
-      const toward = r.toward ?? sideNames(sys, r.line, null)[up ? 1 : 0];
+      const toward = r.toward ?? sideNames(sys, r.track, null)[up ? 1 : 0];
       const color = opts.color(r.line);
       train.push(pt(p, { line: r.line, color, bullet: bulletId(r.line, color), bulletOffset: [round(o[0] / 0.8), round(o[1] / 0.8)], bearing: round(bearingOf(h)), tag: toward ? `to ${toward}` : "", tagOffset: [round(o[0] / 12), round(o[1] / 12 + 1.1)] }));
       keep(at(r.to));
+    } else if (p && at(r.to)) {
+      // No one line runs from one end to the other (a reroute over two lines): the train at its start,
+      // pointing straight at where it is going.
+      const q = at(r.to)!, k = Math.cos((p[1] * Math.PI) / 180);
+      const e = (q[0] - p[0]) * k, n = q[1] - p[1], L = Math.hypot(e, n) || 1;
+      const color = opts.color(r.line);
+      train.push(pt(p, { line: r.line, color, bullet: bulletId(r.line, color), bulletOffset: [0, 0], bearing: round(bearingOf([e / L, n / L])), tag: r.toward ? `to ${r.toward}` : "", tagOffset: [0, 1.1] }));
+      keep(q);
     }
   }
 

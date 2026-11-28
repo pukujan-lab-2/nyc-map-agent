@@ -83,6 +83,14 @@ describe("noticeMapFeatures", () => {
     expect(Number(t.bearing)).toBeLessThan(135);
   });
 
+  it("draws a ride named by another line's station id, or over another line's track", () => {
+    // Queensboro Plaza is 718 on the 7 and R09 on the N; the A rerouted over the F starts at Delancey St-Essex St.
+    for (const ride of [{ line: "N", from: "718", to: "R11", toward: "Manhattan" }, { line: "A", from: "F15", to: "A38", toward: null }]) {
+      const fx = noticeMapFeatures({ stations: [ride.from, ride.to], lines: [ride.line], ride }, sys, { color });
+      expect(props(fx.train).map((p) => p.line), `${ride.line} ${ride.from}-${ride.to}`).toEqual([ride.line]);
+    }
+  });
+
   it("names the line when two stations share a name, but not one complex under two ids", () => {
     const label = (id: string) => props(fx.labels).find((p) => p.id === id)?.label;
     expect(label("A20")).toBe("86 Street (A)");
