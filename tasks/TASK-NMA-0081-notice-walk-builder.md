@@ -104,6 +104,29 @@ Blocked/uncertain:
 Next:
 - Rebase onto main once pull request 284 merges
 
+### 2026-11-28 04:22:37 UTC — agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/49eafa85-0865-4394-a41e-dc905b4c6d7f","blocked":["Built on pull request 284, which is not merged yet"],"changed":["src/features/transit/noticeWalk.ts (facts cached per notice), noticeWalk.test.ts"],"completed":["The notice walk tests build every walk once, and a notice's facts are read once, so the tests no longer time out on CI"],"decisions":["no new decisions"],"evidence":["noticeWalk.test.ts runs 13 tests in 0.7 s locally (was over 20 s, and over 5 s per test on CI for PR 288); transit unit tests pass (217)"],"evidence_class":"observed","next_action":"Rebase onto main once pull request 284 merges","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0081","timestamp":"2026-11-28T04:22:37Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"77c2c51cfb7a72cb954d22757af6854ae1c1b7907f2d8daade20d7f5fc8c3168","request_id":"9f2eb1795c5f4158a3d4fcd286f249b1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0081"} -->
+
+Completed:
+- The notice walk tests build every walk once, and a notice's facts are read once, so the tests no longer time out on CI
+
+Evidence:
+- noticeWalk.test.ts runs 13 tests in 0.7 s locally (was over 20 s, and over 5 s per test on CI for PR 288); transit unit tests pass (217)
+
+Decisions:
+- no new decisions
+
+Changed:
+- src/features/transit/noticeWalk.ts (facts cached per notice), noticeWalk.test.ts
+
+Blocked/uncertain:
+- Built on pull request 284, which is not merged yet
+
+Next:
+- Rebase onto main once pull request 284 merges
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
