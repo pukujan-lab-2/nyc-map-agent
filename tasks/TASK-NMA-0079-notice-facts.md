@@ -56,6 +56,52 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-28 01:41:42 UTC — agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b","blocked":[],"changed":["server/features/transit/noticeFacts.ts, noticeFacts.test.ts, the feed fixture, scripts/notice-facts-coverage.ts"],"completed":["Notice facts parser, alias list, coverage script and tests from the 2026-11-27 feed; pull request 284 opened"],"decisions":["no new decisions"],"evidence":["On the saved feed all 214 notices become facts with every station matched; 189 have no guidance sentence left over; full unit suite passes (2,309 tests)"],"evidence_class":"observed","next_action":"Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0079","timestamp":"2026-11-28T01:41:42Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"8df9dbb03e1b8b89645d147b128307de9856987ebd0c92579a1470ec5ade58e6","request_id":"7bf2aa5b75434dfeba4dd61ab5fc7092","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0079"} -->
+
+Completed:
+- Notice facts parser, alias list, coverage script and tests from the 2026-11-27 feed; pull request 284 opened
+
+Evidence:
+- On the saved feed all 214 notices become facts with every station matched; 189 have no guidance sentence left over; full unit suite passes (2,309 tests)
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/transit/noticeFacts.ts, noticeFacts.test.ts, the feed fixture, scripts/notice-facts-coverage.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
+
+### 2026-11-28 01:42:02 UTC — agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/13815112-3aa5-4f28-a77b-edf50852ab6b","blocked":[],"changed":["server/features/transit/noticeFacts.ts, noticeFacts.test.ts, the feed fixture, scripts/notice-facts-coverage.ts"],"completed":["Notice facts parser, alias list, coverage script and tests from the 2026-11-27 feed; pull request 284 opened"],"decisions":["no new decisions"],"evidence":["On the saved feed all 214 notices become facts with every station matched; 189 have no guidance sentence left over; full unit suite passes (2,309 tests)"],"evidence_class":"observed","next_action":"Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0079","timestamp":"2026-11-28T01:42:02Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"8df9dbb03e1b8b89645d147b128307de9856987ebd0c92579a1470ec5ade58e6","request_id":"8cf5a4b17e0144b2acb4532faaf83142","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0079"} -->
+
+Completed:
+- Notice facts parser, alias list, coverage script and tests from the 2026-11-27 feed; pull request 284 opened
+
+Evidence:
+- On the saved feed all 214 notices become facts with every station matched; 189 have no guidance sentence left over; full unit suite passes (2,309 tests)
+
+Decisions:
+- no new decisions
+
+Changed:
+- server/features/transit/noticeFacts.ts, noticeFacts.test.ts, the feed fixture, scripts/notice-facts-coverage.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let pull request 284 merge; the walk builder (plan step 3) reads NoticeFacts
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
