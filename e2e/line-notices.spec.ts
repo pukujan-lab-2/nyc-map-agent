@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { expectLayout, SIZES } from "./layout";
 import { mockNetwork } from "./mocks";
 import { slow } from "./slow";
+import { PERIOD_KEYS, occurrence, periodAt } from "../src/lib/transit/periods";
 
 // The 2 line with one elevator outage at Times Sq-42 St (captured from /api/transit-live, trimmed).
 const FIXTURE = JSON.parse(readFileSync(new URL("./fixtures/transit-live-2-line.json", import.meta.url), "utf8")) as {
@@ -379,33 +380,56 @@ for (const size of SIZES) {
   });
 }
 
-// Owner, 2026-10-27: on a weekday the 7's weekend work was nowhere on the map. "This weekend" shows it.
+// Owner, 2026-10-27: on a weekday the 7's weekend work was nowhere on the map. Owner, 2026-11-27: four time
+// buttons replace Now and This weekend (docs/PLAN-notice-walks.md, step 5). The one for now is picked on open;
+// another asks for its next occurrence and lists only the notices in effect in its hours.
 for (const [width, height] of [[375, 667], [1280, 800]]) {
-  test(`the line panel shows this weekend's planned work at ${width}×${height}`, async ({ page }) => {
+  test(`the line panel's time buttons show each period's planned work at ${width}×${height}`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await mockNetwork(page);
     await page.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: liveNow() }));
     await page.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
-    const asked: string[] = [];
+    const asked: Array<{ from: number; to: number }> = [];
     await page.route("**/api/transit/alerts?from=*", async (r) => {
-      asked.push(r.request().url());
-      const now = Math.floor(Date.now() / 1000);
-      await r.fulfill({ contentType: "application/json", body: JSON.stringify({ at: now, outages: [], alerts: [{
-        id: "lmm:planned_work:wk2", kind: "planned", type: "Planned - Stops Skipped", reroute: true, agency: "MTASBWY", routes: ["2"], stops: [],
-        text: "In Manhattan, downtown [2] skips Christopher St-Stonewall and Houston St", description: "", start: now + 86_400, end: now + 2 * 86_400, period: "Sat and Sun",
-        changes: [], skipNames: ["Christopher St-Stonewall", "Houston St"] }] }) });
+      const q = new URL(r.request().url()).searchParams;
+      const from = Number(q.get("from")), to = Number(q.get("to"));
+      asked.push({ from, to });
+      const skip = (id: string, text: string, windows: Array<[number, number]>) => ({
+        id, kind: "planned", type: "Planned - Stops Skipped", reroute: true, agency: "MTASBWY", routes: ["2"], stops: [], text, description: "",
+        start: windows[0][0], end: windows[windows.length - 1][1], windows, period: "", changes: [], skipNames: [] });
+      await r.fulfill({ contentType: "application/json", body: JSON.stringify({ at: from, outages: [], alerts: [
+        // In effect in the period's first hour, so in every period's own hours.
+        skip("lmm:planned_work:in", "In Manhattan, downtown [2] skips Christopher St-Stonewall and Houston St", [[from, from + 3600], [to + 86_400, to + 90_000]]),
+        // Its windows all fall after the period: the buttons drop it even if the server sends it.
+        skip("lmm:planned_work:out", "In Brooklyn, [2] skips Sterling St", [[to + 3600, to + 7200]]),
+      ] }) });
     });
+    // The browser's clock picks the button; work out the same one here.
+    const now = await page.evaluate(() => Date.now());
     await page.goto("/");
     await page.getByRole("button", { name: "My train" }).click({ timeout: slow(15_000) });
     await page.getByRole("button", { name: /^7 Avenue Express/ }).first().click({ timeout: slow(15_000) });
     await expect(page.getByTestId("line-panel")).toBeVisible();
     const days = page.getByTestId("line-day");
-    await expect(days.getByRole("button", { name: "Now" })).toHaveAttribute("aria-pressed", "true");
-    await days.getByRole("button", { name: "This weekend" }).click();
-    await expect(days.getByRole("button", { name: "This weekend" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator("[data-notice]", { hasText: "skips" })).toBeVisible();
-    expect(asked.length).toBeGreaterThan(0);
+    await expect(days.getByRole("button")).toHaveText(["Day", "Night", "Weekend day", "Weekend night"]);
+    const current = periodAt(now);
+    await expect(days.locator(`[data-period="${current}"]`)).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("line-period")).toHaveText(occurrence(current, now).label);
+    const other = PERIOD_KEYS.find((k) => k !== current)!;
+    await days.locator(`[data-period="${other}"]`).click();
+    await expect(days.locator(`[data-period="${other}"]`)).toHaveAttribute("aria-pressed", "true");
+    await expect(days.locator(`[data-period="${current}"]`)).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator("[data-notice]", { hasText: "Christopher St" })).toBeVisible();
+    await expect(page.locator("[data-notice]", { hasText: "Sterling St" })).toHaveCount(0);
+    const o = occurrence(other, now);
+    await expect(page.getByTestId("line-period")).toHaveText(o.label);
+    expect(asked).toContainEqual({ from: o.from, to: o.to });
     await expectLayout(page);
+    // Back to the period under way: the live notices again, no request.
+    const before = asked.length;
+    await days.locator(`[data-period="${current}"]`).click();
+    await expect(page.locator("[data-notice]", { hasText: "Christopher St" })).toHaveCount(0);
+    expect(asked.length).toBe(before);
   });
 }
 

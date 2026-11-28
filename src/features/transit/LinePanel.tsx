@@ -14,7 +14,8 @@ import { sendScreen, useScreen, useScreenSize } from "@/lib/screen/screenSpace";
 import { heldTrains } from "@/lib/transit/holds";
 import { setAlertFocus, useShuttleFocus } from "./alertFocus";
 import { useAlerts, useAlertsBetween, useNow, useTransitData } from "./hooks";
-import { setLineDay, useLineDay, weekendWindow } from "@/lib/transit/lineDay";
+import { setLineDay, useLineDay } from "@/lib/transit/lineDay";
+import { PERIOD_KEYS, PERIOD_LABEL, alertInEffect, occurrence, outageInEffect, periodAt, periodFor, type PeriodKey } from "@/lib/transit/periods";
 import { boardingArrivals, minutesUntil } from "./model";
 import { TONE, allLineNotices, type LineNotice } from "./lineNotices";
 import { NoticeIcon, noticeKind } from "./noticeKind";
@@ -97,6 +98,16 @@ function useNoticeRings(map: MaplibreMap | undefined, notice: LineNotice | null,
   }, [map, notice, panel, sheet, bused]);
 }
 
+/** The time now in ms, a minute at a time: enough to move the picked time button across 6 AM and 9 PM. */
+function useMinuteClock(): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return now;
+}
+
 /**
  * The selected subway line (#370): one card headed by the line, its notice count
  * and a close button, listing the line's notices; folded, just the pill.
@@ -105,14 +116,31 @@ function useNoticeRings(map: MaplibreMap | undefined, notice: LineNotice | null,
 export function LinePanel({ map, route, onFollow, trains = () => [] }: { map: MaplibreMap | undefined; route: string; onFollow: () => void; trains?: () => Vehicle[] }) {
   const data = useTransitData(["subway"]);
   const nowAlerts = useAlerts(true).data;
-  // "This weekend": the planned work then, not what is running now (owner, 2026-10-27).
-  const day = useLineDay();
-  const ahead = useAlertsBetween(day);
-  const alerts = day ? ahead.data : nowAlerts;
+  // Four time buttons (docs/PLAN-notice-walks.md, step 5): the one for the New York time now is picked on open,
+  // or the one an answer asked about ("this weekend"). The clock moves the picked button across 6 AM and 9 PM.
+  const asked = useLineDay();
+  const clock = useMinuteClock();
+  const current = periodAt(clock);
+  const [chosen, setChosen] = useState<PeriodKey | null>(() => (asked ? periodFor(asked) : null));
+  useEffect(() => { if (asked) setChosen(periodFor(asked)); }, [asked]);
+  const period = chosen ?? current;
+  // The period under way shows what is running now; another asks for its next occurrence's planned work.
+  const isNow = period === current;
+  // Periods change on the hour: working it out once an hour keeps the notices (and their map rings) steady between.
+  const hour = Math.floor(clock / 3_600_000);
+  const occ = useMemo(() => occurrence(period, hour * 3_600_000), [period, hour]);
+  const ahead = useAlertsBetween(isNow ? null : occ);
+  const alerts = isNow ? nowAlerts : ahead.data;
   const sys = data.subway?.stat;
   const live = data.subway?.live;
-  // Held trains first: they are happening now, on this line (src/lib/transit/holds.ts). Not part of another day.
-  const notices = useMemo(() => allLineNotices(route, day ? [] : heldTrains(live).values(), alerts?.alerts ?? [], alerts?.outages ?? [], sys), [route, alerts, sys, live, day]);
+  // Held trains first: they are happening now, on this line (src/lib/transit/holds.ts). Not part of another period.
+  // Another period lists only what is in effect in its own hours: a Saturday-night skip is not on Weekend day.
+  const notices = useMemo(() => {
+    const list = alerts?.alerts ?? [], outs = alerts?.outages ?? [];
+    return isNow
+      ? allLineNotices(route, heldTrains(live).values(), list, outs, sys)
+      : allLineNotices(route, [], list.filter((a) => alertInEffect(a, occ.spans)), outs.filter((o) => outageInEffect(o, occ.spans)), sys);
+  }, [route, alerts, sys, live, isNow, occ]);
   // The day goes with the line: closing it (or another line) starts again from now.
   useEffect(() => () => setLineDay(null), []);
   const [picked, setPicked] = useState<string | null>(null);
@@ -222,19 +250,26 @@ export function LinePanel({ map, route, onFollow, trains = () => [] }: { map: Ma
             })}
           </ul>
         ) : null;
-  const weekend = weekendWindow();
-  const onWeekend = Boolean(day && day.from === weekend.from && day.to === weekend.to);
-  const chip = (on: boolean) => `h-8 rounded-full border px-3 text-[13px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa] ${on ? "border-transparent bg-slate-50 text-slate-900" : "border-[rgba(148,163,184,0.3)] text-[#f1f5f9]"}`;
+  // Four small buttons on one row, as the approved preview draws them (docs/design/notice-walks-preview.html).
   const dayEl = (
-    <div role="group" aria-label="Show notices for" data-testid="line-day" className="flex items-center gap-1.5">
-      <button type="button" aria-pressed={!day} className={chip(!day)} onClick={() => { setLineDay(null); setPicked(null); }}>Now</button>
-      <button type="button" aria-pressed={onWeekend} className={chip(onWeekend)} onClick={() => { setLineDay(weekend); setPicked(null); }}>This weekend</button>
-      {day && !onWeekend ? <button type="button" aria-pressed className={chip(true)}>{day.label}</button> : null}
-      {day && ahead.isLoading ? <span className="text-[12px] text-[#cbd5e1]" aria-live="polite">Checking…</span> : null}
+    <div className="flex flex-col gap-1">
+      <div role="group" aria-label="Show notices for" data-testid="line-day" className="grid grid-cols-[auto_auto_minmax(0,auto)_minmax(0,auto)] justify-start gap-1">
+        {PERIOD_KEYS.map((k) => (
+          <button key={k} type="button" aria-pressed={k === period} data-period={k}
+            onClick={() => { setChosen(k === current ? null : k); setLineDay(null); setPicked(null); setTapped(null); }}
+            className={`min-h-7 rounded-[8px] border px-[7px] py-[3px] text-[11.5px] font-semibold leading-[1.15] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa] ${k === period ? "border-transparent bg-slate-50 text-slate-900" : "border-[rgba(148,163,184,0.3)] text-[#f1f5f9]"}`}>
+            {k === current ? <span aria-hidden className="mr-[5px] inline-block h-1.5 w-1.5 rounded-full bg-[#22c55e] align-[1px]" /> : null}
+            {PERIOD_LABEL[k]}
+          </button>
+        ))}
+      </div>
+      <p data-testid="line-period" className="text-[12px] text-[#cbd5e1]">
+        {occ.label}{!isNow && ahead.isLoading ? <span aria-live="polite"> · Checking…</span> : null}
+      </p>
     </div>
   );
-  const noneEl = day && !ahead.isLoading && !count
-    ? <p className="text-[13px] text-[#cbd5e1]" data-testid="line-day-none">No planned work on the {route} {onWeekend ? "this weekend" : `for ${day.label}`}.</p> : null;
+  const noneEl = !isNow && !ahead.isLoading && !count
+    ? <p className="text-[13px] text-[#cbd5e1]" data-testid="line-day-none">No changes on the {route} then. Trains run as scheduled.</p> : null;
   // No "Other ways" here: trips are asked in the chat (owner, 2026-11-07).
   const actionsEl = (
     <button type="button" onClick={onFollow}

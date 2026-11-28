@@ -34,4 +34,17 @@ describe("line panel and the answer (docs/PDD.md, Screen space)", () => {
     expect(html).toMatch(/data-testid="line-body" class="flex/);
     expect(html).toContain("sm:left-auto");
   });
+
+  it("shows four time buttons with the one for the New York time now picked, and its dates under them", () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-27T03:10:00Z")); // Thursday 10:10 PM in New York
+    try {
+      const html = render();
+      const buttons = [...html.matchAll(/<button type="button" aria-pressed="(true|false)" data-period="(\w+)"/g)].map((m) => [m[2], m[1]]);
+      expect(buttons).toEqual([["day", "false"], ["night", "true"], ["weekendDay", "false"], ["weekendNight", "false"]]);
+      expect(html).toContain("Now, until Fri 6 AM");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
