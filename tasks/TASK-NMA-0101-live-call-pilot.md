@@ -41,6 +41,29 @@ The owner can hold a hands-free conversation with the map, with `?flags=+liveCal
 
 No checkpoints yet.
 
+### 2026-11-28 12:44:31 UTC — agent:claude-code/b1d64ae3-e69f-43ae-866a-6494cb427df6
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/b1d64ae3-e69f-43ae-866a-6494cb427df6","blocked":["A real call needs the owner's LiveKit key and secret on the web app and the worker running on the VPS"],"changed":["voice-agent/, server/features/agent/voiceToken.ts, src/lib/voice/liveCall.ts, src/features/agent/ (call panel, hook, two small edits), flag, size-limit, env examples"],"completed":["With ?flags=+liveCall, hands-free opens a LiveKit call to the copied nyc-map-voice worker; heard lines go through /api/agent; Mute and End call in the sheet; failed or dropped calls fall back to one question at a time"],"decisions":["Token endpoint is POST /api/voice/token with use map or present; the map's token names the multilingual stack and English as the caller's attributes; the total JS budget rises 2.7 kB for the call code"],"evidence":["Unit tests pass (2,411 in all, including the token route and a fake LiveKit room); e2e/live-call.spec.ts and hands-free.spec.ts pass at four sizes with expectLayout; livekit-client is a 133 kB lazy chunk"],"evidence_class":"observed","next_action":"The owner sets the keys and runs the worker (voice-agent/README.md); then step 3, the noise test","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0101","timestamp":"2026-11-28T12:44:31Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"296aecdd576754fe981d9ab6e489788dbda5822f09a79a705e1fde22294f21f8","request_id":"d79488a129614fb987a241e97a9b6983","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0101"} -->
+
+Completed:
+- With ?flags=+liveCall, hands-free opens a LiveKit call to the copied nyc-map-voice worker; heard lines go through /api/agent; Mute and End call in the sheet; failed or dropped calls fall back to one question at a time
+
+Evidence:
+- Unit tests pass (2,411 in all, including the token route and a fake LiveKit room); e2e/live-call.spec.ts and hands-free.spec.ts pass at four sizes with expectLayout; livekit-client is a 133 kB lazy chunk
+
+Decisions:
+- Token endpoint is POST /api/voice/token with use map or present; the map's token names the multilingual stack and English as the caller's attributes; the total JS budget rises 2.7 kB for the call code
+
+Changed:
+- voice-agent/, server/features/agent/voiceToken.ts, src/lib/voice/liveCall.ts, src/features/agent/ (call panel, hook, two small edits), flag, size-limit, env examples
+
+Blocked/uncertain:
+- A real call needs the owner's LiveKit key and secret on the web app and the worker running on the VPS
+
+Next:
+- The owner sets the keys and runs the worker (voice-agent/README.md); then step 3, the noise test
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
