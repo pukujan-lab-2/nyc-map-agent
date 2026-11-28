@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, Bus, ChevronDown, Play, Square, Volume2, VolumeX } from "lucide-react";
+import { ArrowDown, Bus, Info, Play, Square, Volume2, VolumeX } from "lucide-react";
 import { useSharedLocation } from "@/lib/geo/sharedLocation";
 import { useAppLang } from "@/lib/i18n/appLang";
 import { formatStationName } from "@/lib/streetName";
+import { useStepClips } from "@/lib/voice/clips";
 import { say } from "@/lib/voice/say";
-import { alertDiagram, cleanAlertText, hasMore, isGap, plainSteps, type AlertDiagram, type Corner, type DiagramStep, type StopState } from "./alertDiagram";
+import { alertDiagram, isGap, type AlertDiagram, type Corner, type StopState } from "./alertDiagram";
+import { mtaWords, noticeWalk, type TripMode, type WalkStep } from "./noticeWalk";
 import { setShuttleFocus, setWalkFocus } from "./alertFocus";
 import { useNoticeLines } from "./noticeLang";
 import type { TransitAlert } from "./hooks";
@@ -19,7 +21,7 @@ const readMuted = () => { try { return localStorage.getItem(MUTE_KEY) === "off";
  * voice and does graph walk for me"): each step is said aloud while its stations light up, then the
  * next. Muted, the steps still walk, paced for reading. Each step stays up at least a moment.
  */
-function useNoticeWalk(steps: DiagramStep[], auto: boolean, lang: string) {
+function useNoticeWalk(steps: Array<WalkStep & { clip?: string | null }>, auto: boolean, lang: string) {
   const [step, setStep] = useState<number | null>(null);
   const [muted, setMutedState] = useState(readMuted);
   const cancel = useRef<(() => void) | null>(null);
@@ -40,7 +42,7 @@ function useNoticeWalk(steps: DiagramStep[], auto: boolean, lang: string) {
       let spoke = muted, dwelt = false;
       const next = () => { if (spoke && dwelt) go(i + 1); };
       timer = setTimeout(() => { dwelt = true; next(); }, muted ? 1500 + steps[i].text.length * 45 : 900);
-      if (!muted) hush = say(steps[i].text, lang, () => { spoke = true; next(); });
+      if (!muted) hush = say(steps[i].say, lang, () => { spoke = true; next(); }, false, undefined, steps[i].clip);
     };
     cancel.current = () => { alive = false; clearTimeout(timer); hush(); };
     go(0);
@@ -153,58 +155,131 @@ function Tag({ label, bg, fg, shuttle }: { label: string; bg: string; fg: string
   );
 }
 
+const TRIP_WORDS = ["Your stop", "Your trip", "Getting off at {stop}", "Getting on at {stop}", "The MTA's words"] as const;
+
+/** The stop picked first: the one the rider came from (a station's card), else the one nearest them, else the first. */
+function firstStop(stops: string[], sys: StaticSystem | undefined, from: string | undefined, near: { lon: number; lat: number } | null): string | null {
+  if (from && stops.includes(from)) return from;
+  if (near && sys) {
+    const at = (id: string) => sys.stations.features.find((f) => f.properties.id === id)?.geometry.coordinates as [number, number] | undefined;
+    const d = (id: string) => { const p = at(id); return p ? Math.hypot((p[0] - near.lon) * 84_400, (p[1] - near.lat) * 111_320) : Infinity; };
+    const best = [...stops].sort((a, b) => d(a) - d(b))[0];
+    if (best && d(best) < 1500) return best;
+  }
+  return stops[0] ?? null;
+}
+
 /**
- * An open service notice: the affected stretch drawn as a line, the short steps under it, read
- * aloud with each step lit, and the MTA's own words folded below. A notice with no stations to
- * draw says its headline first: which train, where and what changes.
+ * An open service notice (plan step 3, `docs/PLAN-notice-walks.md`): the rider says their stop and whether they
+ * are getting off or getting on there, and the walk for that case alone is read aloud, one action a step, while
+ * the map shows what each step names. The affected stretch is drawn as a line above. The MTA's own words sit
+ * behind (i). `stop` picks the rider's stop when the walk opens from a station.
  */
-export default function NoticeDiagram({ alert, sys, route, color, auto }: { alert: TransitAlert; sys: StaticSystem | undefined; route: string; color: string; auto: boolean }) {
+export default function NoticeDiagram({ alert, sys, route, color, auto, stop }: { alert: TransitAlert; sys: StaticSystem | undefined; route: string; color: string; auto: boolean; stop?: string }) {
   // Start from the rider's nearest station when they share where they are; about 100 m is close enough.
   const here = useSharedLocation();
   const nearKey = here.status === "on" && here.coords ? `${here.coords.lon.toFixed(3)},${here.coords.lat.toFixed(3)}` : "";
   const near = useMemo(() => (nearKey ? { lon: Number(nearKey.split(",")[0]), lat: Number(nearKey.split(",")[1]) } : null), [nearKey]);
-  const diagram = useMemo(() => alertDiagram(alert, sys, route, near), [alert, sys, route, near]);
-  const full = useMemo(() => cleanAlertText([alert.text, alert.description].filter(Boolean).join("\n\n")).replace(/\n{3,}/g, "\n\n").trim(), [alert]);
-  // Nothing to draw: the card still says which train, where and what changes before why and when (#198).
-  const english = useMemo(() => diagram?.steps ?? plainSteps(alert, sys, route), [diagram, alert, sys, route]);
-  const more = useMemo(() => hasMore(alert, Boolean(diagram)), [alert, diagram]);
-  // One call translates the steps, the tags and the heading together (owner, 2026-11-08: "in user preffered language").
+  const diagram = useMemo(() => alertDiagram(alert, sys, route), [alert, sys, route]);
+  const mta = useMemo(() => mtaWords(alert), [alert]);
+  const stops = useMemo(() => noticeWalk(alert, sys, route, null).stops, [alert, sys, route]);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [mode, setMode] = useState<TripMode>("off");
+  const you = picked && stops.includes(picked) ? picked : firstStop(stops, sys, stop, near);
+  const plan = useMemo(() => noticeWalk(alert, sys, route, you ? { stop: you, mode } : null), [alert, sys, route, you, mode]);
+  const english = plan.steps;
+  const stopName = (id: string) => formatStationName(String(sys?.stations.features.find((f) => f.properties.id === id)?.properties.name ?? id));
+  // One call translates the steps, the tags, the heading and the trip words together (owner, 2026-11-08: "in user preffered language").
   const lang = useAppLang();
-  const words = useMemo(() => [...english.map((s) => s.text), ...TAG_KEYS.map((k) => TAG[k]!.label), "Change here", diagram?.heading ?? "", diagram?.tag ?? ""], [english, diagram]);
+  const words = useMemo(() => [...english.map((s) => s.text), ...TAG_KEYS.map((k) => TAG[k]!.label), "Change here", diagram?.heading ?? "", diagram?.tag ?? "", ...TRIP_WORDS], [english, diagram]);
   const said = useNoticeLines(words, lang);
-  const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i] })), [english, said.lines]);
+  // English is said in its spoken form ("74th Street, Broadway"); another language is said as translated.
+  const spokenEnglish = lang === "en" || said.failed;
+  const sayings = useMemo(() => english.map((s, i) => (spokenEnglish ? s.say : said.lines[i] ?? s.text)), [english, said.lines, spokenEnglish]);
+  // Each step names its sound made ahead on the server (noticeClips.ts); one not made yet is spoken live.
+  const clips = useStepClips(sayings, spokenEnglish ? "en" : lang);
+  const steps = useMemo(() => english.map((s, i) => ({ ...s, text: said.lines[i], say: sayings[i], clip: clips.clips[i] })), [english, said.lines, sayings, clips.clips]);
   const labels = useMemo(() => {
     const t = said.lines.slice(english.length);
     return { ...Object.fromEntries(TAG_KEYS.map((k, i) => [k, t[i]])), transfer: t[TAG_KEYS.length], heading: diagram?.heading ? t[TAG_KEYS.length + 1] : "", noted: t[TAG_KEYS.length + 2] } as Record<StopState, string> & { heading: string };
   }, [said.lines, english.length, diagram]);
-  const walk = useNoticeWalk(steps, auto && said.ready, lang === "en" || said.failed ? "en-US" : lang);
-  const [open, setOpen] = useState(false);
-  const lit = walk.step !== null && steps[walk.step].ids.length ? new Set(steps[walk.step].ids) : null;
-  // The map follows the walk: this step's stations, their shuttle bus corners, the buses a tip names.
-  const corners = useMemo(() => new Map((diagram?.rows ?? []).flatMap((r) => (!isGap(r) && r.corners ? [[r.id, r.corners] as const] : []))), [diagram]);
+  const trip = useMemo(() => {
+    const t = said.lines.slice(english.length + TAG_KEYS.length + 3);
+    return { stop: t[0], trip: t[1], off: t[2], on: t[3], mta: t[4] };
+  }, [said.lines, english.length]);
+  const walk = useNoticeWalk(steps, auto && said.ready && clips.ready, spokenEnglish ? "en-US" : lang);
+  // Picking another stop or way plays that walk from the top.
+  const replay = useRef(false);
+  const choose = (next: { stop?: string; mode?: TripMode }) => {
+    replay.current = true;
+    if (next.stop) setPicked(next.stop);
+    if (next.mode) setMode(next.mode);
+  };
+  useEffect(() => { if (replay.current && said.ready && clips.ready) { replay.current = false; walk.play(); } }, [plan, said.ready, clips.ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [info, setInfo] = useState(false);
+  const current = walk.step === null ? null : english[walk.step];
+  const lit = current?.map.stations.length ? new Set(current.map.stations) : null;
   // A shuttle notice: the bus's line and every stop stay on the map while the notice is open.
+  const corners = useMemo(() => new Map((diagram?.rows ?? []).flatMap((r) => (!isGap(r) && r.corners ? [[r.id, r.corners] as const] : []))), [diagram]);
   useEffect(() => {
     if (!diagram?.bus) return;
     const closed = new Set(diagram.rows.flatMap((r) => (!isGap(r) && (r.state === "shuttle" || r.state === "closed") ? [r.id] : [])));
     setShuttleFocus({ stops: diagram.bus.map((id) => ({ id, change: !closed.has(id), corners: (corners.get(id) ?? []).map((c) => (c.note ? `${c.text} (${c.note})` : c.text)) })) });
     return () => setShuttleFocus(null);
   }, [diagram, corners]);
-  const current = walk.step === null ? null : english[walk.step];
+  // The map follows the walk: everything this step names (`StepMap`), and its stations framed.
   useEffect(() => {
     if (!current) { setWalkFocus(null); return; }
+    const m = current.map;
     setWalkFocus({
-      ids: current.ids,
-      corners: (current.corners ?? []).flatMap((id) => (corners.get(id) ?? []).map((c) => ({ id, text: c.note ? `${c.text} (${c.note})` : c.text }))),
-      bus: current.bus ?? [],
+      ids: m.stations,
+      corners: (m.bus ?? []).flatMap((b) => b.stops.flatMap((x) => (x.corner ? [{ id: x.station, text: x.corner }] : []))),
+      bus: (m.bus ?? []).filter((b) => !b.shuttle).map((b) => b.route),
+      map: m,
     });
-  }, [current, corners]);
+  }, [current]);
   useEffect(() => () => setWalkFocus(null), []);
   const btn = "flex h-9 items-center gap-1.5 rounded-[18px] border border-[rgba(148,163,184,0.3)] px-3 text-[13px] font-semibold text-[#f1f5f9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
+  const chip = "h-8 shrink-0 rounded-lg border px-2.5 text-[12.5px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]";
+  const chipOn = (on: boolean) => (on ? "border-[#60a5fa] bg-[rgba(96,165,250,0.2)] text-white" : "border-[rgba(148,163,184,0.3)] bg-transparent text-[#e2e8f0]");
   return (
-    <div data-testid="notice-walk" data-step={walk.step ?? undefined} className="flex flex-col gap-2.5 rounded-[14px] border border-[rgba(148,163,184,0.16)] bg-[rgba(15,23,42,0.35)] p-3 text-[#f1f5f9]">
-      {diagram ? <Diagram d={diagram} color={color} lit={lit} labels={labels} /> : null}
+    <div data-testid="notice-walk" data-step={walk.step ?? undefined} className="relative flex flex-col gap-2.5 rounded-[14px] border border-[rgba(148,163,184,0.16)] bg-[rgba(15,23,42,0.35)] p-3 text-[#f1f5f9]">
+      <button type="button" aria-label={trip.mta} aria-expanded={info} onClick={() => setInfo((v) => !v)}
+        className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-full text-[#cbd5e1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">
+        <Info className="h-4 w-4" aria-hidden />
+      </button>
+      {info ? <p data-testid="notice-mta" className="mr-8 whitespace-pre-line text-[13px] leading-[1.45] text-[#cbd5e1]">{mta}</p> : null}
+      {diagram ? <div className="mr-8"><Diagram d={diagram} color={color} lit={lit} labels={labels} /></div> : null}
+      {you ? (
+        <div className="flex flex-col gap-1.5" data-testid="notice-trip">
+          {stops.length > 4 ? (
+            // A long stretch: one dropdown, so the sheet stays short and nothing scrolls sideways.
+            <label className="flex items-center gap-1.5 text-[12px] text-[#a5b4cb]">
+              <span className="shrink-0">{trip.stop}</span>
+              <select value={you} onChange={(e) => choose({ stop: e.target.value })}
+                className="h-8 min-w-0 flex-1 rounded-lg border border-[#60a5fa] bg-[#0f172a] px-2 text-[12.5px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#60a5fa]">
+                {stops.map((id) => <option key={id} value={id}>{stopName(id)}</option>)}
+              </select>
+            </label>
+          ) : stops.length > 1 ? (
+            <div role="group" aria-label={trip.stop} className="flex flex-wrap items-center gap-1.5">
+              <span className="shrink-0 text-[12px] text-[#a5b4cb]">{trip.stop}</span>
+              {stops.map((id) => (
+                <button key={id} type="button" aria-pressed={id === you} className={`${chip} ${chipOn(id === you)}`} onClick={() => choose({ stop: id })}>{stopName(id)}</button>
+              ))}
+            </div>
+          ) : null}
+          <div role="group" aria-label={trip.trip} className="flex flex-wrap items-center gap-1.5">
+            {(["off", "on"] as const).map((m) => (
+              <button key={m} type="button" aria-pressed={mode === m} className={`${chip} ${chipOn(mode === m)}`} onClick={() => choose({ mode: m })}>
+                {(m === "off" ? trip.off : trip.on).replace("{stop}", stopName(you))}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {said.failed ? <p className="text-[12px] text-[#a5b4cb]">Could not translate this notice, so it is in English.</p> : null}
-      <ol className="flex flex-col gap-1 text-[13px] leading-[1.4]" aria-label="What it means" aria-live="polite">
+      <ol className="flex flex-col gap-1 text-[13px] leading-[1.4]" aria-label="What to do" aria-live="polite">
         {steps.map((s, i) => (
           <li key={i} data-testid="notice-step" className={walk.step === i ? "font-semibold text-white" : walk.playing ? "text-[#a5b4cb]" : "text-[#e2e8f0]"}>{s.text}</li>
         ))}
@@ -218,13 +293,7 @@ export default function NoticeDiagram({ alert, sys, route, color, auto }: { aler
         <button type="button" className={btn} aria-pressed={walk.muted} aria-label={walk.muted ? "Voice off: turn on" : "Voice on: turn off"} onClick={() => walk.setMuted(!walk.muted)}>
           {walk.muted ? <VolumeX className="h-4 w-4" aria-hidden /> : <Volume2 className="h-4 w-4" aria-hidden />}
         </button>
-        {more ? (
-          <button type="button" className={`${btn} ml-auto border-transparent px-2 text-[#cbd5e1]`} aria-expanded={open} onClick={() => setOpen((m) => !m)}>
-            Full notice <ChevronDown className="h-3.5 w-3.5 transition-transform" style={{ transform: `rotate(${open ? 180 : 0}deg)` }} aria-hidden />
-          </button>
-        ) : null}
       </div>
-      {open && more ? <p data-testid="notice-full" className="whitespace-pre-line text-[13px] leading-[1.45] text-[#cbd5e1]">{full}</p> : null}
     </div>
   );
 }

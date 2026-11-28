@@ -7,8 +7,9 @@ import { stationOf, type StaticSystem } from "./model";
 /**
  * A service notice as a small line diagram (owner, 2026-11-07: "reading these
  * things are still hard … i wish there was option for graph walk"): the
- * affected stretch in travel order, what happens at each station, and short
- * steps that a voice reads while the diagram lights each one up. Pure.
+ * affected stretch in travel order and what happens at each station. The
+ * steps read under it are the notice walk's (`noticeWalk.ts`), built from the
+ * notice's facts and fixed sentences (plan step 3). Pure.
  */
 /** "noted": the notice is about this station, and trains still stop there; the diagram's `tag` says what. */
 export type StopState = "skip" | "closed" | "shuttle" | "local" | "transfer" | "noted" | "open";
@@ -24,17 +25,6 @@ export interface Corner { text: string; note?: string }
 /** Stations left out between two rows. */
 export interface DiagramGap { gap: number }
 export type DiagramRow = DiagramStop | DiagramGap;
-export interface DiagramStep {
-  text: string;
-  /** Stations lit, and framed on the map, while this step is said. */
-  ids: string[];
-  /** Stations whose shuttle bus corners the map marks for this step. */
-  corners?: string[];
-  /** Bus routes this step names (a travel tip's M4), shown on the map. */
-  bus?: string[];
-}
-/** Where the rider is, when they share it: the guidance starts from the nearest station. */
-type Near = { lon: number; lat: number } | null | undefined;
 export interface AlertDiagram {
   kind: "skip" | "suspended" | "shuttle" | "local" | "named";
   /** What a "noted" station's tag says: "No live times", "Boarding change", "Delays", "Affected". */
@@ -43,7 +33,6 @@ export interface AlertDiagram {
   heading: string;
   /** Top to bottom in the direction of travel; north at the top when it is both ways. */
   rows: DiagramRow[];
-  steps: DiagramStep[];
   /** A shuttle notice: the stations the bus calls at, in the order it runs, ends included. */
   bus?: string[];
 }
@@ -59,19 +48,6 @@ export function cleanAlertText(s: string): string {
     .replace(/\[([A-Z0-9]+)\]/g, "$1")
     .replace(/[ \t]+/g, " ")
     .replace(/ +([.,])/g, "$1");
-}
-
-/** The first sentence or two of a notice, for one with nothing to draw. */
-export function shortNotice(text: string, max = 160): string {
-  const plain = cleanAlertText(text).replace(/\s*\n+\s*/g, " ").trim();
-  const sentences = plain.match(/[^.!?]+[.!?]*/g) ?? [plain];
-  let out = "";
-  for (const s of sentences) {
-    if (out && out.length + s.length > max) break;
-    out += s;
-  }
-  out = out.trim();
-  return out.length > max + 40 ? `${out.slice(0, max).replace(/\s+\S*$/, "")}…` : out;
 }
 
 type Feature = StaticSystem["stations"]["features"][number];
@@ -229,72 +205,10 @@ function between(sys: StaticSystem, seq: string[], onLine: Record<string, number
 }
 
 /** The diagram for one alert on one line, or null when nothing in it maps onto stations. */
-export function alertDiagram(a: TransitAlert, sys: StaticSystem | undefined, route: string, near?: Near): AlertDiagram | null {
+export function alertDiagram(a: TransitAlert, sys: StaticSystem | undefined, route: string): AlertDiagram | null {
   if (!sys || !sys.stopM[route]) return null;
   const all = `${a.text}\n${a.description ?? ""}`;
-  const d = suspension(a, sys, route, all, near) ?? skipStops(a, sys, route, all) ?? local(a, sys, route, all);
-  if (!d) {
-    const n = named(a, sys, route);
-    if (n) n.steps.push(...laterSteps(a, sys, route));
-    return n;
-  }
-  const head = headlineSteps(a, sys, route);
-  // A delay's diagram comes from a reminder in its description: the delay itself is said first.
-  if (a.kind === "delay") d.steps.unshift(...head);
-  // A headline's further lines ("All trains at Woodside-61 St board from the Manhattan-bound platform") follow the opening step.
-  else d.steps.splice(1, 0, ...head.slice(1).map((s) => ({ ...s, ids: namedOnLine(sys, route, s.text) })));
-  d.steps.push(...laterSteps(a, sys, route));
-  return d;
-}
-
-/** "[4][5] trains" -> "4 and 5 trains", "[1][2] and [3]" -> "1, 2 and 3": a run of bullets read as a list. */
-const bulletRuns = (s: string) => s.replace(/((?:\[[A-Z0-9]+\]){2,})( and \[[A-Z0-9]+\])?/g, (m) => {
-  const b = [...m.matchAll(/\[([A-Z0-9]+)\]/g)].map((x) => x[1]);
-  return `${b.slice(0, -1).join(", ")} and ${b.at(-1)}`;
-});
-const sentence = (s: string) => { const t = s.trim().replace(/[.\s]+$/, ""); return t ? `${t.charAt(0).toUpperCase()}${t.slice(1)}.` : ""; };
-/** The MTA's stock phrases in plainer words. */
-const plainer = (s: string) => s.replace(/real-time arrival information may be unavailable/i, "live arrival times may be missing there");
-
-/**
- * The headline as the card's first lines (owner, 2026-11-14: "it doesn't say the other part, what train is it,
- * what's affected"): which train and which way, where, and what changes, one short sentence a line, names
- * spelled out. "Downtown [1] trains are stopping at 116 St…, but real-time arrival information may be unavailable"
- * is two lines. The first lights the notice's own stations.
- */
-function headlineSteps(a: TransitAlert, sys: StaticSystem | undefined, route: string): DiagramStep[] {
-  const ids = sys?.stopM[route] ? [...new Set(a.stops.map((s) => stationOf(sys.system, s)))].filter((id) => id in sys.stopM[route]) : [];
-  return cleanAlertText(bulletRuns(a.text)).split(/\n+|,? but (?=[a-z])/)
-    .map((l) => sentence(said(plainer(l))))
-    .filter(Boolean)
-    .map((text, i) => ({ text, ids: i === 0 ? ids : [] }));
-}
-
-const HAPPENING = /^what(?:'s| is) happening\??$|^what happened\??$/i;
-/** A description's lines, with the MTA's reason taken out from under its "What's happening?" heading. */
-function splitCause(description: string): { cause: string; rest: string[] } {
-  const lines = cleanAlertText(bulletRuns(description)).split(/\n/).map((l) => l.trim());
-  const at = lines.findIndex((l) => HAPPENING.test(l));
-  if (at < 0) return { cause: "", rest: lines };
-  const out: string[] = [];
-  let end = at + 1;
-  for (; end < lines.length; end++) {
-    const l = lines[end];
-    if (/^[.\s]*$/.test(l)) { if (!l && out.length) break; continue; }
-    // The next heading ("Planned Work Reminder:", "Note: …") ends it.
-    if (/^[A-Z][\w ]*:/.test(l)) break;
-    out.push(l);
-  }
-  return { cause: out.join(" ").replace(/[.\s]+$/, ""), rest: [...lines.slice(0, at), ...lines.slice(end)] };
-}
-/** "What's happening?\nTechnical issue" -> "Technical issue": the MTA's reason, in its own words. */
-export const causeOf = (description: string): string => said(splitCause(description).cause);
-
-/** What a description adds for the rider, before the MTA's own sections: a sentence or two. */
-function advice(description: string): string {
-  const body = cleanAlertText(bulletRuns(description)).split(/\n/).map((l) => l.trim());
-  const end = body.findIndex((l) => HAPPENING.test(l) || /^(?:Planned Work Reminder|Travel (?:alternatives|tips)|Transfer stations)\b/i.test(l));
-  return shortNotice((end < 0 ? body : body.slice(0, end)).join("\n"));
+  return suspension(a, sys, route, all) ?? skipStops(a, sys, route, all) ?? local(a, sys, route, all) ?? named(a, sys, route);
 }
 
 const MAX_NAMED = 10;
@@ -302,7 +216,7 @@ const MAX_NAMED = 10;
  * A notice that takes no train away but names its stations (owner, 2026-11-14: "not sure if it does for train
  * affected"): "Downtown [1] trains are stopping at 116 St…, but real-time arrival information may be unavailable",
  * a boarding change, a closed staircase, a delay at one station. The stations are drawn on their stretch of line
- * and tagged with what the notice is about; the steps are the plain ones, with the stations lit on the first.
+ * and tagged with what the notice is about.
  */
 function named(a: TransitAlert, sys: StaticSystem, route: string): AlertDiagram | null {
   const head = cleanAlertText(a.text);
@@ -336,76 +250,8 @@ function named(a: TransitAlert, sys: StaticSystem, route: string): AlertDiagram 
   const dir = m ? m[1].charAt(0).toUpperCase() + m[1].slice(1).replace(/-bound$/, "") : null;
   const tag = /arrival (?:information|times?)/i.test(head) ? "No live times" : /\bboard/i.test(head) ? "Boarding change" : a.kind === "delay" ? "Delays" : "Affected";
   const state = new Map<string, StopState>(ids.map((id) => [id, adds ? "local" : "noted"]));
-  const steps = plainHead(a, sys, route);
-  steps[0] = { ...steps[0], ids };
   const who = dir ? `${/^(?:Uptown|Downtown)$/.test(dir) ? dir : `${dir}-bound`} ${route}` : route;
-  return { kind: "named", heading: who, tag, rows: rowsFor(seq, Math.max(0, Math.min(...idx) - 1), Math.min(seq.length - 1, Math.max(...idx) + 1), state, sys, drawReversed(sys, line, dir)), steps };
-}
-
-/** The headline's lines, then what the description adds. */
-function plainHead(a: TransitAlert, sys: StaticSystem | undefined, route: string): DiagramStep[] {
-  const more = advice(a.description ?? "");
-  return [...headlineSteps(a, sys, route), ...(more ? [{ text: said(more), ids: [] }] : [])];
-}
-
-/** A notice with nothing to draw, in order: which train and where, what the notice adds, tips, why, when. */
-export function plainSteps(a: TransitAlert, sys: StaticSystem | undefined, route: string): DiagramStep[] {
-  return [...plainHead(a, sys, route), ...laterSteps(a, sys, route)];
-}
-
-/** True when the MTA's own words hold more than the card's lines already say, so "Full notice" is worth a button. */
-export function hasMore(a: TransitAlert, drawn: boolean): boolean {
-  const rest = splitCause(a.description ?? "").rest.join(" ").replace(/\s+/g, " ").trim();
-  return Boolean(rest) && (drawn || rest !== advice(a.description ?? ""));
-}
-
-/** The steps every notice ends with, drawn or not: the travel tips, why, then when it applies. */
-export function laterSteps(a: TransitAlert, sys: StaticSystem | undefined, route: string): DiagramStep[] {
-  const out: DiagramStep[] = travelTips(`${a.text}\n${a.description ?? ""}`).map((t) => ({ text: t.text, ids: sys?.stopM[route] ? namedOnLine(sys, route, t.text) : [], bus: t.bus }));
-  const why = causeOf(a.description ?? "");
-  if (why) out.push({ text: `Why: ${why}.`, ids: [] });
-  const when = periodWords(a.period ?? "");
-  if (when) out.push({ text: `When: ${/^(?:beginning|starting|until|from)\b/i.test(when) ? when.charAt(0).toLowerCase() + when.slice(1) : when}.`, ids: [] });
-  return out;
-}
-
-const DAYS: Record<string, string> = { Mon: "Monday", Tue: "Tuesday", Wed: "Wednesday", Thu: "Thursday", Fri: "Friday", Sat: "Saturday", Sun: "Sunday" };
-const MONTHS: Record<string, string> = { Jan: "January", Feb: "February", Mar: "March", Apr: "April", Jun: "June", Jul: "July", Aug: "August", Sep: "September", Oct: "October", Nov: "November", Dec: "December" };
-/** "Nov 13 - Dec 7, Fri 11:45 PM to Mon 5:00 AM (Weekends)" -> "November 13 to December 7, Friday 11:45 PM to Monday 5:00 AM". */
-export function periodWords(period: string): string {
-  return period.replace(/\s*\((?:weekends?|weekdays?|nights?)\)\s*$/i, "")
-    .replace(/\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b(?!day)/g, (_m, d: string) => DAYS[d])
-    .replace(/\b(Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b\.?/g, (_m, m: string) => MONTHS[m])
-    .replace(/\s+-\s+/g, " to ").replace(/\s+/g, " ").replace(/[.\s]+$/, "").trim();
-}
-
-const BUS_ROUTE = /\b(?:Bx|BX|B|M|Q|S|SIM|X|QM|BM|T)\d{1,3}[A-Z]?\+?(?![\w-])/g;
-/**
- * "Travel tips: Transfer … at 137 St-City College, or take the M4/M104 to 116 St* for 1. Consider the M125 to the
- * 125 St A/C B/D Station. *(except when …). Note: …" -> one step a sentence, with the buses it names.
- */
-export function travelTips(text: string): Array<{ text: string; bus: string[] }> {
-  const clean = cleanAlertText(text);
-  const at = clean.search(/\bTravel tips?:?/i);
-  if (at < 0) return [];
-  // The tips run to a blank line, a note, or the next heading.
-  const body = clean.slice(at).replace(/^Travel tips?:?\s*/i, "").split(/\n\s*\n|\bNote:|What's happening\??|Travel Alternatives:/i)[0];
-  return body.split(/(?<=\.)\s+|\n/).map((x) => x.trim())
-    .filter((x) => x && !/^\*?\(/.test(x))
-    .map((x) => x.replace(/\*/g, "").replace(/\b([A-Z]{1,3}\d{1,3}[A-Z]?|[A-Z0-9])\/(?=[A-Z0-9])/g, "$1 or ")
-      .replace(/^Consider (?:taking )?the /i, "You can also take the ").replace(/^Consider /i, "You can also use ").replace(/\s+([,.])/g, "$1"))
-    .map((x) => ({ text: /[.!?]$/.test(x) ? x : `${x}.`, bus: [...new Set(x.match(BUS_ROUTE) ?? [])] }));
-}
-
-/** Stations of this line a sentence names ("137 St-City College", "116 St"), on the line's own names. */
-function namedOnLine(sys: StaticSystem, route: string, text: string): string[] {
-  const out: string[] = [];
-  for (const id of Object.keys(sys.stopM[route] ?? {})) {
-    const name = nameOf(sys, id);
-    const head = name.split("-")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (new RegExp(`(^|[^\\w-])${head}(?![\\w])`, "i").test(text)) out.push(id);
-  }
-  return out;
+  return { kind: "named", heading: who, tag, rows: rowsFor(seq, Math.max(0, Math.min(...idx) - 1), Math.min(seq.length - 1, Math.max(...idx) + 1), state, sys, drawReversed(sys, line, dir)) };
 }
 
 /**
@@ -430,9 +276,6 @@ export function shuttleCorners(a: TransitAlert, sys: StaticSystem): Map<string, 
   return out;
 }
 
-const cornerWords = (cs: Corner[]) => orWords(cs.map((c) => (c.note ? `${c.text} (${c.note})` : c.text)));
-const coordOf = (sys: StaticSystem, id: string) => sys.stations.features.find((f) => f.properties.id === id)?.geometry.coordinates as [number, number] | undefined;
-const metres = (p: [number, number], q: { lon: number; lat: number }) => Math.hypot((p[0] - q.lon) * 84_400, (p[1] - q.lat) * 111_320);
 
 /**
  * A branch the line's track order does not hold (the A's Lefferts Blvd branch): the named ends and the
@@ -456,7 +299,7 @@ function branchOrder(sys: StaticSystem, onLine: Record<string, number>, ends: st
   return out;
 }
 
-function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: string, near?: Near): AlertDiagram | null {
+function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: string): AlertDiagram | null {
   const change = a.changes?.find((c) => c.kind === "suspended" && c.route === route);
   const bus = shuttleRange(all);
   const ends = change?.names ?? (/^(?:In [\w ]+, )?no /i.test(a.text.trim()) ? bus : null);
@@ -500,80 +343,8 @@ function suspension(a: TransitAlert, sys: StaticSystem, route: string, all: stri
   const corners = shuttleCorners(a, sys);
   const withCorners = (r: DiagramRow): DiagramRow => (!isGap(r) && corners.has(r.id) ? { ...r, corners: corners.get(r.id) } : r);
   const rows = [...rowsFor(seq, lo, hi, state, sys, seq === trackOrder(sys, route, []).seq ? drawReversed(sys, route, null) : false), ...off].map(withCorners);
-  const steps: DiagramStep[] = [{ text: `No ${route} trains between ${said(ends[0])} and ${said(ends[1])}.${shuttle ? " Free shuttle buses run instead." : ""}`, ids: closed }];
-  const busTransfers = changes.find((t) => t.bus)?.at ?? [];
-  if (shuttle) steps.push(...shuttleGuide(sys, route, a, { seq, span: busSpan ?? span, state, bused: bused.length ? bused : closed, corners, busTransfers, onLine, near }));
-  for (const t of changes) if (!t.bus || !shuttle) steps.push({ text: t.text, ids: idsOf(sys, t, onLine) });
   const ran = busSpan ?? span;
-  return { kind: shuttle ? "shuttle" : "suspended", heading: `No ${route} trains`, rows, steps, ...(shuttle ? { bus: seq.slice(ran[0], ran[1] + 1) } : {}) };
-}
-
-/**
- * The owner's "guide me on whats going on where to take shuttle bus etc" (2026-11-08): where to leave
- * the train, the corner the bus stops at, where to get back on. Starts from the end nearest the rider.
- */
-function shuttleGuide(sys: StaticSystem, route: string, a: TransitAlert, g: {
-  seq: string[]; span: [number, number]; state: Map<string, StopState>; bused: string[]; corners: Map<string, Corner[]>;
-  busTransfers: Transfer["at"]; onLine: Record<string, number>; near: Near;
-}): DiagramStep[] {
-  const steps: DiagramStep[] = [];
-  const name = (id: string) => said(nameOf(sys, id));
-  // The trains at each end of the bus stretch: this line where it still runs, else the lines the notice names there.
-  // "[J] runs between Jamaica Center-York College and Myrtle Av, the last stop": the line still reaches these.
-  const runs = /\b([A-Z0-9])\b (?:trains? )?runs? between (.+?) and ([^,.\n]+)/i.exec(cleanAlertText(a.description ?? ""));
-  const reached = new Set(runs && runs[1] === route ? [runs[2], runs[3]].map((n) => findStation(sys, trimName(n), g.onLine)?.properties.id) : []);
-  const trainsAt = (id: string): string[] => {
-    const s = g.state.get(id);
-    if (!s || s === "transfer" || s === "open" || reached.has(id)) return [route];
-    const named = g.busTransfers.find((t) => findStation(sys, t.name, g.onLine, t.lines)?.properties.id === id)?.lines ?? [];
-    if (named.length) return named;
-    // The station's own note lists the trains there during the change ("[F]" at Delancey St-Essex St).
-    const noted = notes(id).flatMap((l) => (/shuttle bus icon/i.test(l) ? [] : [...l.matchAll(/\[([A-Z0-9])\]/g)].map((m) => m[1])));
-    if (noted.length) return [...new Set(noted)];
-    const here = String(sys.stations.features.find((f) => f.properties.id === id)?.properties.routes ?? "").split(/[\s,]+/).filter(Boolean);
-    // Not the suspended line's express either (the 7X at Flushing-Main St).
-    return here.filter((r) => !a.routes.some((x) => r === x || r === `${x}X`));
-  };
-  const notes = (id: string) => (a.alternatives ?? []).filter((x) => stationOf(sys.system, x.stop) === id).flatMap((x) => x.notes.split(/\n/));
-  const goTicket = (id: string) => notes(id).some((l) => /GO ticket/i.test(l)) ? " Get a GO ticket on the way out, so you can get back in free." : "";
-  const pos = (id: string) => coordOf(sys, id);
-  const dist = (id: string) => { const p = pos(id); return g.near && p ? metres(p, g.near) : 0; };
-  const ends = [...new Set([g.seq[g.span[0]], g.seq[g.span[1]]])].filter((id) => trainsAt(id).length).sort((x, y) => dist(x) - dist(y));
-  const at = (id: string) => g.corners.get(id) ?? [];
-  const cornerIds = (ids: string[]) => ids.filter((id) => at(id).length);
-  // Near a closed station: its own bus corner first.
-  const mine = g.near ? g.bused.filter((id) => pos(id)).sort((x, y) => dist(x) - dist(y))[0] : undefined;
-  if (mine && dist(mine) < 1200 && !ends.includes(mine)) {
-    steps.push(at(mine).length
-      ? { text: `Nearest to you is ${name(mine)}. Its shuttle bus stops at ${cornerWords(at(mine))}.`, ids: [mine], corners: [mine] }
-      : { text: `Nearest to you is ${name(mine)}. The notice does not say where its shuttle bus stops.`, ids: [mine] });
-  }
-  const start = ends[0];
-  if (start) {
-    const by = trainsAt(start);
-    steps.push({ text: `Ride the ${orWords(by)} to ${name(start)} and go up to the street.${goTicket(start)}`, ids: [start], corners: cornerIds([start]) });
-    steps.push(at(start).length
-      ? { text: `The shuttle bus stops at ${cornerWords(at(start))}.`, ids: [start], corners: [start] }
-      : { text: `The notice does not say where the shuttle bus stops at ${name(start)}.`, ids: [start] });
-  }
-  const along = g.bused.filter((id) => !ends.includes(id));
-  if (along.length) {
-    const listed = cornerIds(along);
-    steps.push(listed.length
-      ? { text: `It stops near ${stationWords(along.map((id) => nameOf(sys, id)))}. The corners are on the map.`, ids: along, corners: listed }
-      : { text: `It stops near ${stationWords(along.map((id) => nameOf(sys, id)))}. The notice does not say at which corners.`, ids: along });
-  }
-  const back = ends[1];
-  if (back) steps.push({ text: `Get off the bus at ${name(back)} and change to the ${orWords(trainsAt(back))}.`, ids: [back], corners: cornerIds([back]) });
-  else if (start) steps.push({ text: `Coming back, take the shuttle bus to ${name(start)} and get back on the ${route} there.`, ids: [start], corners: cornerIds([start]) });
-  // Stations off this line where the bus meets another train (Inwood-207 St for the A).
-  for (const t of g.busTransfers) {
-    const f = findStation(sys, t.name, g.onLine, t.lines);
-    if (!f || f.properties.id in g.onLine || !t.lines.length) continue;
-    const id = f.properties.id;
-    steps.push({ text: `You can also change between the bus and the ${orWords(t.lines)} at ${name(id)}${at(id).length ? `, where it stops at ${cornerWords(at(id))}` : ""}.`, ids: [id], corners: cornerIds([id]) });
-  }
-  return steps;
+  return { kind: shuttle ? "shuttle" : "suspended", heading: `No ${route} trains`, rows, ...(shuttle ? { bus: seq.slice(ran[0], ran[1] + 1) } : {}) };
 }
 
 /** The direction of a skip: "Uptown", "Flushing", or null for both. */
@@ -607,18 +378,7 @@ function skipStops(a: TransitAlert, sys: StaticSystem, route: string, all: strin
   const lo = Math.max(0, Math.min(...idx) - pad), hi = Math.min(seq.length - 1, Math.max(...idx) + pad);
   const service = change?.route.endsWith("X") ? `${change.route} express` : route;
   const who = dir ? `${/-bound$|^(?:Uptown|Downtown)$/.test(dir) || dir.split(" ").length > 1 ? dir : `${dir}-bound`} ${service} trains` : `${service} trains`;
-  const steps: DiagramStep[] = [{ text: `${who} skip ${stationWords(names)}${dir ? "" : " in both directions"}.`, ids: skipped }];
-  if (change?.route.endsWith("X")) {
-    const stillStops = cleanAlertText(bulletRuns(all)).split(/\n|(?<=\.) +/).map((l) => l.trim())
-      .filter((l) => /\b(?:will continue to stop|(?:all .+?)?trains stop) at\b/i.test(l)
-        && names.some((name) => sameStation(name, l.replace(/^.*?\bstop at /i, "").replace(/\.$/, ""))));
-    steps.push(...stillStops.map((text) => ({
-      text: sentence(said(text.replace(/\b([1-7])(?:,| and) \1X local\/express\b/g, "$1 local and $1X express"))),
-      ids: skipped,
-    })));
-  }
-  changes.forEach((t, i) => steps.push({ text: t.text, ids: [...new Set([...changeIds[i], ...skipped])] }));
-  return { kind: "skip", heading: dir ? who.replace(/ trains$/, "") : `${service}, both ways`, rows: rowsFor(seq, lo, hi, state, sys, reverse), steps };
+  return { kind: "skip", heading: dir ? who.replace(/ trains$/, "") : `${service}, both ways`, rows: rowsFor(seq, lo, hi, state, sys, reverse) };
 }
 
 function local(a: TransitAlert, sys: StaticSystem, route: string, all: string): AlertDiagram | null {
@@ -637,7 +397,5 @@ function local(a: TransitAlert, sys: StaticSystem, route: string, all: string): 
   const names = added.map((id) => nameOf(sys, id));
   if (reverse) names.reverse();
   const who = `${run.toward ? `${run.toward} ` : ""}${route}`;
-  const steps: DiagramStep[] = [{ text: `${who} trains run local from ${said(run.from)} to ${said(run.to)}.`, ids: [seq[span[0]], seq[span[1]]] }];
-  if (added.length) steps.push({ text: `They also stop at ${stationWords(names)}.`, ids: added });
-  return { kind: "local", heading: who, rows: rowsFor(seq, span[0], span[1], state, sys, reverse), steps };
+  return { kind: "local", heading: who, rows: rowsFor(seq, span[0], span[1], state, sys, reverse) };
 }

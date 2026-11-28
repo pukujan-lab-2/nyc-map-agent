@@ -29,7 +29,7 @@ describe("say and the Voice setting", () => {
 
   it("App voice: Kokoro speaks the languages it has, the phone the rest", () => {
     say("Toma el tren A.", "es", () => {}, false, "app");
-    expect(speakKokoro).toHaveBeenCalledWith("Toma el tren A.", "es", expect.any(Function), expect.any(Function), false);
+    expect(speakKokoro).toHaveBeenCalledWith("Toma el tren A.", "es", expect.any(Function), expect.any(Function), false, undefined);
     expect(speakQueued).not.toHaveBeenCalled();
     say("Сядьте на поезд A.", "ru", () => {}, false, "app");
     expect(speakQueued).toHaveBeenCalledTimes(1);
@@ -50,7 +50,7 @@ describe("say and the Voice setting", () => {
   it("My phone's voice: Kokoro steps in where the phone has no voice for the language", () => {
     say("乘坐A线。", "zh", () => {}, false, "phone");
     phoneHasNone();
-    expect(speakKokoro).toHaveBeenCalledWith("乘坐A线。", "zh", expect.any(Function), expect.any(Function), false);
+    expect(speakKokoro).toHaveBeenCalledWith("乘坐A线。", "zh", expect.any(Function), expect.any(Function), false, undefined);
     expect(tellNoVoice).not.toHaveBeenCalled();
   });
 
@@ -63,6 +63,19 @@ describe("say and the Voice setting", () => {
       expect(tellNoVoice).toHaveBeenLastCalledWith("ht");
       expect(onEnd).toHaveBeenCalledTimes(1);
     }
+  });
+
+  it("a notice step's clip made ahead is tried even while the speech server is marked down", () => {
+    up = false;
+    vi.stubGlobal("AudioContext", class {});
+    const key = "c".repeat(64);
+    say("Take the 7 train.", "en-US", vi.fn(), false, "app", key);
+    expect(speakKokoro).toHaveBeenCalledWith("Take the 7 train.", "en", expect.any(Function), expect.any(Function), false, key);
+    speakKokoro.mockClear();
+    // No clip and the server down: the phone's voice, as before.
+    say("Take the 7 train.", "en-US", vi.fn(), false, "app");
+    expect(speakKokoro).not.toHaveBeenCalled();
+    expect(speakQueued).toHaveBeenCalled();
   });
 
   it("no voice on the phone and the speech server down: the note, not an English voice", () => {

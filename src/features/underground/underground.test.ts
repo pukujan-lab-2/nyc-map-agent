@@ -366,6 +366,16 @@ describe("offline cache list (public/sw.js)", () => {
     expect(keptKey("/api/agent/translate", body("en"), "https://map.test")).not.toBe(a);
   });
 
+  it("keeps the notice walks' clips made ahead, and nothing else under /api/tts", () => {
+    const key = "a".repeat(64);
+    expect(how(`/api/tts/clip/${key}`)).toBe("clip");
+    expect(how(`/api/v1/tts/clip/${key}`)).toBe("clip");
+    expect(how("/api/tts/clip/not-a-key")).toBe("bypass");
+    expect(how(`/api/tts/clip/${key}`, "cors", "POST")).toBe("bypass");
+    expect(how("/api/tts/voice")).toBe("bypass");
+    expect(how(`https://elsewhere.test/api/tts/clip/${key}`)).toBe("network-then-tiles");
+  });
+
   it("drops built files from deploys more than 30 days old, and keeps undated ones", () => {
     const now = Date.parse("2026-11-12T12:00:00Z");
     expect(staleAsset("Mon, 05 Oct 2026 12:00:00 GMT", now)).toBe(true);

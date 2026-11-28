@@ -25,6 +25,7 @@ import { mayReadBack, planReadBack } from "./readback";
 import { askIn, CloseHold, isQuestion, questionsAnswered, riderLanguage, say, sayPrompt, type Lang, type Line } from "./ask";
 import { openDataEntrances, type Station } from "./transit";
 import { OTP_CONTAINER, VALHALLA_CONTAINER, waker } from "./sablier";
+import { clipReport } from "./noticeClips";
 
 export const INFERHUB_BASE_URL = process.env.INFERHUB_BASE_URL ?? "https://api.inferhub.dev/v1";
 /** Cheap, fast, good at tool calls: ~$0.075 in / $0.30 out per M tokens (InferHub market max ask). */
@@ -49,11 +50,12 @@ export function defaultModel(only?: string, run?: RunLog, profile: Profile = "de
   return createOpenAICompatible({ name: "inferhub", baseURL: INFERHUB_BASE_URL, apiKey: key, fetch: fallbackFetch(models, fetch, log, undefined, undefined, (m) => run?.usedModel(m)) })(models[0]);
 }
 
-/** GET /api/agent/health (#35): the default profile and each smart provider's last probe. No keys or URLs. */
+/** GET /api/agent/health (#35): the default profile, each smart provider's last probe and the speech clip store's size. No keys or URLs. */
 export const health = {
   GET: (): Promise<Response> => {
     startWatcher();
-    return Promise.resolve(Response.json({ profile: pickProfile(undefined), smart: healthReport() }, { headers: { "cache-control": "no-store" } }));
+    // `clips`: the store of notice-walk speech made ahead (noticeClips.ts), or null when it is off.
+    return Promise.resolve(Response.json({ profile: pickProfile(undefined), smart: healthReport(), clips: clipReport() }, { headers: { "cache-control": "no-store" } }));
   },
 };
 

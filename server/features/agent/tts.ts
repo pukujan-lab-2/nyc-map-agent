@@ -5,7 +5,9 @@
  * POST /tts {text, stack, lang} streams 16-bit mono PCM, sample rate in X-Sample-Rate, first sound as
  * soon as it is made. We pass that stream straight through. Kokoro has voices for English, Spanish,
  * French and Chinese of the app's languages; any other answers 415 and the browser speaks it as before.
- * TTS_BASE_URL overrides the server when speech-to-text lives elsewhere. Nothing is stored or logged.
+ * TTS_BASE_URL overrides the server when speech-to-text lives elsewhere. Nothing said here is stored or logged;
+ * a notice walk's steps are made ahead and served as clips instead (noticeClips.ts), and the clip maker waits while
+ * a rider's request here is in flight (`liveSpeechBusy`).
  * Like speech-to-text, every request names the app to the speech gateway with X-Speech-Project.
  *
  * The speech server keeps one stack of models in memory and swaps when another app asks for a different
@@ -25,7 +27,33 @@ export const ttsConfig = (env = process.env) => ({
   base: (env.TTS_BASE_URL || (env.STT_PROTOCOL === "speech" ? env.STT_BASE_URL : "") || "").replace(/\/$/, ""),
   stack: env.TTS_STACK || env.STT_STACK || "multilingual",
   project: env.STT_PROJECT || "nyc-map",
+  /** Part of a clip's key: raise it when the speech server's Kokoro model or voices change, so no old sound plays. */
+  modelVersion: env.TTS_MODEL_VERSION || "kokoro-1",
 });
+
+/** The voice a clip was made with: the stack (which picks each language's voice) and the model version. */
+export const voiceTag = (env = process.env): string => { const c = ttsConfig(env); return `${c.stack}:${c.modelVersion}`; };
+
+/** Riders' speech requests still streaming; the clip maker waits until this is 0, so riders come first. */
+let live = 0;
+export const liveSpeechCount = (): number => live;
+export const liveSpeechBusy = (): boolean => live > 0;
+
+/** Passes a stream through and calls `done` once when it ends, fails or is cancelled. */
+function tracked(body: ReadableStream<Uint8Array>, done: () => void): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  let over = false;
+  const end = () => { if (!over) { over = true; done(); } };
+  return new ReadableStream<Uint8Array>({
+    async pull(c) {
+      try {
+        const { done: last, value } = await reader.read();
+        if (last) { end(); c.close(); } else c.enqueue(value);
+      } catch (e) { end(); c.error(e); }
+    },
+    cancel(reason) { end(); return reader.cancel(reason); },
+  });
+}
 
 const json = (body: unknown, status: number) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
 
@@ -45,6 +73,11 @@ export async function speak(req: Request, f: typeof fetch = fetch, env = process
   const lang = ttsLang(body?.lang);
   if (!lang) return json({ error: "language" }, 415);
   let res: Response;
+  live++;
+  let counted = true;
+  const release = () => { if (counted) { counted = false; live--; } };
+  // A stream nobody reads to the end must not hold the clip maker back for ever.
+  (setTimeout(release, 30_000) as { unref?: () => void }).unref?.();
   try {
     res = await f(`${base}/tts`, {
       method: "POST",
@@ -53,10 +86,11 @@ export async function speak(req: Request, f: typeof fetch = fetch, env = process
       signal: AbortSignal.any([req.signal, AbortSignal.timeout(20_000)]),
     });
   } catch {
+    release();
     return json({ error: "voice server unreachable" }, 502);
   }
-  if (!res.ok || !res.body) return json({ error: `voice server ${res.status}` }, 502);
-  return new Response(res.body, {
+  if (!res.ok || !res.body) { release(); return json({ error: `voice server ${res.status}` }, 502); }
+  return new Response(tracked(res.body, release), {
     headers: { "content-type": "audio/L16", "x-sample-rate": res.headers.get("x-sample-rate") ?? "24000", "cache-control": "no-store" },
   });
 }

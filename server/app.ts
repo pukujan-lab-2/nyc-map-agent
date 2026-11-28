@@ -8,7 +8,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import type { Context } from "hono";
 import { compress } from "hono/compress";
 import { apiRateLimit } from "./lib/apiRateLimit";
-import { AGENT_ROUTE, FINISH_ROUTE, LIVE_STATE_ROUTE, LIVE_WATCH_ROUTE, PART_ROUTE, SEE_SIGN_ROUTE, START_ROUTE, STT_ROUTE, TRANSLATE_ROUTE, TTS_ROUTE, API_INFO, ROUTES, legacyAlias, toV1, toV1Route } from "./openapi";
+import { AGENT_ROUTE, FINISH_ROUTE, LIVE_STATE_ROUTE, LIVE_WATCH_ROUTE, PART_ROUTE, SEE_SIGN_ROUTE, START_ROUTE, STT_ROUTE, TRANSLATE_ROUTE, TTS_CLIP_ROUTE, TTS_ROUTE, TTS_VOICE_ROUTE, API_INFO, ROUTES, legacyAlias, toV1, toV1Route } from "./openapi";
 import * as aggregate from "../api/aggregate";
 import * as area from "../api/area/[block]";
 import * as areas from "../api/areas";
@@ -28,6 +28,7 @@ import * as parking from "./features/parking/routes";
 import * as agent from "./features/agent/routes";
 import { transcribe } from "./features/agent/stt";
 import { speak, startVoiceKeeper } from "./features/agent/tts";
+import { getClip, getVoice, startNoticeClips } from "./features/agent/noticeClips";
 import { translate } from "./features/agent/translate";
 import { seeSign } from "./features/agent/seeSign";
 import * as transit from "./features/transit/routes";
@@ -100,7 +101,7 @@ app.use("/api/*", apiRateLimit());
 app.use("/api/*", async (c, next) => {
   // Tile ranges are already-compressed binary; gzip would break Content-Range.
   const p = c.req.path.replace(/^\/api\/v1\//, "/api/");
-  if (p === "/api/city-tiles" || p === "/api/block-tiles" || p.startsWith("/api/vehicle-models/") || p === "/api/agent" || p === "/api/tts" || p.startsWith("/api/live/")) return next(); // streams
+  if (p === "/api/city-tiles" || p === "/api/block-tiles" || p.startsWith("/api/vehicle-models/") || p === "/api/agent" || p === "/api/tts" || p.startsWith("/api/tts/clip/") || p.startsWith("/api/live/")) return next(); // streams
   return compress()(c, next);
 });
 // Canonical paths are /api/v1/*; /api/* stays as an alias (marked deprecated in the spec).
@@ -137,6 +138,13 @@ app.openapi(legacyAlias(STT_ROUTE), sttHandler as never);
 const ttsHandler = (c: Context) => speak(c.req.raw);
 app.openapi(toV1Route(TTS_ROUTE), ttsHandler as never);
 app.openapi(legacyAlias(TTS_ROUTE), ttsHandler as never);
+// A notice walk's steps, made ahead when the notice arrives (noticeClips.ts).
+const clipHandler = (c: Context) => getClip(c.req.param("key") ?? "");
+app.openapi(toV1Route(TTS_CLIP_ROUTE), clipHandler as never);
+app.openapi(legacyAlias(TTS_CLIP_ROUTE), clipHandler as never);
+const voiceHandler = () => getVoice();
+app.openapi(toV1Route(TTS_VOICE_ROUTE), voiceHandler as never);
+app.openapi(legacyAlias(TTS_VOICE_ROUTE), voiceHandler as never);
 // A notice's steps in the rider's language (#55). As for the agent, the validator has read the body already.
 const translateHandler = async (c: Context) => {
   const body: unknown = await c.req.json().catch(() => null);
@@ -167,6 +175,8 @@ app.openapi(toV1Route(LIVE_WATCH_ROUTE), liveWatchHandler as never);
 app.openapi(legacyAlias(LIVE_WATCH_ROUTE), liveWatchHandler as never);
 // Keep the speech server on our stack so the first spoken answer is not the one that waits for a model swap.
 startVoiceKeeper();
+// Make each notice's walk speech when the notice arrives, and clean it up when the notice ends (noticeClips.ts).
+if (process.env.NODE_ENV !== "test") startNoticeClips(transit.loadAlertsBetween);
 
 /**
  * Station-walk uploads (#223): start, part, finish. The part body is raw bytes, so Hono's JSON body
