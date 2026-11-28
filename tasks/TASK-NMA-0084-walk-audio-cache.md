@@ -82,6 +82,29 @@ Blocked/uncertain:
 Next:
 - let pull request 288 merge after 287; then check clips in /api/agent/health on the server
 
+### 2026-11-28 04:32:01 UTC — agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/0aaf55d0-e94c-4910-89cf-425a0d4c251f","blocked":["The walk builder's own test that timed out on CI lives in pull request 287; the walk-builder session has the fix."],"changed":["none"],"completed":["Pull request 288's three failing checks are addressed: the clip tests build the saved walks once, the title is a Conventional Commit, and the notice panel's budget rises by the measured 429 B after trimming."],"decisions":["no new decisions"],"evidence":["Clip and voice tests pass (53); the notice panel chunk measures 24,427 B brotli against 23,998 B on pull request 287 alone."],"next_action":"let pull request 288 merge after 287; then check clips in /api/agent/health on the server","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0084","timestamp":"2026-11-28T04:32:01Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"9a85f40ce3969f9d9d92e13327479d03751cdacfffa22ea91717548dc812c75c","request_id":"e93b52baf52044fb87b2ad913656fdf9","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0084"} -->
+
+Completed:
+- Pull request 288's three failing checks are addressed: the clip tests build the saved walks once, the title is a Conventional Commit, and the notice panel's budget rises by the measured 429 B after trimming.
+
+Evidence:
+- Clip and voice tests pass (53); the notice panel chunk measures 24,427 B brotli against 23,998 B on pull request 287 alone.
+
+Decisions:
+- no new decisions
+
+Changed:
+- none
+
+Blocked/uncertain:
+- The walk builder's own test that timed out on CI lives in pull request 287; the walk-builder session has the fix.
+
+Next:
+- let pull request 288 merge after 287; then check clips in /api/agent/health on the server
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
