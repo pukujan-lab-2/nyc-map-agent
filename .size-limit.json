@@ -80,9 +80,9 @@
     "limit": "7.1 kB"
   },
   {
-    "name": "feature: notice diagram (lazy, opens with the first notice)",
+    "name": "feature: notice diagram (lazy, opens with the first notice; reads the notice's facts on the phone)",
     "path": ".size-build/assets/NoticeDiagram-*.js",
-    "limit": "10.5 kB"
+    "limit": "24.3 kB"
   },
   {
     "name": "feature: notice map layers (lazy, loads with the first notice: tracks, signposts, train, buses, walks, entrances)",
@@ -135,6 +135,6 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js"
     ],
-    "limit": "1298.3 kB"
+    "limit": "1312.5 kB"
   }
 ]

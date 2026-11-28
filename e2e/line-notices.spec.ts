@@ -118,20 +118,34 @@ for (const size of SIZES) {
     await expect(diagram).toBeVisible();
     // Downtown, top to bottom: 14 St, the two skipped stops, Canal St.
     await expect(diagram.locator("[data-stop]")).toHaveText([/14 Street/, /Christopher Street-Stonewall.*Skipped/, /Houston Street.*Skipped/, /Canal Street/]);
-    await expect(panel.getByTestId("notice-step").first()).toHaveText("Downtown 2 trains skip Christopher Street-Stonewall and Houston Street.");
-    await expect(panel.getByTestId("notice-step").nth(1)).toHaveText("To reach Christopher Street-Stonewall and Houston Street, take the 2 to Canal Street and change to an uptown 1.");
+    // Step one says what changes and who it does not touch; then only the rider's own case, one action a step.
+    await expect(panel.getByTestId("notice-step")).toHaveText([
+      "Downtown 2 trains skip Christopher Street-Stonewall and Houston Street. Uptown 2 trains still stop there. If you aren't getting on or off at Christopher Street-Stonewall or Houston Street, nothing changes for you.",
+      "Getting off at Christopher Street-Stonewall: your train won't stop there. Stay on to Canal Street.",
+      "There, change to an uptown 1.",
+      "Ride it to Christopher Street-Stonewall.",
+    ]);
     // The tap started the walk: the first step's stations are lit, and Stop ends it.
     const walk = panel.getByTestId("notice-walk");
     await expect(walk).toHaveAttribute("data-step", "0");
-    await expect(diagram.locator("[data-lit]")).toHaveCount(2);
-    await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.join(" "))).toContain("Christopher Street-Stonewall");
+    await expect(diagram.locator("[data-lit]")).toHaveCount(4);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.join(" "))).toContain("Christopher Street, Stonewall");
     await expectLayout(page);
-    await walk.getByRole("button", { name: "Stop" }).click();
+    await walk.getByRole("button", { name: "Stop", exact: true }).click();
     await expect(walk).not.toHaveAttribute("data-step");
     await expect(walk.getByRole("button", { name: "Read it to me" })).toBeVisible();
-    // The MTA's own words stay one tap away.
-    await walk.getByRole("button", { name: "Full notice" }).click();
-    await expect(walk.getByTestId("notice-full")).toContainText("transfer to an uptown 1");
+    // Starting at Houston St instead: board the other way to 14 St and change back (plan step 3).
+    const trip = walk.getByTestId("notice-trip");
+    await trip.getByRole("button", { name: "Houston Street", exact: true }).click();
+    await trip.getByRole("button", { name: "Getting on at Houston Street" }).click();
+    await expect(trip.getByRole("button", { name: "Getting on at Houston Street" })).toHaveAttribute("aria-pressed", "true");
+    await expect(panel.getByTestId("notice-step").nth(1)).toHaveText("Getting on at Houston Street: board an uptown 2 and ride to 14 Street.");
+    await expect(panel.getByTestId("notice-step").nth(2)).toHaveText("There, change to a downtown 1.");
+    await expect(panel.getByTestId("notice-step")).toHaveCount(3);
+    // The MTA's own words sit behind (i); there is no Full notice button.
+    await expect(walk.getByRole("button", { name: "Full notice" })).toHaveCount(0);
+    await walk.getByRole("button", { name: "The MTA's words" }).click();
+    await expect(walk.getByTestId("notice-mta")).toContainText("transfer to an uptown 1");
     await expectLayout(page);
   });
 }
@@ -140,7 +154,7 @@ for (const size of SIZES) {
 // "it doesn't say the other part, what train is it, what's affected". The card and the voice say all of it (#198),
 // and since it names its stations it is drawn and walked like a skip or a shuttle notice.
 for (const size of SIZES) {
-  test(`a notice that names its stations draws them and says which train, then why and when, at ${size.width}×${size.height}`, async ({ page }) => {
+  test(`a notice that names its stations draws them and says which train, then when, at ${size.width}×${size.height}`, async ({ page }) => {
     await page.setViewportSize({ width: size.width, height: size.height });
     // A voice that finishes each line at once, so the whole summary is spoken.
     await page.addInitScript(() => {
@@ -172,10 +186,9 @@ for (const size of SIZES) {
     await notice.click();
 
     const walk = panel.getByTestId("notice-walk");
+    // No "Why" step: walks give guidance, not the MTA's reasons (owner, 2026-11-26).
     const summary = [
-      "Downtown 2 trains are stopping at Times Square-42 Street and 34 Street-Penn Station.",
-      "Live arrival times may be missing there.",
-      "Why: Technical issue.",
+      "Downtown 2 trains are stopping at Times Square-42 Street and 34 Street-Penn Station, but real-time arrival information may be unavailable.",
       "When: November 14 to 16, Saturday 12:01 AM to Monday 5:00 AM.",
     ];
     await expect(walk.getByTestId("notice-step")).toHaveText(summary);
@@ -188,9 +201,14 @@ for (const size of SIZES) {
       const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: unknown[] }> } | undefined } }).__map?.getSource("transit-alert-skipped");
       return src ? ((await src.getData()).features ?? []).length : -1;
     })).toBe(0);
-    // "Read it to me" is the same summary, start to end (the browser voice takes it in pieces, cut at each colon).
+    // "Read it to me" says the same steps, start to end (the browser voice takes it in pieces, cut at each colon).
     const packed = (t: string[]) => t.join("").replace(/\s+/g, "");
-    await expect.poll(async () => packed(await page.evaluate(() => (window as unknown as { __said: string[] }).__said)), { timeout: slow(10_000) }).toBe(packed(summary));
+    // Said aloud, numbered streets are ordinals and a name's parts get a pause (owner, 2026-11-27).
+    const spoken = [
+      "Downtown 2 trains are stopping at Times Square, 42nd Street and 34th Street, Penn Station, but real-time arrival information may be unavailable.",
+      "When: November 14 to 16, Saturday 12:01 AM to Monday 5:00 AM.",
+    ];
+    await expect.poll(async () => packed(await page.evaluate(() => (window as unknown as { __said: string[] }).__said)), { timeout: slow(10_000) }).toBe(packed(spoken));
     await expect(walk.getByRole("button", { name: "Read it to me" })).toBeVisible();
     // Open, the row is a one-line label: the card has the dates, and the MTA's words add nothing here.
     await expect(notice).not.toContainText("Nov 14 - 16");
@@ -224,7 +242,8 @@ const voiceHoldingAtCorner = () => {
     speaking: false, paused: false, pending: false, getVoices: () => [], addEventListener: () => undefined, removeEventListener: () => undefined,
     speak: (u: SpeechSynthesisUtterance) => {
       said.push({ text: u.text, lang: u.lang });
-      if (!/7 Avenue at 42 Street/.test(u.text)) setTimeout(() => { u.onend?.(new Event("end") as SpeechSynthesisEvent); u.dispatchEvent(new Event("end")); }, 20);
+      // The corner as shown ("7 Avenue at 42 Street") or as said ("7th Avenue at 42nd Street").
+      if (!/at 42(?:nd)? Street/.test(u.text)) setTimeout(() => { u.onend?.(new Event("end") as SpeechSynthesisEvent); u.dispatchEvent(new Event("end")); }, 20);
     },
     cancel: () => undefined, pause: () => undefined, resume: () => undefined,
   } });
@@ -251,15 +270,17 @@ for (const size of SIZES) {
     const walk = panel.getByTestId("notice-walk");
     // Each station row says where its bus stops, in the notice's own words with the streets spelled out.
     await expect(walk.locator('[data-stop="127"]')).toContainText("7 Avenue at 42 Street");
-    await expect(walk.getByTestId("notice-step")).toContainText([
-      "No 2 trains between Times Square-42 Street and 14 Street. Free shuttle buses run instead.",
+    // The first stop of the stretch is picked: the walk takes the rider there by train and bus.
+    await expect(walk.getByTestId("notice-step")).toHaveText([
+      "No 2 trains between Times Square-42 Street and 14 Street. Free shuttle buses run instead. If your trip stays off that stretch, nothing changes for you.",
+      "2 trains run only between Wakefield-241 Street and Times Square-42 Street.",
       "Ride the 2 to Times Square-42 Street and go up to the street.",
-      "The shuttle bus stops at 7 Avenue at 42 Street.",
-      "Get off the bus at 14 Street and change to the 1 or 3.",
+      "Take the free shuttle bus from 7 Avenue at 42 Street.",
+      "Get off the bus at 34 Street-Penn Station, at 7 Avenue at 34 Street.",
       "When: November 14 to 15, Saturday 3:45 AM to Sunday 10:00 PM.",
     ]);
     // The voice reached the corner step; the map marks that corner at Times Sq-42 St (the walk's own shuttle stop).
-    await expect(walk).toHaveAttribute("data-step", "2", { timeout: slow(10_000) });
+    await expect(walk).toHaveAttribute("data-step", "3", { timeout: slow(10_000) });
     await expect.poll(() => page.evaluate(async () => {
       const src = (window as unknown as { __map?: { getSource: (id: string) => { getData: () => Promise<{ features?: Array<{ properties?: { label?: string } }> }> } | undefined } }).__map?.getSource("notice-bus-stops");
       return (await src?.getData())?.features?.map((f) => f.properties?.label ?? "").join("|") ?? "";
@@ -281,7 +302,7 @@ for (const size of SIZES) {
     await expect(page.locator(".maplibregl-marker", { hasText: /Skipped|Work|Affected/ })).toHaveCount(0);
     await expectLayout(page);
     // With the walk stopped, the map shows the whole stretch the buses cover: both ends are on screen.
-    await walk.getByRole("button", { name: "Stop" }).click();
+    await walk.getByRole("button", { name: "Stop", exact: true }).click();
     await expect.poll(() => page.evaluate(async () => {
       const m = (window as unknown as { __map: { getBounds(): { contains(p: [number, number]): boolean }; getSource(id: string): { getData(): Promise<{ features: Array<{ geometry: { coordinates: [number, number] } }> }> } } }).__map;
       const stops = (await m.getSource("transit-shuttle-stops").getData()).features;
@@ -313,7 +334,7 @@ test("a notice is guided in the rider's language", async ({ page }) => {
   await notice.scrollIntoViewIfNeeded();
   await notice.click();
   const walk = panel.getByTestId("notice-walk");
-  await expect(walk.getByTestId("notice-step").first()).toHaveText("ES No 2 trains between Times Square-42 Street and 14 Street. Free shuttle buses run instead.");
+  await expect(walk.getByTestId("notice-step").first()).toHaveText("ES No 2 trains between Times Square-42 Street and 14 Street. Free shuttle buses run instead. If your trip stays off that stretch, nothing changes for you.");
   await expect(walk.locator('[data-stop="128"]')).toContainText("ES Shuttle bus");
   await expect.poll(() => page.evaluate(() => (window as unknown as { __said: Array<{ text: string; lang: string }> }).__said[0] ?? null)).toMatchObject({ text: expect.stringMatching(/^ES No 2/), lang: expect.stringMatching(/^es/) });
   await expectLayout(page);
