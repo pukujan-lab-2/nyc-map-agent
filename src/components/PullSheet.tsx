@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ArrowLeft } from "lucide-react";
 import "@/components/task-screens.css";
+import { useColumnWide, useLeftColumn } from "@/lib/store/leftColumn";
 import { pullSheetMounted, useSheetPlace } from "@/lib/store/pullSheet";
 import { nextLevel, swipeOf, type SheetLevel } from "./sheetSwipe";
 
@@ -19,6 +21,8 @@ export interface PullSheetProps {
   onClose?: () => void;
   /** The header already has its own back arrow that calls onClose: do not draw a second one. */
   ownBack?: boolean;
+  /** A name another part of the app can bring this view back to the top by (raiseTag). */
+  tag?: string;
 }
 
 /** The sheet whose height --pull-sheet-h holds: the one showing. */
@@ -32,10 +36,12 @@ let heightOwner: object | null = null;
  * shows above it, and it counts as a cover so the camera keeps the focus clear
  * (owner, 2026-10-25).
  *
- * A phone has one sheet. A sheet opened over another becomes its top view: the
+ * There is one sheet. A sheet opened over another becomes its top view: the
  * one under it draws nothing until Back takes the new one off (src/lib/store/pullSheet.ts).
+ * From 640 px the same view is the left card instead, above the ask box, always open
+ * (owner, 2026-11-27: every panel in one place, as Apple Maps does on a Mac).
  */
-export function PullSheet({ level, onLevel, onSide, header, children, testId, label, onClose, ownBack }: PullSheetProps) {
+export function PullSheet({ level, onLevel, onSide, header, children, testId, label, onClose, ownBack, tag }: PullSheetProps) {
   const ref = useRef<HTMLElement>(null);
   const start = useRef<{ x: number; y: number; body: boolean } | null>(null);
   const swiped = useRef(false);
@@ -46,11 +52,13 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   useLayoutEffect(() => {
-    const { id, release } = pullSheetMounted(() => closeRef.current?.());
+    const { id, release } = pullSheetMounted(() => closeRef.current?.(), Date.now(), tag);
     setId(id);
     return release;
-  }, []);
+  }, [tag]);
   const { top, below } = useSheetPlace(id);
+  const wide = useColumnWide();
+  const slot = useLeftColumn((s) => s.slot);
   // On a phone the sheet spans the width: publish its height so Center on my location rides above it.
   useLayoutEffect(() => {
     const el = ref.current;
@@ -83,16 +91,16 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
       heightOwner = null;
       root.style.removeProperty("--pull-sheet-h");
     };
-  }, [top]);
+  }, [top, wide, slot]);
   // Open on a phone, locate rides just above the sheet (owner, 2026-10-27: "there isn't even a button
   // to zoom to my location"); only a full-height sheet leaves no room, so it steps aside then.
   useLayoutEffect(() => {
     const root = document.documentElement;
-    if (!top) return;
+    if (!top || wide) return;
     if (level) root.dataset.pullSheet = level === 2 ? "full" : "open";
     else delete root.dataset.pullSheet;
     return () => { delete root.dataset.pullSheet; };
-  }, [level, top]);
+  }, [level, top, wide]);
 
   const end = (e: PointerEvent) => {
     const s = start.current;
@@ -131,17 +139,29 @@ export function PullSheet({ level, onLevel, onSide, header, children, testId, la
 
   // Under another view: stay mounted (its place, level and scroll come back with Back) but draw nothing.
   if (!top) return null;
+  const head = below && onClose && !ownBack ? (
+    <div className="flex items-center gap-1.5">
+      <button type="button" data-testid="sheet-back" aria-label="Back" onClick={onClose} className="task-action task-close shrink-0"><ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden /></button>
+      <div className="min-w-0 flex-1">{header}</div>
+    </div>
+  ) : header;
+  // The left card: no grip and no levels, the whole view shows and its body scrolls.
+  if (wide) {
+    if (!slot) return null;
+    return createPortal(
+      <section ref={ref} data-testid={testId} data-level={2} aria-label={label} className="task-panel side-card">
+        {head}
+        {children}
+      </section>,
+      slot,
+    );
+  }
   return (
     <section ref={ref} data-testid={testId} data-level={level} data-map-cover aria-label={label}
       className="task-panel pull-sheet" onPointerDown={down} onClickCapture={eatClick}>
       <button type="button" className="pull-grip" data-testid="sheet-grip" aria-label={level === 2 ? "Show less" : "Show more"} aria-expanded={level > 0}
         onClick={() => onLevel(level === 2 ? 0 : ((level + 1) as SheetLevel))}><span aria-hidden /></button>
-      {below && onClose && !ownBack ? (
-        <div className="flex items-center gap-1.5">
-          <button type="button" data-testid="sheet-back" aria-label="Back" onClick={onClose} className="task-action task-close shrink-0"><ArrowLeft className="h-[18px] w-[18px]" strokeWidth={2.5} aria-hidden /></button>
-          <div className="min-w-0 flex-1">{header}</div>
-        </div>
-      ) : header}
+      {head}
       {level > 0 ? children : null}
     </section>
   );

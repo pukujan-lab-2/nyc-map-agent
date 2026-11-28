@@ -1,12 +1,8 @@
 import "@/components/task-screens.css";
-import { createPortal } from "react-dom";
-import { useFlag } from "@/lib/flags";
-import { useLeftCard } from "@/lib/store/leftColumn";
 import { ArrowUp, LocateFixed, WifiOff, X } from "lucide-react";
 import { useState } from "react";
 import { PullSheet } from "@/components/PullSheet";
 import type { SheetLevel } from "@/components/sheetSwipe";
-import { useMediaQuery } from "@/lib/useMediaQuery";
 import { alongLabel } from "./cues";
 import type { ExitPack } from "./pack";
 import { signText } from "./cues";
@@ -27,12 +23,7 @@ export function ExitTask(p: {
   const w = p.where;
   const here = !w || w.kind === "here";
   const away = exit && w?.kind === "here" && w.toExitM !== null ? `About ${w.toExitM} m from you` : null;
-  const wide = useMediaQuery("(min-width: 640px)");
   const [level, setLevel] = useState<SheetLevel>(1);
-  // A desktop with the agent home: the station and its exits are one card in the left column.
-  const home = useFlag("agentHome");
-  const desktop = useMediaQuery("(min-width: 1024px)");
-  const { slot, top } = useLeftCard(`exits:${p.pack.station.name}`, home && desktop);
   const exitTitle = exit ? signText(exit.streets, exit.corner)?.replace(/^Exit · /, "") ?? `Exit ${p.chosen + 1}` : "No street exits listed";
   const offline = !p.online ? <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-slate-300"><WifiOff size={14} />Offline</span> : null;
   const close = <button type="button" aria-label="Close underground help" className="task-action task-close" onClick={p.onClose}><X size={18} /></button>;
@@ -53,8 +44,9 @@ export function ExitTask(p: {
     </div> : null}
     {other ? <div className="flex w-full flex-col gap-1.5" aria-label="Other exits">{p.pack.exits.map((e, i) => <button type="button" key={i} className="task-action task-secondary min-h-9 text-left text-sm" aria-pressed={i === p.chosen} onClick={() => { p.onChoose(i); setOther(false); }}>{signText(e.streets, e.corner) ?? `Exit ${i + 1}`}</button>)}</div> : null}
   </>;
-  // A phone: the station and your exit rest as one line on the chat and pull up, so the map keeps the station, you and the way out (owner, 2026-10-25).
-  if (!wide) return (
+  // One sheet: on a phone the station and your exit rest as one line on the chat and pull up, so the map keeps
+  // the station, you and the way out (owner, 2026-10-25); from 640 px it is the left card.
+  return (
     <PullSheet testId="exit-sheet" label={`${p.pack.station.name} exits`} level={level} onLevel={setLevel} onClose={p.onClose}
       header={<div className="flex items-center gap-2.5">
         <button type="button" className="flex min-h-11 min-w-0 flex-1 flex-col justify-center text-left" aria-expanded={level > 0} onClick={() => setLevel((l) => (l === 0 ? 1 : l))}>
@@ -66,30 +58,6 @@ export function ExitTask(p: {
       <section className="pull-sheet-body mt-1 flex flex-col gap-2" aria-label="Station exits">{body}</section>
     </PullSheet>
   );
-  if (slot) return createPortal(
-    <section aria-label="Station exits" data-testid="exit-card" className={`task-panel ${top ? "flex" : "hidden"} min-h-0 flex-col gap-2 overflow-y-auto rounded-2xl px-3 py-2.5`}>
-      <div className="flex items-center gap-2">
-        <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{p.pack.station.name}</h2>
-        {offline}
-        {close}
-      </div>
-      {body}
-    </section>,
-    slot,
-  );
-  return <>
-    <div className="task-top flex items-center gap-2">
-      <div className="task-panel flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-full px-3 py-1.5">
-        <h2 className="text-sm font-semibold">{p.pack.station.name}</h2>
-        {offline}
-      </div>
-      {close}
-    </div>
-    {/* A short strip under the station name: the map below shows you, the exit and the way there (owner, 2026-10-25). */}
-    <section style={{ top: "calc(env(safe-area-inset-top) + 132px)" }} className="task-panel absolute left-3 z-40 flex max-h-[calc(100dvh-250px)] w-[min(420px,calc(100%-104px))] flex-col gap-2 overflow-y-auto rounded-2xl px-3 py-2.5" aria-label="Station exits">
-      {body}
-    </section>
-  </>;
 }
 
 /** "Are you at Flushing Av?", "Finding you…" or "You're 1.2 km from Flushing Av", with the one or two buttons that answer it. */

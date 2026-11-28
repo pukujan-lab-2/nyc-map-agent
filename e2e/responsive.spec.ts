@@ -26,8 +26,10 @@ async function ask(page: Page, text: string) {
 }
 
 /** The app with the network mocked; `answer` is what the agent says (registered after the mocks, so it wins). */
-async function open(page: Page, answer: unknown[] = []) {
+async function open(page: Page, answer: unknown[] = [], routes?: (page: Page) => Promise<void>) {
   await mockNetwork(page);
+  // Added after the mocks, so they win over the catch-all.
+  await routes?.(page);
   if (answer.length) await page.route("**/api/agent", (r) => r.fulfill({ contentType: "application/x-ndjson", body: stream([...answer, { type: "done" }]) }));
   await page.goto("/");
   await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible();
@@ -150,7 +152,7 @@ for (const size of SIZES) {
       await tripDetails(page);
       await page.getByRole("button", { name: "Use this route", exact: true }).click();
       await expect(page.getByRole("region", { name: "Walking guidance", exact: true })).toBeVisible();
-      const next = page.getByRole("region", { name: "Next on this trip" });
+      const next = page.getByTestId("walk-next");
       await expect(next).toContainText("Then the 4 train");
       await expectLayout(page);
       await next.getByRole("button", { name: "I'm at the station" }).click();
@@ -188,18 +190,18 @@ for (const size of SIZES) {
       await expect(mini).toBeVisible();
       await page.waitForTimeout(900);
       await expectLayout(page);
-      // Change view names the preview's own view for what it is: a walk through your eyes, not a flat map.
-      await page.getByRole("button", { name: "Change view", exact: true }).first().click();
-      await expect(page.getByRole("menuitemradio", { name: /Walkthrough/ })).toHaveAttribute("aria-checked", "true");
+      // The map style names the preview's own view for what it is: a walk through your eyes, not a flat map.
+      await page.getByTestId("map-style-button").click();
+      await expect(page.getByRole("radio", { name: /Walkthrough/ })).toHaveAttribute("aria-checked", "true");
       await expectLayout(page);
-      // The mini map steps aside while Change view is open, and is back once a view is picked.
+      // The mini map steps aside while the camera choice is open, and is back once a view is picked.
       await expect(mini).toBeHidden();
-      await page.getByRole("menuitemradio", { name: /Chase/ }).click();
+      await page.getByRole("radio", { name: /Chase/ }).click();
       await expect(mini).toBeVisible();
       await expectLayout(page);
       // Tapping it goes to the flat map, as it does when following a train; it stays in the corner.
       await mini.click();
-      await expect(page.getByRole("button", { name: "Change view", exact: true }).first()).toBeVisible();
+      await expect(page.getByTestId("map-style-button")).toBeVisible();
       await expect(mini).toBeVisible();
       await expectLayout(page);
     });
@@ -373,7 +375,7 @@ for (const size of SIZES) {
     test("the where-am-I helper, online and with no network", async ({ page, context }) => {
       await open(page, [{ type: "text", text: "Look for the station name on the wall by the stairs." }]);
       await page.getByRole("button", { name: "Find exit", exact: true }).click();
-      const helper = page.getByTestId(size.width < 640 ? "lost-sheet" : "lost-card");
+      const helper = page.getByTestId("lost-sheet");
       await expect(helper).toBeVisible();
       await expect(page.getByTestId("lost-thread")).toContainText("Which station are you in");
       await expect(page.getByTestId("home-tasks")).toHaveCount(0);
@@ -458,14 +460,116 @@ for (const size of SIZES) {
       await page.waitForTimeout(1000); // the live layers, including the alert marker layers (#647), are mounted
       await expectLayout(page);
     });
+  });
+}
 
-    test("a line panel", async ({ page }) => {
+/**
+ * Every panel opens in one place (owner, 2026-11-27, #180): the phone's one bottom sheet, resting on the chat
+ * bar, or from 640 px the left card with the chat bar at its foot. Nothing else floats over the map. These run
+ * at the layout bar's sizes and at a 768×1024 tablet, which no longer has a layout of its own.
+ */
+const ONE_PLACE_SIZES = [...SIZES, { name: "tablet", width: 768, height: 1024 }] as const;
+
+// The 2 line's live trains (captured from /api/transit-live, trimmed), moved to now so they run.
+const TWO_LINE = JSON.parse(readFileSync(new URL("./fixtures/transit-live-2-line.json", import.meta.url), "utf8")) as {
+  at: number; systems: { subway: { at: number; trips: Array<{ stops: Array<[string, number]>; vt: number }> } }; alerts: { at: number };
+};
+function liveTwoLine(): string {
+  const now = Math.floor(Date.now() / 1000);
+  const shift = now - Math.min(...TWO_LINE.systems.subway.trips.map((t) => t.vt));
+  const d = structuredClone(TWO_LINE);
+  d.at = d.systems.subway.at = d.alerts.at = now;
+  for (const t of d.systems.subway.trips) { t.vt += shift; t.stops = t.stops.map(([s, at]) => [s, at + shift]); }
+  return JSON.stringify(d);
+}
+
+/** The view is in the one place: on a phone the full-width sheet on the bar, from 640 px inside the left card. */
+async function expectInSheet(page: Page, testId: string) {
+  const view = page.getByTestId(testId);
+  await expect(view).toBeVisible();
+  const v = (await view.boundingBox())!;
+  const bar = (await page.getByTestId("agent-bar").boundingBox())!;
+  const W = page.viewportSize()!.width;
+  if (W < 640) {
+    expect(v.x, `${testId} spans the phone`).toBeLessThanOrEqual(1);
+    expect(v.x + v.width, `${testId} spans the phone`).toBeGreaterThanOrEqual(W - 1);
+    expect(v.y + v.height, `${testId} rests on the chat bar`).toBeLessThanOrEqual(bar.y + 1);
+    return;
+  }
+  const card = (await page.getByTestId("agent-card").boundingBox())!;
+  expect(v.x, `${testId} is in the left card`).toBeGreaterThanOrEqual(card.x - 1);
+  expect(v.x + v.width, `${testId} is in the left card`).toBeLessThanOrEqual(card.x + card.width + 1);
+  expect(v.y + v.height, `${testId} sits above the chat bar`).toBeLessThanOrEqual(bar.y + 1);
+  expect(card.x + card.width, "the left card leaves the middle of the map clear").toBeLessThan(W / 2);
+}
+
+/** How many sheet views are drawn: there is only ever one. */
+const views = (page: Page) => page.locator(".pull-sheet, .side-card");
+
+for (const size of ONE_PLACE_SIZES) {
+  test.describe(`one place for panels at ${size.name} ${size.width}×${size.height}`, () => {
+    test.beforeEach(async ({ page }) => {
+      await page.setViewportSize({ width: size.width, height: size.height });
+    });
+
+    test("the idle map: the map style pair at the top right, zoom only from 640 px", async ({ page }) => {
+      await open(page);
+      const pair = page.getByTestId("map-style-button");
+      await expect(pair).toBeVisible();
+      await expect(page.getByTestId("locate-button")).toBeVisible();
+      const b = (await pair.boundingBox())!;
+      expect(b.x + b.width).toBeGreaterThan(size.width - 72);
+      expect(b.y).toBeLessThan(80);
+      await expect(page.getByTestId("zoom-buttons")).toBeVisible({ visible: size.width >= 640 });
+      await expect(page.getByTestId("map-view-switch")).toHaveCount(0);
+      await expect(page.getByTestId("compass")).toHaveCount(0);
+      if (size.width >= 640) await expect(page.getByTestId("agent-card")).toBeVisible();
+      await expectLayout(page);
+    });
+
+    test("the map style sheet and More layers", async ({ page }) => {
+      await open(page);
+      await page.getByTestId("map-style-button").click();
+      await expectInSheet(page, "map-style-sheet");
+      const sheet = page.getByTestId("map-style-sheet");
+      await expect(sheet.getByTestId("map-view-switch").getByRole("radio")).toHaveText(["Map", "3D", "Street"]);
+      await expect(sheet.getByTestId("more-layers")).toBeVisible();
+      await expectLayout(page);
+      await sheet.getByTestId("more-layers").click();
+      await expectInSheet(page, "layers-drawer");
+      await expect(views(page)).toHaveCount(1);
+      await expectLayout(page);
+      await page.getByTestId("layers-drawer").getByTestId("sheet-back").click();
+      await expect(page.getByTestId("layers-drawer")).toHaveCount(0);
+      await expect(sheet).toBeVisible();
+    });
+
+    test("a line panel and following one of its trains", async ({ page }) => {
       await open(page, [
-        { type: "text", text: "The 7 is running with delays." },
-        { type: "actions", actions: [{ kind: "showLine", id: "line:7", label: "See the 7 trains live", route: "7" }] },
-      ]);
-      await ask(page, "How is the 7?");
-      await page.getByRole("button", { name: "See the 7 trains live" }).click();
+        { type: "text", text: "The 2 is running with delays." },
+        { type: "actions", actions: [{ kind: "showLine", id: "line:2", label: "See the 2 trains live", route: "2" }] },
+      ], async (p) => {
+        await p.route("**/api/transit-live*", (r) => r.fulfill({ contentType: "application/json", body: liveTwoLine() }));
+        await p.route("**/api/transit", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ bus: false }) }));
+      });
+      await ask(page, "How is the 2?");
+      await page.getByRole("button", { name: "See the 2 trains live" }).click();
+      await expectInSheet(page, "line-panel");
+      await expect(views(page)).toHaveCount(1);
+      await expectLayout(page);
+      // The live trains are drawn a moment after the feed lands: ask again until one is there to follow.
+      const card = page.getByTestId("follow-card");
+      await expect.poll(async () => {
+        if (await card.count()) return 1;
+        const follow = page.getByTestId("line-panel").getByRole("button", { name: "Follow a train" });
+        if (await follow.isVisible()) await follow.click();
+        await page.waitForTimeout(500);
+        return card.count();
+      }, { timeout: slow(30_000) }).toBeGreaterThan(0);
+      await expectInSheet(page, "follow-card");
+      // Apple Maps' navigation screen: the next stop is a banner at the top, everything else is in the sheet.
+      const banner = (await page.getByTestId("follow-heading").boundingBox())!;
+      expect(banner.y).toBeLessThan(size.height / 3);
       await page.waitForTimeout(800);
       await expectLayout(page);
     });
@@ -498,39 +602,35 @@ for (const size of SIZES) {
       }
     });
 
-    // Owner, 2026-11-07: the station sheet and the line sheet stacked and cut each other off. A phone has one
+    // Owner, 2026-11-07: the station sheet and the line sheet stacked and cut each other off. There is one
     // sheet: the line comes up as its next view, Back returns to the station, and Close empties it (#53).
     test("a station, one of its lines, and back", async ({ page }) => {
       const phone = size.width < 640;
-      const sheets = page.locator(".pull-sheet");
       await open(page);
       await page.waitForFunction(() => typeof (window as unknown as { __openStation?: unknown }).__openStation === "function", null, { timeout: slow(15_000) });
       await page.evaluate(() => (window as unknown as { __openStation: (s: string, id: string, name: string) => void }).__openStation("subway", "G13", "Elmhurst Av"));
       const station = page.getByTestId("details-sheet");
-      await expect(station).toBeVisible();
+      await expectInSheet(page, "details-sheet");
+      await expectLayout(page);
       if (phone) await station.getByTestId("sheet-grip").click();
       await page.getByRole("button", { name: "Show only the M line" }).click();
       const line = page.getByTestId("line-panel");
       await expect(line).toBeVisible();
-      if (!phone) {
-        await expectLayout(page);
-        return;
-      }
       await expect(station).toHaveCount(0);
-      await expect(sheets).toHaveCount(1);
+      await expect(views(page)).toHaveCount(1);
       await expectLayout(page);
 
       await line.getByTestId("sheet-back").click();
       await expect(line).toHaveCount(0);
       await expect(station).toBeVisible();
       await expect(page.getByRole("button", { name: "Show only the M line" })).toBeVisible();
-      await expect(sheets).toHaveCount(1);
+      await expect(views(page)).toHaveCount(1);
       await expectLayout(page);
 
       await page.getByRole("button", { name: "Show only the M line" }).click();
-      await expect(sheets).toHaveCount(1);
+      await expect(views(page)).toHaveCount(1);
       await line.getByRole("button", { name: "Close line" }).click();
-      await expect(sheets).toHaveCount(0);
+      await expect(views(page)).toHaveCount(0);
       await expect(station).toHaveCount(0);
     });
   });

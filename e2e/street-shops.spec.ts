@@ -61,13 +61,9 @@ for (const size of SIZES) {
     // East End Avenue at East 84 Street: no subway entrance or station label within reach of a tap.
     await page.goto("/?at=-73.9445,40.7745,0");
     await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible({ timeout: slow(20_000) });
-    // A phone opens the view menu from one button; wider screens show the three views side by side.
-    const street = page.getByRole("radiogroup", { name: "View" }).getByRole("radio", { name: "Street" });
-    if (await street.isVisible()) await street.click();
-    else {
-      await page.getByRole("button", { name: "Change view" }).click();
-      await page.getByRole("menu", { name: "Change view" }).getByText("Street", { exact: true }).click();
-    }
+    // The map style button opens Map, 3D and Street at every size.
+    await page.getByTestId("map-style-button").click();
+    await page.getByRole("radiogroup", { name: "View" }).getByRole("radio", { name: "Street" }).click();
     // Eye level, and the sign layer's code has arrived (it loads with the street's 3D city).
     await page.waitForFunction(() => {
       const map = (window as unknown as { __map?: { getPitch(): number; getLayer(id: string): unknown } }).__map;

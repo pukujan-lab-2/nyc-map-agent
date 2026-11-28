@@ -57,27 +57,41 @@
   touch-action: manipulation;
 }
 .task-caption { color: #a5b4cb; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-/* Tablet and desktop: docked to the left edge, above the chat bar; nothing covers the map's middle. */
+/* From 640 px a banner (walking guidance, the followed train's next stop) heads the left side, and the
+   left card starts under it (--task-top-h, published by the banner). */
 @media (min-width: 640px) {
-  .task-top, .task-bottom { width: min(380px, 42vw); }
-  .task-bottom {
-    left: 12px;
-    bottom: calc(var(--chat-bar-h, 96px) + 16px);
-    max-height: calc(100dvh - env(safe-area-inset-top) - 76px - var(--chat-bar-h, 96px) - 28px);
-  }
+  .task-top { left: var(--edge, 12px); top: calc(env(safe-area-inset-top) + var(--topbar-h, 0px) + var(--edge, 12px)); width: min(400px, 44vw); }
 }
-/* Pull sheet (follow, line): one line resting on the chat bar, pulled up for more. It never grows past the
-   point where the focus (a followed train, a picked line), kept in the clear map above it, would be hidden. */
+/* The phone's one sheet: a view resting on the chat bar, pulled up for more, the bar at its foot wearing the
+   same glass (AgentHome). It never grows past the point where the focus (a followed train, a picked line),
+   kept in the clear map above it, would be hidden. */
 .pull-sheet {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: calc(var(--chat-bar-h, 96px) + 6px);
+  left: 0;
+  right: 0;
+  bottom: var(--chat-bar-h, 96px);
   z-index: 40;
   display: flex;
   flex-direction: column;
-  padding: 2px 8px 8px;
+  padding: 2px 12px 8px;
+  border-bottom: 0;
+  border-radius: 22px 22px 0 0;
   touch-action: none;
+}
+/* From 640 px: the same view, as the top of the left card (AgentHome draws the card's glass). */
+.side-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 /* Level 1 also leaves room under the top-right buttons for Center on my location (44 px, plus its 12 px gap and the 8 px --pull-sheet-h adds, plus 12 px clear). */
 .pull-sheet[data-level="1"] { max-height: min(46dvh, calc(100dvh - var(--chat-bar-h, 96px) - 250px), calc(100dvh - var(--chat-bar-h, 96px) - var(--map-chrome-bottom, 0px) - 76px)); }
@@ -87,10 +101,6 @@
 .pull-grip { display: flex; flex: 0 0 auto; justify-content: center; width: 100%; height: 24px; min-height: 24px; padding: 6px 0 0; border: 0; background: transparent; }
 .pull-grip > span { width: 40px; height: 5px; border-radius: 3px; background: rgba(203, 213, 225, .55); }
 .pull-grip:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; border-radius: 8px; }
-@media (max-width: 639px) { [data-pull-sheet="full"] .sheet-locate, [data-answer-sheet="full"] .sheet-locate { display: none; } }
-@media (min-width: 640px) {
-  .pull-sheet { left: 12px; right: auto; width: min(380px, 42vw); bottom: calc(var(--chat-bar-h, 96px) + 16px); }
-}
 /* Arrival: a speech bubble just above the chat bar, where every answer lands (owner, 2026-10-26); it points down at the chat. */
 .arrive-bubble {
   position: fixed;
@@ -140,24 +150,11 @@
 }
 @media (prefers-reduced-motion: reduce) { .arrive-bubble { animation: none; } }
 
-/* Bottom-right corner group (owner, 2026-10-27): Map · 3D · Street stacked over Center on my location.
-   Phones keep them just above the chat bar; from 768px the chat bar is centred, so they sit in the
-   corner itself, over the map credits' "i". */
-/* A full-width task card on a phone (the walk to the station) lifts them above it: --task-bottom-h is its height. */
-.corner-locate { right: 16px; bottom: max(calc(var(--chat-bar-h, 0px) + var(--pull-sheet-h, 0px) + 12px), calc(env(safe-area-inset-bottom) + 112px + var(--task-bottom-h, -999px))); }
-.corner-view { right: 12px; bottom: max(calc(var(--chat-bar-h, 0px) + var(--pull-sheet-h, 0px) + 66px), calc(env(safe-area-inset-bottom) + 166px + var(--task-bottom-h, -999px))); }
-/* 640-767px: the credits' "i" stays at the right, just above the chat bar, so the stack starts above it. */
-@media (min-width: 640px) and (max-width: 767px) {
-  .corner-locate { bottom: calc(var(--chat-bar-h, 0px) + var(--pull-sheet-h, 0px) + 40px); }
-  .corner-view { bottom: calc(var(--chat-bar-h, 0px) + var(--pull-sheet-h, 0px) + 94px); }
-}
-@media (min-width: 768px) {
-  .corner-locate { bottom: calc(var(--pull-sheet-h, 0px) + 44px); }
-  .corner-view { bottom: calc(var(--pull-sheet-h, 0px) + 98px); }
-}
-/* The follow mini map (a followed train, or a trip preview's rider): bottom right on a phone, where the
-   cube button stands alone; from 640px, left of the Map · 3D · Street stack, so it never sits on it. */
-.corner-mini { right: 16px; bottom: calc(var(--chat-bar-h, 0px) + var(--pull-sheet-h, 0px) + 68px); }
-@media (min-width: 640px) { .corner-mini { right: 76px; } }
-/* One thing open at a time: while Change view is open, the mini map steps aside instead of lying under it. */
+/* The follow mini map (a followed train, or a trip preview's rider): bottom right, just above the sheet on a
+   phone; from 640 px left of + and −, so it never sits on them. */
+.corner-mini { right: 16px; bottom: calc(var(--chat-bar-h, 0px) + var(--pull-sheet-h, 0px) + 12px); }
+@media (min-width: 640px) { .corner-mini { right: 76px; bottom: 44px; } }
+/* One thing open at a time: while the camera choice is open, the mini map steps aside instead of lying under it. */
 body:has([data-testid="follow-view-menu"]) .corner-mini { display: none; }
+/* In the left card the four task buttons wrap inside its padding instead of running off its edges. */
+[data-layout="column"] [data-testid="home-tasks"] { margin-inline: 0; padding-inline: 0; flex-wrap: wrap; justify-content: flex-start; overflow: visible; }

@@ -216,8 +216,8 @@ test("the follow mini map names the bus's next stop, never its stop id", async (
     await page.waitForTimeout(500);
     return card.count();
   }, { timeout: slow(30_000) }).toBeGreaterThan(0);
-  await page.getByTestId("view-button").click();
-  await page.getByTestId("follow-view-menu").getByRole("menuitemradio", { name: /Chase/ }).click();
+  await page.getByTestId("map-style-button").click();
+  await page.getByTestId("follow-view-menu").getByRole("radio", { name: /Chase/ }).click();
   const mini = page.getByTestId("follow-minimap");
   await expect(mini).toContainText("Next: Greenpoint Avenue/Manhattan Avenue", { timeout: slow(15_000) });
   await expect(mini).not.toContainText("305423");

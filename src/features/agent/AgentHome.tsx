@@ -3,8 +3,8 @@ import { formatStationName } from "@/lib/streetName";
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/ui/button";
 import { nextLevel, swipeOf, type SheetLevel } from "@/components/sheetSwipe";
-import { setLeftAnswer, setLeftChips, setLeftSheet, setLeftSlot, useLeftColumn } from "@/lib/store/leftColumn";
-import { useMediaQuery } from "@/lib/useMediaQuery";
+import { setLeftChips, setLeftSheet, setLeftSlot, useColumnWide } from "@/lib/store/leftColumn";
+import { pullSheetMounted, raiseSheet, usePullSheetUp, useSheetPlace } from "@/lib/store/pullSheet";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/appLang";
 import { removeShell, shellFocused, shellText } from "@/lib/shellDraft";
@@ -234,24 +234,40 @@ const PHONE_ANSWER_H: Record<SheetLevel, string> = {
  * it when nothing is open, and the answer or the voice orb in a translucent
  * sheet that wraps the bar so the map shows through.
  *
- * On a wide screen an open answer or map card makes it one left column (owner,
- * 2026-10-28): the card at the top, the answer under it, the ask box at the foot,
- * so the middle of the map stays clear. On a phone the answer pulls up and down.
+ * From 640 px it is one left card that is always there (owner, 2026-11-14 and
+ * 2026-11-27, #180): the top view of the one sheet (src/lib/store/pullSheet.ts) or
+ * the answer above, the ask box at its foot, so the middle of the map stays clear.
+ * On a phone the answer pulls up and down, and other views rest on the bar.
+ * The answer is a view of that sheet too: a card opened over it hides it until Back.
  */
 export function AgentHome(p: AgentHomeProps) {
   const t = useT();
   const scroller = useRef<HTMLDivElement>(null);
   const { orb, answerOpen, onCloseAnswer, hidden } = p;
   const sheet = orb.show || answerOpen;
-  const wide = useMediaQuery("(min-width: 1024px)");
-  const tablet = useMediaQuery("(min-width: 640px)");
-  const card = useLeftColumn((s) => s.cards.length > 0);
-  const column = !hidden && wide && (sheet || card);
+  const wide = useColumnWide();
+  const column = !hidden && wide;
   useLayoutEffect(() => {
-    setLeftAnswer(!hidden && wide && sheet);
-    setLeftSheet(!hidden && tablet && sheet);
-    return () => { setLeftAnswer(false); setLeftSheet(false); };
-  }, [hidden, wide, tablet, sheet]);
+    setLeftSheet(column);
+    return () => setLeftSheet(false);
+  }, [column]);
+  // The answer (or the orb) is a view of the one sheet: on top when it opens and when a new question is
+  // sent; a line or a card it opens goes over it, and their Back brings it again.
+  const closeAnswer = useRef(() => {});
+  closeAnswer.current = orb.show ? orb.stop : onCloseAnswer;
+  const [answerId, setAnswerId] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (!sheet || hidden) return;
+    const { id, release } = pullSheetMounted(() => closeAnswer.current());
+    setAnswerId(id);
+    return () => { release(); setAnswerId(null); };
+  }, [sheet, hidden]);
+  useLayoutEffect(() => { if (p.busy && answerId !== null) raiseSheet(answerId); }, [p.busy, answerId]);
+  useLayoutEffect(() => { if (orb.show && answerId !== null) raiseSheet(answerId); }, [orb.show, answerId]);
+  const answerTop = useSheetPlace(answerId).top;
+  const shown = sheet && (answerId === null || answerTop);
+  // Another view is on top: on a phone it rests on the bar, and the bar wears the sheet's glass under it.
+  const viewUp = usePullSheetUp() && !shown;
 
   // A phone's answer box pulls up (more answer) and down (more map); each new question starts at the usual size.
   const [level, setLevel] = useState<SheetLevel>(1);
@@ -284,7 +300,7 @@ export function AgentHome(p: AgentHomeProps) {
     if (busy) setLevel(1);
   }, [busy]);
   // Pulled all the way up, Center on my location gives way, as it does for a full line sheet.
-  const tall = !column && answerOpen && level === 2;
+  const tall = !column && answerOpen && shown && level === 2;
   useLayoutEffect(() => {
     if (!tall) return;
     const root = document.documentElement;
@@ -295,7 +311,7 @@ export function AgentHome(p: AgentHomeProps) {
   // Escape stops the orb first, then closes the answer. Not while someone is
   // part-way through typing: the first Escape there is theirs, not the answer's.
   useEffect(() => {
-    if (!orb.show && !answerOpen) return;
+    if (!shown) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       const field = e.target as HTMLInputElement | null;
@@ -305,7 +321,7 @@ export function AgentHome(p: AgentHomeProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [orb, answerOpen, onCloseAnswer]);
+  }, [orb, shown, onCloseAnswer]);
 
   // Publish how much of the screen bottom the home takes as --chat-bar-h, so
   // map controls sit above it. 0px while hidden; unset on unmount. The left
@@ -353,18 +369,18 @@ export function AgentHome(p: AgentHomeProps) {
   if (p.hidden) return null;
 
   const typed = p.input.trim().length > 0;
-  const shown = p.dictation.on && p.interim ? `${p.input ? `${p.input} ` : ""}${p.interim}` : p.input;
+  const boxText = p.dictation.on && p.interim ? `${p.input ? `${p.input} ` : ""}${p.interim}` : p.input;
 
   const bar = (
     <form
       ref={barRef}
       data-testid="agent-bar"
-      className={cn("pointer-events-auto flex shrink-0 items-center gap-2 rounded-[30px] bg-slate-50 p-1.5", !sheet && "shadow-[0_8px_24px_rgba(0,0,0,0.45)]")}
+      className={cn("pointer-events-auto flex shrink-0 items-center gap-2 rounded-[30px] bg-slate-50 p-1.5", !sheet && !column && !viewUp && "shadow-[0_8px_24px_rgba(0,0,0,0.45)]")}
       onSubmit={(e) => { e.preventDefault(); p.onSend(p.input); }}
     >
       <input
         ref={p.inputRef}
-        value={shown}
+        value={boxText}
         readOnly={p.dictation.on}
         onChange={(e) => p.setInput(e.target.value)}
         placeholder={p.placeholder ?? (answerOpen ? t("askFollowUp") : t("askAnything"))}
@@ -403,7 +419,9 @@ export function AgentHome(p: AgentHomeProps) {
 
   const content = (
     <>
-      {orb.show ? (
+      {!shown ? (
+        sheet ? null : p.idle
+      ) : orb.show ? (
         <VoiceOrb listening={orb.listening} transcript={orb.transcript} onStop={orb.stop} />
       ) : answerOpen ? (
         <section aria-label="Assistant answer" data-testid="agent-answers" className="relative flex min-h-0 flex-col">
@@ -442,57 +460,49 @@ export function AgentHome(p: AgentHomeProps) {
     </>
   );
 
-  // Status chips (buses, live paused, back to street) print in one row at the top of the left side.
-  const chips = !hidden && wide ? (
+  // Status chips (live paused, back to street) print in one row at the top of the left side.
+  const chips = column ? (
     <div ref={setLeftChips} data-testid="left-chips" data-map-cover
       className="pointer-events-none flex shrink-0 flex-wrap items-center gap-2 empty:hidden [&>*]:pointer-events-auto" />
   ) : null;
 
-  // One tree for both shapes, so the ask box keeps its cursor when the column opens.
+  // One tree for both shapes, so the ask box keeps its cursor when the screen changes size.
   return (
-    <>
-    {column ? null : chips ? (
-      <div className="pointer-events-none fixed left-[var(--edge)] top-[calc(var(--topbar-h,64px)+var(--sp-3))] z-[45] w-[min(400px,44vw)]">{chips}</div>
-    ) : null}
     <div
       data-testid="agent-home"
       data-layout={column ? "column" : undefined}
       className={cn(
-        // Only the answer and the ask box are dark; cards and chips above them keep the app's theme.
         "pointer-events-none fixed z-[45] flex",
         column
-          ? "bottom-4 left-[var(--edge)] top-[calc(var(--topbar-h,64px)+var(--sp-3))] w-[min(400px,44vw)] flex-col gap-3"
+          ? "bottom-4 left-[var(--edge)] top-[calc(var(--topbar-h,0px)+var(--task-top-h,0px)+var(--edge))] w-[min(400px,44vw)] flex-col gap-3"
           : "inset-x-0 bottom-0 justify-center",
-        !column && sheet && "sm:justify-start sm:pl-3",
       )}
     >
-      {column ? chips : null}
-      {/* A map card (MapPanel) prints here; it leaves the answer at least half the column. */}
-      {column ? <div ref={setLeftSlot} data-testid="left-slot" data-map-cover className={cn("flex min-h-0 shrink flex-col empty:hidden", sheet && "max-h-[50%]")} /> : null}
+      {chips}
       <div
         ref={stackRef}
-        // An open answer or the orb is a map cover: the map keeps you and the answer's place beside it.
-        data-map-cover={sheet ? "" : undefined}
+        data-testid="agent-card"
+        // The card, an open answer and the views over the bar are map covers: the map keeps its focus beside them.
+        data-map-cover={column || sheet || viewUp ? "" : undefined}
         className={cn(
           "dark pointer-events-none flex w-full flex-col",
           column
-            ? "mt-auto min-h-0"
+            ? "pointer-events-auto mt-auto min-h-0 gap-3 rounded-[24px] border border-[#263449] bg-[#0b1220]/80 p-3 shadow-2xl backdrop-blur-xl"
             : cn(
               "sm:mb-4 sm:max-w-[480px]",
-              // An open answer docks to the left on wide screens, so the middle of the map stays clear.
-              sheet && "max-h-[calc(100dvh-5rem)] rounded-t-[24px] border-t px-4 pt-4 sm:max-w-[min(420px,44vw)] sm:rounded-[24px] sm:border",
-              !sheet && "px-4",
-              p.lift ? "pb-[calc(env(safe-area-inset-bottom)+4.25rem)]" : "pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:pb-4",
+              shown && sheet && "max-h-[calc(100dvh-5rem)] rounded-t-[24px] border-t px-4 pt-4",
+              !(shown && sheet) && "px-4",
+              viewUp && "pointer-events-auto bg-[rgba(11,18,32,.55)] pt-2 backdrop-blur-[14px]",
+              p.lift ? "pb-[calc(env(safe-area-inset-bottom)+4.25rem)]" : "pb-[calc(env(safe-area-inset-bottom)+1.5rem)]",
+              shown && sheet ? "pointer-events-auto gap-3.5 border-[#263449] bg-[#0b1220]/80 shadow-2xl backdrop-blur-xl" : "gap-3",
             ),
-          sheet
-            ? cn("pointer-events-auto gap-3.5 border-[#263449] bg-[#0b1220]/80 shadow-2xl backdrop-blur-xl", column && "rounded-[24px] border p-4")
-            : "gap-3",
         )}
       >
+        {/* The top view of the one sheet prints here (PullSheet), over the answer it hides. */}
+        {column ? <div ref={setLeftSlot} data-testid="left-slot" className="flex min-h-0 shrink flex-col empty:hidden" /> : null}
         {content}
         {bar}
       </div>
     </div>
-    </>
   );
 }
