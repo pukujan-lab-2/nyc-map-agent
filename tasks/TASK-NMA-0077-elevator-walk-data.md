@@ -79,6 +79,29 @@ Blocked/uncertain:
 Next:
 - Open the pull request with auto-merge; then the elevator walk screen uses this data.
 
+### 2026-11-28 01:39:10 UTC — agent:claude-code/b525f1c1-5adf-4746-8520-2cc2f4859686
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/b525f1c1-5adf-4746-8520-2cc2f4859686","blocked":[],"changed":["e2e/mocks.ts, playwright.config.ts"],"completed":["Browser tests spoke alerts aloud on the owner's Mac; they now run muted with a silent speech stub, committed in the same pull request."],"decisions":["no new decisions"],"evidence":["Pull request #282 open with squash auto-merge; the speech stub and --mute-audio are in commit 05a40d4f."],"evidence_class":"observed","next_action":"Let #282 merge when CI passes; then the elevator walk screen uses this data.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0077","timestamp":"2026-11-28T01:39:10Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"231c2975385d3e5581a336b2ea8a116111a084dd5ab785169d7ade41021ebc4c","request_id":"e568adf29c6440ef97512b10eebcfea1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0077"} -->
+
+Completed:
+- Browser tests spoke alerts aloud on the owner's Mac; they now run muted with a silent speech stub, committed in the same pull request.
+
+Evidence:
+- Pull request #282 open with squash auto-merge; the speech stub and --mute-audio are in commit 05a40d4f.
+
+Decisions:
+- no new decisions
+
+Changed:
+- e2e/mocks.ts, playwright.config.ts
+
+Blocked/uncertain:
+- none
+
+Next:
+- Let #282 merge when CI passes; then the elevator walk screen uses this data.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
