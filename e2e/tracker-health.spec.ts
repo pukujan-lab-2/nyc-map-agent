@@ -148,15 +148,18 @@ for (const size of SIZES) {
     test("the You card links to tracker health", async ({ page }) => {
       await mock(page, true);
       await page.goto("/");
+      await expect(page.locator("canvas.maplibregl-canvas").first()).toBeVisible({ timeout: slow(20_000) });
       await page.getByTestId("me-button").click({ timeout: slow(20_000) });
       const panel = page.getByTestId("settings-sheet");
       const link = panel.getByTestId("open-tracker-health");
       await expect(link).toBeAttached({ timeout: slow(20_000) });
       await expectLayout(page);
-      // The card opens half way and the link is near its foot, so pull it up as a person would.
-      await panel.getByTestId("sheet-grip").click();
-      await expect(panel).toHaveAttribute("data-level", "2");
-      await expectLayout(page);
+      // A phone's card opens half way and the link is near its foot, so pull it up as a person would.
+      if (size.width < 640) {
+        await panel.getByTestId("sheet-grip").click();
+        await expect(panel).toHaveAttribute("data-level", "2");
+        await expectLayout(page);
+      }
       await link.click();
       await expect(page).toHaveURL(/\/tracker-health$/);
       await expect(page.getByTestId("tracker-health")).toBeVisible({ timeout: slow(15_000) });

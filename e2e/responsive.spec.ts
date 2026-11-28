@@ -33,11 +33,16 @@ async function openYou(page: Page) {
   return card;
 }
 
+/** A phone's sheet pulled all the way up, as a rider would; from 640 px the card has no grip. */
+async function pullUp(card: ReturnType<Page["getByTestId"]>) {
+  if (card.page().viewportSize()!.width < 640) await card.getByTestId("sheet-grip").click();
+}
+
 /** The You card's Settings view, pulled all the way up so every row is clear of the header. */
 async function openSettings(page: Page) {
   const card = await openYou(page);
   await card.getByTestId("you-settings").click();
-  await card.getByTestId("sheet-grip").click();
+  await pullUp(card);
   return card.getByTestId("settings-panel");
 }
 
@@ -327,7 +332,7 @@ for (const size of SIZES) {
       await open(page);
       await page.route("**/api/presenter/status", (r) => r.fulfill({ json: { haiku: false, octo: false, dictate: false } }));
       const card = await openYou(page);
-      await card.getByTestId("sheet-grip").click();
+      await pullUp(card);
       const link = card.getByTestId("open-presenter");
       await expect(link).toBeVisible();
       await expectLayout(page);
@@ -583,7 +588,7 @@ test("the QR panel offers more than a code", async ({ page }) => {
     await page.setViewportSize(size);
     await open(page);
     const card = await openYou(page);
-    await card.getByTestId("sheet-grip").click();
+    await pullUp(card);
     await card.getByTestId("qr-button").click();
     const sheet = page.getByTestId("qr-sheet");
     await expect(sheet).toBeVisible();
