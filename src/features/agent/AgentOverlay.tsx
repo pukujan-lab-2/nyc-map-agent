@@ -1,4 +1,5 @@
 import { usePullSheetUp } from "@/lib/store/pullSheet";
+import { requestRestroomPick } from "@/lib/store/restroomPick";
 import { Bus, Car, ChevronUp, Compass, Footprints, Headphones, LocateFixed, Mic, MicOff, MoreVertical, Pause, Play, Send, SkipForward, X } from "lucide-react";
 import { legFocus } from "./legFocus";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -175,6 +176,7 @@ export default function AgentOverlay() {
   const driveOn = useFlag("agentDrive");
   // The station replay fills the left column or the top of a phone: the task row has no room beside it.
   const replayOn = useFlag("stationReplay");
+  const restroomsOn = useFlag("restrooms");
   const [messages, setMessages] = useState<Msg[]>([]);
   // Who gets the screen is decided in one place (src/lib/screen/screenSpace.ts); this reports what is open.
   const openMenu = useOpenMenu();
@@ -954,7 +956,8 @@ export default function AgentOverlay() {
     const trainRoute = trip?.legs.find((l) => l.kind === "ride")?.route;
     const tasks = {
       settings: () => setSettingsOpen(true),
-      restroom: () => void send(tr(appLang, "askRestroom")),
+      // The restroom pick (#249); the agent answers only when the restrooms feature is off.
+      restroom: () => { if (!requestRestroomPick(restroomsOn)) void send(tr(appLang, "askRestroom")); },
       train: () => {
         if (trainRoute) void send(tr(appLang, "askLine").replace("{r}", trainRoute));
         else if (openLines) openLines();

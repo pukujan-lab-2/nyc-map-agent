@@ -18,6 +18,7 @@ const EXCEPTIONS: Record<string, string> = {
   suncalc: "BSD-2-Clause per its LICENSE file; package.json has no license field",
   "axe-core": "MPL-2.0, dev-only via eslint-plugin-jsx-a11y, unmodified",
   "@react-three/rapier": "MIT per its repository (pmndrs/react-three-rapier); package.json has no license field",
+  opening_hours: "LGPL-3.0, server-only, unmodified, never shipped to the browser (server/lib/openingHours.ts; owner, 2026-11-28)",
   "gtfs-realtime-bindings": "Apache-2.0 (package.json spells it \"Apache 2.0\"), MTA's official GTFS-rt bindings",
 };
 

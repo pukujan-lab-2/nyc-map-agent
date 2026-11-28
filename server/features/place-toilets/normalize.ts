@@ -4,6 +4,13 @@ const AMENITIES = new Set(["restaurant", "cafe", "fast_food", "bar", "pub"]);
 const ANYONE = new Set(["yes", "permissive", "public"]);
 const CUSTOMERS = new Set(["customers"]);
 
+/** "120 Fulton St": house number and street, when OSM has the street. */
+function address(t: Record<string, string>): string | null {
+  const street = t["addr:street"];
+  if (!street) return null;
+  return [t["addr:housenumber"], street].filter(Boolean).join(" ");
+}
+
 const yesNo = (v: string | undefined): boolean | null => (v === "yes" || v === "designated" ? true : v === "no" ? false : null);
 
 /**
@@ -37,6 +44,12 @@ export function fromOsm(e: OverpassElement): StoredPlaceToilet | null {
     fee,
     source: "openstreetmap",
     url: `https://www.openstreetmap.org/${e.type}/${e.id}`,
+    openingHours: t["toilets:opening_hours"] ?? t.opening_hours ?? null,
+    phone: t.phone ?? t["contact:phone"] ?? null,
+    website: t.website ?? t["contact:website"] ?? null,
+    address: address(t),
+    brandWikidata: t["brand:wikidata"] ?? null,
+    checkDate: t["check_date:opening_hours"] ?? t.check_date ?? null,
     lon,
     lat,
   };

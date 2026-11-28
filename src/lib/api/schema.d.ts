@@ -1538,6 +1538,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/restroom-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent rider answers for up to 100 restrooms, summarised: the latest confirmation in 30 days, whether it was free, and No answers since (alias of /api/v1/restroom-answers)
+         * @deprecated
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Comma-separated restroom ids, at most 100 */
+                    ids: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RestroomAnswerSummaries"];
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Store one anonymous answer to Was the restroom available to use? (restroom id, answers and a timestamp; no account, device or position) (alias of /api/v1/restroom-answers)
+         * @deprecated
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RestroomAnswer"];
+                };
+            };
+            responses: {
+                /** @description Stored */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not a restroom id, or an answer of the wrong kind */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/restrooms": {
         parameters: {
             query?: never;
@@ -4478,6 +4581,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/restroom-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent rider answers for up to 100 restrooms, summarised: the latest confirmation in 30 days, whether it was free, and No answers since */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Comma-separated restroom ids, at most 100 */
+                    ids: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RestroomAnswerSummaries"];
+                    };
+                };
+                /** @description Invalid query */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Store one anonymous answer to Was the restroom available to use? (restroom id, answers and a timestamp; no account, device or position) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RestroomAnswer"];
+                };
+            };
+            responses: {
+                /** @description Stored */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not a restroom id, or an answer of the wrong kind */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+                /** @description Upstream (Octo / R2) error */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ApiError"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/restrooms": {
         parameters: {
             query?: never;
@@ -6336,6 +6536,19 @@ export interface components {
         Json: {
             [key: string]: unknown;
         };
+        OpenState: {
+            /** @description When closed: the next opening within a week (ISO), or null */
+            opensAt: string | null;
+            /**
+             * @description Why the status is unknown: no hours, our copy is over 30 days old, or hours the parser cannot read
+             * @enum {string|null}
+             */
+            reason: "missing" | "stale" | "unclear" | null;
+            /** @enum {string} */
+            status: "open" | "closed" | "unknown";
+            /** @description When open: when it closes (ISO); null when open around the clock */
+            until: string | null;
+        };
         PlaceToilet: {
             /**
              * @description anyone = toilets:access yes|permissive|public; customers = customers or untagged
@@ -6344,16 +6557,29 @@ export interface components {
             access: "anyone" | "customers";
             /** @description false when OSM has no toilets:access tag */
             accessTagged: boolean;
+            /** @example 120 Fulton St */
+            address: string | null;
+            /** @description brand:wikidata; the storefront logo comes from /api/v1/storefronts/logo?qid= */
+            brandWikidata: string | null;
             changingTable: boolean | null;
+            /** @description OSM check_date:opening_hours or check_date: when a mapper last confirmed it */
+            checkDate: string | null;
             fee: boolean | null;
+            /** @description When we last fetched it from OpenStreetMap (ISO) */
+            fetchedAt: string | null;
             /** @example osm:node/123 */
             id: string;
             /** @description OSM amenity (restaurant, cafe, fast_food, bar, pub) or 'shop' */
             kind: string;
             name: string;
+            open: components["schemas"]["OpenState"];
+            /** @description OSM opening_hours, as tagged */
+            openingHours: string | null;
+            phone: string | null;
             /** @enum {string} */
             source: "openstreetmap";
             url: string;
+            website: string | null;
             wheelchair: boolean | null;
         };
         PlaceToiletsResponse: {
@@ -6380,6 +6606,8 @@ export interface components {
             asOf: string | null;
             changingTable: boolean | null;
             fee: boolean | null;
+            /** @description When we last fetched the record from its source (ISO); over 30 days old reads as Hours may have changed */
+            fetchedAt: string | null;
             /** @description City fields that were empty and were filled from the matched OSM toilet */
             filledFromOsm: string[];
             hours: string | null;
@@ -6387,6 +6615,7 @@ export interface components {
             id: string;
             location_type: string | null;
             name: string;
+            open: components["schemas"]["OpenState"];
             operator: string | null;
             /** @description The matched or source OpenStreetMap element */
             osmId: string | null;
@@ -6398,6 +6627,41 @@ export interface components {
             source: "nyc-open-data" | "openstreetmap";
             status: string | null;
             unisex: boolean | null;
+        };
+        RestroomAnswer: {
+            available: boolean;
+            /** @description Needed a code or key */
+            codeNeeded?: boolean | null;
+            customersOnly?: boolean | null;
+            /** @description Had to pay or buy something */
+            paid?: boolean | null;
+            /**
+             * @description After No: what happened
+             * @enum {string|null}
+             */
+            problem?: "closed" | "customers_only" | "out_of_order" | "not_found" | null;
+            /** @example osm:node/123 */
+            restroomId: string;
+        };
+        RestroomAnswerSummaries: {
+            answers: {
+                [key: string]: components["schemas"]["RestroomAnswerSummary"];
+            };
+        };
+        RestroomAnswerSummary: {
+            /** @description The latest Yes in the last 30 days (ISO) */
+            confirmedAt: string | null;
+            /** @description That Yes said nothing had to be paid or bought (false: it did; null: skipped) */
+            free: boolean | null;
+            /**
+             * @description What the latest of those No answers said happened
+             * @enum {string|null}
+             */
+            problem: "closed" | "customers_only" | "out_of_order" | "not_found" | null;
+            /** @description No answers in the last 14 days since that Yes */
+            recentNo: number;
+            /** @description Several recent No answers: the card warns */
+            warn: boolean;
         };
         RestroomsResponse: {
             features: {

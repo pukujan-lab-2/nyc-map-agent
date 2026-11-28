@@ -21,19 +21,29 @@ const base: PlaceToiletProps = {
 const html = (p: Partial<PlaceToiletProps>) => renderToStaticMarkup(<PlaceToiletSheet place={{ ...base, ...p }} lon={-74} lat={40.7} />);
 
 describe("PlaceToiletSheet", () => {
-  it("shows the access badge, source link and Directions", () => {
+  it("says it may be customers only, with the source link and Directions", () => {
     const out = html({});
-    expect(out).toContain("Customers only");
+    expect(out).toContain("May be customers only");
     expect(out).toContain("Directions");
     expect(out).toContain('href="https://www.openstreetmap.org/node/1"');
     expect(out).not.toContain("Wheelchair accessible toilet");
   });
-  it("shows Anyone and the wheelchair mark only where tagged", () => {
+  it("says customers only even where OSM tags the toilet open to anyone, and shows the wheelchair mark only where tagged", () => {
     const out = html({ access: "anyone", wheelchair: true });
-    expect(out).toContain("Anyone");
+    expect(out).toContain("May be customers only");
     expect(out).toContain("Wheelchair accessible toilet");
   });
-  it("flags untagged access as customers only", () => {
-    expect(html({ accessTagged: false })).toContain("Access not tagged");
+  it("shows open now, the address, Website and Call", () => {
+    const until = new Date(Date.now() + 3_600_000).toISOString();
+    const out = html({ open: { status: "open", until, opensAt: null, reason: null }, address: "120 Fulton St", website: "joe.example", phone: "+1 212-555-0100" });
+    expect(out).toContain("Open until");
+    expect(out).toContain("120 Fulton St");
+    expect(out).toContain('href="https://joe.example/"');
+    expect(out).toContain('href="tel:+12125550100"');
+  });
+  it("never says open without hours, and drops a link that is not http", () => {
+    const out = html({ website: "javascript:alert(1)" });
+    expect(out).toContain("Hours may have changed");
+    expect(out).not.toContain("javascript:");
   });
 });

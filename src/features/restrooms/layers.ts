@@ -1,5 +1,6 @@
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
-import { drawRestroomPictogram } from "@/lib/map/restroomPictogram";
+import { PUBLIC_ICON, publicRestroomIcon } from "@/lib/map/restroomIcons";
+import type { OpenState } from "@/lib/openHours";
 import { eyeOrCenter } from "@/lib/map/streetPick";
 
 /**
@@ -8,11 +9,12 @@ import { eyeOrCenter } from "@/lib/map/streetPick";
  * fetched once. City and neighbourhood zoom draw a spread across the view so
  * the open map is not five dots at the centre. Street zoom (17 and closer)
  * keeps the restrooms within a few blocks, which is what the 3D kiosks can
- * draw. Click opens a small card; there is no hover tooltip.
+ * draw. Click opens a small card; there is no hover tooltip. The icon is the
+ * green restroom disc (src/lib/map/restroomIcons.ts), never "WC".
  */
 export const RESTROOMS_LAYER = "restrooms";
 const SOURCE = "restrooms";
-const ICON = "restroom-icon";
+const ICON = PUBLIC_ICON;
 /** Inset map layer. Separate source so the street camera's cap does not empty it. */
 export const MINI_RESTROOMS_LAYER = "mini-restrooms";
 const MINI_SOURCE = "mini-restrooms";
@@ -36,29 +38,11 @@ export interface RestroomInfo {
   unisex?: boolean | null;
   /** City fields filled from a matched OpenStreetMap toilet. */
   filledFromOsm?: string[];
+  /** Open now, worked out by the server in New York time. */
+  open?: OpenState | null;
 }
 
 const RESTROOM_ATTRIBUTION = "NYC Open Data (Public Restrooms), © OpenStreetMap contributors";
-const INK = "#121212";
-const CHARTREUSE = "#c6f702";
-
-/** A chartreuse disc with an ink ring and the restroom pictogram: readable on pale land and over bus badges. */
-function restroomIcon(): ImageData {
-  const size = 64;
-  const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
-  if (!ctx) throw new Error("no 2d canvas");
-  ctx.canvas.width = ctx.canvas.height = size;
-  ctx.beginPath();
-  ctx.arc(size / 2, size / 2, size / 2 - 3, 0, Math.PI * 2);
-  ctx.fillStyle = CHARTREUSE;
-  ctx.fill();
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = INK;
-  ctx.stroke();
-  drawRestroomPictogram(ctx, size / 2, size / 2, 36, INK);
-  return ctx.getImageData(0, 0, size, size);
-}
-
 /** How many restrooms are shown at neighbourhood zoom when the caller has no view bounds. */
 export const NEAREST_COUNT = 5;
 /** Icons on the open map: a spread across the view, not a pile at the centre. */
@@ -223,7 +207,21 @@ export function restroomInfo(f: GeoJSON.Feature): RestroomInfo | null {
     changingTable: b("changingTable"),
     unisex: b("unisex"),
     filledFromOsm: stringList(p.filledFromOsm),
+    open: openProp(p.open),
   };
+}
+
+/** The open-now object; MapLibre hands a rendered feature's objects back as JSON text. */
+function openProp(v: unknown): OpenState | null {
+  let x = v;
+  if (typeof x === "string") {
+    try {
+      x = JSON.parse(x);
+    } catch {
+      return null;
+    }
+  }
+  return x && typeof x === "object" && "status" in x ? (x as OpenState) : null;
 }
 
 /** A string-array property; MapLibre hands a rendered feature's arrays back as JSON text. */
@@ -343,7 +341,7 @@ const ICON_LAYOUT = {
 
 /** Adds source + layer once per style; safe to call after every style load. */
 export function installRestrooms(map: MapLibreMap): void {
-  if (!map.hasImage(ICON)) map.addImage(ICON, restroomIcon(), { pixelRatio: 2 });
+  if (!map.hasImage(ICON)) map.addImage(ICON, publicRestroomIcon(), { pixelRatio: 2 });
   if (!map.getSource(SOURCE)) {
     map.addSource(SOURCE, {
       type: "geojson",
@@ -370,7 +368,7 @@ export function setRestroomsVisible(map: MapLibreMap, on: boolean): void {
 
 /** Restroom icons for the street-view inset. The caller fills the source. */
 export function mountMiniRestrooms(map: MapLibreMap): void {
-  if (!map.hasImage(ICON)) map.addImage(ICON, restroomIcon(), { pixelRatio: 2 });
+  if (!map.hasImage(ICON)) map.addImage(ICON, publicRestroomIcon(), { pixelRatio: 2 });
   if (!map.getSource(MINI_SOURCE)) map.addSource(MINI_SOURCE, { type: "geojson", data: EMPTY, attribution: RESTROOM_ATTRIBUTION });
   if (!map.getLayer(MINI_RESTROOMS_LAYER)) {
     map.addLayer({

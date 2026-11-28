@@ -42,6 +42,8 @@ export interface OsmToilet {
   url: string;
   /** When the element was last edited in OSM (ISO). */
   editedAt: string | null;
+  /** When the nightly ingest last fetched it (core.osm_toilets.refreshed_at); set when read back. */
+  fetchedAt?: string | null;
   lon: number;
   lat: number;
 }

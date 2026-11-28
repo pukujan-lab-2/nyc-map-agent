@@ -2,42 +2,51 @@ import { createElement } from "react";
 import type { GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent, MapMouseEvent } from "maplibre-gl";
 import { kioskSources, pickAt } from "@/lib/map/streetPick";
 import { pushPanel } from "@/lib/store/PanelContext";
-import { ACCESS_LABEL, fetchPlaceToilets, KIND_LABEL, MIN_ZOOM, type PlaceToiletFeature } from "./data";
+import { businessKind, ensureBrandIcon, ensureRestroomIcons, ICON_IMAGE } from "@/lib/map/restroomIcons";
+import { hoursLabel, stateAt } from "@/lib/openHours";
+import { CUSTOMERS_LINE, fetchPlaceToilets, KIND_LABEL, MIN_ZOOM, type PlaceToiletFeature } from "./data";
 import { PlaceToiletSheet } from "./PlaceToiletSheet";
 import { isShopsEnabled, subscribeShops } from "./store";
 
 /**
- * Shops & cafés with a toilet: small, calm stone-grey dots (white ring; a
- * green ring for "Anyone") from zoom 15, under the blue public-restroom "WC"
- * discs, which stay primary. Data is fetched only once the chip is on.
+ * Shops & cafés with a toilet from zoom 15, under the green public restroom
+ * discs, which stay primary: each shows its kind (a café cup, a knife and
+ * fork, a glass, a bag) or its brand logo, with a small green restroom badge
+ * (#249, src/lib/map/restroomIcons.ts). Data is fetched only once the chip is on.
  */
 const SRC = "place-toilets";
 const PLACE_TOILETS_LAYER = "place-toilets";
-const STONE = "#78716c";
-const ANYONE_RING = "#059669";
 const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
+/** What the symbol layer reads: the id (for the click), the icon's kind and the brand. */
 function toCollection(places: PlaceToiletFeature[]): GeoJSON.FeatureCollection {
-  return { type: "FeatureCollection", features: places };
+  return {
+    type: "FeatureCollection",
+    features: places.map((f) => ({
+      type: "Feature",
+      geometry: f.geometry,
+      properties: { id: f.properties.id, kind: businessKind(f.properties.kind), brand: f.properties.brandWikidata ?? null },
+    })),
+  };
 }
 
 export function mount(map: MapLibreMap): () => void {
   let places: PlaceToiletFeature[] = [];
   let alive = true;
   if (!map.getSource(SRC)) map.addSource(SRC, { type: "geojson", data: EMPTY, attribution: "© OpenStreetMap contributors (ODbL)" });
+  ensureRestroomIcons(map);
   map.addLayer(
     {
       id: PLACE_TOILETS_LAYER,
-      type: "circle",
+      type: "symbol",
       source: SRC,
       minzoom: MIN_ZOOM,
-      layout: { visibility: "none" },
-      paint: {
-        "circle-color": STONE,
-        "circle-opacity": 0.85,
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 4, 18, 6],
-        "circle-stroke-color": ["match", ["get", "access"], "anyone", ANYONE_RING, "#ffffff"],
-        "circle-stroke-width": 1.5,
+      layout: {
+        visibility: "none",
+        "icon-image": ICON_IMAGE,
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 0.6, 18, 0.9],
+        "icon-allow-overlap": true,
+        "icon-pitch-alignment": "viewport",
       },
     },
     map.getLayer("restrooms") ? "restrooms" : undefined,
@@ -51,7 +60,13 @@ export function mount(map: MapLibreMap): () => void {
       void fetchPlaceToilets().then((p) => {
         if (!alive) return;
         places = p;
-        void map.getSource<GeoJSONSource>(SRC)?.setData(toCollection(p));
+        const data = toCollection(p);
+        void map.getSource<GeoJSONSource>(SRC)?.setData(data);
+        // Brand logos replace the kind icon as they arrive.
+        const brands = [...new Set(p.map((x) => x.properties.brandWikidata).filter((q): q is string => Boolean(q)))];
+        void Promise.all(brands.map((q) => ensureBrandIcon(map, q))).then((added) => {
+          if (alive && added.some(Boolean)) void map.getSource<GeoJSONSource>(SRC)?.setData(data);
+        });
       });
     }
   };
@@ -62,8 +77,8 @@ export function mount(map: MapLibreMap): () => void {
     pushPanel({
       id: `place-toilet:${p.id}`,
       title: p.name,
-      subtitle: `${KIND_LABEL[p.kind] ?? "Place"} with toilet`,
-      summary: `${ACCESS_LABEL[p.access]}${p.wheelchair ? " · ♿ wheelchair accessible" : ""}`,
+      subtitle: `${KIND_LABEL[p.kind] ?? "Place"} with restroom`,
+      summary: `${hoursLabel(stateAt(p.open, new Date()), new Date())} · ${CUSTOMERS_LINE}`,
       details: createElement(PlaceToiletSheet, { place: p, lon, lat }),
     });
   };
