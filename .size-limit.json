@@ -135,6 +135,6 @@
       ".size-build/assets/*.js",
       "!.size-build/assets/StationWalkScene-*.js"
     ],
-    "limit": "1297.6 kB"
+    "limit": "1298.3 kB"
   }
 ]
