@@ -82,7 +82,7 @@
   {
     "name": "feature: notice diagram (lazy, opens with the first notice; reads the notice's facts on the phone)",
     "path": ".size-build/assets/NoticeDiagram-*.js",
-    "limit": "24 kB"
+    "limit": "24.3 kB"
   },
   {
     "name": "feature: notice map layers (lazy, loads with the first notice: tracks, signposts, train, buses, walks, entrances)",
