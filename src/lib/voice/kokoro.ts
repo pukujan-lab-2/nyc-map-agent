@@ -42,8 +42,9 @@ export function pcm16ToFloat(b: Uint8Array): Float32Array {
 export async function openSpeech(text: string, lang: string, keep: boolean, clip: string | null | undefined, signal: AbortSignal, f: typeof fetch = fetch): Promise<Response> {
   const base = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
   if (clip) {
-    const res = await f(`${base}/api/tts/clip/${clip}`, { signal }).catch((e: unknown) => { if (signal.aborted) throw e; return null; });
-    if (res?.ok && res.body) return res;
+    // A cancel here only means the live request below starts already aborted, which the caller ignores.
+    const res = await f(`${base}/api/tts/clip/${clip}`, { signal }).catch(() => null);
+    if (res?.ok) return res;
   }
   return f(`${base}/api/tts`, { method: "POST", headers: { "content-type": "application/json", ...(keep ? { "x-keep": "1" } : {}) }, body: JSON.stringify({ text, lang }), signal });
 }
