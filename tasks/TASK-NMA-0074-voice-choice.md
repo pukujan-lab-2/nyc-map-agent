@@ -53,6 +53,29 @@ Starting revision, material inputs/configuration, runtime, exact command or prom
 
 No checkpoints yet.
 
+### 2026-11-28 01:27:54 UTC — agent:claude-code/4cefb5fb-6625-4f75-af3d-30455892565b
+
+<!-- continuity:checkpoint {"agent":"agent:claude-code/4cefb5fb-6625-4f75-af3d-30455892565b","blocked":["Full unit suite and the layout e2e were still running locally at this checkpoint; CI runs both."],"changed":["src/lib/voice/tts.ts, say.ts, voiceChoice.ts, noVoice.ts, SettingsBody.tsx, MenuRow.tsx, menuText.ts, e2e/responsive.spec.ts, e2e/mocks.ts, playwright.config.ts"],"completed":["Phone voices are ranked (Premium, Enhanced or Natural, then on the phone, then online); a language the phone has no voice for stays on screen with a one-time note; Settings has Voice: App voice or My phone's voice, kept as nma.voice. Browser tests start muted with a stub voice."],"decisions":["App voice stays the default; with My phone's voice, Kokoro speaks only a language the phone has no voice for."],"evidence":["Voice unit tests pass (8 files, 55 tests) on lists shaped like iOS, Android, Chrome desktop and Edge; typecheck, lint on changed files and knip pass."],"next_action":"Let CI pass on pull request 281; auto-merge is armed.","protocol_version":"0.1.0-draft","schema":"project-continuity.checkpoint.v1","task_id":"NMA-0074","timestamp":"2026-11-28T01:27:54Z"} -->
+<!-- continuity:checkpoint-operation {"payload_sha256":"1cbe5a883121438ad9adc44c5f4970d25fcf48b9fee7eeaf9d13f823aceb02e6","request_id":"d91c672a9a8a4191908eb31cf9d753d1","schema":"project-continuity.checkpoint-operation.v1","task_id":"NMA-0074"} -->
+
+Completed:
+- Phone voices are ranked (Premium, Enhanced or Natural, then on the phone, then online); a language the phone has no voice for stays on screen with a one-time note; Settings has Voice: App voice or My phone's voice, kept as nma.voice. Browser tests start muted with a stub voice.
+
+Evidence:
+- Voice unit tests pass (8 files, 55 tests) on lists shaped like iOS, Android, Chrome desktop and Edge; typecheck, lint on changed files and knip pass.
+
+Decisions:
+- App voice stays the default; with My phone's voice, Kokoro speaks only a language the phone has no voice for.
+
+Changed:
+- src/lib/voice/tts.ts, say.ts, voiceChoice.ts, noVoice.ts, SettingsBody.tsx, MenuRow.tsx, menuText.ts, e2e/responsive.spec.ts, e2e/mocks.ts, playwright.config.ts
+
+Blocked/uncertain:
+- Full unit suite and the layout e2e were still running locally at this checkpoint; CI runs both.
+
+Next:
+- Let CI pass on pull request 281; auto-merge is armed.
+
 ## Handoff
 
 Read PROJECT → CURRENT → this task → minimum relevant spec. Checkpoint before stopping.
