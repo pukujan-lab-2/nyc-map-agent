@@ -26,11 +26,45 @@ export function spokenSummary(text: string, max = 240): string {
   return out.length < plain.length - 5 && !otherScript ? `${out} The details are on screen.` : out;
 }
 
-/** A voice for `lang` (BCP 47); English keeps the preferred natural US voices. */
+/** "es_ES" (older Android) and "es-es" both read as "es-ES". */
+const tagOf = (lang: string) => lang.replace(/_/g, "-").toLowerCase();
+
+/** The region a bare tag means when the phone has several: "zh" is Mandarin, not Cantonese (zh-HK). */
+const HOME_REGION: Record<string, string> = { en: "en-us", zh: "zh-cn" };
+
+/**
+ * How good a voice sounds, lower first (owner, 2026-11-27: the first voice a phone lists is often a
+ * robotic "compact" one). Premium, Enhanced (iOS, macOS) and Natural or Neural (Edge, Android) voices
+ * first, then voices on the phone itself, which keep working underground, then the rest. Apple's novelty
+ * voices (Eloquence's Eddy and Grandma, Zarvox, Bells) go last.
+ */
+export function voiceRank(x: SpeechSynthesisVoice): number {
+  const id = `${x.name} ${x.voiceURI ?? ""}`;
+  if (/eloquence|speech\.synthesis\.voice|novelty/i.test(id)) return 5;
+  const local = x.localService !== false;
+  if (/premium/i.test(id)) return local ? 0 : 0.5;
+  if (/enhanced|natural|neural/i.test(id)) return local ? 1 : 1.5;
+  if (local) return /compact/i.test(id) ? 2.5 : 2;
+  return /google/i.test(id) ? 3 : 4;
+}
+
+/** The best of `v` for `lang`: the region asked for first (accent), then the bare tag's home region, then voiceRank. */
+function bestFor(v: SpeechSynthesisVoice[], lang: string): SpeechSynthesisVoice | undefined {
+  const tag = tagOf(lang);
+  const base = tag.split("-")[0];
+  const region = (x: SpeechSynthesisVoice) => {
+    const t = tagOf(x.lang);
+    return t === tag ? 0 : t === HOME_REGION[base] ? 1 : 2;
+  };
+  const same = v.filter((x) => tagOf(x.lang).split("-")[0] === base);
+  return same.sort((a, b) => region(a) - region(b) || voiceRank(a) - voiceRank(b))[0];
+}
+
+/** A voice for `lang` (BCP 47); English keeps the preferred natural US voices, then the best other English one. */
 export const pickVoice = (v: SpeechSynthesisVoice[], lang = "en-US") => {
-  const base = lang.split("-")[0].toLowerCase();
-  if (base === "en") return v.find((x) => x.lang === "en-US" && /google|samantha|natural|aria/i.test(x.name)) ?? v.find((x) => x.lang.startsWith("en"));
-  return v.find((x) => x.lang.toLowerCase() === lang.toLowerCase()) ?? v.find((x) => x.lang.toLowerCase().startsWith(base));
+  const base = tagOf(lang).split("-")[0];
+  if (base === "en") return v.find((x) => tagOf(x.lang) === "en-us" && /google|samantha|natural|aria/i.test(x.name)) ?? bestFor(v, "en-US");
+  return bestFor(v, lang);
 };
 
 /** Writing systems a voice must read, and the language whose voice to borrow when none speaks the text's own. */
@@ -76,8 +110,13 @@ export function voiceFor(v: SpeechSynthesisVoice[], text: string, lang = "en-US"
   return { voice: pickVoice(v, script.borrow), lang: script.borrow };
 }
 
-/** Speaks `text` chunk by chunk. Returns cancel. Callers mark speaking before calling. `onEnd` fires once: after the last chunk, on cancel, or on interruption. */
-export function speakQueued(synth: SpeechSynthesis, text: string, onEnd: () => void, lang?: string): () => void {
+/**
+ * Speaks `text` chunk by chunk. Returns cancel. Callers mark speaking before calling. `onEnd` fires once: after
+ * the last chunk, on cancel, or on interruption. With `onNoVoice`, a phone that lists voices but none for the
+ * language (Haitian Creole on most phones) says nothing and calls `onNoVoice` with the language instead of
+ * `onEnd`, rather than reading it in an English voice. English, and a phone that lists no voices yet, speak as before.
+ */
+export function speakQueued(synth: SpeechSynthesis, text: string, onEnd: () => void, lang?: string, onNoVoice?: (lang: string) => void): () => void {
   const chunks = chunkText(text);
   let done = false;
   let timer: ReturnType<typeof setInterval> | undefined;
@@ -91,7 +130,9 @@ export function speakQueued(synth: SpeechSynthesis, text: string, onEnd: () => v
   synth.cancel();
   const go = () => {
     if (done || timer) return;
-    const { voice, lang: tag } = voiceFor(synth.getVoices(), text, lang);
+    const voices = synth.getVoices();
+    const { voice, lang: tag } = voiceFor(voices, text, lang);
+    if (!voice && voices.length && onNoVoice && !/^en\b/i.test(tag)) { done = true; onNoVoice(tag); return; }
     timer = setInterval(() => { if (synth.speaking && !synth.paused) { synth.pause(); synth.resume(); } }, 10_000);
     let i = 0;
     const next = () => {
